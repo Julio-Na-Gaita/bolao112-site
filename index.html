@@ -3,21 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Bolão 112">
     <meta name="theme-color" content="#006400">
-    
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
-
     <title>Bolão 112 F.C 2026</title>
-    
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-
     <style>
-        /* CSS IDÊNTICO À VERSÃO ANTERIOR (MANTIDO PORQUE ESTAVA ÓTIMO) */
         :root { --primary: #006400; --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21; --gray: #65676b; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 0; color: var(--text); -webkit-tap-highlight-color: transparent; padding-bottom: 20px; }
         header { background-color: var(--primary); color: white; padding: 15px; padding-top: max(15px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
@@ -88,7 +82,7 @@
 </head>
 <body>
     <div id="login-screen">
-        <img src="https://via.placeholder.com/120x120?text=Bolao+112" style="margin-bottom: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);"> 
+        <img src="background_login.png" onerror="this.src='favicon.png'" style="margin-bottom: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 120px; height: 120px; object-fit: cover;"> 
         <h2 style="color: #333; margin-bottom: 30px; font-weight: 800;">Bolão 112 F.C 2026</h2>
         <input type="text" id="fullname" placeholder="Nome de Exibição" class="hidden">
         <input type="text" id="email" placeholder="Usuário" autocapitalize="none">
@@ -145,7 +139,7 @@
             <hr style="border:0; border-top:1px solid #eee; margin:30px 0;">
             <input type="password" id="new-password" placeholder="Nova Senha">
             <button onclick="window.alterarSenha()" style="margin-top: 10px;">Salvar Nova Senha</button>
-            <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:25px; color:#006400; border-color: #006400; background: #f0fff4;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.8 & Guia</button>
+            <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:25px; color:#006400; border-color: #006400; background: #f0fff4;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.9 & Guia</button>
         </div>
 
         <div class="bottom-nav">
@@ -172,19 +166,13 @@
                 <input id="adm-tA" placeholder="Time A" style="flex:1;">
                 <span onclick="window.buscarLogo('adm-tA')" class="material-icons-round search-icon-btn">search</span>
             </div>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <input id="adm-idA" placeholder="ID Sofa A" style="width:30%;" oninput="window.autoUrl('adm-idA','adm-urlA')">
-                <input id="adm-urlA" placeholder="URL Imagem A" style="width:70%;">
-            </div>
+            <input id="adm-urlA" placeholder="URL Imagem A">
             
             <div style="display:flex; align-items:center; margin-top:10px;">
                 <input id="adm-tB" placeholder="Time B" style="flex:1;">
                 <span onclick="window.buscarLogo('adm-tB')" class="material-icons-round search-icon-btn">search</span>
             </div>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <input id="adm-idB" placeholder="ID Sofa B" style="width:30%;" oninput="window.autoUrl('adm-idB','adm-urlB')">
-                <input id="adm-urlB" placeholder="URL Imagem B" style="width:70%;">
-            </div>
+            <input id="adm-urlB" placeholder="URL Imagem B">
             
             <label style="font-size:12px; color:#666; display:block; margin-top:15px; margin-bottom:2px;">Data e Hora:</label>
             <input type="datetime-local" id="adm-date" style="margin-top:0;">
@@ -272,13 +260,10 @@
                 } else {
                     document.getElementById('btn-admin-painel').style.display = 'none';
                 }
-            } catch (e) { console.error("Erro admin:", e); }
+            } catch (e) {
+                console.error("Erro ao verificar admin:", e);
+            }
         }
-
-        window.autoUrl = (idField, urlField) => {
-            const id = document.getElementById(idField).value;
-            if(id) document.getElementById(urlField).value = `https://img.sofascore.com/api/v1/team/${id}/image`;
-        };
 
         async function loadCompetitions() {
             const docRef = doc(db, "settings", "competitions");
@@ -341,13 +326,16 @@
             const originalName = document.getElementById('edit-comp-original-name').value;
 
             if(!name) return alert("Digite o nome da competição.");
+
             let newList = [...currentCompetitions];
+
             if (originalName) {
                 newList = newList.map(c => c.name === originalName ? {name: name, logo: logo} : c);
             } else {
                 if (newList.some(c => c.name === name)) return alert("Competição já existe.");
                 newList.push({name: name, logo: logo});
             }
+
             await updateDoc(doc(db, "settings", "competitions"), { items: newList });
             currentCompetitions = newList;
             window.limparFormComp();
@@ -379,7 +367,7 @@
                     if(!fullName || pass.length < 6) throw new Error("Preencha campos.");
                     const w = await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Não convidado.");
                     const c = await createUserWithEmailAndPassword(auth, email, pass);
-                    await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.8"});
+                    await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.9"});
                 } else await signInWithEmailAndPassword(auth, email, pass);
             } catch(e) { msg.innerText = e.message; btn.disabled = false; }
         };
@@ -422,8 +410,6 @@
             document.getElementById('adm-urlA').value = "";
             document.getElementById('adm-urlB').value = "";
             document.getElementById('adm-date').value = "";
-            document.getElementById('adm-idA').value = "";
-            document.getElementById('adm-idB').value = "";
             document.getElementById('modal-game-editor').style.display = 'flex';
         }
 
@@ -483,9 +469,17 @@
             };
 
             if(id) {
+                // Ao editar, pergunta se quer WhatsApp
                 await updateDoc(doc(db, "matches", id), data);
-                alert("Jogo Atualizado!");
+                if(confirm("Jogo Atualizado! Deseja avisar no WhatsApp?")) {
+                    const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                    const msg = `📢 *ATENÇÃO: JOGO ATUALIZADO NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Novo Prazo: ${formattedDate}\n\n📲 *Confira se seus palpites ainda valem!*`;
+                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`);
+                } else {
+                    alert("Jogo Atualizado!");
+                }
             } else {
+                // Novo jogo
                 data.winner = null;
                 await addDoc(collection(db, "matches"), data);
                 const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
@@ -558,6 +552,7 @@
             document.getElementById('lista-jogos').innerHTML = "";
             const [mSnap, gSnap] = await Promise.all([getDocs(query(collection(db, "matches"))), getDocs(collection(db, "guesses"))]);
             
+            // LOAD COMP LOGOS
             const settingsSnap = await getDoc(doc(db, "settings", "competitions"));
             let compLogos = {};
             if(settingsSnap.exists()) {
@@ -588,8 +583,11 @@
                     const isTeamASelected = userVote && userVote.trim().toLowerCase() === m.teamA.trim().toLowerCase();
                     const isTeamBSelected = userVote && userVote.trim().toLowerCase() === m.teamB.trim().toLowerCase();
                     
+                    // WATERMARK LOGIC
                     const logoUrl = compLogos[m.competition] || "";
                     const watermarkHtml = logoUrl ? `<img src="${logoUrl}" class="comp-watermark">` : "";
+                    
+                    // LOGO NO HEADER
                     const headerLogo = logoUrl ? `<img src="${logoUrl}" style="width:24px;height:24px;object-fit:contain;margin-right:5px;">` : "";
 
                     let statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header">${m.round || ''}<br>${prazoText} ${dateStr}</div>`;
@@ -671,8 +669,24 @@
             });
         }
 
+        window.verNovidades = () => {
+            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Guia & Novidades v1.3.9";
+            list.innerHTML = `
+                <div class="guide-title">📢 O QUE MUDOU NA v1.3.9?</div>
+                <div class="log-item">• <b>SITE:</b> Correção na exibição do botão Admin.</div>
+                <div class="log-item">• <b>FUNCIONAL:</b> Busca aprimorada e remoção de dependência do SofaScore.</div>
+                <br>
+                <div class="guide-title">💡 GUIA RÁPIDO</div>
+                <div class="log-item">• <b>1. JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</div>
+                <div class="log-item">• <b>2. RANKING:</b> Toque na foto para zoom. Toque nos pontos para extrato.</div>
+                <div class="log-item">• <b>3. PERFIL:</b> Altere foto e senha aqui.</div>
+                <div class="log-item">• <b>4. POTE:</b> Clique no porquinho para ver o prêmio acumulado.</div>
+            `;
+            document.getElementById('modal-history').style.display = 'flex';
+        };
+
         window.verPote = async () => { document.getElementById('modal-pote').style.display = 'flex'; const usersSnap = await getDocs(collection(db, "users")); let totalPayments = 0; usersSnap.forEach(doc => { const payments = doc.data().payments || {}; for(let month in payments) { if(payments[month]) totalPayments++; } }); const totalValue = totalPayments * 10; document.getElementById('pote-valor').innerText = totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
-        window.processarFoto = () => { const file = document.getElementById('file-input').files[0]; if(!file) return; const r = new FileReader(); r.onload = (e) => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'); const ctx = c.getContext('2d'); const scale = 300/i.width; c.width=300; c.height=i.height*scale; ctx.drawImage(i,0,0,c.width,c.height); const b64 = c.toDataURL('image/jpeg',0.7).split(',')[1]; updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.8"}).then(() => { document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; alert("Foto salva!"); }); }; }; r.readAsDataURL(file); };
+        window.processarFoto = () => { const file = document.getElementById('file-input').files[0]; if(!file) return; const r = new FileReader(); r.onload = (e) => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'); const ctx = c.getContext('2d'); const scale = 300/i.width; c.width=300; c.height=i.height*scale; ctx.drawImage(i,0,0,c.width,c.height); const b64 = c.toDataURL('image/jpeg',0.7).split(',')[1]; updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.9"}).then(() => { document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; alert("Foto salva!"); }); }; }; r.readAsDataURL(file); };
         window.carregarRegras = async () => { const d = await getDoc(doc(db, "settings", "general")); document.getElementById('regras-texto').innerText = d.exists() ? d.data().rulesText : "Sem regras."; }
         window.carregarPerfil = async () => {
             const d = await getDoc(doc(db, "users", currentUser.uid));
@@ -682,18 +696,17 @@
                 document.getElementById('user-perfil').innerText = "@"+u.username;
                 if(u.photoBase64) document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+u.photoBase64;
                 
-                // ADMIN: Check force display
                 if(u.isAdmin) { 
                     isAdminUser = true; 
                     document.getElementById('btn-admin-painel').style.display = 'flex'; 
                     loadCompetitions();
                 }
-                updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.8" });
+                updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.9" });
             }
         }
         window.alterarSenha = () => { const p = document.getElementById('new-password').value; if(p.length<6) { alert("Mínimo 6 caracteres"); return; } updatePassword(currentUser, p).then(() => { alert("Senha alterada!"); document.getElementById('new-password').value=""; }).catch(e => alert("Erro: " + e.message)); };
 
-        // GLOBAL FUNCTIONS EXPORT (Para funcionar os onclicks)
+        // GLOBAL FUNCTIONS EXPORT
         window.votar = async (matchId, time, teamA, teamB) => {
             if(!currentUser) return;
             document.getElementById(`btn-${matchId}-${teamA}`).classList.remove('selected');
@@ -732,9 +745,9 @@
         onAuthStateChanged(auth, (u) => {
             if(u) { 
                 currentUser=u; 
-                verificarAdmin(u.uid); // CHECK ADMIN IMMEDIATELY
+                verificarAdmin(u.uid); // CHECK ADMIN
                 const userRef = doc(db, "users", u.uid);
-                updateDoc(userRef, { appVersion: "Web v1.3.8", lastAccess: new Date() });
+                updateDoc(userRef, { appVersion: "Web v1.3.9", lastAccess: new Date() });
                 document.getElementById('login-screen').classList.add('hidden'); 
                 document.getElementById('app-screen').classList.remove('hidden'); 
                 window.mudarAba('jogos'); 
