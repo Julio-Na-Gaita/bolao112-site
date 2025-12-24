@@ -8,42 +8,21 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Bolão 112">
     <meta name="theme-color" content="#006400">
-    
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
-
     <title>Bolão 112 F.C 2026</title>
-    
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-
     <style>
-        /* --- ESTILOS GERAIS --- */
         :root { --primary: #006400; --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21; --gray: #65676b; }
-        
-        /* BODY COM BACKGROUND DINÂMICO */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background-color: var(--bg); /* Fallback */
-            margin: 0; padding: 0; 
-            color: var(--text); 
-            -webkit-tap-highlight-color: transparent; 
-            padding-bottom: 20px;
-            
-            /* Propriedades para a imagem de fundo */
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-size: cover;
-            transition: background-image 0.3s ease-in-out;
+            background-color: var(--bg); margin: 0; padding: 0; color: var(--text); -webkit-tap-highlight-color: transparent; padding-bottom: 20px;
+            background-position: center; background-repeat: no-repeat; background-attachment: fixed; background-size: cover; transition: background-image 0.3s ease-in-out;
         }
-        
         header { background-color: var(--primary); color: white; padding: 15px; padding-top: max(15px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
         h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; flex-grow: 1; text-align: left; padding-left: 10px;}
         .header-icon { font-size: 28px; cursor: pointer; padding: 5px; color: #FFD700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
-        
         .container { padding: 15px; max-width: 600px; margin: 0 auto; padding-bottom: 90px; }
-        
-        /* LOGIN */
         #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: white; padding: 20px; box-sizing: border-box; }
         input, select { padding: 14px; margin: 8px 0; width: 100%; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; transition: 0.3s; }
         input:focus, select:focus { border-color: var(--primary); outline: none; background: #fff; }
@@ -52,14 +31,10 @@
         button:disabled { background-color: #ccc; box-shadow: none; }
         .secondary-btn { background-color: transparent; color: var(--gray); border: 1px solid #ddd; margin-top: 10px; box-shadow: none; }
         .toggle-link { color: var(--primary); font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 14px; }
-
-        /* NAV */
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; padding-bottom: max(12px, env(safe-area-inset-bottom)); border-top: 1px solid #eee; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 100; }
         .nav-item { cursor: pointer; font-size: 10px; text-align: center; color: #aaa; flex: 1; display: flex; flex-direction: column; align-items: center; transition: color 0.2s; }
         .nav-item .material-icons-round { font-size: 26px; margin-bottom: 2px; }
         .nav-item.active { color: var(--primary); font-weight: 600; }
-
-        /* CARD JOGOS */
         .section-header { text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin: 25px 0 10px 0; font-size: 14px; background: rgba(255,255,255,0.8); padding: 8px; border-radius: 20px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); position: relative; overflow: hidden; }
         .comp-watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1; z-index: 0; pointer-events: none; object-fit: cover; }
@@ -161,15 +136,12 @@
                 <div class="profile-user" id="user-perfil">@...</div>
                 <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="window.processarFoto()">
                 <button onclick="document.getElementById('file-input').click()" class="secondary-btn icon-text" style="width:auto; padding:10px 25px;"><span class="material-icons-round" style="font-size:18px;">photo_camera</span> Alterar Foto</button>
-                
-                <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn icon-text" style="margin-top: 20px; display: none;">
-                    <span class="material-icons-round">admin_panel_settings</span> PAINEL ADMIN
-                </button>
+                <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn icon-text" style="margin-top: 20px; display: none;"><span class="material-icons-round">admin_panel_settings</span> PAINEL ADMIN</button>
             </div>
             <hr style="border:0; border-top:1px solid #eee; margin:30px 0;">
             <input type="password" id="new-password" placeholder="Nova Senha">
             <button onclick="window.alterarSenha()" style="margin-top: 10px;">Salvar Nova Senha</button>
-            <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:25px; color:#006400; border-color: #006400; background: #f0fff4;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.8 & Guia</button>
+            <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:25px; color:#006400; border-color: #006400; background: #f0fff4;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.9 & Guia</button>
         </div>
 
         <div class="bottom-nav">
@@ -191,615 +163,71 @@
             <input type="hidden" id="edit-match-id">
             <select id="adm-comp"></select>
             <select id="adm-round"><option>Oitavas de final</option><option>Quartas de final</option><option>Semi final</option><option>Final</option></select>
-            
-            <div style="display:flex; align-items:center;">
-                <input id="adm-tA" placeholder="Time A" style="flex:1;">
-                <span onclick="window.buscarLogo('adm-tA')" class="material-icons-round search-icon-btn">search</span>
-            </div>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <input id="adm-idA" placeholder="ID Sofa A" style="width:30%;" oninput="window.autoUrl('adm-idA','adm-urlA')">
-                <input id="adm-urlA" placeholder="URL Imagem A" style="width:70%;">
-            </div>
-            
-            <div style="display:flex; align-items:center; margin-top:10px;">
-                <input id="adm-tB" placeholder="Time B" style="flex:1;">
-                <span onclick="window.buscarLogo('adm-tB')" class="material-icons-round search-icon-btn">search</span>
-            </div>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <input id="adm-idB" placeholder="ID Sofa B" style="width:30%;" oninput="window.autoUrl('adm-idB','adm-urlB')">
-                <input id="adm-urlB" placeholder="URL Imagem B" style="width:70%;">
-            </div>
-            
-            <label style="font-size:12px; color:#666; display:block; margin-top:15px; margin-bottom:2px;">Data e Hora:</label>
-            <input type="datetime-local" id="adm-date" style="margin-top:0;">
+            <div style="display:flex; align-items:center;"><input id="adm-tA" placeholder="Time A" style="flex:1;"><span onclick="window.buscarLogo('adm-tA')" class="material-icons-round search-icon-btn">search</span></div>
+            <div style="display:flex; gap:5px; margin-top:5px;"><input id="adm-idA" placeholder="ID Sofa A" style="width:30%;" oninput="window.autoUrl('adm-idA','adm-urlA')"><input id="adm-urlA" placeholder="URL Imagem A" style="width:70%;"></div>
+            <div style="display:flex; align-items:center; margin-top:10px;"><input id="adm-tB" placeholder="Time B" style="flex:1;"><span onclick="window.buscarLogo('adm-tB')" class="material-icons-round search-icon-btn">search</span></div>
+            <div style="display:flex; gap:5px; margin-top:5px;"><input id="adm-idB" placeholder="ID Sofa B" style="width:30%;" oninput="window.autoUrl('adm-idB','adm-urlB')"><input id="adm-urlB" placeholder="URL Imagem B" style="width:70%;"></div>
+            <label style="font-size:12px; color:#666; display:block; margin-top:15px; margin-bottom:2px;">Data e Hora:</label><input type="datetime-local" id="adm-date" style="margin-top:0;">
             <button onclick="window.salvarJogo()" style="margin-top:15px;">Salvar Jogo</button>
             <button onclick="document.getElementById('modal-game-editor').style.display='none'" class="secondary-btn">Cancelar</button>
         </div>
     </div>
 
-    <div id="modal-manage-comps" class="modal">
-        <div class="modal-box">
-            <div class="modal-header">Competições</div>
-            <div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:15px;">
-                 <input type="hidden" id="edit-comp-original-name"> 
-                 <input id="new-comp-name" placeholder="Nome (ex: Brasileirão)">
-                 <div style="display:flex; align-items:center; margin-top:5px;">
-                     <input id="new-comp-logo" placeholder="URL do Logo" style="flex:1;">
-                     <span onclick="window.buscarLogo('new-comp-name')" class="material-icons-round search-icon-btn">search</span>
-                 </div>
-                 <div style="display:flex; justify-content:flex-end; margin-top:10px; gap:5px;">
-                     <button onclick="window.limparFormComp()" class="btn-small btn-danger" style="background:#ccc; color:#333; border:none;">Limpar</button>
-                     <button onclick="window.salvarCompeticao()" class="btn-small" style="width:auto;">Salvar</button>
-                 </div>
-            </div>
-            <div id="comp-list"></div>
-            <button onclick="document.getElementById('modal-manage-comps').style.display='none'" class="secondary-btn">Fechar</button>
-        </div>
-    </div>
-
-    <div id="modal-finance" class="modal">
-        <div class="modal-box" style="width: 95%; max-width: 600px;">
-            <div class="modal-header">Gestão Financeira</div>
-            <div id="finance-list"></div>
-            <button onclick="document.getElementById('modal-finance').style.display='none'" style="margin-top:10px;">Fechar</button>
-        </div>
-    </div>
-
-    <div id="modal-manage-games" class="modal">
-        <div class="modal-box">
-            <div class="modal-header">Gerenciar Jogos</div>
-            <button onclick="window.abrirNovoJogo()" class="admin-btn" style="margin-bottom:15px; margin-top:0;">+ NOVO JOGO</button>
-            <div id="admin-games-list"></div>
-            <button onclick="document.getElementById('modal-manage-games').style.display='none'" class="secondary-btn">Fechar</button>
-        </div>
-    </div>
-
-    <div id="modal-winner" class="modal">
-        <div class="modal-box">
-            <div class="modal-header">Quem venceu?</div>
-            <input type="hidden" id="winner-match-id">
-            <button id="btn-win-A" onclick="window.setWinner(this.innerText)">Time A</button>
-            <button id="btn-win-B" onclick="window.setWinner(this.innerText)">Time B</button>
-            <button onclick="window.setWinner(null)" class="btn-danger" style="margin-top:10px;">Remover Vencedor</button>
-            <button onclick="document.getElementById('modal-winner').style.display='none'" class="secondary-btn">Cancelar</button>
-        </div>
-    </div>
+    <div id="modal-manage-comps" class="modal"><div class="modal-box"><div class="modal-header">Competições</div><div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:15px;"><input type="hidden" id="edit-comp-original-name"><input id="new-comp-name" placeholder="Nome (ex: Brasileirão)"><div style="display:flex; align-items:center; margin-top:5px;"><input id="new-comp-logo" placeholder="URL do Logo" style="flex:1;"><span onclick="window.buscarLogo('new-comp-name')" class="material-icons-round search-icon-btn">search</span></div><div style="display:flex; justify-content:flex-end; margin-top:10px; gap:5px;"><button onclick="window.limparFormComp()" class="btn-small btn-danger" style="background:#ccc; color:#333; border:none;">Limpar</button><button onclick="window.salvarCompeticao()" class="btn-small" style="width:auto;">Salvar</button></div></div><div id="comp-list"></div><button onclick="document.getElementById('modal-manage-comps').style.display='none'" class="secondary-btn">Fechar</button></div></div>
+    <div id="modal-finance" class="modal"><div class="modal-box" style="width: 95%; max-width: 600px;"><div class="modal-header">Gestão Financeira</div><div id="finance-list"></div><button onclick="document.getElementById('modal-finance').style.display='none'" style="margin-top:10px;">Fechar</button></div></div>
+    <div id="modal-manage-games" class="modal"><div class="modal-box"><div class="modal-header">Gerenciar Jogos</div><button onclick="window.abrirNovoJogo()" class="admin-btn" style="margin-bottom:15px; margin-top:0;">+ NOVO JOGO</button><div id="admin-games-list"></div><button onclick="document.getElementById('modal-manage-games').style.display='none'" class="secondary-btn">Fechar</button></div></div>
+    <div id="modal-winner" class="modal"><div class="modal-box"><div class="modal-header">Quem venceu?</div><input type="hidden" id="winner-match-id"><button id="btn-win-A" onclick="window.setWinner(this.innerText)">Time A</button><button id="btn-win-B" onclick="window.setWinner(this.innerText)">Time B</button><button onclick="window.setWinner(null)" class="btn-danger" style="margin-top:10px;">Remover Vencedor</button><button onclick="document.getElementById('modal-winner').style.display='none'" class="secondary-btn">Cancelar</button></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, setDoc, getDoc, updateDoc, deleteDoc, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k",
-            authDomain: "bolao112fc.firebaseapp.com",
-            projectId: "bolao112fc",
-            storageBucket: "bolao112fc.firebasestorage.app",
-            messagingSenderId: "131329454158",
-            appId: "1:131329454158:web:983e4544dd651ec942131f",
-            measurementId: "G-5SGWJE6EKK"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+        let currentUser = null; let isRegisterMode = false; let currentCompetitions = []; 
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        let currentUser = null;
-        let isRegisterMode = false;
-        let currentCompetitions = []; 
-
-        async function verificarAdmin(uid) {
-            try {
-                const userDoc = await getDoc(doc(db, "users", uid));
-                if (userDoc.exists() && userDoc.data().isAdmin === true) {
-                    document.getElementById('btn-admin-painel').style.display = 'flex';
-                    loadCompetitions();
-                } else {
-                    document.getElementById('btn-admin-painel').style.display = 'none';
-                }
-            } catch (e) {
-                console.error("Erro ao verificar admin:", e);
-            }
-        }
-
-        window.autoUrl = (idField, urlField) => {
-            const id = document.getElementById(idField).value;
-            if(id) document.getElementById(urlField).value = `https://img.sofascore.com/api/v1/team/${id}/image`;
-        };
-
-        async function loadCompetitions() {
-            const docRef = doc(db, "settings", "competitions");
-            const snap = await getDoc(docRef);
-            if (snap.exists()) {
-                currentCompetitions = snap.data().items || [];
-            } else {
-                currentCompetitions = [{name: "Copa do Mundo", logo: ""}, {name: "Champions League", logo: ""}];
-                await setDoc(docRef, { items: currentCompetitions });
-            }
-            updateCompSelect();
-        }
-
-        function updateCompSelect() {
-            const select = document.getElementById('adm-comp');
-            select.innerHTML = "";
-            currentCompetitions.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.name; opt.innerText = c.name;
-                select.appendChild(opt);
-            });
-        }
-
-        window.abrirGestaoCompeticoes = () => {
-            document.getElementById('modal-manage-comps').style.display = 'flex';
-            renderCompList();
-        }
-
-        window.limparFormComp = () => {
-            document.getElementById('new-comp-name').value = "";
-            document.getElementById('new-comp-logo').value = "";
-            document.getElementById('edit-comp-original-name').value = "";
-        }
-
-        function renderCompList() {
-            const div = document.getElementById('comp-list');
-            div.innerHTML = "";
-            currentCompetitions.forEach(c => {
-                const logoImg = c.logo ? `<img src="${c.logo}" style="width:20px;height:20px;object-fit:contain;margin-right:5px;">` : "";
-                div.innerHTML += `
-                    <div class="comp-item">
-                        <div style="display:flex;align-items:center;">${logoImg}<span>${c.name}</span></div>
-                        <div>
-                            <span style="color:blue; cursor:pointer; margin-right:10px; font-weight:bold;" onclick="window.prepararEdicaoComp('${c.name}', '${c.logo}')">EDITAR</span>
-                            <span style="color:red; cursor:pointer; font-weight:bold;" onclick="window.removeComp('${c.name}')">EXCLUIR</span>
-                        </div>
-                    </div>`;
-            });
-        }
-
-        window.prepararEdicaoComp = (name, logo) => {
-            document.getElementById('new-comp-name').value = name;
-            document.getElementById('new-comp-logo').value = logo;
-            document.getElementById('edit-comp-original-name').value = name;
-        }
-
-        window.salvarCompeticao = async () => {
-            const name = document.getElementById('new-comp-name').value.trim();
-            const logo = document.getElementById('new-comp-logo').value.trim();
-            const originalName = document.getElementById('edit-comp-original-name').value;
-
-            if(!name) return alert("Digite o nome da competição.");
-
-            let newList = [...currentCompetitions];
-
-            if (originalName) {
-                newList = newList.map(c => c.name === originalName ? {name: name, logo: logo} : c);
-            } else {
-                if (newList.some(c => c.name === name)) return alert("Competição já existe.");
-                newList.push({name: name, logo: logo});
-            }
-
-            await updateDoc(doc(db, "settings", "competitions"), { items: newList });
-            currentCompetitions = newList;
-            window.limparFormComp();
-            renderCompList(); 
-            updateCompSelect();
-            alert("Salvo!");
-        };
-
-        window.removeComp = async (name) => {
-            if(confirm(`Excluir ${name}?`)) {
-                const newList = currentCompetitions.filter(c => c.name !== name);
-                await updateDoc(doc(db, "settings", "competitions"), { items: newList });
-                currentCompetitions = newList;
-                renderCompList(); updateCompSelect();
-            }
-        };
-
-        window.buscarLogo = (inputId) => {
-            const name = document.getElementById(inputId).value;
-            if(name) window.open(`https://www.google.com/search?tbm=isch&q=escudo+${encodeURIComponent(name)}+png`);
-            else alert("Digite o nome primeiro!");
-        };
-
-        window.processarAuth = async () => { 
-            const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg'); const user = document.getElementById('email').value.trim().toLowerCase(); const pass = document.getElementById('password').value; const fullName = document.getElementById('fullname').value.trim(); const email = user + "@bolao112.com";
-            btn.disabled = true; msg.innerText = "Conectando...";
-            try {
-                if (isRegisterMode) {
-                    if(!fullName || pass.length < 6) throw new Error("Preencha campos.");
-                    const w = await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Não convidado.");
-                    const c = await createUserWithEmailAndPassword(auth, email, pass);
-                    await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.8"});
-                } else await signInWithEmailAndPassword(auth, email, pass);
-            } catch(e) { msg.innerText = e.message; btn.disabled = false; }
-        };
+        async function verificarAdmin(uid) { try { const userDoc = await getDoc(doc(db, "users", uid)); if (userDoc.exists() && userDoc.data().isAdmin === true) { document.getElementById('btn-admin-painel').style.display = 'flex'; loadCompetitions(); } else { document.getElementById('btn-admin-painel').style.display = 'none'; } } catch (e) { console.error("Erro admin:", e); } }
+        window.autoUrl = (idField, urlField) => { const id = document.getElementById(idField).value; if(id) document.getElementById(urlField).value = `https://img.sofascore.com/api/v1/team/${id}/image`; };
+        async function loadCompetitions() { const docRef = doc(db, "settings", "competitions"); const snap = await getDoc(docRef); if (snap.exists()) { currentCompetitions = snap.data().items || []; } else { currentCompetitions = [{name: "Copa do Mundo", logo: ""}, {name: "Champions League", logo: ""}]; await setDoc(docRef, { items: currentCompetitions }); } updateCompSelect(); }
+        function updateCompSelect() { const select = document.getElementById('adm-comp'); select.innerHTML = ""; currentCompetitions.forEach(c => { const opt = document.createElement('option'); opt.value = c.name; opt.innerText = c.name; select.appendChild(opt); }); }
+        window.abrirGestaoCompeticoes = () => { document.getElementById('modal-manage-comps').style.display = 'flex'; renderCompList(); }
+        window.limparFormComp = () => { document.getElementById('new-comp-name').value = ""; document.getElementById('new-comp-logo').value = ""; document.getElementById('edit-comp-original-name').value = ""; }
+        function renderCompList() { const div = document.getElementById('comp-list'); div.innerHTML = ""; currentCompetitions.forEach(c => { const logoImg = c.logo ? `<img src="${c.logo}" style="width:20px;height:20px;object-fit:contain;margin-right:5px;">` : ""; div.innerHTML += `<div class="comp-item"><div style="display:flex;align-items:center;">${logoImg}<span>${c.name}</span></div><div><span style="color:blue; cursor:pointer; margin-right:10px; font-weight:bold;" onclick="window.prepararEdicaoComp('${c.name}', '${c.logo}')">EDITAR</span><span style="color:red; cursor:pointer; font-weight:bold;" onclick="window.removeComp('${c.name}')">EXCLUIR</span></div></div>`; }); }
+        window.prepararEdicaoComp = (name, logo) => { document.getElementById('new-comp-name').value = name; document.getElementById('new-comp-logo').value = logo; document.getElementById('edit-comp-original-name').value = name; }
+        window.salvarCompeticao = async () => { const name = document.getElementById('new-comp-name').value.trim(); const logo = document.getElementById('new-comp-logo').value.trim(); const originalName = document.getElementById('edit-comp-original-name').value; if(!name) return alert("Digite o nome da competição."); let newList = [...currentCompetitions]; if (originalName) { newList = newList.map(c => c.name === originalName ? {name: name, logo: logo} : c); } else { if (newList.some(c => c.name === name)) return alert("Competição já existe."); newList.push({name: name, logo: logo}); } await updateDoc(doc(db, "settings", "competitions"), { items: newList }); currentCompetitions = newList; window.limparFormComp(); renderCompList(); updateCompSelect(); alert("Salvo!"); };
+        window.removeComp = async (name) => { if(confirm(`Excluir ${name}?`)) { const newList = currentCompetitions.filter(c => c.name !== name); await updateDoc(doc(db, "settings", "competitions"), { items: newList }); currentCompetitions = newList; renderCompList(); updateCompSelect(); } };
+        window.buscarLogo = (inputId) => { const name = document.getElementById(inputId).value; if(name) window.open(`https://www.google.com/search?tbm=isch&q=escudo+${encodeURIComponent(name)}+png`); else alert("Digite o nome primeiro!"); };
+        window.processarAuth = async () => { const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg'); const user = document.getElementById('email').value.trim().toLowerCase(); const pass = document.getElementById('password').value; const fullName = document.getElementById('fullname').value.trim(); const email = user + "@bolao112.com"; btn.disabled = true; msg.innerText = "Conectando..."; try { if (isRegisterMode) { if(!fullName || pass.length < 6) throw new Error("Preencha campos."); const w = await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Não convidado."); const c = await createUserWithEmailAndPassword(auth, email, pass); await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.9"}); } else await signInWithEmailAndPassword(auth, email, pass); } catch(e) { msg.innerText = e.message; btn.disabled = false; } };
         window.alternarModo = () => { isRegisterMode=!isRegisterMode; document.getElementById('btn-login').innerText=isRegisterMode?"CADASTRAR":"ENTRAR"; document.getElementById('fullname').classList.toggle('hidden'); };
         window.sair = () => signOut(auth);
-
-        window.abrirAdmin = () => {
-            ['jogos', 'ranking', 'regras', 'perfil'].forEach(a => document.getElementById(`container-${a}`).classList.add('hidden'));
-            document.getElementById('container-admin').classList.remove('hidden');
-            document.getElementById('header-title').innerText = "Painel Admin";
-            loadCompetitions(); 
-        };
-
-        window.abrirGestaoJogos = async () => {
-            document.getElementById('modal-manage-games').style.display = 'flex';
-            const snap = await getDocs(query(collection(db, "matches"), orderBy("deadline", "desc")));
-            const div = document.getElementById('admin-games-list');
-            div.innerHTML = "";
-            snap.forEach(d => {
-                const m = {id:d.id, ...d.data()};
-                const winnerText = m.winner ? `<span style="color:green">V: ${m.winner}</span>` : `<span style="color:orange">Aberto</span>`;
-                div.innerHTML += `
-                    <div style="border:1px solid #eee; padding:10px; margin-bottom:5px; border-radius:8px;">
-                        <div style="font-weight:bold">${m.teamA} x ${m.teamB}</div>
-                        <div style="font-size:12px; color:#666;">${m.competition} | ${winnerText}</div>
-                        <div class="admin-actions">
-                             <button class="btn-small btn-edit" onclick="window.abrirEditarJogo('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', '${m.competition}', '${m.round}', '${m.deadline ? m.deadline.toDate().toISOString() : ''}')">Editar</button>
-                            <button class="btn-small btn-edit" onclick="window.abrirDefinirVencedor('${m.id}','${m.teamA}','${m.teamB}')">Vencedor</button>
-                            <button class="btn-small btn-danger" onclick="window.excluirJogo('${m.id}')">Excluir</button>
-                        </div>
-                    </div>`;
-            });
-        };
-
-        window.abrirNovoJogo = () => {
-            document.getElementById('modal-game-title').innerText = "Novo Jogo";
-            document.getElementById('edit-match-id').value = ""; 
-            document.getElementById('adm-tA').value = "";
-            document.getElementById('adm-tB').value = "";
-            document.getElementById('adm-urlA').value = "";
-            document.getElementById('adm-urlB').value = "";
-            document.getElementById('adm-date').value = "";
-            document.getElementById('adm-idA').value = "";
-            document.getElementById('adm-idB').value = "";
-            document.getElementById('modal-game-editor').style.display = 'flex';
-        }
-
-        window.abrirEditarJogo = (id, tA, tB, urlA, urlB, comp, round, dateIso) => {
-            document.getElementById('modal-game-title').innerText = "Editar Jogo";
-            document.getElementById('edit-match-id').value = id;
-            document.getElementById('adm-tA').value = tA;
-            document.getElementById('adm-tB').value = tB;
-            document.getElementById('adm-urlA').value = urlA;
-            document.getElementById('adm-urlB').value = urlB;
-            document.getElementById('adm-comp').value = comp;
-            document.getElementById('adm-round').value = round;
-            if(dateIso) {
-                const d = new Date(dateIso);
-                const tzOffset = d.getTimezoneOffset() * 60000;
-                const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16);
-                document.getElementById('adm-date').value = localISOTime;
-            }
-            document.getElementById('modal-game-editor').style.display = 'flex';
-        };
-
-        window.abrirDefinirVencedor = (id, tA, tB) => {
-            document.getElementById('winner-match-id').value = id;
-            document.getElementById('btn-win-A').innerText = tA;
-            document.getElementById('btn-win-B').innerText = tB;
-            document.getElementById('modal-winner').style.display = 'flex';
-        };
-
-        window.setWinner = async (winner) => {
-            const id = document.getElementById('winner-match-id').value;
-            if(winner) await updateDoc(doc(db, "matches", id), {winner: winner});
-            else await updateDoc(doc(db, "matches", id), {winner: null}); 
-            alert("Salvo!"); document.getElementById('modal-winner').style.display = 'none'; window.abrirGestaoJogos();
-        };
-
-        window.excluirJogo = async (id) => {
-            if(confirm("Tem certeza? Isso apaga todos os palpites desse jogo.")) {
-                await deleteDoc(doc(db, "matches", id));
-                alert("Excluído!"); window.abrirGestaoJogos();
-            }
-        };
-
-        window.salvarJogo = async () => {
-            const id = document.getElementById('edit-match-id').value;
-            const tA = document.getElementById('adm-tA').value;
-            const tB = document.getElementById('adm-tB').value;
-            const comp = document.getElementById('adm-comp').value;
-            const dateVal = document.getElementById('adm-date').value;
-            
-            if(!tA || !tB || !dateVal) return alert("Preencha tudo!");
-            
-            const dateObj = new Date(dateVal);
-            const data = {
-                teamA: tA, teamB: tB, teamAUrl: document.getElementById('adm-urlA').value, teamBUrl: document.getElementById('adm-urlB').value,
-                competition: comp, round: document.getElementById('adm-round').value,
-                deadline: dateObj
-            };
-
-            if(id) {
-                await updateDoc(doc(db, "matches", id), data);
-                if(confirm("Jogo Atualizado! Deseja avisar no WhatsApp?")) {
-                    const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                    const msg = `📢 *ATENÇÃO: JOGO ATUALIZADO NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Novo Prazo: ${formattedDate}\n\n📲 *Confira se seus palpites ainda valem!*`;
-                    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`);
-                } else {
-                    alert("Jogo Atualizado!");
-                }
-            } else {
-                data.winner = null;
-                await addDoc(collection(db, "matches"), data);
-                const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                const msg = `📢 *NOVO JOGO DISPONÍVEL NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Prazo: ${formattedDate}\n\n📲 *Não fica moscando, entre agora e deixe seu palpite!*`;
-                if(confirm("Jogo Criado! Deseja enviar no WhatsApp?")) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`);
-            }
-            
-            document.getElementById('modal-game-editor').style.display='none';
-            window.abrirGestaoJogos();
-        };
-
-        window.abrirGestaoUsuarios = async () => {
-            document.getElementById('modal-finance').style.display = 'flex';
-            const list = document.getElementById('finance-list');
-            list.innerHTML = "Carregando...";
-            const snap = await getDocs(collection(db, "users"));
-            let html = "";
-            const users = [];
-            snap.forEach(d => users.push({id:d.id, ...d.data()}));
-            users.sort((a,b) => (a.name||"").localeCompare(b.name||""));
-
-            const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-
-            users.forEach(u => {
-                const debts = u.debts || 0;
-                let monthsHtml = "";
-                months.forEach(m => {
-                    const isPaid = u.payments && u.payments[m];
-                    monthsHtml += `<div class="month-box ${isPaid?'paid':''}" onclick="window.togglePayment('${u.id}', '${m}', ${!isPaid})">${m}</div>`;
-                });
-
-                html += `
-                    <div style="border-bottom:1px solid #eee; padding:10px 0;">
-                        <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                            <span>${u.name} <small style="color:blue; font-weight:normal;">(${u.appVersion||'-'})</small></span>
-                            <span style="color:red">Déb: ${debts}</span>
-                        </div>
-                        <div style="display:flex; gap:10px; margin:5px 0;">
-                            <button class="btn-small" onclick="window.mudarDebito('${u.id}', ${debts-1})">-1</button>
-                            <button class="btn-small btn-danger" onclick="window.mudarDebito('${u.id}', ${debts+1})">+1</button>
-                        </div>
-                        <div class="payment-grid">${monthsHtml}</div>
-                    </div>
-                `;
-            });
-            list.innerHTML = html;
-        };
-
+        window.abrirAdmin = () => { ['jogos', 'ranking', 'regras', 'perfil'].forEach(a => document.getElementById(`container-${a}`).classList.add('hidden')); document.getElementById('container-admin').classList.remove('hidden'); document.getElementById('header-title').innerText = "Painel Admin"; loadCompetitions(); };
+        window.abrirGestaoJogos = async () => { document.getElementById('modal-manage-games').style.display = 'flex'; const snap = await getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))); const div = document.getElementById('admin-games-list'); div.innerHTML = ""; snap.forEach(d => { const m = {id:d.id, ...d.data()}; const winnerText = m.winner ? `<span style="color:green">V: ${m.winner}</span>` : `<span style="color:orange">Aberto</span>`; div.innerHTML += `<div style="border:1px solid #eee; padding:10px; margin-bottom:5px; border-radius:8px;"><div style="font-weight:bold">${m.teamA} x ${m.teamB}</div><div style="font-size:12px; color:#666;">${m.competition} | ${winnerText}</div><div class="admin-actions"><button class="btn-small btn-edit" onclick="window.abrirEditarJogo('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', '${m.competition}', '${m.round}', '${m.deadline ? m.deadline.toDate().toISOString() : ''}')">Editar</button><button class="btn-small btn-edit" onclick="window.abrirDefinirVencedor('${m.id}','${m.teamA}','${m.teamB}')">Vencedor</button><button class="btn-small btn-danger" onclick="window.excluirJogo('${m.id}')">Excluir</button></div></div>`; }); };
+        window.abrirNovoJogo = () => { document.getElementById('modal-game-title').innerText = "Novo Jogo"; document.getElementById('edit-match-id').value = ""; document.getElementById('adm-tA').value = ""; document.getElementById('adm-tB').value = ""; document.getElementById('adm-urlA').value = ""; document.getElementById('adm-urlB').value = ""; document.getElementById('adm-date').value = ""; document.getElementById('adm-idA').value = ""; document.getElementById('adm-idB').value = ""; document.getElementById('modal-game-editor').style.display = 'flex'; }
+        window.abrirEditarJogo = (id, tA, tB, urlA, urlB, comp, round, dateIso) => { document.getElementById('modal-game-title').innerText = "Editar Jogo"; document.getElementById('edit-match-id').value = id; document.getElementById('adm-tA').value = tA; document.getElementById('adm-tB').value = tB; document.getElementById('adm-urlA').value = urlA; document.getElementById('adm-urlB').value = urlB; document.getElementById('adm-comp').value = comp; document.getElementById('adm-round').value = round; if(dateIso) { const d = new Date(dateIso); const tzOffset = d.getTimezoneOffset() * 60000; const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16); document.getElementById('adm-date').value = localISOTime; } document.getElementById('modal-game-editor').style.display = 'flex'; };
+        window.abrirDefinirVencedor = (id, tA, tB) => { document.getElementById('winner-match-id').value = id; document.getElementById('btn-win-A').innerText = tA; document.getElementById('btn-win-B').innerText = tB; document.getElementById('modal-winner').style.display = 'flex'; };
+        window.setWinner = async (winner) => { const id = document.getElementById('winner-match-id').value; if(winner) await updateDoc(doc(db, "matches", id), {winner: winner}); else await updateDoc(doc(db, "matches", id), {winner: null}); alert("Salvo!"); document.getElementById('modal-winner').style.display = 'none'; window.abrirGestaoJogos(); };
+        window.excluirJogo = async (id) => { if(confirm("Tem certeza? Isso apaga todos os palpites desse jogo.")) { await deleteDoc(doc(db, "matches", id)); alert("Excluído!"); window.abrirGestaoJogos(); } };
+        window.salvarJogo = async () => { const id = document.getElementById('edit-match-id').value; const tA = document.getElementById('adm-tA').value; const tB = document.getElementById('adm-tB').value; const comp = document.getElementById('adm-comp').value; const dateVal = document.getElementById('adm-date').value; if(!tA || !tB || !dateVal) return alert("Preencha tudo!"); const dateObj = new Date(dateVal); const data = { teamA: tA, teamB: tB, teamAUrl: document.getElementById('adm-urlA').value, teamBUrl: document.getElementById('adm-urlB').value, competition: comp, round: document.getElementById('adm-round').value, deadline: dateObj }; if(id) { await updateDoc(doc(db, "matches", id), data); if(confirm("Jogo Atualizado! Deseja avisar no WhatsApp?")) { const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); const msg = `📢 *ATENÇÃO: JOGO ATUALIZADO NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Novo Prazo: ${formattedDate}\n\n📲 *Confira se seus palpites ainda valem!*`; window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); } else { alert("Jogo Atualizado!"); } } else { data.winner = null; await addDoc(collection(db, "matches"), data); const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); const msg = `📢 *NOVO JOGO DISPONÍVEL NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Prazo: ${formattedDate}\n\n📲 *Não fica moscando, entre agora e deixe seu palpite!*`; if(confirm("Jogo Criado! Deseja enviar no WhatsApp?")) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); } document.getElementById('modal-game-editor').style.display='none'; window.abrirGestaoJogos(); };
+        window.abrirGestaoUsuarios = async () => { document.getElementById('modal-finance').style.display = 'flex'; const list = document.getElementById('finance-list'); list.innerHTML = "Carregando..."; const snap = await getDocs(collection(db, "users")); let html = ""; const users = []; snap.forEach(d => users.push({id:d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]; users.forEach(u => { const debts = u.debts || 0; let monthsHtml = ""; months.forEach(m => { const isPaid = u.payments && u.payments[m]; monthsHtml += `<div class="month-box ${isPaid?'paid':''}" onclick="window.togglePayment('${u.id}', '${m}', ${!isPaid})">${m}</div>`; }); html += `<div style="border-bottom:1px solid #eee; padding:10px 0;"><div style="display:flex; justify-content:space-between; font-weight:bold;"><span>${u.name} <small style="color:blue; font-weight:normal;">(${u.appVersion||'-'})</small></span><span style="color:red">Déb: ${debts}</span></div><div style="display:flex; gap:10px; margin:5px 0;"><button class="btn-small" onclick="window.mudarDebito('${u.id}', ${debts-1})">-1</button><button class="btn-small btn-danger" onclick="window.mudarDebito('${u.id}', ${debts+1})">+1</button></div><div class="payment-grid">${monthsHtml}</div></div>`; }); list.innerHTML = html; };
         window.togglePayment = async (uid, month, status) => { const ref = doc(db, "users", uid); const key = `payments.${month}`; await updateDoc(ref, { [key]: status }); window.abrirGestaoUsuarios(); };
         window.mudarDebito = async (uid, val) => { if(val < 0) val = 0; await updateDoc(doc(db, "users", uid), { debts: val }); window.abrirGestaoUsuarios(); };
-
-        window.mudarAba = (aba) => {
-            // LÓGICA DE BACKGROUND DINÂMICO
-            let bgImage = "";
-            if (aba === 'jogos') bgImage = "url('bg_jogos.png')";
-            else if (aba === 'ranking') bgImage = "url('bg_ranking.png')";
-            else if (aba === 'regras') bgImage = "url('bg_regras.png')";
-            else if (aba === 'perfil') bgImage = "url('bg_perfil.png')";
-            document.body.style.backgroundImage = bgImage;
-
-            const titles = {jogos:'Bolão 112 F.C', ranking:'Classificação', regras:'Regulamento', perfil:'Perfil'};
-            const h = document.getElementById('header-title'); if(h) h.innerText = titles[aba];
-            ['jogos', 'ranking', 'regras', 'perfil', 'admin'].forEach(a => { 
-                const el = document.getElementById(`container-${a}`); if(el) el.classList.add('hidden');
-                const btn = document.getElementById(`btn-${a}`); if(btn) btn.classList.remove('active');
-            });
-            document.getElementById(`container-${aba}`).classList.remove('hidden');
-            const btnA = document.getElementById(`btn-${aba}`); if(btnA) btnA.classList.add('active');
-            
-            if(aba==='jogos') window.carregarJogos();
-            if(aba==='ranking') window.carregarRanking();
-            if(aba==='regras') window.carregarRegras();
-            if(aba==='perfil') window.carregarPerfil();
+        window.mudarAba = (aba) => { 
+            let bgImage = ""; if (aba === 'jogos') bgImage = "url('bg_jogos.png')"; else if (aba === 'ranking') bgImage = "url('bg_ranking.png')"; else if (aba === 'regras') bgImage = "url('bg_regras.png')"; else if (aba === 'perfil') bgImage = "url('bg_perfil.png')"; document.body.style.backgroundImage = bgImage;
+            const titles = {jogos:'Bolão 112 F.C', ranking:'Classificação', regras:'Regulamento', perfil:'Perfil'}; const h = document.getElementById('header-title'); if(h) h.innerText = titles[aba]; ['jogos', 'ranking', 'regras', 'perfil', 'admin'].forEach(a => { const el = document.getElementById(`container-${a}`); if(el) el.classList.add('hidden'); const btn = document.getElementById(`btn-${a}`); if(btn) btn.classList.remove('active'); }); document.getElementById(`container-${aba}`).classList.remove('hidden'); const btnA = document.getElementById(`btn-${aba}`); if(btnA) btnA.classList.add('active'); if(aba==='jogos') window.carregarJogos(); if(aba==='ranking') window.carregarRanking(); if(aba==='regras') window.carregarRegras(); if(aba==='perfil') window.carregarPerfil(); 
         };
-
-        window.carregarJogos = async () => {
-             document.getElementById('loading-jogos').classList.remove('hidden');
-            document.getElementById('lista-jogos').innerHTML = "";
-            const [mSnap, gSnap] = await Promise.all([getDocs(query(collection(db, "matches"))), getDocs(collection(db, "guesses"))]);
-            
-            const settingsSnap = await getDoc(doc(db, "settings", "competitions"));
-            let compLogos = {};
-            if(settingsSnap.exists()) {
-                const items = settingsSnap.data().items || [];
-                items.forEach(i => compLogos[i.name] = i.logo);
-            }
-
-            const myGuesses = {};
-            gSnap.forEach(d => { if(d.data().userId === currentUser.uid) myGuesses[d.data().matchId] = d.data().teamSelected; });
-            let allMatches = []; mSnap.forEach(d => allMatches.push({id: d.id, ...d.data()}));
-            const now = new Date();
-            const openMatches = [], waitingMatches = [], finishedMatches = [];
-            allMatches.forEach(m => {
-                m.dateObj = m.deadline ? m.deadline.toDate() : new Date(0);
-                if (m.dateObj > now) openMatches.push(m); else if (!m.winner) waitingMatches.push(m); else finishedMatches.push(m);
-            });
-            openMatches.sort((a,b) => a.dateObj - b.dateObj); waitingMatches.sort((a,b) => b.dateObj - a.dateObj); finishedMatches.sort((a,b) => b.dateObj - a.dateObj);
-
-            const renderSection = (title, matches, color) => {
-                if(matches.length === 0) return;
-                const header = document.createElement('div'); header.className = 'section-header'; header.innerText = title; header.style.color = color;
-                document.getElementById('lista-jogos').appendChild(header);
-                matches.forEach(m => {
-                    const isExpired = m.dateObj < now;
-                    const dateStr = m.dateObj.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + " " + m.dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                    const userVote = myGuesses[m.id];
-                    const prazoText = isExpired ? "Votação encerrou em:" : "Votação encerra em:";
-                    const isTeamASelected = userVote && userVote.trim().toLowerCase() === m.teamA.trim().toLowerCase();
-                    const isTeamBSelected = userVote && userVote.trim().toLowerCase() === m.teamB.trim().toLowerCase();
-                    
-                    const logoUrl = compLogos[m.competition] || "";
-                    const watermarkHtml = logoUrl ? `<img src="${logoUrl}" class="comp-watermark">` : "";
-                    const headerLogo = logoUrl ? `<img src="${logoUrl}" style="width:24px;height:24px;object-fit:contain;margin-right:5px;">` : "";
-
-                    let statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header">${m.round || ''}<br>${prazoText} ${dateStr}</div>`;
-                    if(isExpired) statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header" style="color:#d32f2f; font-weight:bold;">🔒 ENCERRADO<br>${m.winner ? 'Vencedor: <b style="color:green">'+m.winner+'</b>' : 'Aguardando resultado...'}</div>`;
-                    
-                    const div = document.createElement('div'); div.className = "card"; if(isExpired) div.style.background = "#f7f7f7";
-                    const imgA = `<img src="${m.teamAUrl}" class="team-img" onerror="this.src='https://placehold.co/50?text=A'">`;
-                    const imgB = `<img src="${m.teamBUrl}" class="team-img" onerror="this.src='https://placehold.co/50?text=B'">`;
-                    const clickA = isExpired ? "" : `onclick="window.votar('${m.id}', '${m.teamA}', '${m.teamA}', '${m.teamB}')"`;
-                    const clickB = isExpired ? "" : `onclick="window.votar('${m.id}', '${m.teamB}', '${m.teamA}', '${m.teamB}')"`;
-                    
-                    div.innerHTML = `${watermarkHtml}
-                        ${statusHtml}
-                        <div class="teams">
-                            <div class="team-btn ${isTeamASelected?'selected':''}" id="btn-${m.id}-${m.teamA}" ${clickA}>${imgA}<span class="team-name">${m.teamA}</span></div>
-                            <span class="vs">X</span>
-                            <div class="team-btn ${isTeamBSelected?'selected':''}" id="btn-${m.id}-${m.teamB}" ${clickB}>${imgB}<span class="team-name">${m.teamB}</span></div>
-                        </div>
-                        ${userVote && !isExpired ? `<div class="status-msg" style="color:#2e7d32; font-weight:bold;">✅ Voto confirmado: ${userVote}</div>` : ''}
-                        <div class="status-msg">
-                            <span onclick="window.verPalpites('${m.id}', '${m.teamA}', '${m.teamB}', ${isExpired}, '${m.teamAUrl}', '${m.teamBUrl}')" style="color:#666; text-decoration:underline; cursor:pointer;">${isExpired ? 'Ver Palpites da Galera' : 'Quem já votou?'}</span>
-                        </div>`;
-                    document.getElementById('lista-jogos').appendChild(div);
-                });
-            };
-            renderSection("✅ JOGOS DISPONÍVEIS ✅", openMatches, "#006400");
-            renderSection("⏳ AGUARDANDO RESULTADO FINAL ⏳", waitingMatches, "#F9A825");
-            renderSection("🚫 JOGOS FINALIZADOS 🚫", finishedMatches, "#D32F2F");
-            if(allMatches.length === 0) document.getElementById('lista-jogos').innerHTML = "<div style='text-align:center; color:#999; padding:40px;'>Nenhum jogo cadastrado.</div>";
-            document.getElementById('loading-jogos').classList.add('hidden');
-        }
-        
-        window.carregarRanking = async () => {
-            document.getElementById('lista-ranking').innerHTML = '<tr><td colspan="6" style="padding:20px;">Carregando classificação...</td></tr>';
-            const [uSnap, mSnap, gSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "matches")), getDocs(collection(db, "guesses"))]);
-            let matches = [], oitavas = [], lastUpdate = null;
-            mSnap.forEach(d => { const m = {id: d.id, ...d.data()}; if(m.winner) { matches.push(m); const dt = m.deadline?.toDate(); if(dt && (!lastUpdate || dt > lastUpdate)) lastUpdate = dt; } if(m.round === "Oitavas de final") oitavas.push(m); });
-            if(lastUpdate) document.getElementById('last-update').innerText = "Última atualização: " + lastUpdate.toLocaleString('pt-BR');
-            const oitavasByComp = {}; oitavas.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); });
-            const rank = [];
-            uSnap.forEach(u => {
-                const user = u.data(); const uid = u.id; let pts = 0, v = 0, f = 0, d = user.debts || 0; const history = []; const userGuesses = [];
-                gSnap.forEach(g => { if(g.data().userId === uid) userGuesses.push(g.data()); });
-                userGuesses.forEach(g => {
-                    const m = matches.find(x => x.id === g.matchId);
-                    if(m && m.winner === g.teamSelected) {
-                        const isFinal = m.round?.toLowerCase() === "final"; const dateStr = m.deadline ? m.deadline.toDate().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) : "--/--";
-                        if(isFinal) { pts+=6; v++; f++; history.push(`📅 ${dateStr} - 🏆 Acerto Final: ${m.teamA} x ${m.teamB} (+6)`); } else { pts+=3; v++; history.push(`📅 ${dateStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+3)`); }
-                    }
-                });
-                for (const compName in oitavasByComp) {
-                    const compMatches = oitavasByComp[compName]; const matchesWithWinner = compMatches.filter(m => m.winner);
-                    if(matchesWithWinner.length > 0 && matchesWithWinner.length === compMatches.length) {
-                        const hits = userGuesses.filter(g => { const m = compMatches.find(x => x.id === g.matchId); return m && m.winner === g.teamSelected; }).length;
-                        if(hits === compMatches.length) { pts+=3; history.push(`🌟 Bônus Oitavas: ${compName} (+3)`); }
-                    }
-                }
-                if(d > 0) { pts-=d; history.push(`🔻 Penalidade Inadimplência (-${d})`); }
-                rank.push({ name: user.name || user.username || "Sem Nome", photo: user.photoBase64, pts, v, f, d, history });
-            });
-            rank.sort((a,b) => b.pts - a.pts || a.d - b.d || b.v - a.v || b.f - a.f);
-            const tbody = document.getElementById('lista-ranking'); tbody.innerHTML = "";
-            rank.forEach((r, i) => {
-                let pos = (i+1)+"º"; 
-                let rowClass = "";
-                if(i===0) { pos = "🥇"; rowClass = "rank-row-1"; }
-                else if(i===1) { pos = "🥈"; rowClass = "rank-row-2"; }
-                else if(i===2) { pos = "🥉"; rowClass = "rank-row-3"; }
-                const tr = document.createElement('tr'); if(rowClass) tr.className = rowClass;
-                const imgSrc = r.photo ? `data:image/jpeg;base64,${r.photo}` : 'https://via.placeholder.com/32';
-                const tdName = document.createElement('td'); tdName.className = "td-nome"; tdName.innerHTML = `<img src="${imgSrc}" class="rank-avatar"> ${r.name}`;
-                tdName.onclick = () => { document.getElementById('modal-img').src = imgSrc; document.getElementById('modal-foto').style.display = 'flex'; };
-                const openHistory = () => { document.getElementById('history-title').innerText = `Extrato: ${r.name}`; const list = document.getElementById('history-list'); list.innerHTML = r.history.length ? r.history.map(h => `<div class="log-item">${h}</div>`).join('') : '<div style="padding:20px; color:#777; text-align:center;">Nenhum ponto ainda.</div>'; document.getElementById('modal-history').style.display = 'flex'; };
-                const tdD = document.createElement('td'); tdD.className="debit clickable-stats"; tdD.innerText = r.d; tdD.onclick = openHistory;
-                const tdV = document.createElement('td'); tdV.className="clickable-stats"; tdV.innerText = r.v; tdV.onclick = openHistory;
-                const tdF = document.createElement('td'); tdF.className="clickable-stats"; tdF.innerText = r.f; tdF.onclick = openHistory;
-                const tdP = document.createElement('td'); tdP.className="points clickable-stats"; tdP.innerText = r.pts; tdP.onclick = openHistory;
-                tr.innerHTML = `<td><b>${pos}</b></td>`; tr.appendChild(tdName); tr.appendChild(tdD); tr.appendChild(tdV); tr.appendChild(tdF); tr.appendChild(tdP); tbody.appendChild(tr);
-            });
-        }
-
-        window.verNovidades = () => {
-            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Guia & Novidades v1.3.8";
-            list.innerHTML = `
-                <div class="guide-title">📢 O QUE MUDOU NA v1.3.8?</div>
-                <div class="log-item">• <b>SITE:</b> Paridade visual com o App (Fundos de tela idênticos).</div>
-                <div class="log-item">• <b>VISUAL:</b> Ajuste dinâmico de layout.</div>
-                <br>
-                <div class="guide-title">💡 GUIA RÁPIDO</div>
-                <div class="log-item">• <b>1. JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</div>
-                <div class="log-item">• <b>2. RANKING:</b> Toque na foto para zoom. Toque nos pontos para extrato.</div>
-                <div class="log-item">• <b>3. PERFIL:</b> Altere foto e senha aqui.</div>
-                <div class="log-item">• <b>4. POTE:</b> Clique no porquinho para ver o prêmio acumulado.</div>
-            `;
-            document.getElementById('modal-history').style.display = 'flex';
-        };
-
+        window.carregarJogos = async () => { document.getElementById('loading-jogos').classList.remove('hidden'); document.getElementById('lista-jogos').innerHTML = ""; const [mSnap, gSnap] = await Promise.all([getDocs(query(collection(db, "matches"))), getDocs(collection(db, "guesses"))]); const settingsSnap = await getDoc(doc(db, "settings", "competitions")); let compLogos = {}; if(settingsSnap.exists()) { const items = settingsSnap.data().items || []; items.forEach(i => compLogos[i.name] = i.logo); } const myGuesses = {}; gSnap.forEach(d => { if(d.data().userId === currentUser.uid) myGuesses[d.data().matchId] = d.data().teamSelected; }); let allMatches = []; mSnap.forEach(d => allMatches.push({id: d.id, ...d.data()})); const now = new Date(); const openMatches = [], waitingMatches = [], finishedMatches = []; allMatches.forEach(m => { m.dateObj = m.deadline ? m.deadline.toDate() : new Date(0); if (m.dateObj > now) openMatches.push(m); else if (!m.winner) waitingMatches.push(m); else finishedMatches.push(m); }); openMatches.sort((a,b) => a.dateObj - b.dateObj); waitingMatches.sort((a,b) => b.dateObj - a.dateObj); finishedMatches.sort((a,b) => b.dateObj - a.dateObj); const renderSection = (title, matches, color) => { if(matches.length === 0) return; const header = document.createElement('div'); header.className = 'section-header'; header.innerText = title; header.style.color = color; document.getElementById('lista-jogos').appendChild(header); matches.forEach(m => { const isExpired = m.dateObj < now; const dateStr = m.dateObj.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + " " + m.dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); const userVote = myGuesses[m.id]; const prazoText = isExpired ? "Votação encerrou em:" : "Votação encerra em:"; const isTeamASelected = userVote && userVote.trim().toLowerCase() === m.teamA.trim().toLowerCase(); const isTeamBSelected = userVote && userVote.trim().toLowerCase() === m.teamB.trim().toLowerCase(); const logoUrl = compLogos[m.competition] || ""; const watermarkHtml = logoUrl ? `<img src="${logoUrl}" class="comp-watermark">` : ""; const headerLogo = logoUrl ? `<img src="${logoUrl}" style="width:24px;height:24px;object-fit:contain;margin-right:5px;">` : ""; let statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header">${m.round || ''}<br>${prazoText} ${dateStr}</div>`; if(isExpired) statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header" style="color:#d32f2f; font-weight:bold;">🔒 ENCERRADO<br>${m.winner ? 'Vencedor: <b style="color:green">'+m.winner+'</b>' : 'Aguardando resultado...'}</div>`; const div = document.createElement('div'); div.className = "card"; if(isExpired) div.style.background = "#f7f7f7"; const imgA = `<img src="${m.teamAUrl}" class="team-img" onerror="this.src='https://placehold.co/50?text=A'">`; const imgB = `<img src="${m.teamBUrl}" class="team-img" onerror="this.src='https://placehold.co/50?text=B'">`; const clickA = isExpired ? "" : `onclick="window.votar('${m.id}', '${m.teamA}', '${m.teamA}', '${m.teamB}')"`; const clickB = isExpired ? "" : `onclick="window.votar('${m.id}', '${m.teamB}', '${m.teamA}', '${m.teamB}')"`; div.innerHTML = `${watermarkHtml} ${statusHtml} <div class="teams"><div class="team-btn ${isTeamASelected?'selected':''}" id="btn-${m.id}-${m.teamA}" ${clickA}>${imgA}<span class="team-name">${m.teamA}</span></div><span class="vs">X</span><div class="team-btn ${isTeamBSelected?'selected':''}" id="btn-${m.id}-${m.teamB}" ${clickB}>${imgB}<span class="team-name">${m.teamB}</span></div></div>${userVote && !isExpired ? `<div class="status-msg" style="color:#2e7d32; font-weight:bold;">✅ Voto confirmado: ${userVote}</div>` : ''}<div class="status-msg"><span onclick="window.verPalpites('${m.id}', '${m.teamA}', '${m.teamB}', ${isExpired}, '${m.teamAUrl}', '${m.teamBUrl}')" style="color:#666; text-decoration:underline; cursor:pointer;">${isExpired ? 'Ver Palpites da Galera' : 'Quem já votou?'}</span></div>`; document.getElementById('lista-jogos').appendChild(div); }); }; renderSection("✅ JOGOS DISPONÍVEIS ✅", openMatches, "#006400"); renderSection("⏳ AGUARDANDO RESULTADO FINAL ⏳", waitingMatches, "#F9A825"); renderSection("🚫 JOGOS FINALIZADOS 🚫", finishedMatches, "#D32F2F"); if(allMatches.length === 0) document.getElementById('lista-jogos').innerHTML = "<div style='text-align:center; color:#999; padding:40px;'>Nenhum jogo cadastrado.</div>"; document.getElementById('loading-jogos').classList.add('hidden'); };
+        window.carregarRanking = async () => { document.getElementById('lista-ranking').innerHTML = '<tr><td colspan="6" style="padding:20px;">Carregando classificação...</td></tr>'; const [uSnap, mSnap, gSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "matches")), getDocs(collection(db, "guesses"))]); let matches = [], oitavas = [], lastUpdate = null; mSnap.forEach(d => { const m = {id: d.id, ...d.data()}; if(m.winner) { matches.push(m); const dt = m.deadline?.toDate(); if(dt && (!lastUpdate || dt > lastUpdate)) lastUpdate = dt; } if(m.round === "Oitavas de final") oitavas.push(m); }); if(lastUpdate) document.getElementById('last-update').innerText = "Última atualização: " + lastUpdate.toLocaleString('pt-BR'); const oitavasByComp = {}; oitavas.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); }); const rank = []; uSnap.forEach(u => { const user = u.data(); const uid = u.id; let pts = 0, v = 0, f = 0, d = user.debts || 0; const history = []; const userGuesses = []; gSnap.forEach(g => { if(g.data().userId === uid) userGuesses.push(g.data()); }); userGuesses.forEach(g => { const m = matches.find(x => x.id === g.matchId); if(m && m.winner === g.teamSelected) { const isFinal = m.round?.toLowerCase() === "final"; const dateStr = m.deadline ? m.deadline.toDate().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) : "--/--"; if(isFinal) { pts+=6; v++; f++; history.push(`📅 ${dateStr} - 🏆 Acerto Final: ${m.teamA} x ${m.teamB} (+6)`); } else { pts+=3; v++; history.push(`📅 ${dateStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+3)`); } } }); for (const compName in oitavasByComp) { const compMatches = oitavasByComp[compName]; const matchesWithWinner = compMatches.filter(m => m.winner); if(matchesWithWinner.length > 0 && matchesWithWinner.length === compMatches.length) { const hits = userGuesses.filter(g => { const m = compMatches.find(x => x.id === g.matchId); return m && m.winner === g.teamSelected; }).length; if(hits == 8) { pts+=3; history.push(`🌟 Bônus Oitavas: ${compName} (+3)`); } } } if(d > 0) { pts-=d; history.push(`🔻 Penalidade Inadimplência (-${d})`); } rank.push({ name: user.name || user.username || "Sem Nome", photo: user.photoBase64, pts, v, f, d, history }); }); rank.sort((a,b) => b.pts - a.pts || a.d - b.d || b.v - a.v || b.f - a.f); const tbody = document.getElementById('lista-ranking'); tbody.innerHTML = ""; rank.forEach((r, i) => { let pos = (i+1)+"º"; let rowClass = ""; if(i===0) { pos = "🥇"; rowClass = "rank-row-1"; } else if(i===1) { pos = "🥈"; rowClass = "rank-row-2"; } else if(i===2) { pos = "🥉"; rowClass = "rank-row-3"; } const tr = document.createElement('tr'); if(rowClass) tr.className = rowClass; const imgSrc = r.photo ? `data:image/jpeg;base64,${r.photo}` : 'https://via.placeholder.com/32'; const tdName = document.createElement('td'); tdName.className = "td-nome"; tdName.innerHTML = `<img src="${imgSrc}" class="rank-avatar"> ${r.name}`; tdName.onclick = () => { document.getElementById('modal-img').src = imgSrc; document.getElementById('modal-foto').style.display = 'flex'; }; const openHistory = () => { document.getElementById('history-title').innerText = `Extrato: ${r.name}`; const list = document.getElementById('history-list'); list.innerHTML = r.history.length ? r.history.map(h => `<div class="log-item">${h}</div>`).join('') : '<div style="padding:20px; color:#777; text-align:center;">Nenhum ponto ainda.</div>'; document.getElementById('modal-history').style.display = 'flex'; }; const tdD = document.createElement('td'); tdD.className="debit clickable-stats"; tdD.innerText = r.d; tdD.onclick = openHistory; const tdV = document.createElement('td'); tdV.className="clickable-stats"; tdV.innerText = r.v; tdV.onclick = openHistory; const tdF = document.createElement('td'); tdF.className="clickable-stats"; tdF.innerText = r.f; tdF.onclick = openHistory; const tdP = document.createElement('td'); tdP.className="points clickable-stats"; tdP.innerText = r.pts; tdP.onclick = openHistory; tr.innerHTML = `<td><b>${pos}</b></td>`; tr.appendChild(tdName); tr.appendChild(tdD); tr.appendChild(tdV); tr.appendChild(tdF); tr.appendChild(tdP); tbody.appendChild(tr); }); };
+        window.verNovidades = () => { const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Guia & Novidades v1.3.9"; list.innerHTML = `<div class="guide-title">📢 O QUE MUDOU NA v1.3.9?</div><div class="log-item">• <b>SITE:</b> Correção definitiva do botão Admin e exibição imediata após login.</div><div class="log-item">• <b>VISUAL:</b> Melhorias no card e suporte a Favicon.</div><br><div class="guide-title">💡 GUIA RÁPIDO</div><div class="log-item">• <b>1. JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</div><div class="log-item">• <b>2. RANKING:</b> Toque na foto para zoom. Toque nos pontos para extrato.</div><div class="log-item">• <b>3. PERFIL:</b> Altere foto e senha aqui.</div><div class="log-item">• <b>4. POTE:</b> Clique no porquinho para ver o prêmio acumulado.</div><br><div class="guide-title">📜 LINHA DO TEMPO</div><div class="log-item" style="color:gray">• v1.3.9 (Atual): Admin Resgatado na Web e Hotfix de Pontuação.</div><div class="log-item" style="color:gray">• v1.3.6: Marca d'água e ID SofaScore.</div><div class="log-item" style="color:gray">• v1.3.5: Gestão de Competições e busca de logo.</div><div class="log-item" style="color:gray">• v1.3.4: Rastreio de versão aprimorado.</div>`; document.getElementById('modal-history').style.display = 'flex'; };
         window.verPote = async () => { document.getElementById('modal-pote').style.display = 'flex'; const usersSnap = await getDocs(collection(db, "users")); let totalPayments = 0; usersSnap.forEach(doc => { const payments = doc.data().payments || {}; for(let month in payments) { if(payments[month]) totalPayments++; } }); const totalValue = totalPayments * 10; document.getElementById('pote-valor').innerText = totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
-        window.processarFoto = () => { const file = document.getElementById('file-input').files[0]; if(!file) return; const r = new FileReader(); r.onload = (e) => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'); const ctx = c.getContext('2d'); const scale = 300/i.width; c.width=300; c.height=i.height*scale; ctx.drawImage(i,0,0,c.width,c.height); const b64 = c.toDataURL('image/jpeg',0.7).split(',')[1]; updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.8"}).then(() => { document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; alert("Foto salva!"); }); }; }; r.readAsDataURL(file); };
+        window.processarFoto = () => { const file = document.getElementById('file-input').files[0]; if(!file) return; const r = new FileReader(); r.onload = (e) => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'); const ctx = c.getContext('2d'); const scale = 300/i.width; c.width=300; c.height=i.height*scale; ctx.drawImage(i,0,0,c.width,c.height); const b64 = c.toDataURL('image/jpeg',0.7).split(',')[1]; updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.9"}).then(() => { document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; alert("Foto salva!"); }); }; }; r.readAsDataURL(file); };
         window.carregarRegras = async () => { const d = await getDoc(doc(db, "settings", "general")); document.getElementById('regras-texto').innerText = d.exists() ? d.data().rulesText : "Sem regras."; }
-        window.carregarPerfil = async () => {
-            const d = await getDoc(doc(db, "users", currentUser.uid));
-            if(d.exists()) {
-                const u = d.data();
-                document.getElementById('nome-perfil').innerText = u.name;
-                document.getElementById('user-perfil').innerText = "@"+u.username;
-                if(u.photoBase64) document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+u.photoBase64;
-                
-                if(u.isAdmin) { 
-                    isAdminUser = true; 
-                    document.getElementById('btn-admin-painel').style.display = 'flex'; 
-                    loadCompetitions();
-                }
-                updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.8" });
-            }
-        }
+        window.carregarPerfil = async () => { const d = await getDoc(doc(db, "users", currentUser.uid)); if(d.exists()) { const u = d.data(); document.getElementById('nome-perfil').innerText = u.name; document.getElementById('user-perfil').innerText = "@"+u.username; if(u.photoBase64) document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+u.photoBase64; if(u.isAdmin) { isAdminUser = true; document.getElementById('btn-admin-painel').style.display = 'flex'; loadCompetitions(); } updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.9" }); } }
         window.alterarSenha = () => { const p = document.getElementById('new-password').value; if(p.length<6) { alert("Mínimo 6 caracteres"); return; } updatePassword(currentUser, p).then(() => { alert("Senha alterada!"); document.getElementById('new-password').value=""; }).catch(e => alert("Erro: " + e.message)); };
+        window.votar = async (matchId, time, teamA, teamB) => { if(!currentUser) return; document.getElementById(`btn-${matchId}-${teamA}`).classList.remove('selected'); document.getElementById(`btn-${matchId}-${teamB}`).classList.remove('selected'); document.getElementById(`btn-${matchId}-${time}`).classList.add('selected'); await setDoc(doc(db, "guesses", `${matchId}_${currentUser.uid}`), { matchId, userId: currentUser.uid, teamSelected: time, timestamp: new Date() }); };
+        window.verPalpites = async (matchId, tA, tB, isExpired, urlA, urlB) => { const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = isExpired ? "Palpites (Encerrado)" : "Quem Votou"; list.innerHTML = "Carregando..."; document.getElementById('modal-history').style.display = 'flex'; const [gSnap, uSnap] = await Promise.all([getDocs(query(collection(db, "guesses"))), getDocs(collection(db, "users"))]); let html = ""; const usersMap = {}; uSnap.forEach(u => usersMap[u.id] = u.data()); gSnap.forEach(g => { const data = g.data(); if(data.matchId === matchId) { const u = usersMap[data.userId] || {name: "Desconhecido", photoBase64: ""}; const name = u.name || u.username; const photo = u.photoBase64 ? `data:image/jpeg;base64,${u.photoBase64}` : 'https://via.placeholder.com/30'; let teamIcon = ""; if(isExpired) { const voted = data.teamSelected.trim().toLowerCase(); if(voted === tA.trim().toLowerCase()) teamIcon = `<img src="${urlA}" style="width:20px; height:20px; object-fit:contain; margin-left:auto;">`; else if(voted === tB.trim().toLowerCase()) teamIcon = `<img src="${urlB}" style="width:20px; height:20px; object-fit:contain; margin-left:auto;">`; } html += `<div class="log-item" style="display:flex; align-items:center;"><img src="${photo}" class="rank-avatar" style="width:30px; height:30px; margin-right:10px;"><span style="font-weight:600; font-size:14px;">${name}</span>${teamIcon}</div>`; } }); list.innerHTML = html || "<div style='text-align:center; padding:20px;'>Nenhum voto ainda.</div>"; };
 
-        // GLOBAL FUNCTIONS EXPORT
-        window.votar = async (matchId, time, teamA, teamB) => {
-            if(!currentUser) return;
-            document.getElementById(`btn-${matchId}-${teamA}`).classList.remove('selected');
-            document.getElementById(`btn-${matchId}-${teamB}`).classList.remove('selected');
-            document.getElementById(`btn-${matchId}-${time}`).classList.add('selected');
-            await setDoc(doc(db, "guesses", `${matchId}_${currentUser.uid}`), { matchId, userId: currentUser.uid, teamSelected: time, timestamp: new Date() });
-        };
-
-        window.verPalpites = async (matchId, tA, tB, isExpired, urlA, urlB) => {
-            const list = document.getElementById('history-list');
-            document.getElementById('history-title').innerText = isExpired ? "Palpites (Encerrado)" : "Quem Votou";
-            list.innerHTML = "Carregando...";
-            document.getElementById('modal-history').style.display = 'flex';
-            const [gSnap, uSnap] = await Promise.all([getDocs(query(collection(db, "guesses"))), getDocs(collection(db, "users"))]);
-            let html = "";
-            const usersMap = {};
-            uSnap.forEach(u => usersMap[u.id] = u.data());
-            gSnap.forEach(g => {
-                const data = g.data();
-                if(data.matchId === matchId) {
-                    const u = usersMap[data.userId] || {name: "Desconhecido", photoBase64: ""};
-                    const name = u.name || u.username;
-                    const photo = u.photoBase64 ? `data:image/jpeg;base64,${u.photoBase64}` : 'https://via.placeholder.com/30';
-                    let teamIcon = "";
-                    if(isExpired) {
-                        const voted = data.teamSelected.trim().toLowerCase();
-                        if(voted === tA.trim().toLowerCase()) teamIcon = `<img src="${urlA}" style="width:20px; height:20px; object-fit:contain; margin-left:auto;">`;
-                        else if(voted === tB.trim().toLowerCase()) teamIcon = `<img src="${urlB}" style="width:20px; height:20px; object-fit:contain; margin-left:auto;">`;
-                    }
-                    html += `<div class="log-item" style="display:flex; align-items:center;"><img src="${photo}" class="rank-avatar" style="width:30px; height:30px; margin-right:10px;"><span style="font-weight:600; font-size:14px;">${name}</span>${teamIcon}</div>`;
-                }
-            });
-            list.innerHTML = html || "<div style='text-align:center; padding:20px;'>Nenhum voto ainda.</div>";
-        };
-
-        onAuthStateChanged(auth, (u) => {
-            if(u) { 
-                currentUser=u; 
-                verificarAdmin(u.uid); // CHECK ADMIN
-                const userRef = doc(db, "users", u.uid);
-                updateDoc(userRef, { appVersion: "Web v1.3.8", lastAccess: new Date() });
-                document.getElementById('login-screen').classList.add('hidden'); 
-                document.getElementById('app-screen').classList.remove('hidden'); 
-                window.mudarAba('jogos'); 
-            }
-            else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); }
-        });
-
+        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.9", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
     </script>
 </body>
 </html>
