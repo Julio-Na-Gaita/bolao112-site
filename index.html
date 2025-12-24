@@ -10,10 +10,14 @@
     <meta name="theme-color" content="#006400">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
+
     <title>Bolão 112 F.C 2026</title>
+    
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
     <style>
         :root { --primary: #006400; --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21; --gray: #65676b; }
+        
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background-color: var(--bg); margin: 0; padding: 0; color: var(--text); 
@@ -21,11 +25,15 @@
             background-position: center; background-repeat: no-repeat; background-attachment: fixed; background-size: cover; 
             transition: background-image 0.3s ease-in-out;
         }
+        
         header { background-color: var(--primary); color: white; padding: 15px; padding-top: max(15px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
         h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; flex-grow: 1; text-align: left; padding-left: 10px;}
         .header-icon { font-size: 28px; cursor: pointer; padding: 5px; color: #FFD700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
+        
         .container { padding: 15px; max-width: 600px; margin: 0 auto; padding-bottom: 90px; }
-        #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: white; padding: 20px; box-sizing: border-box; }
+        
+        /* LOGIN */
+        #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: white; padding: 20px; box-sizing: border-box; position: relative; z-index: 5000; }
         input, select { padding: 14px; margin: 8px 0; width: 100%; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; transition: 0.3s; }
         input:focus, select:focus { border-color: var(--primary); outline: none; background: #fff; }
         button { padding: 16px; background-color: var(--primary); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; width: 100%; font-weight: 700; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,100,0,0.2); transition: transform 0.1s; }
@@ -33,41 +41,44 @@
         button:disabled { background-color: #ccc; box-shadow: none; }
         .secondary-btn { background-color: transparent; color: var(--gray); border: 1px solid #ddd; margin-top: 10px; box-shadow: none; }
         .toggle-link { color: var(--primary); font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 14px; }
+
+        /* NAV */
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; padding-bottom: max(12px, env(safe-area-inset-bottom)); border-top: 1px solid #eee; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 100; }
         .nav-item { cursor: pointer; font-size: 10px; text-align: center; color: #aaa; flex: 1; display: flex; flex-direction: column; align-items: center; transition: color 0.2s; }
         .nav-item .material-icons-round { font-size: 26px; margin-bottom: 2px; }
         .nav-item.active { color: var(--primary); font-weight: 600; }
-        
-        /* CARD JOGOS - CORREÇÃO DE Z-INDEX */
+
+        /* CARD JOGOS - Z-INDEX CRÍTICO */
         .section-header { text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin: 25px 0 10px 0; font-size: 14px; background: rgba(255,255,255,0.8); padding: 8px; border-radius: 20px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); position: relative; overflow: hidden; }
-        .comp-watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1; z-index: 0; pointer-events: none; object-fit: cover; }
-        .match-comp { font-size: 11px; color: var(--primary); font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.8px; position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; }
-        .match-header { font-size: 12px; color: #888; text-align: center; margin-bottom: 15px; margin-top: 4px; line-height: 1.4; position: relative; z-index: 2; }
+        
+        .comp-watermark { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            opacity: 0.1; z-index: 0; pointer-events: none; object-fit: cover; 
+        }
+        
+        .match-comp { font-size: 11px; color: var(--primary); font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.8px; position: relative; z-index: 1; display: flex; justify-content: center; align-items: center; }
+        .match-header { font-size: 12px; color: #888; text-align: center; margin-bottom: 15px; margin-top: 4px; line-height: 1.4; position: relative; z-index: 1; }
+        
+        /* Z-INDEX 10 GARANTE QUE O BOTÃO SEJA CLICÁVEL ACIMA DA MARCA D'ÁGUA */
         .teams { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; }
         
-        /* TEXTO DO TIME COM QUEBRA DE LINHA */
-        .team-btn { display: flex; flex-direction: column; align-items: center; width: 40%; padding: 12px 5px; border: 2px solid transparent; border-radius: 12px; background: rgba(249,249,249,0.8); cursor: pointer; transition: all 0.2s; position: relative; backdrop-filter: blur(2px); z-index: 11; }
+        .team-btn { display: flex; flex-direction: column; align-items: center; width: 40%; padding: 12px 5px; border: 2px solid transparent; border-radius: 12px; background: rgba(249,249,249,0.8); cursor: pointer; transition: all 0.2s; position: relative; backdrop-filter: blur(2px); }
         .team-btn:active { transform: scale(0.95); }
         .team-btn.selected { background-color: rgba(232,245,233,0.9); border-color: #4CAF50; color: var(--primary); }
         .team-img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
         
+        /* CORREÇÃO DO TEXTO LONGO */
         .team-name { 
-            font-size: 11px; 
-            font-weight: 700; 
-            text-align: center; 
-            line-height: 1.2; 
-            white-space: normal; /* Permitir quebra */
-            display: -webkit-box;
-            -webkit-line-clamp: 2; /* Max 2 linhas */
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            height: 28px; /* Altura fixa para alinhar */
-            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700; text-align: center; line-height: 1.2; 
+            white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+            height: 28px; display: flex; align-items: center; justify-content: center;
         }
 
-        .vs { font-weight: 900; color: #d32f2f; font-size: 16px; position: relative; z-index: 2; }
+        .vs { font-weight: 900; color: #d32f2f; font-size: 16px; position: relative; z-index: 1; }
         .status-msg { text-align:center; margin-top:10px; position:relative; z-index:10; font-size:12px; }
+        
+        /* TABELA E LAYOUT */
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         th { text-align: center; color: #888; font-size: 11px; background: #fafafa; padding: 12px 5px; border-bottom: 1px solid #eee; text-transform: uppercase; font-weight: 700; }
         td { padding: 14px 5px; vertical-align: middle; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -77,12 +88,14 @@
         .points { font-weight: 900; font-size: 16px; color: #000; }
         .clickable-stats { cursor: pointer; }
         .rank-row-1 { background-color: #fff9c4 !important; } .rank-row-2 { background-color: #e0e0e0 !important; } .rank-row-3 { background-color: #ffccbc !important; } 
+        
         .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; margin-top: 20px; position: relative; z-index: 5; }
-        .glass-box { background: rgba(255,255,255,0.9); padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); backdrop-filter: blur(5px); }
+        .glass-box { background: rgba(255,255,255,0.9); padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); backdrop-filter: blur(5px); width: 100%; box-sizing: border-box; }
         .big-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary); margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .profile-name { font-size: 22px; font-weight: 800; }
         .profile-user { color: #888; font-size: 15px; margin-bottom: 25px; }
         .rules-box { background: rgba(255,255,255,0.95); padding: 25px; border-radius: 16px; font-size: 15px; line-height: 1.7; white-space: pre-wrap; box-shadow: 0 2px 6px rgba(0,0,0,0.05); color: #444; }
+
         .admin-btn { background-color: #333; color: #ffd700; margin-top: 20px; border: 1px solid #ffd700; font-weight: bold; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .payment-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-top: 10px; }
         .month-box { font-size: 10px; text-align: center; padding: 5px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; background: white; }
@@ -91,11 +104,17 @@
         .btn-small { padding: 8px 12px; font-size: 12px; margin: 0; width: auto; }
         .btn-danger { background-color: #d32f2f; }
         .btn-edit { background-color: #1976d2; }
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
-        #modal-manage-games { z-index: 2000; }
-        #modal-game-editor { z-index: 2100; }
-        #modal-winner { z-index: 2100; }
-        .modal-box { background: white; width: 90%; max-width: 500px; max-height: 80vh; border-radius: 20px; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+        /* MODAIS - Z-INDEX MUITO ALTO PARA FICAR NA FRENTE DE TUDO */
+        .modal { display: none; position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 5000; }
+        
+        /* Hierarquia de Modais para um abrir sobre o outro */
+        #modal-manage-games { z-index: 6000; }
+        #modal-game-editor { z-index: 7000; }
+        #modal-winner { z-index: 7000; }
+        #modal-manage-comps { z-index: 6000; }
+
+        .modal-box { background: white; width: 90%; max-width: 500px; max-height: 80vh; border-radius: 20px; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; }
         .modal-header { font-weight: 800; font-size: 18px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; text-align: center; }
         .log-item { padding: 10px 0; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
         .guide-title { color: var(--primary); font-weight: 800; margin-top: 20px; margin-bottom: 8px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -155,19 +174,21 @@
 
         <div id="container-perfil" class="container hidden">
             <div class="profile-header">
-                <div class="glass-box" style="width: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
+                <div class="glass-box">
                     <img id="img-perfil" src="" class="big-avatar">
                     <div class="profile-name" id="nome-perfil">...</div>
                     <div class="profile-user" id="user-perfil">@...</div>
                     <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="window.processarFoto()">
                     <button onclick="document.getElementById('file-input').click()" class="secondary-btn icon-text" style="width:auto; padding:10px 25px;"><span class="material-icons-round" style="font-size:18px;">photo_camera</span> Alterar Foto</button>
-                    <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn icon-text" style="margin-top: 20px; display: none;"><span class="material-icons-round">admin_panel_settings</span> PAINEL ADMIN</button>
+                    <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn icon-text" style="margin-top: 20px; display: none;">
+                        <span class="material-icons-round">admin_panel_settings</span> PAINEL ADMIN
+                    </button>
                 </div>
             </div>
             <div class="glass-box" style="margin-top: 20px;">
                 <input type="password" id="new-password" placeholder="Nova Senha">
                 <button onclick="window.alterarSenha()" style="margin-top: 10px;">Salvar Nova Senha</button>
-                <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:15px; color:#006400; border-color: #006400; background: #f0fff4; width: 100%;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.11 & Guia</button>
+                <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:15px; color:#006400; border-color: #006400; background: #f0fff4; width: 100%;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.12 & Guia</button>
             </div>
         </div>
 
@@ -214,11 +235,12 @@
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
         let currentUser = null; let isRegisterMode = false; let currentCompetitions = []; 
 
-        // --- FUNÇÕES GLOBAIS ---
+        // --- FUNÇÕES GLOBAIS FORÇADAS (CORREÇÃO DE BOTÕES) ---
         window.autoUrl = (idField, urlField) => { const id = document.getElementById(idField).value; if(id) document.getElementById(urlField).value = `https://img.sofascore.com/api/v1/team/${id}/image`; };
 
         window.votar = async (matchId, time, teamA, teamB) => {
             if(!currentUser) return;
+            console.log("Votando:", time);
             document.getElementById(`btn-${matchId}-${teamA}`).classList.remove('selected');
             document.getElementById(`btn-${matchId}-${teamB}`).classList.remove('selected');
             document.getElementById(`btn-${matchId}-${time}`).classList.add('selected');
@@ -226,6 +248,7 @@
         };
 
         window.verPalpites = async (matchId, tA, tB, isExpired, urlA, urlB) => {
+            console.log("Ver palpites");
             const list = document.getElementById('history-list');
             document.getElementById('history-title').innerText = isExpired ? "Palpites (Encerrado)" : "Quem Votou";
             list.innerHTML = "Carregando...";
@@ -252,7 +275,32 @@
             list.innerHTML = html || "<div style='text-align:center; padding:20px;'>Nenhum voto ainda.</div>";
         };
 
-        window.carregarRegras = async () => { const d = await getDoc(doc(db, "settings", "general")); document.getElementById('regras-texto').innerText = d.exists() ? d.data().rulesText : "Sem regras."; }
+        window.processarFoto = () => { 
+            const file = document.getElementById('file-input').files[0]; 
+            if(!file) return; 
+            const r = new FileReader(); 
+            r.onload = (e) => { 
+                const i = new Image(); 
+                i.src = e.target.result; 
+                i.onload = () => { 
+                    const c = document.createElement('canvas'); 
+                    const ctx = c.getContext('2d'); 
+                    const scale = 300/i.width; c.width=300; c.height=i.height*scale; 
+                    ctx.drawImage(i,0,0,c.width,c.height); 
+                    const b64 = c.toDataURL('image/jpeg',0.7).split(',')[1]; 
+                    updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.12"}).then(() => { 
+                        document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; 
+                        alert("Foto salva!"); 
+                    }); 
+                }; 
+            }; 
+            r.readAsDataURL(file); 
+        };
+
+        window.carregarRegras = async () => { 
+            const d = await getDoc(doc(db, "settings", "general")); 
+            document.getElementById('regras-texto').innerText = d.exists() ? d.data().rulesText : "Sem regras."; 
+        }
         
         window.carregarPerfil = async () => {
             if(!currentUser) return;
@@ -264,39 +312,14 @@
                 if(u.photoBase64) document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+u.photoBase64;
                 
                 if(u.isAdmin) { 
-                    isAdminUser = true; 
                     document.getElementById('btn-admin-painel').style.display = 'flex'; 
                     window.loadCompetitions();
                 }
-                updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.11" });
+                updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.12" });
             }
         }
-
-        window.processarFoto = () => { 
-            const file = document.getElementById('file-input').files[0]; 
-            if(!file) return; 
-            const r = new FileReader(); 
-            r.onload = (e) => { 
-                const i = new Image(); 
-                i.src = e.target.result; 
-                i.onload = () => { 
-                    const c = document.createElement('canvas'); 
-                    const ctx = c.getContext('2d'); 
-                    const scale = 300/i.width; 
-                    c.width=300; 
-                    c.height=i.height*scale; 
-                    ctx.drawImage(i,0,0,c.width,c.height); 
-                    const b64 = c.toDataURL('image/jpeg',0.7).split(',')[1]; 
-                    updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.11"}).then(() => { 
-                        document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; 
-                        alert("Foto salva!"); 
-                    }); 
-                }; 
-            }; 
-            r.readAsDataURL(file); 
-        };
-
-        // --- FIM FUNÇÕES GLOBAIS ---
+        
+        // --- RESTANTE DAS FUNÇÕES DO SISTEMA ---
 
         async function verificarAdmin(uid) {
             try {
@@ -358,7 +381,7 @@
         window.removeComp = async (name) => { if(confirm(`Excluir ${name}?`)) { const newList = currentCompetitions.filter(c => c.name !== name); await updateDoc(doc(db, "settings", "competitions"), { items: newList }); currentCompetitions = newList; window.renderCompList(); window.updateCompSelect(); } };
         window.buscarLogo = (inputId) => { const name = document.getElementById(inputId).value; if(name) window.open(`https://www.google.com/search?tbm=isch&q=escudo+${encodeURIComponent(name)}+png`); else alert("Digite o nome primeiro!"); };
 
-        window.processarAuth = async () => { const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg'); const user = document.getElementById('email').value.trim().toLowerCase(); const pass = document.getElementById('password').value; const fullName = document.getElementById('fullname').value.trim(); const email = user + "@bolao112.com"; btn.disabled = true; msg.innerText = "Conectando..."; try { if (isRegisterMode) { if(!fullName || pass.length < 6) throw new Error("Preencha campos."); const w = await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Não convidado."); const c = await createUserWithEmailAndPassword(auth, email, pass); await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.11"}); } else await signInWithEmailAndPassword(auth, email, pass); } catch(e) { msg.innerText = e.message; btn.disabled = false; } };
+        window.processarAuth = async () => { const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg'); const user = document.getElementById('email').value.trim().toLowerCase(); const pass = document.getElementById('password').value; const fullName = document.getElementById('fullname').value.trim(); const email = user + "@bolao112.com"; btn.disabled = true; msg.innerText = "Conectando..."; try { if (isRegisterMode) { if(!fullName || pass.length < 6) throw new Error("Preencha campos."); const w = await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Não convidado."); const c = await createUserWithEmailAndPassword(auth, email, pass); await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.12"}); } else await signInWithEmailAndPassword(auth, email, pass); } catch(e) { msg.innerText = e.message; btn.disabled = false; } };
         window.alternarModo = () => { isRegisterMode=!isRegisterMode; document.getElementById('btn-login').innerText=isRegisterMode?"CADASTRAR":"ENTRAR"; document.getElementById('fullname').classList.toggle('hidden'); };
         window.sair = () => signOut(auth);
         window.abrirAdmin = () => { ['jogos', 'ranking', 'regras', 'perfil'].forEach(a => document.getElementById(`container-${a}`).classList.add('hidden')); document.getElementById('container-admin').classList.remove('hidden'); document.getElementById('header-title').innerText = "Painel Admin"; window.loadCompetitions(); };
@@ -368,7 +391,7 @@
         window.abrirDefinirVencedor = (id, tA, tB) => { document.getElementById('winner-match-id').value = id; document.getElementById('btn-win-A').innerText = tA; document.getElementById('btn-win-B').innerText = tB; document.getElementById('modal-winner').style.display = 'flex'; };
         window.setWinner = async (winner) => { const id = document.getElementById('winner-match-id').value; if(winner) await updateDoc(doc(db, "matches", id), {winner: winner}); else await updateDoc(doc(db, "matches", id), {winner: null}); alert("Salvo!"); document.getElementById('modal-winner').style.display = 'none'; window.abrirGestaoJogos(); };
         window.excluirJogo = async (id) => { if(confirm("Tem certeza? Isso apaga todos os palpites desse jogo.")) { await deleteDoc(doc(db, "matches", id)); alert("Excluído!"); window.abrirGestaoJogos(); } };
-        window.salvarJogo = async () => { const id = document.getElementById('edit-match-id').value; const tA = document.getElementById('adm-tA').value; const tB = document.getElementById('adm-tB').value; const comp = document.getElementById('adm-comp').value; const dateVal = document.getElementById('adm-date').value; if(!tA || !tB || !dateVal) return alert("Preencha tudo!"); const dateObj = new Date(dateVal); const data = { teamA: tA, teamB: tB, teamAUrl: document.getElementById('adm-urlA').value, teamBUrl: document.getElementById('adm-urlB').value, competition: comp, round: document.getElementById('adm-round').value, deadline: dateObj }; if(id) { await updateDoc(doc(db, "matches", id), data); if(confirm("Jogo Atualizado! Deseja avisar no WhatsApp?")) { const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); const msg = `📢 *ATENÇÃO: JOGO ATUALIZADO NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Novo Prazo: ${formattedDate}\n\n📲 *Confira se seus palpites ainda valem!*`; window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); } else { alert("Jogo Atualizado!"); } } else { data.winner = null; await addDoc(collection(db, "matches"), data); const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); const msg = `📢 *NOVO JOGO DISPONÍVEL NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Prazo: ${formattedDate}\n\n📲 *Não fica moscando, entre agora e deixe seu palpite!*`; if(confirm("Jogo Criado! Deseja enviar no WhatsApp?")) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); } document.getElementById('modal-game-editor').style.display='none'; window.abrirGestaoJogos(); };
+        window.salvarJogo = async () => { const id = document.getElementById('edit-match-id').value; const tA = document.getElementById('adm-tA').value; const tB = document.getElementById('adm-tB').value; const comp = document.getElementById('adm-comp').value; const dateVal = document.getElementById('adm-date').value; if(!tA || !tB || !dateVal) return alert("Preencha tudo!"); const dateObj = new Date(dateVal); const data = { teamA: tA, teamB: tB, teamAUrl: document.getElementById('adm-urlA').value, teamBUrl: document.getElementById('adm-urlB').value, competition: comp, round: document.getElementById('adm-round').value, deadline: dateObj }; if(id) { await updateDoc(doc(db, "matches", id), data); if(confirm("Jogo Atualizado! Deseja avisar no WhatsApp?")) { const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); const msg = `📢 *ATENÇÃO: JOGO ATUALIZADO NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Novo Prazo: ${formattedDate}\n\n📲 *Confira se seus palpites ainda valem!* https://bolao112-site.vercel.app`; window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); } else { alert("Jogo Atualizado!"); } } else { data.winner = null; await addDoc(collection(db, "matches"), data); const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); const msg = `📢 *NOVO JOGO DISPONÍVEL NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Prazo: ${formattedDate}\n\n📲 *Não fica moscando, entre agora e deixe seu palpite!* https://bolao112-site.vercel.app`; if(confirm("Jogo Criado! Deseja enviar no WhatsApp?")) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); } document.getElementById('modal-game-editor').style.display='none'; window.abrirGestaoJogos(); };
         window.abrirGestaoUsuarios = async () => { document.getElementById('modal-finance').style.display = 'flex'; const list = document.getElementById('finance-list'); list.innerHTML = "Carregando..."; const snap = await getDocs(collection(db, "users")); let html = ""; const users = []; snap.forEach(d => users.push({id:d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]; users.forEach(u => { const debts = u.debts || 0; let monthsHtml = ""; months.forEach(m => { const isPaid = u.payments && u.payments[m]; monthsHtml += `<div class="month-box ${isPaid?'paid':''}" onclick="window.togglePayment('${u.id}', '${m}', ${!isPaid})">${m}</div>`; }); html += `<div style="border-bottom:1px solid #eee; padding:10px 0;"><div style="display:flex; justify-content:space-between; font-weight:bold;"><span>${u.name} <small style="color:blue; font-weight:normal;">(${u.appVersion||'-'})</small></span><span style="color:red">Déb: ${debts}</span></div><div style="display:flex; gap:10px; margin:5px 0;"><button class="btn-small" onclick="window.mudarDebito('${u.id}', ${debts-1})">-1</button><button class="btn-small btn-danger" onclick="window.mudarDebito('${u.id}', ${debts+1})">+1</button></div><div class="payment-grid">${monthsHtml}</div></div>`; }); list.innerHTML = html; };
         window.togglePayment = async (uid, month, status) => { const ref = doc(db, "users", uid); const key = `payments.${month}`; await updateDoc(ref, { [key]: status }); window.abrirGestaoUsuarios(); };
         window.mudarDebito = async (uid, val) => { if(val < 0) val = 0; await updateDoc(doc(db, "users", uid), { debts: val }); window.abrirGestaoUsuarios(); };
@@ -471,15 +494,17 @@
             }); 
         };
 
+        window.alterarSenha = () => { const p = document.getElementById('new-password').value; if(p.length<6) { alert("Mínimo 6 caracteres"); return; } updatePassword(currentUser, p).then(() => { alert("Senha alterada!"); document.getElementById('new-password').value=""; }).catch(e => alert("Erro: " + e.message)); };
+
         window.verNovidades = () => { 
-            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Guia & Novidades v1.3.11"; 
-            list.innerHTML = `<div class="guide-title">📢 O QUE MUDOU NA v1.3.11?</div><div class="log-item">• <b>SITE:</b> Correção definitiva do botão Admin e exibição imediata após login.</div><div class="log-item">• <b>VISUAL:</b> Melhorias no card e suporte a Favicon.</div><br><div class="guide-title">💡 GUIA RÁPIDO</div><div class="log-item">• <b>1. JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</div><div class="log-item">• <b>2. RANKING:</b> Toque na foto para zoom. Toque nos pontos para extrato.</div><div class="log-item">• <b>3. PERFIL:</b> Altere foto e senha aqui.</div><div class="log-item">• <b>4. POTE:</b> Clique no porquinho para ver o prêmio acumulado.</div><br><div class="guide-title">📜 LINHA DO TEMPO</div><div class="log-item" style="color:gray">• v1.3.11 (Atual): Otimização de performance (Keys) e correções web.</div><div class="log-item" style="color:gray">• v1.3.10: Formato de data e textos padronizados.</div><div class="log-item" style="color:gray">• v1.3.9: Hotfix de Pontuação (Bônus).</div><div class="log-item" style="color:gray">• v1.3.8: Paridade visual com Web.</div>`; 
+            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Guia & Novidades v1.3.12"; 
+            list.innerHTML = `<div class="guide-title">📢 O QUE MUDOU NA v1.3.12?</div><div class="log-item">• <b>WEB:</b> Correção total de botões e admin.</div><div class="log-item">• <b>VISUAL:</b> Melhorias no card e suporte a Favicon.</div><br><div class="guide-title">💡 GUIA RÁPIDO</div><div class="log-item">• <b>1. JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</div><div class="log-item">• <b>2. RANKING:</b> Toque na foto para zoom. Toque nos pontos para extrato.</div><div class="log-item">• <b>3. PERFIL:</b> Altere foto e senha aqui.</div><div class="log-item">• <b>4. POTE:</b> Clique no porquinho para ver o prêmio acumulado.</div><br><div class="guide-title">📜 LINHA DO TEMPO</div><div class="log-item" style="color:gray">• v1.3.11 (Atual): Otimização de performance (Keys) e correções web.</div><div class="log-item" style="color:gray">• v1.3.10: Formato de data e textos padronizados.</div><div class="log-item" style="color:gray">• v1.3.9: Hotfix de Pontuação (Bônus).</div><div class="log-item" style="color:gray">• v1.3.8: Paridade visual com Web.</div>`; 
             document.getElementById('modal-history').style.display = 'flex'; 
         };
         
         async function verificarAdmin(uid) { try { const userDoc = await getDoc(doc(db, "users", uid)); if (userDoc.exists() && userDoc.data().isAdmin === true) { document.getElementById('btn-admin-painel').style.display = 'flex'; window.loadCompetitions(); } else { document.getElementById('btn-admin-painel').style.display = 'none'; } } catch (e) { console.error("Erro admin:", e); } }
 
-        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.11", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
+        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.12", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
     </script>
 </body>
 </html>
