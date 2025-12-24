@@ -433,8 +433,55 @@
         window.abrirAdmin = () => { ['jogos', 'ranking', 'regras', 'perfil'].forEach(a => document.getElementById(`container-${a}`).classList.add('hidden')); document.getElementById('container-admin').classList.remove('hidden'); document.getElementById('header-title').innerText = "Painel Admin"; window.loadCompetitions(); };
         window.abrirGestaoJogos = async () => { document.getElementById('modal-manage-games').style.display = 'flex'; const snap = await getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))); const div = document.getElementById('admin-games-list'); div.innerHTML = ""; snap.forEach(d => { const m = {id:d.id, ...d.data()}; const winnerText = m.winner ? `<span style="color:green">V: ${m.winner}</span>` : `<span style="color:orange">Aberto</span>`; div.innerHTML += `<div style="border:1px solid #eee; padding:10px; margin-bottom:5px; border-radius:8px;"><div style="font-weight:bold">${m.teamA} x ${m.teamB}</div><div style="font-size:12px; color:#666;">${m.competition} | ${winnerText}</div><div class="admin-actions"><button class="btn-small btn-edit" onclick="window.abrirEditarJogo('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', '${m.competition}', '${m.round}', '${m.deadline ? m.deadline.toDate().toISOString() : ''}')">Editar</button><button class="btn-small btn-edit" onclick="window.abrirDefinirVencedor('${m.id}','${m.teamA}','${m.teamB}', '${m.round}')">Vencedor</button><button class="btn-small btn-danger" onclick="window.excluirJogo('${m.id}')">Excluir</button></div></div>`; }); };
         
-        window.abrirNovoJogo = () => { document.getElementById('modal-game-title').innerText = "Novo Jogo"; document.getElementById('edit-match-id').value = ""; document.getElementById('adm-tA').value = ""; document.getElementById('adm-tB').value = ""; document.getElementById('adm-urlA').value = ""; document.getElementById('adm-urlB').value = ""; document.getElementById('adm-date').value = ""; document.getElementById('modal-game-editor').style.display = 'flex'; }
-        window.abrirEditarJogo = (id, tA, tB, urlA, urlB, comp, round, dateIso) => { document.getElementById('modal-game-title').innerText = "Editar Jogo"; document.getElementById('edit-match-id').value = id; document.getElementById('adm-tA').value = tA; document.getElementById('adm-tB').value = tB; document.getElementById('adm-urlA').value = urlA; document.getElementById('adm-urlB').value = urlB; document.getElementById('adm-comp').value = comp; document.getElementById('adm-round').value = round; if(dateIso) { const d = new Date(dateIso); const tzOffset = d.getTimezoneOffset() * 60000; const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16); document.getElementById('adm-date').value = localISOTime; } document.getElementById('modal-game-editor').style.display = 'flex'; };
+        window.abrirNovoJogo = () => { 
+            document.getElementById('modal-game-title').innerText = "Novo Jogo"; 
+            document.getElementById('edit-match-id').value = ""; 
+            document.getElementById('adm-tA').value = ""; 
+            document.getElementById('adm-tB').value = ""; 
+            document.getElementById('adm-urlA').value = ""; 
+            document.getElementById('adm-urlB').value = ""; 
+            document.getElementById('adm-date').value = ""; 
+            
+            // Destrava a data para novos jogos
+            document.getElementById('adm-date').disabled = false;
+            document.getElementById('adm-date').style.backgroundColor = "#f9f9f9";
+
+            document.getElementById('modal-game-editor').style.display = 'flex'; 
+        }
+
+        window.abrirEditarJogo = (id, tA, tB, urlA, urlB, comp, round, dateIso) => { 
+            document.getElementById('modal-game-title').innerText = "Editar Jogo"; 
+            document.getElementById('edit-match-id').value = id; 
+            document.getElementById('adm-tA').value = tA; 
+            document.getElementById('adm-tB').value = tB; 
+            document.getElementById('adm-urlA').value = urlA; 
+            document.getElementById('adm-urlB').value = urlB; 
+            document.getElementById('adm-comp').value = comp; 
+            document.getElementById('adm-round').value = round; 
+            
+            const dateInput = document.getElementById('adm-date');
+            
+            if(dateIso) { 
+                const d = new Date(dateIso); 
+                const now = new Date();
+                const tzOffset = d.getTimezoneOffset() * 60000; 
+                const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16); 
+                dateInput.value = localISOTime; 
+                
+                // LÓGICA DE TRAVAMENTO WEB
+                // Se a data do jogo for MENOR que agora (já passou), bloqueia.
+                if (d < now) {
+                    dateInput.disabled = true;
+                    dateInput.style.backgroundColor = "#e0e0e0"; // Cinza visual
+                    dateInput.title = "Data bloqueada pois a votação já encerrou.";
+                } else {
+                    dateInput.disabled = false;
+                    dateInput.style.backgroundColor = "#f9f9f9";
+                    dateInput.title = "";
+                }
+            } 
+            document.getElementById('modal-game-editor').style.display = 'flex'; 
+        };
         
         window.abrirDefinirVencedor = (id, tA, tB, round) => { 
             document.getElementById('winner-match-id').value = id; 
@@ -611,3 +658,4 @@
     </script>
 </body>
 </html>
+
