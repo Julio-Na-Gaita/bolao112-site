@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Bolão 112">
@@ -61,8 +62,25 @@
         .points { font-weight: 900; font-size: 16px; color: #000; }
         .clickable-stats { cursor: pointer; }
         .rank-row-1 { background-color: #fff9c4 !important; } .rank-row-2 { background-color: #e0e0e0 !important; } .rank-row-3 { background-color: #ffccbc !important; } 
+        
         .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; margin-top: 20px; position: relative; z-index: 5; }
-        .glass-box { background: rgba(255,255,255,0.9); padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); backdrop-filter: blur(5px); width: 100%; box-sizing: border-box; }
+        
+        /* CORREÇÃO DO ALINHAMENTO DO PERFIL */
+        .glass-box { 
+            background: rgba(255,255,255,0.9); 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            backdrop-filter: blur(5px); 
+            width: 100%; 
+            box-sizing: border-box;
+            display: flex;         /* Habilita Flexbox */
+            flex-direction: column; /* Organiza em coluna */
+            align-items: center;    /* Centraliza horizontalmente */
+            justify-content: center; /* Centraliza verticalmente */
+            text-align: center;      /* Garante que textos internos centralizem */
+        }
+        
         .big-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary); margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .profile-name { font-size: 22px; font-weight: 800; }
         .profile-user { color: #888; font-size: 15px; margin-bottom: 25px; }
@@ -75,16 +93,11 @@
         .btn-small { padding: 8px 12px; font-size: 12px; margin: 0; width: auto; }
         .btn-danger { background-color: #d32f2f; }
         .btn-edit { background-color: #1976d2; }
-        
-        /* MODAIS */
-        .modal { display: none; position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); z-index: 6000; }
-        
-        /* Z-INDEX CORREÇÃO */
-        #modal-pote { z-index: 9999 !important; } /* Máxima Prioridade */
+        .modal { display: none; position: fixed; z-index: 6000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        #modal-pote { z-index: 9999 !important; }
         #modal-manage-games { z-index: 7000; }
         #modal-game-editor { z-index: 8000; }
         #modal-winner { z-index: 8000; }
-
         .modal-box { background: white; width: 90%; max-width: 500px; max-height: 80vh; border-radius: 20px; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; }
         .modal-header { font-weight: 800; font-size: 18px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; text-align: center; }
         .log-item { padding: 10px 0; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
@@ -174,16 +187,7 @@
 
     <div id="modal-foto" class="modal" onclick="this.style.display='none'"><img id="modal-img" class="modal-content"></div>
     <div id="modal-history" class="modal"><div class="modal-box"><div class="modal-header" id="history-title">...</div><div id="history-list"></div><button onclick="this.parentElement.parentElement.style.display='none'" style="margin-top:20px; background:#eee; color:#333;">Fechar</button></div></div>
-    
-    <div id="modal-pote" class="modal">
-        <div class="modal-box" style="text-align: center;">
-            <div class="modal-header" style="color: #006400;">💰 POTE DE OURO 💰</div>
-            <div style="font-size: 16px; color: #555;">Valor total arrecadado:</div>
-            <div id="pote-valor" class="pot-value">Calculando...</div>
-            <div style="font-size: 12px; color: #999; margin-top: 15px;">Quanto mais gente pagar em dia, maior o prêmio! 🚀</div>
-            <button onclick="document.getElementById('modal-pote').style.display='none'" style="margin-top:20px;">Sensacional!</button>
-        </div>
-    </div>
+    <div id="modal-pote" class="modal"><div class="modal-box" style="text-align: center;"><div class="modal-header" style="color: #006400;">💰 POTE DE OURO 💰</div><div style="font-size: 16px; color: #555;">Valor total arrecadado:</div><div id="pote-valor" class="pot-value">Calculando...</div><div style="font-size: 12px; color: #999; margin-top: 15px;">Quanto mais gente pagar em dia, maior o prêmio! 🚀</div><button onclick="document.getElementById('modal-pote').style.display='none'" style="margin-top:20px;">Sensacional!</button></div></div>
 
     <div id="modal-game-editor" class="modal">
         <div class="modal-box">
