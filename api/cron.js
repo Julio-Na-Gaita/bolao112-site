@@ -1,70 +1,83 @@
 import admin from 'firebase-admin';
 
-// Inicializa o Firebase (mesma lógica do send.js)
+// Função para limpar a chave privada
+const getPrivateKey = () => {
+    const key = process.env.FIREBASE_PRIVATE_KEY;
+    if (!key) return undefined;
+    const rawKey = key.replace(/^"|"$/g, '');
+    return rawKey.replace(/\\n/g, '\n');
+};
+
 if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId: process.env.FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
-        }),
-    });
+    try {
+        admin.initializeApp({
+            credential: admin.credential.cert({
+                projectId: process.env.FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: getPrivateKey(),
+            }),
+        });
+    } catch (e) {
+        console.error("Erro na inicialização do Firebase:", e);
+    }
 }
 
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-    // Definindo a janela de tempo: Jogos que vencem entre 50 min e 70 min a partir de agora
-    // Isso garante que peguemos o jogo "faltando 1h" mesmo se o cron rodar a cada 15 min.
+    if (!process.env.FIREBASE_PRIVATE_KEY) return res.status(500).json({ error: "Chave Privada não configurada." });
+    if (!process.env.FIREBASE_CLIENT_EMAIL) return res.status(500).json({ error: "Email não configurado." });
+
     const now = new Date();
-    const startWindow = new Date(now.getTime() + 50 * 60 * 1000); // Daqui a 50 min
-    const endWindow = new Date(now.getTime() + 70 * 60 * 1000);   // Daqui a 70 min
+    // Janela de tempo: Jogos vencendo entre 50 e 75 minutos a partir de agora
+    const startWindow = new Date(now.getTime() + 50 * 60 * 1000); 
+    const endWindow = new Date(now.getTime() + 75 * 60 * 1000);   
 
     try {
-        // Busca jogos nessa janela de tempo
         const snapshot = await db.collection('matches')
             .where('deadline', '>=', startWindow)
             .where('deadline', '<=', endWindow)
             .get();
 
         if (snapshot.empty) {
-            return res.status(200).json({ message: 'Nenhum jogo próximo do prazo.' });
+            return res.status(200).json({ status: "Ok", message: 'Nenhum jogo na janela de 1h.' });
         }
 
         let notificados = 0;
-
-        // Processa cada jogo encontrado
         const updates = snapshot.docs.map(async (doc) => {
             const match = doc.data();
-
-            // Se já foi avisado automaticamente, ignora
             if (match.notifiedAuto) return;
 
-            // Envia a notificação
+            const deadlineDate = match.deadline.toDate();
+            const horaFormatada = deadlineDate.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+            // --- AQUI ESTÁ A MUDANÇA NO TEXTO ---
             await admin.messaging().send({
                 topic: 'todos',
                 notification: {
                     title: '⏳ Falta 1 hora!',
-                    body: `Corre! A votação para ${match.teamA} x ${match.teamB} encerra em breve.`,
+                    body: `O jogo ${match.teamA} x ${match.teamB} encerra às ${horaFormatada}. (Se você já votou, desconsidere este aviso).`,
                 },
                 android: {
                     priority: 'high',
-                    notification: { icon: 'ic_stat_bola', color: '#006400' }
+                    notification: { 
+                        icon: 'ic_stat_bola', 
+                        color: '#006400',
+                        sound: 'default'
+                    }
                 }
             });
+            // ------------------------------------
 
             notificados++;
-            
-            // Marca no banco que esse jogo já teve o aviso automático
             return doc.ref.update({ notifiedAuto: true });
         });
 
         await Promise.all(updates);
-
-        return res.status(200).json({ success: true, message: `${notificados} jogos notificados.` });
+        return res.status(200).json({ success: true, message: `${notificados} notificações enviadas.` });
 
     } catch (error) {
         console.error('Erro no Cron:', error);
-        return res.status(500).json({ error: error.message });
+        return res.status(500).json({ error: "Erro interno.", details: error.message });
     }
 }
