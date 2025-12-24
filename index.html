@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Bolão 112">
@@ -37,16 +36,12 @@
         .nav-item { cursor: pointer; font-size: 10px; text-align: center; color: #aaa; flex: 1; display: flex; flex-direction: column; align-items: center; transition: color 0.2s; }
         .nav-item .material-icons-round { font-size: 26px; margin-bottom: 2px; }
         .nav-item.active { color: var(--primary); font-weight: 600; }
-
-        /* CARD JOGOS - CORREÇÃO DE Z-INDEX */
         .section-header { text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin: 25px 0 10px 0; font-size: 14px; background: rgba(255,255,255,0.8); padding: 8px; border-radius: 20px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); position: relative; overflow: hidden; }
         .comp-watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1; z-index: 0; pointer-events: none; object-fit: cover; }
-        
-        /* CAMADAS SUPERIORES */
         .match-comp { font-size: 11px; color: var(--primary); font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.8px; position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; }
         .match-header { font-size: 12px; color: #888; text-align: center; margin-bottom: 15px; margin-top: 4px; line-height: 1.4; position: relative; z-index: 2; }
-        .teams { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; /* ALTO NÍVEL PARA CLIQUE */ }
+        .teams { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; }
         .team-btn { display: flex; flex-direction: column; align-items: center; width: 40%; padding: 12px 5px; border: 2px solid transparent; border-radius: 12px; background: rgba(249,249,249,0.8); cursor: pointer; transition: all 0.2s; position: relative; backdrop-filter: blur(2px); z-index: 11; }
         .team-btn:active { transform: scale(0.95); }
         .team-btn.selected { background-color: rgba(232,245,233,0.9); border-color: #4CAF50; color: var(--primary); }
@@ -54,7 +49,6 @@
         .team-name { font-size: 13px; font-weight: 600; text-align: center; line-height: 1.2; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .vs { font-weight: 900; color: #d32f2f; font-size: 16px; position: relative; z-index: 2; }
         .status-msg { text-align:center; margin-top:10px; position:relative; z-index:10; font-size:12px; }
-        
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         th { text-align: center; color: #888; font-size: 11px; background: #fafafa; padding: 12px 5px; border-bottom: 1px solid #eee; text-transform: uppercase; font-weight: 700; }
         td { padding: 14px 5px; vertical-align: middle; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -64,7 +58,9 @@
         .points { font-weight: 900; font-size: 16px; color: #000; }
         .clickable-stats { cursor: pointer; }
         .rank-row-1 { background-color: #fff9c4 !important; } .rank-row-2 { background-color: #e0e0e0 !important; } .rank-row-3 { background-color: #ffccbc !important; } 
-        .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; margin-top: 20px; }
+        .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; margin-top: 20px; position: relative; z-index: 5; }
+        /* Adicionei fundo branco com transparência para o perfil ser legível com qualquer wallpaper */
+        .profile-card { background: rgba(255,255,255,0.9); padding: 20px; border-radius: 20px; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; }
         .big-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary); margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .profile-name { font-size: 22px; font-weight: 800; }
         .profile-user { color: #888; font-size: 15px; margin-bottom: 25px; }
@@ -78,7 +74,6 @@
         .btn-danger { background-color: #d32f2f; }
         .btn-edit { background-color: #1976d2; }
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
-        /* Hierarquia de Modais */
         #modal-manage-games { z-index: 2000; }
         #modal-game-editor { z-index: 2100; }
         #modal-winner { z-index: 2100; }
@@ -142,12 +137,14 @@
 
         <div id="container-perfil" class="container hidden">
             <div class="profile-header">
-                <img id="img-perfil" src="" class="big-avatar">
-                <div class="profile-name" id="nome-perfil">...</div>
-                <div class="profile-user" id="user-perfil">@...</div>
-                <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="window.processarFoto()">
-                <button onclick="document.getElementById('file-input').click()" class="secondary-btn icon-text" style="width:auto; padding:10px 25px;"><span class="material-icons-round" style="font-size:18px;">photo_camera</span> Alterar Foto</button>
-                <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn icon-text" style="margin-top: 20px; display: none;"><span class="material-icons-round">admin_panel_settings</span> PAINEL ADMIN</button>
+                <div class="profile-card">
+                    <img id="img-perfil" src="" class="big-avatar">
+                    <div class="profile-name" id="nome-perfil">...</div>
+                    <div class="profile-user" id="user-perfil">@...</div>
+                    <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="window.processarFoto()">
+                    <button onclick="document.getElementById('file-input').click()" class="secondary-btn icon-text" style="width:auto; padding:10px 25px;"><span class="material-icons-round" style="font-size:18px;">photo_camera</span> Alterar Foto</button>
+                    <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn icon-text" style="margin-top: 20px; display: none;"><span class="material-icons-round">admin_panel_settings</span> PAINEL ADMIN</button>
+                </div>
             </div>
             <hr style="border:0; border-top:1px solid #eee; margin:30px 0;">
             <input type="password" id="new-password" placeholder="Nova Senha">
@@ -198,13 +195,11 @@
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
         let currentUser = null; let isRegisterMode = false; let currentCompetitions = []; 
 
-        // --- DEFINIÇÃO DE FUNÇÕES GLOBAIS (ESSENCIAL PARA O HTML ACESSAR) ---
-        
+        // --- FUNÇÕES GLOBAIS ---
         window.autoUrl = (idField, urlField) => { const id = document.getElementById(idField).value; if(id) document.getElementById(urlField).value = `https://img.sofascore.com/api/v1/team/${id}/image`; };
 
         window.votar = async (matchId, time, teamA, teamB) => {
             if(!currentUser) return;
-            console.log("Votando em:", time); // Debug
             document.getElementById(`btn-${matchId}-${teamA}`).classList.remove('selected');
             document.getElementById(`btn-${matchId}-${teamB}`).classList.remove('selected');
             document.getElementById(`btn-${matchId}-${time}`).classList.add('selected');
@@ -212,7 +207,6 @@
         };
 
         window.verPalpites = async (matchId, tA, tB, isExpired, urlA, urlB) => {
-            console.log("Vendo palpites..."); // Debug
             const list = document.getElementById('history-list');
             document.getElementById('history-title').innerText = isExpired ? "Palpites (Encerrado)" : "Quem Votou";
             list.innerHTML = "Carregando...";
@@ -239,6 +233,26 @@
             list.innerHTML = html || "<div style='text-align:center; padding:20px;'>Nenhum voto ainda.</div>";
         };
 
+        window.carregarRegras = async () => { const d = await getDoc(doc(db, "settings", "general")); document.getElementById('regras-texto').innerText = d.exists() ? d.data().rulesText : "Sem regras."; }
+        
+        window.carregarPerfil = async () => {
+            if(!currentUser) return;
+            const d = await getDoc(doc(db, "users", currentUser.uid));
+            if(d.exists()) {
+                const u = d.data();
+                document.getElementById('nome-perfil').innerText = u.name;
+                document.getElementById('user-perfil').innerText = "@"+u.username;
+                if(u.photoBase64) document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+u.photoBase64;
+                
+                if(u.isAdmin) { 
+                    isAdminUser = true; 
+                    document.getElementById('btn-admin-painel').style.display = 'flex'; 
+                    window.loadCompetitions();
+                }
+                updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.11" });
+            }
+        }
+
         window.processarFoto = () => { 
             const file = document.getElementById('file-input').files[0]; 
             if(!file) return; 
@@ -263,7 +277,7 @@
             r.readAsDataURL(file); 
         };
 
-        // --- FIM DAS FUNÇÕES GLOBAIS ---
+        // --- FIM FUNÇÕES GLOBAIS ---
 
         async function verificarAdmin(uid) {
             try {
