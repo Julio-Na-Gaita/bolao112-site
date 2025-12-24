@@ -3,16 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Bolão 112">
     <meta name="theme-color" content="#006400">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
+
     <title>Bolão 112 F.C 2026</title>
+    
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
     <style>
+        /* --- ESTILOS GERAIS --- */
         :root { --primary: #006400; --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21; --gray: #65676b; }
+        
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background-color: var(--bg); margin: 0; padding: 0; color: var(--text); 
@@ -20,10 +26,14 @@
             background-position: center; background-repeat: no-repeat; background-attachment: fixed; background-size: cover; 
             transition: background-image 0.3s ease-in-out;
         }
+        
         header { background-color: var(--primary); color: white; padding: 15px; padding-top: max(15px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
         h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; flex-grow: 1; text-align: left; padding-left: 10px;}
         .header-icon { font-size: 28px; cursor: pointer; padding: 5px; color: #FFD700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
+        
         .container { padding: 15px; max-width: 600px; margin: 0 auto; padding-bottom: 90px; }
+        
+        /* LOGIN */
         #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: white; padding: 20px; box-sizing: border-box; }
         input, select { padding: 14px; margin: 8px 0; width: 100%; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; transition: 0.3s; }
         input:focus, select:focus { border-color: var(--primary); outline: none; background: #fff; }
@@ -32,13 +42,22 @@
         button:disabled { background-color: #ccc; box-shadow: none; }
         .secondary-btn { background-color: transparent; color: var(--gray); border: 1px solid #ddd; margin-top: 10px; box-shadow: none; }
         .toggle-link { color: var(--primary); font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 14px; }
+
+        /* NAV */
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; padding-bottom: max(12px, env(safe-area-inset-bottom)); border-top: 1px solid #eee; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 100; }
         .nav-item { cursor: pointer; font-size: 10px; text-align: center; color: #aaa; flex: 1; display: flex; flex-direction: column; align-items: center; transition: color 0.2s; }
         .nav-item .material-icons-round { font-size: 26px; margin-bottom: 2px; }
         .nav-item.active { color: var(--primary); font-weight: 600; }
+
+        /* CARD JOGOS */
         .section-header { text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin: 25px 0 10px 0; font-size: 14px; background: rgba(255,255,255,0.8); padding: 8px; border-radius: 20px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); position: relative; overflow: hidden; }
-        .comp-watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1; z-index: 0; pointer-events: none; object-fit: cover; }
+        
+        .comp-watermark { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            opacity: 0.1; z-index: 0; pointer-events: none; object-fit: cover; 
+        }
+        
         .match-comp { font-size: 11px; color: var(--primary); font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.8px; position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; }
         .match-header { font-size: 12px; color: #888; text-align: center; margin-bottom: 15px; margin-top: 4px; line-height: 1.4; position: relative; z-index: 2; }
         .teams { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; }
@@ -49,6 +68,8 @@
         .team-name { font-size: 13px; font-weight: 600; text-align: center; line-height: 1.2; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .vs { font-weight: 900; color: #d32f2f; font-size: 16px; position: relative; z-index: 2; }
         .status-msg { text-align:center; margin-top:10px; position:relative; z-index:10; font-size:12px; }
+        
+        /* RANKING */
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         th { text-align: center; color: #888; font-size: 11px; background: #fafafa; padding: 12px 5px; border-bottom: 1px solid #eee; text-transform: uppercase; font-weight: 700; }
         td { padding: 14px 5px; vertical-align: middle; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -57,14 +78,21 @@
         .debit { color: #d32f2f; font-weight: bold; }
         .points { font-weight: 900; font-size: 16px; color: #000; }
         .clickable-stats { cursor: pointer; }
-        .rank-row-1 { background-color: #fff9c4 !important; } .rank-row-2 { background-color: #e0e0e0 !important; } .rank-row-3 { background-color: #ffccbc !important; } 
+        .rank-row-1 { background-color: #fff9c4 !important; } 
+        .rank-row-2 { background-color: #e0e0e0 !important; } 
+        .rank-row-3 { background-color: #ffccbc !important; } 
+
+        /* PERFIL & ESTILO "VIDRO" */
         .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; margin-top: 20px; position: relative; z-index: 5; }
-        /* Adicionei fundo branco com transparência para o perfil ser legível com qualquer wallpaper */
-        .profile-card { background: rgba(255,255,255,0.9); padding: 20px; border-radius: 20px; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; }
+        /* CORREÇÃO DO VISUAL DO PERFIL */
+        .glass-box { background: rgba(255,255,255,0.9); padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); backdrop-filter: blur(5px); }
+        
         .big-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary); margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .profile-name { font-size: 22px; font-weight: 800; }
         .profile-user { color: #888; font-size: 15px; margin-bottom: 25px; }
-        .rules-box { background: white; padding: 25px; border-radius: 16px; font-size: 15px; line-height: 1.7; white-space: pre-wrap; box-shadow: 0 2px 6px rgba(0,0,0,0.05); color: #444; }
+        
+        .rules-box { background: rgba(255,255,255,0.95); padding: 25px; border-radius: 16px; font-size: 15px; line-height: 1.7; white-space: pre-wrap; box-shadow: 0 2px 6px rgba(0,0,0,0.05); color: #444; }
+
         .admin-btn { background-color: #333; color: #ffd700; margin-top: 20px; border: 1px solid #ffd700; font-weight: bold; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .payment-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-top: 10px; }
         .month-box { font-size: 10px; text-align: center; padding: 5px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; background: white; }
@@ -73,10 +101,15 @@
         .btn-small { padding: 8px 12px; font-size: 12px; margin: 0; width: auto; }
         .btn-danger { background-color: #d32f2f; }
         .btn-edit { background-color: #1976d2; }
+
+        /* MODAIS */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        
+        /* HIERARQUIA DE MODAIS */
         #modal-manage-games { z-index: 2000; }
         #modal-game-editor { z-index: 2100; }
         #modal-winner { z-index: 2100; }
+
         .modal-box { background: white; width: 90%; max-width: 500px; max-height: 80vh; border-radius: 20px; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal-header { font-weight: 800; font-size: 18px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; text-align: center; }
         .log-item { padding: 10px 0; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
@@ -137,19 +170,24 @@
 
         <div id="container-perfil" class="container hidden">
             <div class="profile-header">
-                <div class="profile-card">
+                <div class="glass-box" style="width: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
                     <img id="img-perfil" src="" class="big-avatar">
                     <div class="profile-name" id="nome-perfil">...</div>
                     <div class="profile-user" id="user-perfil">@...</div>
                     <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="window.processarFoto()">
                     <button onclick="document.getElementById('file-input').click()" class="secondary-btn icon-text" style="width:auto; padding:10px 25px;"><span class="material-icons-round" style="font-size:18px;">photo_camera</span> Alterar Foto</button>
-                    <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn icon-text" style="margin-top: 20px; display: none;"><span class="material-icons-round">admin_panel_settings</span> PAINEL ADMIN</button>
+                    
+                    <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn icon-text" style="margin-top: 20px; display: none;">
+                        <span class="material-icons-round">admin_panel_settings</span> PAINEL ADMIN
+                    </button>
                 </div>
             </div>
-            <hr style="border:0; border-top:1px solid #eee; margin:30px 0;">
-            <input type="password" id="new-password" placeholder="Nova Senha">
-            <button onclick="window.alterarSenha()" style="margin-top: 10px;">Salvar Nova Senha</button>
-            <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:25px; color:#006400; border-color: #006400; background: #f0fff4;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.11 & Guia</button>
+            
+            <div class="glass-box" style="margin-top: 20px;">
+                <input type="password" id="new-password" placeholder="Nova Senha">
+                <button onclick="window.alterarSenha()" style="margin-top: 10px;">Salvar Nova Senha</button>
+                <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:15px; color:#006400; border-color: #006400; background: #f0fff4; width: 100%;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.11 & Guia</button>
+            </div>
         </div>
 
         <div class="bottom-nav">
@@ -195,7 +233,7 @@
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
         let currentUser = null; let isRegisterMode = false; let currentCompetitions = []; 
 
-        // --- FUNÇÕES GLOBAIS ---
+        // --- FUNÇÕES GLOBAIS (CORREÇÃO DE BOTÕES) ---
         window.autoUrl = (idField, urlField) => { const id = document.getElementById(idField).value; if(id) document.getElementById(urlField).value = `https://img.sofascore.com/api/v1/team/${id}/image`; };
 
         window.votar = async (matchId, time, teamA, teamB) => {
@@ -233,26 +271,6 @@
             list.innerHTML = html || "<div style='text-align:center; padding:20px;'>Nenhum voto ainda.</div>";
         };
 
-        window.carregarRegras = async () => { const d = await getDoc(doc(db, "settings", "general")); document.getElementById('regras-texto').innerText = d.exists() ? d.data().rulesText : "Sem regras."; }
-        
-        window.carregarPerfil = async () => {
-            if(!currentUser) return;
-            const d = await getDoc(doc(db, "users", currentUser.uid));
-            if(d.exists()) {
-                const u = d.data();
-                document.getElementById('nome-perfil').innerText = u.name;
-                document.getElementById('user-perfil').innerText = "@"+u.username;
-                if(u.photoBase64) document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+u.photoBase64;
-                
-                if(u.isAdmin) { 
-                    isAdminUser = true; 
-                    document.getElementById('btn-admin-painel').style.display = 'flex'; 
-                    window.loadCompetitions();
-                }
-                updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.11" });
-            }
-        }
-
         window.processarFoto = () => { 
             const file = document.getElementById('file-input').files[0]; 
             if(!file) return; 
@@ -276,22 +294,6 @@
             }; 
             r.readAsDataURL(file); 
         };
-
-        // --- FIM FUNÇÕES GLOBAIS ---
-
-        async function verificarAdmin(uid) {
-            try {
-                const userDoc = await getDoc(doc(db, "users", uid));
-                if (userDoc.exists() && userDoc.data().isAdmin === true) {
-                    document.getElementById('btn-admin-painel').style.display = 'flex';
-                    window.loadCompetitions();
-                } else {
-                    document.getElementById('btn-admin-painel').style.display = 'none';
-                }
-            } catch (e) {
-                console.error("Erro ao verificar admin:", e);
-            }
-        }
 
         window.loadCompetitions = async () => {
             const docRef = doc(db, "settings", "competitions");
@@ -457,6 +459,8 @@
             list.innerHTML = `<div class="guide-title">📢 O QUE MUDOU NA v1.3.11?</div><div class="log-item">• <b>SITE:</b> Correção definitiva do botão Admin e exibição imediata após login.</div><div class="log-item">• <b>VISUAL:</b> Melhorias no card e suporte a Favicon.</div><br><div class="guide-title">💡 GUIA RÁPIDO</div><div class="log-item">• <b>1. JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</div><div class="log-item">• <b>2. RANKING:</b> Toque na foto para zoom. Toque nos pontos para extrato.</div><div class="log-item">• <b>3. PERFIL:</b> Altere foto e senha aqui.</div><div class="log-item">• <b>4. POTE:</b> Clique no porquinho para ver o prêmio acumulado.</div><br><div class="guide-title">📜 LINHA DO TEMPO</div><div class="log-item" style="color:gray">• v1.3.11 (Atual): Otimização de performance (Keys) e correções web.</div><div class="log-item" style="color:gray">• v1.3.10: Formato de data e textos padronizados.</div><div class="log-item" style="color:gray">• v1.3.9: Hotfix de Pontuação (Bônus).</div><div class="log-item" style="color:gray">• v1.3.8: Paridade visual com Web.</div>`; 
             document.getElementById('modal-history').style.display = 'flex'; 
         };
+        
+        async function verificarAdmin(uid) { try { const userDoc = await getDoc(doc(db, "users", uid)); if (userDoc.exists() && userDoc.data().isAdmin === true) { document.getElementById('btn-admin-painel').style.display = 'flex'; window.loadCompetitions(); } else { document.getElementById('btn-admin-painel').style.display = 'none'; } } catch (e) { console.error("Erro admin:", e); } }
 
         onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.11", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
     </script>
