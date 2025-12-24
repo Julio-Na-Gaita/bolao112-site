@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Bolão 112">
@@ -25,21 +24,40 @@
         h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; flex-grow: 1; text-align: left; padding-left: 10px;}
         .header-icon { font-size: 28px; cursor: pointer; padding: 5px; color: #FFD700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
         .container { padding: 15px; max-width: 600px; margin: 0 auto; padding-bottom: 90px; }
-        
         #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: white; padding: 20px; box-sizing: border-box; position: relative; z-index: 5000; }
-        input, select { padding: 14px; margin: 8px 0; width: 100%; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; box-sizing: border-box; background: #f9f9f9; transition: 0.3s; }
+        
+        /* CORREÇÃO DOS INPUTS PARA IPHONE/MOBILE */
+        input, select { 
+            padding: 14px; 
+            margin: 8px 0; 
+            width: 100%; 
+            border: 1px solid #ccc; /* Borda mais visível */
+            border-radius: 12px; 
+            font-size: 16px; 
+            box-sizing: border-box; 
+            background: #f9f9f9; /* Fundo cinza claro para contrastar com modal branco */
+            color: #333;
+            transition: 0.3s; 
+            -webkit-appearance: none; /* Remove estilo padrão do iOS */
+        }
         input:focus, select:focus { border-color: var(--primary); outline: none; background: #fff; }
+        
         button { padding: 16px; background-color: var(--primary); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; width: 100%; font-weight: 700; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,100,0,0.2); transition: transform 0.1s; }
         button:active { transform: scale(0.98); }
         button:disabled { background-color: #ccc; box-shadow: none; }
         .secondary-btn { background-color: transparent; color: var(--gray); border: 1px solid #ddd; margin-top: 10px; box-shadow: none; }
         .toggle-link { color: var(--primary); font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 14px; }
         
+        .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; margin-top: 20px; position: relative; z-index: 5; width: 100%; }
+        .glass-box { background: rgba(255,255,255,0.9); padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); backdrop-filter: blur(5px); width: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .big-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary); margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .profile-name { font-size: 22px; font-weight: 800; }
+        .profile-user { color: #888; font-size: 15px; margin-bottom: 25px; }
+
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; padding-bottom: max(12px, env(safe-area-inset-bottom)); border-top: 1px solid #eee; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 100; }
         .nav-item { cursor: pointer; font-size: 10px; text-align: center; color: #aaa; flex: 1; display: flex; flex-direction: column; align-items: center; transition: color 0.2s; }
         .nav-item .material-icons-round { font-size: 26px; margin-bottom: 2px; }
         .nav-item.active { color: var(--primary); font-weight: 600; }
-        
         .section-header { text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin: 25px 0 10px 0; font-size: 14px; background: rgba(255,255,255,0.8); padding: 8px; border-radius: 20px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); position: relative; overflow: hidden; }
         .comp-watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1; z-index: 0; pointer-events: none; object-fit: cover; }
@@ -52,7 +70,6 @@
         .team-name { font-size: 11px; font-weight: 700; text-align: center; line-height: 1.2; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 28px; display: flex; align-items: center; justify-content: center; }
         .vs { font-weight: 900; color: #d32f2f; font-size: 16px; position: relative; z-index: 2; }
         .status-msg { text-align:center; margin-top:10px; position:relative; z-index:10; font-size:12px; }
-        
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         th { text-align: center; color: #888; font-size: 11px; background: #fafafa; padding: 12px 5px; border-bottom: 1px solid #eee; text-transform: uppercase; font-weight: 700; }
         td { padding: 14px 5px; vertical-align: middle; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -62,28 +79,6 @@
         .points { font-weight: 900; font-size: 16px; color: #000; }
         .clickable-stats { cursor: pointer; }
         .rank-row-1 { background-color: #fff9c4 !important; } .rank-row-2 { background-color: #e0e0e0 !important; } .rank-row-3 { background-color: #ffccbc !important; } 
-        
-        .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; margin-top: 20px; position: relative; z-index: 5; }
-        
-        /* CORREÇÃO DO ALINHAMENTO DO PERFIL */
-        .glass-box { 
-            background: rgba(255,255,255,0.9); 
-            padding: 25px; 
-            border-radius: 20px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-            backdrop-filter: blur(5px); 
-            width: 100%; 
-            box-sizing: border-box;
-            display: flex;         /* Habilita Flexbox */
-            flex-direction: column; /* Organiza em coluna */
-            align-items: center;    /* Centraliza horizontalmente */
-            justify-content: center; /* Centraliza verticalmente */
-            text-align: center;      /* Garante que textos internos centralizem */
-        }
-        
-        .big-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary); margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .profile-name { font-size: 22px; font-weight: 800; }
-        .profile-user { color: #888; font-size: 15px; margin-bottom: 25px; }
         .rules-box { background: rgba(255,255,255,0.95); padding: 25px; border-radius: 16px; font-size: 15px; line-height: 1.7; white-space: pre-wrap; box-shadow: 0 2px 6px rgba(0,0,0,0.05); color: #444; }
         .admin-btn { background-color: #333; color: #ffd700; margin-top: 20px; border: 1px solid #ffd700; font-weight: bold; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .payment-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-top: 10px; }
@@ -110,6 +105,10 @@
         .pot-value { font-size: 32px; font-weight: 900; color: var(--primary); text-align: center; margin: 10px 0; }
         .comp-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         .search-icon-btn { cursor: pointer; color: #555; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-left: 5px; background: #eee; }
+        
+        /* ESTILO PARA CHECKBOXES DE NOTIFICAÇÃO */
+        .notify-option { display: flex; align-items: center; margin-bottom: 8px; font-size: 14px; color: #333; }
+        .notify-option input { width: auto; margin-right: 10px; }
     </style>
 </head>
 <body>
@@ -172,7 +171,7 @@
             <div class="glass-box" style="margin-top: 20px;">
                 <input type="password" id="new-password" placeholder="Nova Senha">
                 <button onclick="window.alterarSenha()" style="margin-top: 10px;">Salvar Nova Senha</button>
-                <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:15px; color:#006400; border-color: #006400; background: #f0fff4; width: 100%;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.14 & Guia</button>
+                <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:15px; color:#006400; border-color: #006400; background: #f0fff4; width: 100%;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.13 & Guia</button>
             </div>
         </div>
 
@@ -194,12 +193,25 @@
             <div class="modal-header" id="modal-game-title">Novo Jogo</div>
             <input type="hidden" id="edit-match-id">
             <select id="adm-comp"></select>
-            <select id="adm-round"><option>Oitavas de final</option><option>Quartas de final</option><option>Semi final</option><option>Final</option></select>
+            <select id="adm-round">
+                <option>Fase de Grupos (Apenas para teste)</option>
+                <option>Oitavas de final</option>
+                <option>Quartas de final</option>
+                <option>Semi final</option>
+                <option>Final</option>
+            </select>
             <div style="display:flex; align-items:center;"><input id="adm-tA" placeholder="Time A" style="flex:1;"><span onclick="window.buscarLogo('adm-tA')" class="material-icons-round search-icon-btn">search</span></div>
             <input id="adm-urlA" placeholder="URL Imagem A">
             <div style="display:flex; align-items:center; margin-top:10px;"><input id="adm-tB" placeholder="Time B" style="flex:1;"><span onclick="window.buscarLogo('adm-tB')" class="material-icons-round search-icon-btn">search</span></div>
             <input id="adm-urlB" placeholder="URL Imagem B">
             <label style="font-size:12px; color:#666; display:block; margin-top:15px; margin-bottom:2px;">Data e Hora:</label><input type="datetime-local" id="adm-date" style="margin-top:0;">
+            
+            <div style="border-top:1px solid #eee; margin-top:15px; padding-top:10px;">
+                <div style="font-weight:bold; font-size:12px; margin-bottom:5px;">Notificações:</div>
+                <div class="notify-option"><input type="checkbox" id="notify-whatsapp" checked> Abrir WhatsApp</div>
+                <div class="notify-option"><input type="checkbox" id="notify-push" checked> Notificar App (Push)</div>
+            </div>
+
             <button onclick="window.salvarJogo()" style="margin-top:15px;">Salvar Jogo</button>
             <button onclick="document.getElementById('modal-game-editor').style.display='none'" class="secondary-btn">Cancelar</button>
         </div>
@@ -208,7 +220,18 @@
     <div id="modal-manage-comps" class="modal"><div class="modal-box"><div class="modal-header">Competições</div><div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:15px;"><input type="hidden" id="edit-comp-original-name"><input id="new-comp-name" placeholder="Nome (ex: Brasileirão)"><div style="display:flex; align-items:center; margin-top:5px;"><input id="new-comp-logo" placeholder="URL do Logo" style="flex:1;"><span onclick="window.buscarLogo('new-comp-name')" class="material-icons-round search-icon-btn">search</span></div><div style="display:flex; justify-content:flex-end; margin-top:10px; gap:5px;"><button onclick="window.limparFormComp()" class="btn-small btn-danger" style="background:#ccc; color:#333; border:none;">Limpar</button><button onclick="window.salvarCompeticao()" class="btn-small" style="width:auto;">Salvar</button></div></div><div id="comp-list"></div><button onclick="document.getElementById('modal-manage-comps').style.display='none'" class="secondary-btn">Fechar</button></div></div>
     <div id="modal-finance" class="modal"><div class="modal-box" style="width: 95%; max-width: 600px;"><div class="modal-header">Gestão Financeira</div><div id="finance-list"></div><button onclick="document.getElementById('modal-finance').style.display='none'" style="margin-top:10px;">Fechar</button></div></div>
     <div id="modal-manage-games" class="modal"><div class="modal-box"><div class="modal-header">Gerenciar Jogos</div><button onclick="window.abrirNovoJogo()" class="admin-btn" style="margin-bottom:15px; margin-top:0;">+ NOVO JOGO</button><div id="admin-games-list"></div><button onclick="document.getElementById('modal-manage-games').style.display='none'" class="secondary-btn">Fechar</button></div></div>
-    <div id="modal-winner" class="modal"><div class="modal-box"><div class="modal-header" id="history-title">Quem venceu?</div><input type="hidden" id="winner-match-id"><button id="btn-win-A" onclick="window.setWinner(this.innerText)">Time A</button><button id="btn-win-B" onclick="window.setWinner(this.innerText)">Time B</button><button onclick="window.setWinner(null)" class="btn-danger" style="margin-top:10px;">Remover Vencedor</button><button onclick="document.getElementById('modal-winner').style.display='none'" class="secondary-btn">Cancelar</button></div></div>
+    <div id="modal-winner" class="modal">
+        <div class="modal-box">
+            <div class="modal-header" id="history-title">Quem venceu?</div>
+            <input type="hidden" id="winner-match-id">
+            <input type="hidden" id="winner-round">
+            <button id="btn-win-A" onclick="window.setWinner(this.innerText)">Time A</button>
+            <button id="btn-win-B" onclick="window.setWinner(this.innerText)">Time B</button>
+            <button id="btn-win-draw" onclick="window.setWinner('Empate')" class="secondary-btn" style="background:#eee; display:none;">Empate (Sem Pontos)</button>
+            <button onclick="window.setWinner(null)" class="btn-danger" style="margin-top:10px;">Remover Vencedor</button>
+            <button onclick="document.getElementById('modal-winner').style.display='none'" class="secondary-btn">Cancelar</button>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
@@ -219,11 +242,9 @@
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
         let currentUser = null; let isRegisterMode = false; let currentCompetitions = []; 
 
-        // --- FUNÇÕES GLOBAIS ---
         window.autoUrl = (idField, urlField) => { const id = document.getElementById(idField).value; if(id) document.getElementById(urlField).value = `https://img.sofascore.com/api/v1/team/${id}/image`; };
 
         window.verPote = async () => { 
-            console.log("Abrindo pote...");
             document.getElementById('modal-pote').style.display = 'flex'; 
             try {
                 const usersSnap = await getDocs(collection(db, "users")); 
@@ -248,31 +269,41 @@
             await setDoc(doc(db, "guesses", `${matchId}_${currentUser.uid}`), { matchId, userId: currentUser.uid, teamSelected: time, timestamp: new Date() });
         };
 
-        window.verPalpites = async (matchId, tA, tB, isExpired, urlA, urlB) => {
+        window.verPalpites = async (matchId, tA, tB, isExpired, urlA, urlB, winner) => {
             const list = document.getElementById('history-list');
             document.getElementById('history-title').innerText = isExpired ? "Palpites (Encerrado)" : "Quem Votou";
             list.innerHTML = "Carregando...";
             document.getElementById('modal-history').style.display = 'flex';
-            const [gSnap, uSnap] = await Promise.all([getDocs(query(collection(db, "guesses"))), getDocs(collection(db, "users"))]);
-            let html = "";
-            const usersMap = {};
-            uSnap.forEach(u => usersMap[u.id] = u.data());
-            gSnap.forEach(g => {
-                const data = g.data();
-                if(data.matchId === matchId) {
-                    const u = usersMap[data.userId] || {name: "Desconhecido", photoBase64: ""};
-                    const name = u.name || u.username;
-                    const photo = u.photoBase64 ? `data:image/jpeg;base64,${u.photoBase64}` : 'https://via.placeholder.com/30';
-                    let teamIcon = "";
-                    if(isExpired) {
-                        const voted = data.teamSelected.trim().toLowerCase();
-                        if(voted === tA.trim().toLowerCase()) teamIcon = `<img src="${urlA}" style="width:20px; height:20px; object-fit:contain; margin-left:auto;">`;
-                        else if(voted === tB.trim().toLowerCase()) teamIcon = `<img src="${urlB}" style="width:20px; height:20px; object-fit:contain; margin-left:auto;">`;
+            try {
+                const [gSnap, uSnap] = await Promise.all([getDocs(query(collection(db, "guesses"))), getDocs(collection(db, "users"))]);
+                let html = "";
+                const usersMap = {};
+                uSnap.forEach(u => usersMap[u.id] = u.data());
+                gSnap.forEach(g => {
+                    const data = g.data();
+                    if(data.matchId === matchId) {
+                        const u = usersMap[data.userId] || {name: "Desconhecido", photoBase64: ""};
+                        const name = u.name || u.username;
+                        const photo = u.photoBase64 ? `data:image/jpeg;base64,${u.photoBase64}` : 'https://via.placeholder.com/30';
+                        let teamIcon = "";
+                        let statusIcon = "";
+                        
+                        if(isExpired) {
+                            const voted = data.teamSelected.trim().toLowerCase();
+                            if(voted === tA.trim().toLowerCase()) teamIcon = `<img src="${urlA}" style="width:20px; height:20px; object-fit:contain; margin-left:auto;">`;
+                            else if(voted === tB.trim().toLowerCase()) teamIcon = `<img src="${urlB}" style="width:20px; height:20px; object-fit:contain; margin-left:auto;">`;
+                            
+                            // Lógica do ✅ ou ❌
+                            if(winner && winner !== "Empate") {
+                                if(data.teamSelected === winner) statusIcon = `<span class="material-icons-round" style="color:green; font-size:16px; margin-left:5px;">check_circle</span>`;
+                                else statusIcon = `<span class="material-icons-round" style="color:red; font-size:16px; margin-left:5px;">cancel</span>`;
+                            }
+                        }
+                        html += `<div class="log-item" style="display:flex; align-items:center;"><img src="${photo}" class="rank-avatar" style="width:30px; height:30px; margin-right:10px;"><span style="font-weight:600; font-size:14px;">${name}</span>${teamIcon}${statusIcon}</div>`;
                     }
-                    html += `<div class="log-item" style="display:flex; align-items:center;"><img src="${photo}" class="rank-avatar" style="width:30px; height:30px; margin-right:10px;"><span style="font-weight:600; font-size:14px;">${name}</span>${teamIcon}</div>`;
-                }
-            });
-            list.innerHTML = html || "<div style='text-align:center; padding:20px;'>Nenhum voto ainda.</div>";
+                });
+                list.innerHTML = html || "<div style='text-align:center; padding:20px;'>Nenhum voto ainda.</div>";
+            } catch(e) { list.innerHTML = "Erro ao carregar."; console.error(e); }
         };
 
         window.processarFoto = () => { 
@@ -290,7 +321,7 @@
                     c.height=i.height*scale; 
                     ctx.drawImage(i,0,0,c.width,c.height); 
                     const b64 = c.toDataURL('image/jpeg',0.7).split(',')[1]; 
-                    updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.14"}).then(() => { 
+                    updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.13"}).then(() => { 
                         document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; 
                         alert("Foto salva!"); 
                     }); 
@@ -302,7 +333,7 @@
         window.carregarRegras = async () => { 
             try {
                 const d = await getDoc(doc(db, "settings", "general")); 
-                document.getElementById('regras-texto').innerText = d.exists() ? d.data().rulesText : "Sem regras."; 
+                document.getElementById('regras-texto').innerText = d.exists() ? d.data().rulesText : "Carregando..."; 
             } catch(e) { console.log(e); }
         };
         
@@ -320,12 +351,10 @@
                         document.getElementById('btn-admin-painel').style.display = 'flex'; 
                         window.loadCompetitions();
                     }
-                    updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.14" });
+                    updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.13" });
                 }
             } catch(e) { console.log(e); }
         };
-
-        // --- RESTANTE DAS FUNÇÕES DO SISTEMA ---
 
         async function verificarAdmin(uid) {
             try {
@@ -387,17 +416,79 @@
         window.removeComp = async (name) => { if(confirm(`Excluir ${name}?`)) { const newList = currentCompetitions.filter(c => c.name !== name); await updateDoc(doc(db, "settings", "competitions"), { items: newList }); currentCompetitions = newList; window.renderCompList(); window.updateCompSelect(); } };
         window.buscarLogo = (inputId) => { const name = document.getElementById(inputId).value; if(name) window.open(`https://www.google.com/search?tbm=isch&q=escudo+${encodeURIComponent(name)}+png`); else alert("Digite o nome primeiro!"); };
 
-        window.processarAuth = async () => { const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg'); const user = document.getElementById('email').value.trim().toLowerCase(); const pass = document.getElementById('password').value; const fullName = document.getElementById('fullname').value.trim(); const email = user + "@bolao112.com"; btn.disabled = true; msg.innerText = "Conectando..."; try { if (isRegisterMode) { if(!fullName || pass.length < 6) throw new Error("Preencha campos."); const w = await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Não convidado."); const c = await createUserWithEmailAndPassword(auth, email, pass); await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.14"}); } else await signInWithEmailAndPassword(auth, email, pass); } catch(e) { msg.innerText = e.message; btn.disabled = false; } };
+        window.processarAuth = async () => { const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg'); const user = document.getElementById('email').value.trim().toLowerCase(); const pass = document.getElementById('password').value; const fullName = document.getElementById('fullname').value.trim(); const email = user + "@bolao112.com"; btn.disabled = true; msg.innerText = "Conectando..."; try { if (isRegisterMode) { if(!fullName || pass.length < 6) throw new Error("Preencha campos."); const w = await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Não convidado."); const c = await createUserWithEmailAndPassword(auth, email, pass); await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.13"}); } else await signInWithEmailAndPassword(auth, email, pass); } catch(e) { msg.innerText = e.message; btn.disabled = false; } };
         window.alternarModo = () => { isRegisterMode=!isRegisterMode; document.getElementById('btn-login').innerText=isRegisterMode?"CADASTRAR":"ENTRAR"; document.getElementById('fullname').classList.toggle('hidden'); };
         window.sair = () => signOut(auth);
         window.abrirAdmin = () => { ['jogos', 'ranking', 'regras', 'perfil'].forEach(a => document.getElementById(`container-${a}`).classList.add('hidden')); document.getElementById('container-admin').classList.remove('hidden'); document.getElementById('header-title').innerText = "Painel Admin"; window.loadCompetitions(); };
-        window.abrirGestaoJogos = async () => { document.getElementById('modal-manage-games').style.display = 'flex'; const snap = await getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))); const div = document.getElementById('admin-games-list'); div.innerHTML = ""; snap.forEach(d => { const m = {id:d.id, ...d.data()}; const winnerText = m.winner ? `<span style="color:green">V: ${m.winner}</span>` : `<span style="color:orange">Aberto</span>`; div.innerHTML += `<div style="border:1px solid #eee; padding:10px; margin-bottom:5px; border-radius:8px;"><div style="font-weight:bold">${m.teamA} x ${m.teamB}</div><div style="font-size:12px; color:#666;">${m.competition} | ${winnerText}</div><div class="admin-actions"><button class="btn-small btn-edit" onclick="window.abrirEditarJogo('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', '${m.competition}', '${m.round}', '${m.deadline ? m.deadline.toDate().toISOString() : ''}')">Editar</button><button class="btn-small btn-edit" onclick="window.abrirDefinirVencedor('${m.id}','${m.teamA}','${m.teamB}')">Vencedor</button><button class="btn-small btn-danger" onclick="window.excluirJogo('${m.id}')">Excluir</button></div></div>`; }); };
+        window.abrirGestaoJogos = async () => { document.getElementById('modal-manage-games').style.display = 'flex'; const snap = await getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))); const div = document.getElementById('admin-games-list'); div.innerHTML = ""; snap.forEach(d => { const m = {id:d.id, ...d.data()}; const winnerText = m.winner ? `<span style="color:green">V: ${m.winner}</span>` : `<span style="color:orange">Aberto</span>`; div.innerHTML += `<div style="border:1px solid #eee; padding:10px; margin-bottom:5px; border-radius:8px;"><div style="font-weight:bold">${m.teamA} x ${m.teamB}</div><div style="font-size:12px; color:#666;">${m.competition} | ${winnerText}</div><div class="admin-actions"><button class="btn-small btn-edit" onclick="window.abrirEditarJogo('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', '${m.competition}', '${m.round}', '${m.deadline ? m.deadline.toDate().toISOString() : ''}')">Editar</button><button class="btn-small btn-edit" onclick="window.abrirDefinirVencedor('${m.id}','${m.teamA}','${m.teamB}', '${m.round}')">Vencedor</button><button class="btn-small btn-danger" onclick="window.excluirJogo('${m.id}')">Excluir</button></div></div>`; }); };
+        
         window.abrirNovoJogo = () => { document.getElementById('modal-game-title').innerText = "Novo Jogo"; document.getElementById('edit-match-id').value = ""; document.getElementById('adm-tA').value = ""; document.getElementById('adm-tB').value = ""; document.getElementById('adm-urlA').value = ""; document.getElementById('adm-urlB').value = ""; document.getElementById('adm-date').value = ""; document.getElementById('modal-game-editor').style.display = 'flex'; }
         window.abrirEditarJogo = (id, tA, tB, urlA, urlB, comp, round, dateIso) => { document.getElementById('modal-game-title').innerText = "Editar Jogo"; document.getElementById('edit-match-id').value = id; document.getElementById('adm-tA').value = tA; document.getElementById('adm-tB').value = tB; document.getElementById('adm-urlA').value = urlA; document.getElementById('adm-urlB').value = urlB; document.getElementById('adm-comp').value = comp; document.getElementById('adm-round').value = round; if(dateIso) { const d = new Date(dateIso); const tzOffset = d.getTimezoneOffset() * 60000; const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16); document.getElementById('adm-date').value = localISOTime; } document.getElementById('modal-game-editor').style.display = 'flex'; };
-        window.abrirDefinirVencedor = (id, tA, tB) => { document.getElementById('winner-match-id').value = id; document.getElementById('btn-win-A').innerText = tA; document.getElementById('btn-win-B').innerText = tB; document.getElementById('modal-winner').style.display = 'flex'; };
-        window.setWinner = async (winner) => { const id = document.getElementById('winner-match-id').value; if(winner) await updateDoc(doc(db, "matches", id), {winner: winner}); else await updateDoc(doc(db, "matches", id), {winner: null}); alert("Salvo!"); document.getElementById('modal-winner').style.display = 'none'; window.abrirGestaoJogos(); };
+        
+        window.abrirDefinirVencedor = (id, tA, tB, round) => { 
+            document.getElementById('winner-match-id').value = id; 
+            document.getElementById('winner-round').value = round;
+            document.getElementById('btn-win-A').innerText = tA; 
+            document.getElementById('btn-win-B').innerText = tB; 
+            // Lógica do botão de Empate
+            const btnDraw = document.getElementById('btn-win-draw');
+            if(round === "Fase de Grupos (Apenas para teste)") btnDraw.style.display = "block";
+            else btnDraw.style.display = "none";
+            
+            document.getElementById('modal-winner').style.display = 'flex'; 
+        };
+
+        window.setWinner = async (winner) => { const id = document.getElementById('winner-match-id').value; const updates = winner ? {winner} : {winner: null}; if(!winner) updates.winner = firebase.firestore.FieldValue.delete(); /* No Web V9, delete é diferente, mas set null tbm resolve se tratar no app */ if(winner === null) await updateDoc(doc(db, "matches", id), {winner: null}); else await updateDoc(doc(db, "matches", id), {winner: winner}); alert("Salvo!"); document.getElementById('modal-winner').style.display = 'none'; window.abrirGestaoJogos(); };
         window.excluirJogo = async (id) => { if(confirm("Tem certeza? Isso apaga todos os palpites desse jogo.")) { await deleteDoc(doc(db, "matches", id)); alert("Excluído!"); window.abrirGestaoJogos(); } };
-        window.salvarJogo = async () => { const id = document.getElementById('edit-match-id').value; const tA = document.getElementById('adm-tA').value; const tB = document.getElementById('adm-tB').value; const comp = document.getElementById('adm-comp').value; const dateVal = document.getElementById('adm-date').value; if(!tA || !tB || !dateVal) return alert("Preencha tudo!"); const dateObj = new Date(dateVal); const data = { teamA: tA, teamB: tB, teamAUrl: document.getElementById('adm-urlA').value, teamBUrl: document.getElementById('adm-urlB').value, competition: comp, round: document.getElementById('adm-round').value, deadline: dateObj }; if(id) { await updateDoc(doc(db, "matches", id), data); if(confirm("Jogo Atualizado! Deseja avisar no WhatsApp?")) { const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); const msg = `📢 *ATENÇÃO: JOGO ATUALIZADO NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Novo Prazo: ${formattedDate}\n\n📲 *Confira se seus palpites ainda valem!* https://bolao112-site.vercel.app`; window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); } else { alert("Jogo Atualizado!"); } } else { data.winner = null; await addDoc(collection(db, "matches"), data); const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}); const msg = `📢 *NOVO JOGO DISPONÍVEL NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Prazo: ${formattedDate}\n\n📲 *Não fica moscando, entre agora e deixe seu palpite!* https://bolao112-site.vercel.app`; if(confirm("Jogo Criado! Deseja enviar no WhatsApp?")) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`); } document.getElementById('modal-game-editor').style.display='none'; window.abrirGestaoJogos(); };
+        
+        window.salvarJogo = async () => { 
+            const id = document.getElementById('edit-match-id').value; 
+            const tA = document.getElementById('adm-tA').value; 
+            const tB = document.getElementById('adm-tB').value; 
+            const comp = document.getElementById('adm-comp').value; 
+            const dateVal = document.getElementById('adm-date').value; 
+            const notifyWpp = document.getElementById('notify-whatsapp').checked;
+            const notifyPush = document.getElementById('notify-push').checked;
+
+            if(!tA || !tB || !dateVal) return alert("Preencha tudo!"); 
+            const dateObj = new Date(dateVal); 
+            const data = { teamA: tA, teamB: tB, teamAUrl: document.getElementById('adm-urlA').value, teamBUrl: document.getElementById('adm-urlB').value, competition: comp, round: document.getElementById('adm-round').value, deadline: dateObj }; 
+            
+            const formattedDate = dateObj.toLocaleDateString('pt-BR') + " " + dateObj.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+            let msgPushTitle = ""; let msgPushBody = "";
+            let msgWpp = "";
+
+            if(id) { 
+                await updateDoc(doc(db, "matches", id), data); 
+                msgPushTitle = `Jogo Atualizado: ${tA} x ${tB}`;
+                msgPushBody = `Novo prazo: ${formattedDate}`;
+                msgWpp = `📢 *ATENÇÃO: JOGO ATUALIZADO NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Novo Prazo: ${formattedDate}\n\n📲 *Confira se seus palpites ainda valem!* https://bolao112-site.vercel.app`;
+            } else { 
+                data.winner = null; 
+                await addDoc(collection(db, "matches"), data); 
+                msgPushTitle = `Novo Jogo: ${tA} x ${tB}`;
+                msgPushBody = `Corre pra votar! Prazo: ${formattedDate}`;
+                msgWpp = `📢 *NOVO JOGO DISPONÍVEL NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Prazo: ${formattedDate}\n\n📲 *Não fica moscando, entre agora e deixe seu palpite!* https://bolao112-site.vercel.app`; 
+            }
+            
+            if(notifyWpp) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msgWpp)}`);
+            
+            if(notifyPush) {
+                // CHAMADA PARA API VERCEL (NOTIFICAÇÃO PUSH)
+                try {
+                    fetch('/api/send', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ title: msgPushTitle, body: msgPushBody })
+                    });
+                } catch(e) { console.error("Erro push:", e); }
+            }
+
+            alert("Jogo Salvo!");
+            document.getElementById('modal-game-editor').style.display='none'; 
+            window.abrirGestaoJogos(); 
+        };
+
         window.abrirGestaoUsuarios = async () => { document.getElementById('modal-finance').style.display = 'flex'; const list = document.getElementById('finance-list'); list.innerHTML = "Carregando..."; const snap = await getDocs(collection(db, "users")); let html = ""; const users = []; snap.forEach(d => users.push({id:d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]; users.forEach(u => { const debts = u.debts || 0; let monthsHtml = ""; months.forEach(m => { const isPaid = u.payments && u.payments[m]; monthsHtml += `<div class="month-box ${isPaid?'paid':''}" onclick="window.togglePayment('${u.id}', '${m}', ${!isPaid})">${m}</div>`; }); html += `<div style="border-bottom:1px solid #eee; padding:10px 0;"><div style="display:flex; justify-content:space-between; font-weight:bold;"><span>${u.name} <small style="color:blue; font-weight:normal;">(${u.appVersion||'-'})</small></span><span style="color:red">Déb: ${debts}</span></div><div style="display:flex; gap:10px; margin:5px 0;"><button class="btn-small" onclick="window.mudarDebito('${u.id}', ${debts-1})">-1</button><button class="btn-small btn-danger" onclick="window.mudarDebito('${u.id}', ${debts+1})">+1</button></div><div class="payment-grid">${monthsHtml}</div></div>`; }); list.innerHTML = html; };
         window.togglePayment = async (uid, month, status) => { const ref = doc(db, "users", uid); const key = `payments.${month}`; await updateDoc(ref, { [key]: status }); window.abrirGestaoUsuarios(); };
         window.mudarDebito = async (uid, val) => { if(val < 0) val = 0; await updateDoc(doc(db, "users", uid), { debts: val }); window.abrirGestaoUsuarios(); };
@@ -431,7 +522,7 @@
                     const dateStr = `${day}/${month}/${year} ${hour}:${min}`;
 
                     const userVote = myGuesses[m.id]; 
-                    const prazoText = isExpired ? "Votação encerrou em:" : "Votação encerra em:"; 
+                    const prazoText = isExpired ? "Encerrou em:" : "Encerra em:"; 
                     const isTeamASelected = userVote && userVote.trim().toLowerCase() === m.teamA.trim().toLowerCase(); 
                     const isTeamBSelected = userVote && userVote.trim().toLowerCase() === m.teamB.trim().toLowerCase(); 
                     const logoUrl = compLogos[m.competition] || ""; 
@@ -455,7 +546,7 @@
                         </div>
                         ${userVote && !isExpired ? `<div class="status-msg" style="color:#2e7d32; font-weight:bold;">✅ Voto confirmado: ${userVote}</div>` : ''}
                         <div class="status-msg">
-                            <span onclick="window.verPalpites('${m.id}', '${m.teamA}', '${m.teamB}', ${isExpired}, '${m.teamAUrl}', '${m.teamBUrl}')" style="color:#666; text-decoration:underline; cursor:pointer;">${isExpired ? 'Ver Palpites da Galera' : 'Quem já votou?'}</span>
+                            <span onclick="window.verPalpites('${m.id}', '${m.teamA}', '${m.teamB}', ${isExpired}, '${m.teamAUrl}', '${m.teamBUrl}', '${m.winner||''}')" style="color:#666; text-decoration:underline; cursor:pointer;">${isExpired ? 'Ver Palpites da Galera' : 'Quem já votou?'}</span>
                         </div>`; 
                     document.getElementById('lista-jogos').appendChild(div); 
                 }); 
@@ -501,12 +592,12 @@
         };
 
         window.verNovidades = () => { 
-            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Guia & Novidades v1.3.14"; 
-            list.innerHTML = `<div class="guide-title">📢 O QUE MUDOU NA v1.3.14?</div><div class="log-item">• <b>SITE:</b> Correção definitiva do Pote de Ouro.</div><div class="log-item">• <b>SITE:</b> Correção de navegação e botões.</div><br><div class="guide-title">💡 GUIA RÁPIDO</div><div class="log-item">• <b>1. JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</div><div class="log-item">• <b>2. RANKING:</b> Toque na foto para zoom. Toque nos pontos para extrato.</div><div class="log-item">• <b>3. PERFIL:</b> Altere foto e senha aqui.</div><div class="log-item">• <b>4. POTE:</b> Clique no porquinho para ver o prêmio acumulado.</div>`; 
+            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Novidades v1.3.13"; 
+            list.innerHTML = `<div class="guide-title">📢 O QUE MUDOU?</div><div class="log-item">• <b>NOTIFICAÇÕES (WEB):</b> Agora você controla os avisos do app pelo site!</div><div class="log-item">• <b>EMPATE:</b> Nova opção para testes na fase de grupos.</div><div class="log-item">• <b>HISTÓRICO:</b> Ícones ✅ e ❌ para saber quem acertou.</div><div class="log-item">• <b>VISUAL:</b> Correções para iPhone.</div>`; 
             document.getElementById('modal-history').style.display = 'flex'; 
         };
 
-        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.14", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
+        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.13", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
     </script>
 </body>
 </html>
