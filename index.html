@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Bolão 112">
@@ -36,19 +37,37 @@
         .nav-item { cursor: pointer; font-size: 10px; text-align: center; color: #aaa; flex: 1; display: flex; flex-direction: column; align-items: center; transition: color 0.2s; }
         .nav-item .material-icons-round { font-size: 26px; margin-bottom: 2px; }
         .nav-item.active { color: var(--primary); font-weight: 600; }
+        
+        /* CARD JOGOS - CORREÇÃO DE Z-INDEX */
         .section-header { text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin: 25px 0 10px 0; font-size: 14px; background: rgba(255,255,255,0.8); padding: 8px; border-radius: 20px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); position: relative; overflow: hidden; }
         .comp-watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1; z-index: 0; pointer-events: none; object-fit: cover; }
         .match-comp { font-size: 11px; color: var(--primary); font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.8px; position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; }
         .match-header { font-size: 12px; color: #888; text-align: center; margin-bottom: 15px; margin-top: 4px; line-height: 1.4; position: relative; z-index: 2; }
-        .teams { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 100; /* ALTO NÍVEL PARA CLIQUE */ }
-        .team-btn { display: flex; flex-direction: column; align-items: center; width: 40%; padding: 12px 5px; border: 2px solid transparent; border-radius: 12px; background: rgba(249,249,249,0.8); cursor: pointer; transition: all 0.2s; position: relative; backdrop-filter: blur(2px); z-index: 101; }
+        .teams { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; }
+        
+        /* TEXTO DO TIME COM QUEBRA DE LINHA */
+        .team-btn { display: flex; flex-direction: column; align-items: center; width: 40%; padding: 12px 5px; border: 2px solid transparent; border-radius: 12px; background: rgba(249,249,249,0.8); cursor: pointer; transition: all 0.2s; position: relative; backdrop-filter: blur(2px); z-index: 11; }
         .team-btn:active { transform: scale(0.95); }
         .team-btn.selected { background-color: rgba(232,245,233,0.9); border-color: #4CAF50; color: var(--primary); }
         .team-img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
-        .team-name { font-size: 13px; font-weight: 600; text-align: center; line-height: 1.2; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .team-name { 
+            font-size: 11px; 
+            font-weight: 700; 
+            text-align: center; 
+            line-height: 1.2; 
+            white-space: normal; /* Permitir quebra */
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* Max 2 linhas */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 28px; /* Altura fixa para alinhar */
+            display: flex; align-items: center; justify-content: center;
+        }
+
         .vs { font-weight: 900; color: #d32f2f; font-size: 16px; position: relative; z-index: 2; }
-        .status-msg { text-align:center; margin-top:10px; position:relative; z-index:100; font-size:12px; }
+        .status-msg { text-align:center; margin-top:10px; position:relative; z-index:10; font-size:12px; }
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         th { text-align: center; color: #888; font-size: 11px; background: #fafafa; padding: 12px 5px; border-bottom: 1px solid #eee; text-transform: uppercase; font-weight: 700; }
         td { padding: 14px 5px; vertical-align: middle; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
@@ -148,7 +167,7 @@
             <div class="glass-box" style="margin-top: 20px;">
                 <input type="password" id="new-password" placeholder="Nova Senha">
                 <button onclick="window.alterarSenha()" style="margin-top: 10px;">Salvar Nova Senha</button>
-                <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:15px; color:#006400; border-color: #006400; background: #f0fff4; width: 100%;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.12 & Guia</button>
+                <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:15px; color:#006400; border-color: #006400; background: #f0fff4; width: 100%;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.11 & Guia</button>
             </div>
         </div>
 
@@ -195,7 +214,7 @@
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
         let currentUser = null; let isRegisterMode = false; let currentCompetitions = []; 
 
-        // --- FUNÇÕES GLOBAIS (CORREÇÃO DE BOTÕES) ---
+        // --- FUNÇÕES GLOBAIS ---
         window.autoUrl = (idField, urlField) => { const id = document.getElementById(idField).value; if(id) document.getElementById(urlField).value = `https://img.sofascore.com/api/v1/team/${id}/image`; };
 
         window.votar = async (matchId, time, teamA, teamB) => {
@@ -233,6 +252,26 @@
             list.innerHTML = html || "<div style='text-align:center; padding:20px;'>Nenhum voto ainda.</div>";
         };
 
+        window.carregarRegras = async () => { const d = await getDoc(doc(db, "settings", "general")); document.getElementById('regras-texto').innerText = d.exists() ? d.data().rulesText : "Sem regras."; }
+        
+        window.carregarPerfil = async () => {
+            if(!currentUser) return;
+            const d = await getDoc(doc(db, "users", currentUser.uid));
+            if(d.exists()) {
+                const u = d.data();
+                document.getElementById('nome-perfil').innerText = u.name;
+                document.getElementById('user-perfil').innerText = "@"+u.username;
+                if(u.photoBase64) document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+u.photoBase64;
+                
+                if(u.isAdmin) { 
+                    isAdminUser = true; 
+                    document.getElementById('btn-admin-painel').style.display = 'flex'; 
+                    window.loadCompetitions();
+                }
+                updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.11" });
+            }
+        }
+
         window.processarFoto = () => { 
             const file = document.getElementById('file-input').files[0]; 
             if(!file) return; 
@@ -256,6 +295,22 @@
             }; 
             r.readAsDataURL(file); 
         };
+
+        // --- FIM FUNÇÕES GLOBAIS ---
+
+        async function verificarAdmin(uid) {
+            try {
+                const userDoc = await getDoc(doc(db, "users", uid));
+                if (userDoc.exists() && userDoc.data().isAdmin === true) {
+                    document.getElementById('btn-admin-painel').style.display = 'flex';
+                    window.loadCompetitions();
+                } else {
+                    document.getElementById('btn-admin-painel').style.display = 'none';
+                }
+            } catch (e) {
+                console.error("Erro ao verificar admin:", e);
+            }
+        }
 
         window.loadCompetitions = async () => {
             const docRef = doc(db, "settings", "competitions");
@@ -417,14 +472,14 @@
         };
 
         window.verNovidades = () => { 
-            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Guia & Novidades v1.3.12"; 
-            list.innerHTML = `<div class="guide-title">📢 O QUE MUDOU NA v1.3.12?</div><div class="log-item">• <b>SITE:</b> Correção definitiva do botão Admin e exibição imediata após login.</div><div class="log-item">• <b>VISUAL:</b> Melhorias no card e suporte a Favicon.</div><br><div class="guide-title">💡 GUIA RÁPIDO</div><div class="log-item">• <b>1. JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</div><div class="log-item">• <b>2. RANKING:</b> Toque na foto para zoom. Toque nos pontos para extrato.</div><div class="log-item">• <b>3. PERFIL:</b> Altere foto e senha aqui.</div><div class="log-item">• <b>4. POTE:</b> Clique no porquinho para ver o prêmio acumulado.</div><br><div class="guide-title">📜 LINHA DO TEMPO</div><div class="log-item" style="color:gray">• v1.3.11 (Atual): Otimização de performance (Keys) e correções web.</div><div class="log-item" style="color:gray">• v1.3.10: Formato de data e textos padronizados.</div><div class="log-item" style="color:gray">• v1.3.9: Hotfix de Pontuação (Bônus).</div><div class="log-item" style="color:gray">• v1.3.8: Paridade visual com Web.</div>`; 
+            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Guia & Novidades v1.3.11"; 
+            list.innerHTML = `<div class="guide-title">📢 O QUE MUDOU NA v1.3.11?</div><div class="log-item">• <b>SITE:</b> Correção definitiva do botão Admin e exibição imediata após login.</div><div class="log-item">• <b>VISUAL:</b> Melhorias no card e suporte a Favicon.</div><br><div class="guide-title">💡 GUIA RÁPIDO</div><div class="log-item">• <b>1. JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</div><div class="log-item">• <b>2. RANKING:</b> Toque na foto para zoom. Toque nos pontos para extrato.</div><div class="log-item">• <b>3. PERFIL:</b> Altere foto e senha aqui.</div><div class="log-item">• <b>4. POTE:</b> Clique no porquinho para ver o prêmio acumulado.</div><br><div class="guide-title">📜 LINHA DO TEMPO</div><div class="log-item" style="color:gray">• v1.3.11 (Atual): Otimização de performance (Keys) e correções web.</div><div class="log-item" style="color:gray">• v1.3.10: Formato de data e textos padronizados.</div><div class="log-item" style="color:gray">• v1.3.9: Hotfix de Pontuação (Bônus).</div><div class="log-item" style="color:gray">• v1.3.8: Paridade visual com Web.</div>`; 
             document.getElementById('modal-history').style.display = 'flex'; 
         };
         
         async function verificarAdmin(uid) { try { const userDoc = await getDoc(doc(db, "users", uid)); if (userDoc.exists() && userDoc.data().isAdmin === true) { document.getElementById('btn-admin-painel').style.display = 'flex'; window.loadCompetitions(); } else { document.getElementById('btn-admin-painel').style.display = 'none'; } } catch (e) { console.error("Erro admin:", e); } }
 
-        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.12", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
+        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.11", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
     </script>
 </body>
 </html>
