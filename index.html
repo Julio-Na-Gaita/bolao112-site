@@ -95,19 +95,24 @@
             <div class="section-tag" style="border-color: #333; color: #333;">PAINEL ADMINISTRATIVO</div>
             <button onclick="window.fecharAdmin()" class="secondary-btn" style="margin-bottom: 20px;">VOLTAR</button>
             
-            <button onclick="window.abrirGestaoUsuarios()" class="admin-btn" style="background-color: #2E7D32;">💰 FINANCEIRO & USUÁRIOS 👥</button>
-            <button onclick="window.abrirNovoJogo()" class="admin-btn" style="background-color: #1565C0;">⚽ NOVO CONFRONTO ➕</button>
-            <button onclick="window.abrirGestaoCompeticoes()" class="admin-btn" style="background-color: #EF6C00;">🏆 COMPETIÇÕES 🎖️</button>
-            <button onclick="window.abrirGestaoConvites()" class="admin-btn" style="background-color: #4A148C;">📩 GERENCIAR CONVITES</button>
+            <div class="admin-section">
+                <button onclick="window.abrirGestaoUsuarios()" class="admin-btn" style="background-color: #2E7D32;">💰 FINANCEIRO & USUÁRIOS 👥</button>
+                <button onclick="window.abrirNovoJogo()" class="admin-btn" style="background-color: #1565C0;">⚽ NOVO CONFRONTO ➕</button>
+                <button onclick="window.abrirGestaoCompeticoes()" class="admin-btn" style="background-color: #EF6C00;">🏆 COMPETIÇÕES 🎖️</button>
+                <button onclick="window.abrirGestaoConvites()" class="admin-btn" style="background-color: #4A148C;">📩 GERENCIAR CONVITES</button>
+            </div>
             
-            <div style="margin-top: 25px; font-weight: bold; border-bottom: 2px solid #ccc;">Gerenciar Confrontos Existentes:</div>
+            <div style="margin-top: 25px; font-weight: bold; border-bottom: 2px solid #ccc; padding-bottom: 5px;">Gerenciar Confrontos Existentes:</div>
             <div id="admin-games-list" style="margin-top: 10px;"></div>
         </div>
 
-        <div id="container-jogos" class="container"><div id="lista-jogos"></div></div>
+        <div id="container-jogos" class="container"><div id="loading-jogos" style="text-align: center; padding: 40px; color: #999; font-weight: bold;">Carregando...</div><div id="lista-jogos"></div></div>
         
         <div id="container-ranking" class="container hidden">
-            <div style="background:#222; color:#ffd700; padding:10px; font-size:11px; text-align:center; font-weight:bold; border:1px solid #ffd700; margin-bottom:10px;">LEGENDA: D=Débitos | V=Vitórias | F=Finais | PTS=Pontos</div>
+            <div style="background:#222; color:#ffd700; padding:10px; font-size:11px; text-align:center; font-weight:bold; border:1px solid #ffd700; margin-bottom:10px;">
+                LEGENDA: D=Débitos(-1) | V=Vitórias | F=Finais | PTS=Pontos
+                <div id="last-update" style="color: white; font-style: italic; margin-top: 4px;">...</div>
+            </div>
             <table id="tabela-ranking">
                 <thead><tr><th>Pos</th><th>Participante</th><th>D</th><th>V</th><th>F</th><th>PTS</th></tr></thead>
                 <tbody id="lista-ranking"></tbody>
@@ -116,21 +121,23 @@
 
         <div id="container-regras" class="container hidden">
             <div style="text-align:right; margin-bottom:10px;"><button id="btn-edit-rules" class="hidden" style="width:auto; background:#333;" onclick="window.editarRegras()">✏️ Editar</button></div>
-            <div id="regras-texto" style="background:rgba(255,255,255,0.9); padding:20px; border:2px solid var(--primary); white-space:pre-wrap;">...</div>
+            <div id="regras-texto" class="rules-box" style="background:rgba(255,255,255,0.9); padding:20px; border:2px solid var(--primary); white-space:pre-wrap;">...</div>
             <textarea id="regras-input" class="hidden" style="width:100%; height:400px;"></textarea>
-            <div id="rules-actions" class="hidden" style="text-align:right; margin-top:10px;"><button onclick="window.salvarRegras()" style="width:auto;">Salvar</button></div>
+            <div id="rules-actions" class="hidden" style="text-align:right; margin-top:10px;"><button onclick="window.cancelarEdicaoRegras()" class="secondary-btn" style="width:auto;">Cancelar</button><button onclick="window.salvarRegras()" style="width:auto; margin-left: 5px;">Salvar</button></div>
         </div>
 
         <div id="container-perfil" class="container hidden">
-            <div style="background:rgba(255,255,255,0.95); padding:25px; border:3px solid var(--primary); text-align:center; clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);">
-                <div style="color:var(--primary); font-weight:900; font-size:18px; margin-bottom:15px;">CARTÃO DE MEMBRO</div>
-                <img id="img-perfil" src="" style="width:110px; height:110px; border-radius:50%; border:4px solid var(--primary); object-fit:cover;">
-                <br><button onclick="document.getElementById('file-input').click()" class="secondary-btn" style="width:auto; padding:5px 15px; font-size:11px; margin-top:10px;">ALTERAR FOTO</button>
-                <div id="nome-perfil" style="font-size:22px; font-weight:800; margin-top:15px;">...</div>
-                <div id="user-perfil" style="color:#666;">@...</div>
-                <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="window.processarFoto()">
-                <button onclick="window.alterarSenha()" style="margin-top:20px; background:#1565C0;">TROCAR SENHA</button>
-                <button onclick="window.verNovidades()" class="secondary-btn" style="margin-top:10px; color:var(--primary); border-color:var(--primary);">✨ NOVIDADES</button>
+            <div class="profile-header">
+                <div class="glass-box" style="background:rgba(255,255,255,0.95); padding:25px; border:3px solid var(--primary); text-align:center; clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);">
+                    <div style="color:var(--primary); font-weight:900; font-size:18px; margin-bottom:10px;">CARTÃO DE MEMBRO</div>
+                    <img id="img-perfil" src="" class="big-avatar" style="width:110px; height:110px; border-radius:50%; border:4px solid var(--primary); object-fit:cover;">
+                    <button onclick="document.getElementById('file-input').click()" class="secondary-btn" style="width: auto; padding: 8px 15px; font-size: 11px; margin-bottom: 10px;">ALTERAR FOTO</button>
+                    <div class="profile-name" id="nome-perfil">...</div>
+                    <div class="profile-user" id="user-perfil">@...</div>
+                    <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="window.processarFoto()">
+                    <button onclick="window.alterarSenha()" style="margin-top:20px; background:#1565C0;">TROCAR SENHA</button>
+                    <button onclick="window.verNovidades()" class="secondary-btn" style="margin-top:10px; color:var(--primary); border-color:var(--primary);">✨ NOVIDADES</button>
+                </div>
             </div>
             <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn" style="margin-top:25px; background:#000; display:none;">PAINEL ADMIN</button>
         </div>
@@ -149,13 +156,15 @@
     <div id="modal-whitelist" class="modal">
         <div class="modal-box">
             <div class="modal-header">GERENCIAR CONVITES</div>
-            <div style="display:flex; gap:5px;"><input id="new-invite-user" placeholder="Usuário"><button onclick="window.criarConvite()" style="width:auto; margin:8px 0;">+</button></div>
+            <div style="display:flex; gap:5px;"><input id="new-invite-user" placeholder="Usuário (sem @)"><button onclick="window.criarConvite()" style="width:auto; margin:8px 0;">+</button></div>
             <div id="whitelist-list" style="margin-top:15px; max-height:300px; overflow-y:auto;"></div>
             <button onclick="document.getElementById('modal-whitelist').style.display='none'" class="secondary-btn">FECHAR</button>
         </div>
     </div>
     
-    <div id="modal-finance" class="modal"><div class="modal-box"><div class="modal-header">FINANCEIRO</div><div id="finance-list"></div><button onclick="document.getElementById('modal-finance').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
+    <div id="modal-delete-confirm" class="modal"><div class="modal-box" style="border-color:#d32f2f;"><div class="modal-header" style="color:#d32f2f;">⚠️ REVOGAR ACESSO?</div><div style="text-align:center;"><h3 id="delete-target-user" style="margin:10px 0;">...</h3><p style="font-size:12px;">Histórico NÃO será apagado.</p><button onclick="window.executarExclusaoConvite()" style="background:#d32f2f;">CONFIRMAR</button><button onclick="document.getElementById('modal-delete-confirm').style.display='none'" class="secondary-btn">CANCELAR</button></div></div></div>
+
+    <div id="modal-finance" class="modal"><div class="modal-box" style="max-width: 600px;"><div class="modal-header">FINANCEIRO</div><div id="finance-list"></div><button onclick="document.getElementById('modal-finance').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
     <div id="modal-game-editor" class="modal"><div class="modal-box"><div class="modal-header">EDITOR</div><input type="hidden" id="edit-match-id"><select id="adm-comp"></select><select id="adm-round"><option>Oitavas de final</option><option>Quartas de final</option><option>Semi final</option><option>Final</option><option>Fase de Grupos (Apenas para teste)</option></select><input id="adm-tA" placeholder="Time A"><input id="adm-urlA" placeholder="URL A"><input id="adm-tB" placeholder="Time B"><input id="adm-urlB" placeholder="URL B"><input type="datetime-local" id="adm-date"><button onclick="window.salvarJogo()">SALVAR</button><button onclick="document.getElementById('modal-game-editor').style.display='none'" class="secondary-btn">CANCELAR</button></div></div>
     <div id="modal-manage-comps" class="modal"><div class="modal-box"><div class="modal-header">COMPETIÇÕES</div><input id="new-comp-name" placeholder="Nome"><input id="new-comp-logo" placeholder="URL Logo"><button onclick="window.salvarCompeticao()">SALVAR NOVA</button><div id="comp-list" style="margin-top:10px;"></div><button onclick="document.getElementById('modal-manage-comps').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
     <div id="modal-manage-games" class="modal"><div class="modal-box"><div class="modal-header">GERENCIAR JOGOS</div><div id="admin-games-list"></div><button onclick="document.getElementById('modal-manage-games').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
@@ -170,9 +179,10 @@
 
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
-        let currentUser = null; let isRegisterMode = false; let currentCompetitions = [];
+        let currentUser = null; let isRegisterMode = false; let currentCompetitions = []; let inviteToDeleteId = "";
 
-        // FUNÇÃO DE VERIFICAÇÃO DE ADMIN (CORRIGIDA - AGORA EXISTE!)
+        // --- DEFININDO FUNÇÕES NO ESCOPO GLOBAL (WINDOW) ---
+        
         window.verificarAdmin = async (uid) => {
             try {
                 const d = await getDoc(doc(db, "users", uid));
@@ -186,25 +196,17 @@
             } catch(e) { console.error(e); }
         };
 
-        // NAVIGATION
         window.mudarAba = (aba) => {
             const bgs = {jogos:'bg_jogos.png', ranking:'bg_ranking.png', regras:'bg_regras.png', perfil:'bg_perfil.png'};
             document.body.style.backgroundImage = `url('${bgs[aba]}')`;
             const titles = {jogos:'BOLÃO 112 F.C', ranking:'CLASSIFICAÇÃO', regras:'REGULAMENTO', perfil:'PERFIL'};
             document.querySelector('header h1').innerText = titles[aba];
-            ['jogos','ranking','regras','perfil','admin'].forEach(id => { 
-                document.getElementById(`container-${id}`).classList.add('hidden'); 
-                document.getElementById(`btn-${id}`)?.classList.remove('active'); 
-            });
+            ['jogos','ranking','regras','perfil','admin'].forEach(id => { document.getElementById(`container-${id}`).classList.add('hidden'); document.getElementById(`btn-${id}`)?.classList.remove('active'); });
             document.getElementById(`container-${aba}`).classList.remove('hidden');
             document.getElementById(`btn-${aba}`)?.classList.add('active');
-            if(aba==='jogos') window.carregarJogos();
-            if(aba==='ranking') window.carregarRanking();
-            if(aba==='regras') window.carregarRegras();
-            if(aba==='perfil') window.carregarPerfil();
+            if(aba==='jogos') window.carregarJogos(); if(aba==='ranking') window.carregarRanking(); if(aba==='regras') window.carregarRegras(); if(aba==='perfil') window.carregarPerfil();
         };
 
-        // AUTH
         window.processarAuth = async () => {
             const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg');
             const email = document.getElementById('email').value.trim().toLowerCase() + "@bolao112.com";
@@ -227,28 +229,31 @@
         window.alternarModo = () => { isRegisterMode=!isRegisterMode; document.getElementById('btn-login').innerText=isRegisterMode?"CADASTRAR":"ENTRAR"; document.getElementById('fullname').classList.toggle('hidden'); };
         window.sair = () => signOut(auth);
 
-        // WHITELIST & ADMIN
         window.abrirGestaoConvites = () => {
-            document.getElementById('modal-whitelist').style.display='flex';
-            onSnapshot(collection(db,"whitelist"), (snap) => {
-                let h = "";
-                const list = []; snap.forEach(d=>list.push(d.id)); list.sort();
-                list.forEach(u => h += `<div class="whitelist-item"><span>${u}</span><button style="width:auto;margin:0;padding:5px;background:none;color:red;" onclick="window.apagarConvite('${u}')">🗑️</button></div>`);
-                document.getElementById('whitelist-list').innerHTML = h || "<p style='text-align:center'>Vazio</p>";
+            document.getElementById('modal-whitelist').style.display = 'flex';
+            onSnapshot(collection(db, "whitelist"), (snap) => {
+                let html = "";
+                const invites = [];
+                snap.forEach(d => invites.push(d.id));
+                invites.sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+                invites.forEach(u => {
+                    html += `<div class="whitelist-item"><span>${u}</span><button class="btn-delete" onclick="window.confirmarExclusaoConvite('${u}')">🗑️</button></div>`;
+                });
+                document.getElementById('whitelist-list').innerHTML = html || "<div style='text-align:center;padding:10px;'>Vazio</div>";
             });
         };
         window.criarConvite = async () => { const u = document.getElementById('new-invite-user').value.trim().toLowerCase(); if(u) { await setDoc(doc(db,"whitelist",u), {active:true}); document.getElementById('new-invite-user').value=""; } };
-        window.apagarConvite = async (u) => { if(confirm("Revogar acesso de "+u+"?")) await deleteDoc(doc(db,"whitelist",u)); };
+        window.confirmarExclusaoConvite = (uid) => { inviteToDeleteId = uid; document.getElementById('delete-target-user').innerText = uid.toUpperCase(); document.getElementById('modal-delete-confirm').style.display = 'flex'; };
+        window.executarExclusaoConvite = async () => { await deleteDoc(doc(db,"whitelist",inviteToDeleteId)); document.getElementById('modal-delete-confirm').style.display = 'none'; alert("Revogado!"); };
 
-        // JOGOS & VOTACAO
         window.carregarJogos = async () => {
             document.getElementById('loading-jogos').classList.remove('hidden'); document.getElementById('lista-jogos').innerHTML = "";
             const [mSnap, gSnap, cSnap] = await Promise.all([getDocs(query(collection(db,"matches"))), getDocs(collection(db,"guesses")), getDoc(doc(db,"settings","competitions"))]);
             const logos = {}; if(cSnap.exists()) (cSnap.data().items||[]).forEach(i => logos[i.name] = i.logo);
             const guesses = {}; gSnap.forEach(g => { if(g.data().userId===currentUser.uid) guesses[g.data().matchId]=g.data().teamSelected; });
             const matches = []; mSnap.forEach(d => matches.push({id:d.id, ...d.data(), date: d.data().deadline?.toDate()}));
-            
             const now = new Date();
+            
             const render = (list, title, color) => {
                 if(!list.length) return;
                 let h = `<div class="section-tag" style="color:${color};border-color:${color};">${title}</div>`;
@@ -256,8 +261,8 @@
                     const isF = m.round==="Final"; const isExp = m.date <= now; const myVote = guesses[m.id];
                     const dateStr = m.date ? m.date.toLocaleDateString('pt-BR')+' '+m.date.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
                     h += `<div class="card ${isF?'card-final':''}">`;
-                    if(logos[m.competition]) h += `<img src="${logos[m.competition]}" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.1;object-fit:cover;z-index:0;">`;
-                    if(isF) h += `<div style="text-align:center;color:#F57F17;font-weight:900;font-size:12px;">✨🏆 GRANDE FINAL • VALE DOBRO 🏆✨</div>`;
+                    if(logos[m.competition]) h += `<img src="${logos[m.competition]}" class="comp-watermark" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0.1;object-fit:cover;z-index:0;">`;
+                    if(isF) h += `<div style="text-align:center;color:#F57F17;font-weight:900;font-size:12px;margin-bottom:5px;">✨🏆 GRANDE FINAL • VALE DOBRO 🏆✨</div>`;
                     let st = isExp ? `<span style="color:#d32f2f;">🔒 ENCERRADO: ${dateStr}</span>` : `📅 PRAZO: ${dateStr}`;
                     if(isExp && m.winner) st = `<span style="color:${isF?'#F57F17':'#006400'};font-size:14px;">${isF?'🏆 CAMPEÃO':'VENCEDOR'}: ${m.winner}</span>`;
                     h += `<div class="match-comp" style="position:relative;z-index:2;">${m.competition}</div><div class="match-info" style="position:relative;z-index:2;">${m.round}<br>${st}</div>`;
@@ -267,9 +272,9 @@
                         <div class="team-box ${myVote===m.teamB?'selected':''}" ${!isExp?`onclick="window.votar('${m.id}','${m.teamB}')"`:''}><img src="${m.teamBUrl}"><div class="team-name">${m.teamB}</div></div>
                     </div>`;
                     if(myVote && !isExp) h += `<div style="text-align:center;margin-top:10px;color:#2e7d32;font-weight:bold;position:relative;z-index:10;">✅ Voto: ${myVote}</div>`;
-                    h += `</div>`;
+                    h += `<div style="text-align:center;margin-top:10px;"><span onclick="window.verPalpites('${m.id}','${m.teamA}','${m.teamB}',${isExp},'${m.teamAUrl}','${m.teamBUrl}','${m.winner||''}')" style="text-decoration:underline;cursor:pointer;color:#555;">${isExp?'Ver Palpites da Galera':'Quem já votou?'}</span></div></div>`;
+                    document.getElementById('lista-jogos').innerHTML += h;
                 });
-                document.getElementById('lista-jogos').innerHTML += h;
             };
             
             render(matches.filter(m=>m.date>now && !m.winner).sort((a,b)=>a.date-b.date), "✅ DISPONÍVEIS", "#006400");
@@ -277,9 +282,9 @@
             render(matches.filter(m=>m.winner).sort((a,b)=>b.date-a.date), "🚫 FINALIZADOS", "#D32F2F");
             document.getElementById('loading-jogos').classList.add('hidden');
         };
+
         window.votar = async (mid, team) => { await setDoc(doc(db,"guesses",`${mid}_${currentUser.uid}`), {matchId:mid, userId:currentUser.uid, teamSelected:team, timestamp:new Date()}); window.carregarJogos(); };
 
-        // RANKING
         window.carregarRanking = async () => {
             const tbody = document.getElementById('lista-ranking'); tbody.innerHTML = "<tr><td colspan='6'>Calculando...</td></tr>";
             const [uSnap, gSnap, mSnap] = await Promise.all([getDocs(collection(db,"users")), getDocs(collection(db,"guesses")), getDocs(collection(db,"matches"))]);
@@ -313,14 +318,85 @@
             rank.forEach((r,i) => {
                 let cls = ""; if(i===0) cls="row-gold"; if(i===1) cls="row-silver"; if(i===2) cls="row-bronze";
                 const img = r.photo ? `data:image/jpeg;base64,${r.photo}` : 'https://via.placeholder.com/30';
-                tbody.innerHTML += `<tr class="${cls}"><td>${i+1}º</td><td class="td-nome" onclick="window.verFoto('${img}')"><img src="${img}" class="rank-avatar">${r.name}</td><td class="debit" onclick="window.verExtrato('${r.name}')">${r.d}</td><td class="clickable-stats" onclick="window.verExtrato('${r.name}')">${r.v}</td><td class="clickable-stats" onclick="window.verExtrato('${r.name}')">${r.f}</td><td class="points" onclick="window.verExtrato('${r.name}')">${r.pts}</td></tr>`;
+                tbody.innerHTML += `<tr class="${cls}"><td>${i+1}º</td><td class="td-nome" onclick="window.verFoto('${img}')"><img src="${img}" class="rank-avatar">${r.name}</td><td class="debit clickable-stats" onclick="window.verExtrato('${r.name}')">${r.d}</td><td class="clickable-stats" onclick="window.verExtrato('${r.name}')">${r.v}</td><td class="clickable-stats" onclick="window.verExtrato('${r.name}')">${r.f}</td><td class="points clickable-stats" onclick="window.verExtrato('${r.name}')">${r.pts}</td></tr>`;
                 window['hist_'+r.name] = r.hist;
             });
         };
+
         window.verExtrato = (n) => { const h = window['hist_'+n] || []; document.getElementById('history-title').innerText = n; document.getElementById('history-list').innerHTML = h.map(x=>`<div class="log-item">${x}</div>`).join('') || "Sem pontos."; document.getElementById('modal-history').style.display='flex'; };
         window.verFoto = (src) => { document.getElementById('modal-img').src = src; document.getElementById('modal-foto').style.display='flex'; };
+        
+        window.verPalpites = async (mid, tA, tB, exp, uA, uB, win) => {
+            document.getElementById('history-title').innerText = exp ? "Palpites (Encerrado)" : "Quem Votou";
+            const list = document.getElementById('history-list'); list.innerHTML = "Carregando..."; document.getElementById('modal-history').style.display = 'flex';
+            const [gSnap, uSnap] = await Promise.all([getDocs(query(collection(db,"guesses"))), getDocs(collection(db,"users"))]);
+            const users = {}; uSnap.forEach(u => users[u.id] = u.data());
+            let html = "";
+            gSnap.forEach(g => {
+                if(g.data().matchId === mid) {
+                    const u = users[g.data().userId]; const vote = g.data().teamSelected; let icon = "";
+                    if(exp) { if(vote === tA) icon = `<img src="${uA}" style="width:20px;">`; else if(vote === tB) icon = `<img src="${uB}" style="width:20px;">`; if(win && win !== "Empate") icon += (vote === win) ? ' <span style="color:green">✔</span>' : ' <span style="color:red">✖</span>'; }
+                    html += `<div class="log-item" style="display:flex;justify-content:space-between;"><span>${u.name}</span><span>${icon}</span></div>`;
+                }
+            });
+            list.innerHTML = html || "Nenhum voto.";
+        };
 
-        // PERFIL
+        window.verPote = async () => { 
+            document.getElementById('modal-pote').style.display = 'flex'; 
+            try {
+                const usersSnap = await getDocs(collection(db, "users")); 
+                let totalPayments = 0; 
+                usersSnap.forEach(doc => { const payments = doc.data().payments || {}; for(let month in payments) { if(payments[month]) totalPayments++; } }); 
+                const totalValue = totalPayments * 10; 
+                document.getElementById('pote-valor').innerText = totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            } catch(e) { console.error(e); }
+        };
+
+        window.verNovidades = () => { 
+            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Linha do Tempo"; 
+            list.innerHTML = `<div class="guide-title">💡 GUIA RÁPIDO</div><div class="log-item">1. <b>JOGOS:</b> Toque no escudo.</div><div class="log-item">2. <b>RANKING:</b> Toque na foto p/ zoom.</div><br><div class="guide-title">📜 VERSÕES</div><div class="log-item" style="background:#e8f5e9;"><b>• v1.3.2:</b> Visual 'Classic Badge', Fontes Serifadas e Coluna Finais (F).</div><div class="log-item">• <b>v1.3.14:</b> Visual Gold Finais.</div>`;
+            document.getElementById('modal-history').style.display = 'flex'; 
+        };
+
+        // ADMIN FUNCTIONS
+        window.abrirAdmin = () => { ['jogos','ranking','regras','perfil'].forEach(id=>document.getElementById(`container-${id}`).classList.add('hidden')); document.getElementById('container-admin').classList.remove('hidden'); document.querySelector('header h1').innerText = "PAINEL ADMIN"; window.loadCompetitions(); };
+        window.fecharAdmin = () => { document.getElementById('container-admin').classList.add('hidden'); document.getElementById('container-perfil').classList.remove('hidden'); window.mudarAba('perfil'); };
+        
+        window.abrirGestaoUsuarios = async () => { 
+            document.getElementById('modal-finance').style.display='flex'; const l=document.getElementById('finance-list'); l.innerHTML="..."; 
+            const s=await getDocs(collection(db,"users")); let h=""; const us=[]; s.forEach(d=>us.push({id:d.id,...d.data()})); us.sort((a,b)=>a.name.localeCompare(b.name));
+            const ms=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+            us.forEach(u=>{
+                h+=`<div style="border-bottom:1px solid #eee;padding:10px 0;"><div style="display:flex;justify-content:space-between;"><b>${u.name}</b><b style="color:red">Déb: ${u.debts||0}</b></div><div class="month-grid">`;
+                ms.forEach(m=>{ const p=u.payments?.[m]; h+=`<div class="month-item ${p?'paid':''}" onclick="window.pay('${u.id}','${m}',${!p})">${m}</div>`; });
+                h+=`</div></div>`;
+            });
+            l.innerHTML=h;
+        };
+        window.pay = async (uid, m, v) => { await updateDoc(doc(db,"users",uid), {[`payments.${m}`]:v}); window.abrirGestaoUsuarios(); };
+        
+        window.loadCompetitions = async () => { const s=await getDoc(doc(db,"settings","competitions")); if(s.exists()) currentCompetitions=s.data().items||[]; window.updateCompSelect(); };
+        window.updateCompSelect = () => { const s=document.getElementById('adm-comp'); s.innerHTML=""; currentCompetitions.forEach(c=>{const o=document.createElement('option');o.value=c.name;o.innerText=c.name;s.appendChild(o);}); };
+        window.abrirGestaoCompeticoes = () => { document.getElementById('modal-manage-comps').style.display='flex'; window.renderCompList(); };
+        window.renderCompList = () => { const d=document.getElementById('comp-list'); d.innerHTML=""; currentCompetitions.forEach(c=>{d.innerHTML+=`<div class="whitelist-item"><span>${c.name}</span><button class="btn-delete" onclick="window.delComp('${c.name}')">🗑️</button></div>`;}); };
+        window.salvarCompeticao = async () => { const n=document.getElementById('new-comp-name').value; const l=document.getElementById('new-comp-logo').value; if(n){ currentCompetitions.push({name:n,logo:l}); await updateDoc(doc(db,"settings","competitions"),{items:currentCompetitions}); window.renderCompList(); window.updateCompSelect(); } };
+        window.delComp = async (n) => { if(confirm("Apagar?")) { currentCompetitions=currentCompetitions.filter(c=>c.name!==n); await updateDoc(doc(db,"settings","competitions"),{items:currentCompetitions}); window.renderCompList(); } };
+        window.buscarLogo = (inputId) => { const name = document.getElementById(inputId).value; if(name) window.open(`https://www.google.com/search?tbm=isch&q=escudo+${encodeURIComponent(name)}+png`); else alert("Digite o nome primeiro!"); };
+
+        window.abrirGestaoJogos = async () => { document.getElementById('modal-manage-games').style.display='flex'; const s=await getDocs(query(collection(db,"matches"),orderBy("deadline","desc"))); const d=document.getElementById('admin-games-list'); d.innerHTML=""; s.forEach(x=>{const m={id:x.id,...x.data()}; d.innerHTML+=`<div style="border:1px solid #ccc;padding:10px;margin-bottom:5px;"><b>${m.teamA} x ${m.teamB}</b><br>${m.competition}<br><button class="btn-small btn-edit" onclick="window.editMatch('${m.id}','${m.teamA}','${m.teamB}','${m.teamAUrl}','${m.teamBUrl}','${m.competition}','${m.round}','${m.deadline?m.deadline.toDate().toISOString():''}')">✏️</button> <button class="btn-small btn-edit" onclick="window.winMatch('${m.id}','${m.teamA}','${m.teamB}')">🏆</button> <button class="btn-small btn-danger" onclick="window.delMatch('${m.id}')">🗑️</button></div>`;}); };
+        window.abrirNovoJogo = () => { document.getElementById('modal-game-title').innerText="Novo"; document.getElementById('edit-match-id').value=""; document.getElementById('modal-game-editor').style.display='flex'; };
+        window.editMatch = (id,tA,tB,uA,uB,c,r,d) => { document.getElementById('modal-game-title').innerText="Editar"; document.getElementById('edit-match-id').value=id; document.getElementById('adm-tA').value=tA; document.getElementById('adm-tB').value=tB; document.getElementById('adm-urlA').value=uA; document.getElementById('adm-urlB').value=uB; document.getElementById('adm-comp').value=c; document.getElementById('adm-round').value=r; if(d) { const dt=new Date(d); const off=dt.getTimezoneOffset()*60000; document.getElementById('adm-date').value=(new Date(dt-off)).toISOString().slice(0,16); } document.getElementById('modal-game-editor').style.display='flex'; };
+        window.salvarJogo = async () => { const id=document.getElementById('edit-match-id').value; const d={teamA:document.getElementById('adm-tA').value, teamB:document.getElementById('adm-tB').value, teamAUrl:document.getElementById('adm-urlA').value, teamBUrl:document.getElementById('adm-urlB').value, competition:document.getElementById('adm-comp').value, round:document.getElementById('adm-round').value, deadline:new Date(document.getElementById('adm-date').value)}; if(id) await updateDoc(doc(db,"matches",id),d); else { d.winner=null; await addDoc(collection(db,"matches"),d); } document.getElementById('modal-game-editor').style.display='none'; window.abrirGestaoJogos(); };
+        window.delMatch = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db,"matches",id)); window.abrirGestaoJogos(); };
+        window.winMatch = (id,tA,tB) => { document.getElementById('winner-match-id').value=id; document.getElementById('btn-win-A').innerText=tA; document.getElementById('btn-win-B').innerText=tB; document.getElementById('modal-winner').style.display='flex'; };
+        window.setWinner = async (w) => { await updateDoc(doc(db,"matches",document.getElementById('winner-match-id').value),{winner:w}); document.getElementById('modal-winner').style.display='none'; window.abrirGestaoJogos(); };
+
+        window.carregarRegras = async () => { const d = await getDoc(doc(db, "settings", "general")); document.getElementById('regras-texto').innerText = d.exists() ? d.data().rulesText : "Carregando..."; document.getElementById('regras-input').value = d.exists() ? d.data().rulesText : ""; };
+        window.editarRegras = () => { document.getElementById('regras-texto').classList.add('hidden'); document.getElementById('regras-input').classList.remove('hidden'); document.getElementById('rules-actions').classList.remove('hidden'); document.getElementById('btn-edit-rules').classList.add('hidden'); };
+        window.cancelarEdicaoRegras = () => { document.getElementById('regras-texto').classList.remove('hidden'); document.getElementById('regras-input').classList.add('hidden'); document.getElementById('rules-actions').classList.add('hidden'); document.getElementById('btn-edit-rules').classList.remove('hidden'); };
+        window.salvarRegras = async () => { await updateDoc(doc(db, "settings", "general"), { rulesText: document.getElementById('regras-input').value }); window.carregarRegras(); window.cancelarEdicaoRegras(); alert("Salvo!"); };
+        
         window.carregarPerfil = async () => {
             try {
                 const u = await getDoc(doc(db,"users",currentUser.uid));
@@ -332,41 +408,7 @@
             } catch(e){}
         };
         window.processarFoto = () => { const f=document.getElementById('file-input').files[0]; if(f){ const r=new FileReader(); r.onload=(e)=>{const i=new Image();i.src=e.target.result;i.onload=()=>{const c=document.createElement('canvas');const ctx=c.getContext('2d');const s=300/i.width;c.width=300;c.height=i.height*s;ctx.drawImage(i,0,0,c.width,c.height);const b=c.toDataURL('image/jpeg',0.7).split(',')[1];updateDoc(doc(db,"users",currentUser.uid),{photoBase64:b}).then(()=>{document.getElementById('img-perfil').src="data:image/jpeg;base64,"+b;alert("Salvo!");});}};r.readAsDataURL(f);} };
-        
-        // ADMIN GERAL
-        window.abrirAdmin = () => { ['jogos','ranking','regras','perfil'].forEach(id=>document.getElementById(`container-${id}`).classList.add('hidden')); document.getElementById('container-admin').classList.remove('hidden'); document.querySelector('header h1').innerText = "PAINEL ADMIN"; };
-        window.fecharAdmin = () => { document.getElementById('container-admin').classList.add('hidden'); document.getElementById('container-perfil').classList.remove('hidden'); window.mudarAba('perfil'); };
-        
-        window.abrirGestaoUsuarios = async () => { 
-            document.getElementById('modal-finance').style.display='flex'; const l=document.getElementById('finance-list'); l.innerHTML="..."; 
-            const s=await getDocs(collection(db,"users")); let h=""; const us=[]; s.forEach(d=>us.push({id:d.id,...d.data()})); us.sort((a,b)=>a.name.localeCompare(b.name));
-            const ms=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-            us.forEach(u=>{
-                h+=`<div style="border-bottom:1px solid #eee;padding:10px 0;"><div style="display:flex;justify-content:space-between;"><b>${u.name}</b><b style="color:red">Déb: ${u.debts||0}</b></div>
-                <div style="display:flex;gap:5px;margin:5px 0;"><button class="btn-small" onclick="window.setDebts('${u.id}',${(u.debts||0)-1})">-</button><button class="btn-small btn-danger" onclick="window.setDebts('${u.id}',${(u.debts||0)+1})">+</button></div>
-                <div class="month-grid">`;
-                ms.forEach(m=>{ const p=u.payments?.[m]; h+=`<div class="month-item ${p?'paid':''}" onclick="window.pay('${u.id}','${m}',${!p})">${m}</div>`; });
-                h+=`</div></div>`;
-            });
-            l.innerHTML=h;
-        };
-        window.pay = async (uid, m, v) => { await updateDoc(doc(db,"users",uid), {[`payments.${m}`]:v}); window.abrirGestaoUsuarios(); };
-        window.setDebts = async (uid, v) => { if(v<0)v=0; await updateDoc(doc(db,"users",uid), {debts:v}); window.abrirGestaoUsuarios(); };
-        
-        window.loadCompetitions = async () => { const s=await getDoc(doc(db,"settings","competitions")); if(s.exists()) currentCompetitions=s.data().items||[]; window.updateCompSelect(); };
-        window.updateCompSelect = () => { const s=document.getElementById('adm-comp'); s.innerHTML=""; currentCompetitions.forEach(c=>{const o=document.createElement('option');o.value=c.name;o.innerText=c.name;s.appendChild(o);}); };
-        window.abrirGestaoCompeticoes = () => { document.getElementById('modal-manage-comps').style.display='flex'; window.renderCompList(); };
-        window.renderCompList = () => { const d=document.getElementById('comp-list'); d.innerHTML=""; currentCompetitions.forEach(c=>{d.innerHTML+=`<div class="whitelist-item"><span>${c.name}</span><button class="btn-delete" onclick="window.delComp('${c.name}')">🗑️</button></div>`;}); };
-        window.salvarCompeticao = async () => { const n=document.getElementById('new-comp-name').value; const l=document.getElementById('new-comp-logo').value; if(n){ currentCompetitions.push({name:n,logo:l}); await updateDoc(doc(db,"settings","competitions"),{items:currentCompetitions}); window.renderCompList(); window.updateCompSelect(); } };
-        window.delComp = async (n) => { if(confirm("Apagar?")) { currentCompetitions=currentCompetitions.filter(c=>c.name!==n); await updateDoc(doc(db,"settings","competitions"),{items:currentCompetitions}); window.renderCompList(); } };
-
-        window.abrirGestaoJogos = async () => { document.getElementById('modal-manage-games').style.display='flex'; const s=await getDocs(query(collection(db,"matches"),orderBy("deadline","desc"))); const d=document.getElementById('admin-games-list'); d.innerHTML=""; s.forEach(x=>{const m={id:x.id,...x.data()}; d.innerHTML+=`<div style="border:1px solid #ccc;padding:10px;margin-bottom:5px;"><b>${m.teamA} x ${m.teamB}</b><br>${m.competition}<br><button class="btn-small btn-edit" onclick="window.editMatch('${m.id}','${m.teamA}','${m.teamB}','${m.teamAUrl}','${m.teamBUrl}','${m.competition}','${m.round}','${m.deadline?m.deadline.toDate().toISOString():''}')">✏️</button> <button class="btn-small btn-edit" onclick="window.winMatch('${m.id}','${m.teamA}','${m.teamB}')">🏆</button> <button class="btn-small btn-danger" onclick="window.delMatch('${m.id}')">🗑️</button></div>`;}); };
-        window.abrirNovoJogo = () => { document.getElementById('modal-game-title').innerText="Novo"; document.getElementById('edit-match-id').value=""; document.getElementById('modal-game-editor').style.display='flex'; };
-        window.editMatch = (id,tA,tB,uA,uB,c,r,d) => { document.getElementById('modal-game-title').innerText="Editar"; document.getElementById('edit-match-id').value=id; document.getElementById('adm-tA').value=tA; document.getElementById('adm-tB').value=tB; document.getElementById('adm-urlA').value=uA; document.getElementById('adm-urlB').value=uB; document.getElementById('adm-comp').value=c; document.getElementById('adm-round').value=r; if(d) { const dt=new Date(d); const off=dt.getTimezoneOffset()*60000; document.getElementById('adm-date').value=(new Date(dt-off)).toISOString().slice(0,16); } document.getElementById('modal-game-editor').style.display='flex'; };
-        window.salvarJogo = async () => { const id=document.getElementById('edit-match-id').value; const d={teamA:document.getElementById('adm-tA').value, teamB:document.getElementById('adm-tB').value, teamAUrl:document.getElementById('adm-urlA').value, teamBUrl:document.getElementById('adm-urlB').value, competition:document.getElementById('adm-comp').value, round:document.getElementById('adm-round').value, deadline:new Date(document.getElementById('adm-date').value)}; if(id) await updateDoc(doc(db,"matches",id),d); else { d.winner=null; await addDoc(collection(db,"matches"),d); } document.getElementById('modal-game-editor').style.display='none'; window.abrirGestaoJogos(); };
-        window.delMatch = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db,"matches",id)); window.abrirGestaoJogos(); };
-        window.winMatch = (id,tA,tB) => { document.getElementById('winner-match-id').value=id; document.getElementById('btn-win-A').innerText=tA; document.getElementById('btn-win-B').innerText=tB; document.getElementById('modal-winner').style.display='flex'; };
-        window.setWinner = async (w) => { await updateDoc(doc(db,"matches",document.getElementById('winner-match-id').value),{winner:w}); document.getElementById('modal-winner').style.display='none'; window.abrirGestaoJogos(); };
+        window.alterarSenha = () => { const p = prompt("Nova senha (min 6 digitos):"); if(p && p.length>=6) updatePassword(currentUser, p).then(()=>alert("Senha alterada!")).catch(e=>alert("Erro: "+e.message)); };
 
         // INIT
         onAuthStateChanged(auth, async (u) => { 
@@ -374,9 +416,8 @@
                 currentUser=u; 
                 verificarAdmin(u.uid); 
                 try {
-                    // CORREÇÃO CRÍTICA: setDoc com merge evita erro se doc não existir
                     await setDoc(doc(db, "users", u.uid), { appVersion: "Web v1.3.2", lastAccess: new Date() }, { merge: true });
-                } catch(e) { console.log("Erro update user:", e); }
+                } catch(e) {}
                 document.getElementById('login-screen').classList.add('hidden'); 
                 document.getElementById('app-screen').classList.remove('hidden'); 
                 window.mudarAba('jogos'); 
