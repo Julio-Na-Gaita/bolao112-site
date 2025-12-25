@@ -70,7 +70,17 @@
         .nav-item .material-icons-round { font-size: 26px; margin-bottom: 2px; }
         .nav-item.active { color: var(--primary); font-weight: 600; }
         .section-header { text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin: 25px 0 10px 0; font-size: 14px; background: rgba(255,255,255,0.8); padding: 8px; border-radius: 20px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        /* CARD PADRÃO */
         .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); position: relative; overflow: hidden; }
+        
+        /* ESTILO ESPECIAL PARA A FINAL (DOURADO) */
+        .card-final {
+            border: 2px solid #FFD700 !important;
+            background: linear-gradient(145deg, #ffffff, #fffde7) !important;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
+        }
+
         .comp-watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1; z-index: 0; pointer-events: none; object-fit: cover; }
         .match-comp { font-size: 11px; color: var(--primary); font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.8px; position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; }
         .match-header { font-size: 12px; color: #888; text-align: center; margin-bottom: 15px; margin-top: 4px; line-height: 1.4; position: relative; z-index: 2; }
@@ -116,8 +126,6 @@
         .pot-value { font-size: 32px; font-weight: 900; color: var(--primary); text-align: center; margin: 10px 0; }
         .comp-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         .search-icon-btn { cursor: pointer; color: #555; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-left: 5px; background: #eee; }
-        
-        /* ESTILO PARA CHECKBOXES DE NOTIFICAÇÃO */
         .notify-option { display: flex; align-items: center; margin-bottom: 12px; font-size: 14px; color: #333; font-weight: 500; }
         .notify-option input { margin-right: 12px; }
     </style>
@@ -143,13 +151,13 @@
         <div id="container-admin" class="container hidden">
             <div class="section-header" style="color: #333;">PAINEL ADMINISTRATIVO</div>
             <button onclick="document.getElementById('container-admin').classList.add('hidden'); document.getElementById('container-perfil').classList.remove('hidden');" class="secondary-btn" style="margin-bottom: 20px;">Voltar</button>
-            <button onclick="window.abrirGestaoJogos()" class="admin-btn icon-text"><span class="material-icons-round">sports_soccer</span> GERENCIAR JOGOS</button>
+            <button onclick="window.abrirGestaoJogos()" class="admin-btn icon-text"><span class="material-icons-round">sports_soccer</span> GERENCIAR CONFRONTOS</button>
             <button onclick="window.abrirGestaoUsuarios()" class="admin-btn icon-text"><span class="material-icons-round">attach_money</span> FINANCEIRO & USUÁRIOS</button>
             <button onclick="window.abrirGestaoCompeticoes()" class="admin-btn icon-text" style="background-color: #1976D2; border-color: #1976D2;"><span class="material-icons-round">list</span> GERENCIAR COMPETIÇÕES</button>
         </div>
 
         <div id="container-jogos" class="container">
-            <div id="loading-jogos" style="text-align: center; padding: 40px; color: #999;">Carregando jogos...</div>
+            <div id="loading-jogos" style="text-align: center; padding: 40px; color: #999;">Carregando confrontos...</div>
             <div id="lista-jogos"></div>
         </div>
 
@@ -197,7 +205,7 @@
         </div>
 
         <div class="bottom-nav">
-            <div class="nav-item active" onclick="window.mudarAba('jogos')" id="btn-jogos"><span class="material-icons-round">sports_soccer</span>Jogos</div>
+            <div class="nav-item active" onclick="window.mudarAba('jogos')" id="btn-jogos"><span class="material-icons-round">sports_soccer</span>Confrontos</div>
             <div class="nav-item" onclick="window.mudarAba('ranking')" id="btn-ranking"><span class="material-icons-round">emoji_events</span>Ranking</div>
             <div class="nav-item" onclick="window.mudarAba('regras')" id="btn-regras"><span class="material-icons-round">gavel</span>Regras</div>
             <div class="nav-item" onclick="window.mudarAba('perfil')" id="btn-perfil"><span class="material-icons-round">person</span>Perfil</div>
@@ -211,7 +219,7 @@
 
     <div id="modal-game-editor" class="modal">
         <div class="modal-box">
-            <div class="modal-header" id="modal-game-title">Novo Jogo</div>
+            <div class="modal-header" id="modal-game-title">Novo Confronto</div>
             <input type="hidden" id="edit-match-id">
             <select id="adm-comp"></select>
             <select id="adm-round">
@@ -233,14 +241,14 @@
                 <label class="notify-option"><input type="checkbox" id="notify-push" checked> Enviar Notificação Push (App)</label>
             </div>
 
-            <button onclick="window.salvarJogo()" style="margin-top:15px;">Salvar Jogo</button>
+            <button onclick="window.salvarJogo()" style="margin-top:15px;">Salvar Confronto</button>
             <button onclick="document.getElementById('modal-game-editor').style.display='none'" class="secondary-btn">Cancelar</button>
         </div>
     </div>
 
     <div id="modal-manage-comps" class="modal"><div class="modal-box"><div class="modal-header">Competições</div><div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:15px;"><input type="hidden" id="edit-comp-original-name"><input id="new-comp-name" placeholder="Nome (ex: Brasileirão)"><div style="display:flex; align-items:center; margin-top:5px;"><input id="new-comp-logo" placeholder="URL do Logo" style="flex:1;"><span onclick="window.buscarLogo('new-comp-name')" class="material-icons-round search-icon-btn">search</span></div><div style="display:flex; justify-content:flex-end; margin-top:10px; gap:5px;"><button onclick="window.limparFormComp()" class="btn-small btn-danger" style="background:#ccc; color:#333; border:none;">Limpar</button><button onclick="window.salvarCompeticao()" class="btn-small" style="width:auto;">Salvar</button></div></div><div id="comp-list"></div><button onclick="document.getElementById('modal-manage-comps').style.display='none'" class="secondary-btn">Fechar</button></div></div>
     <div id="modal-finance" class="modal"><div class="modal-box" style="width: 95%; max-width: 600px;"><div class="modal-header">Gestão Financeira</div><div id="finance-list"></div><button onclick="document.getElementById('modal-finance').style.display='none'" style="margin-top:10px;">Fechar</button></div></div>
-    <div id="modal-manage-games" class="modal"><div class="modal-box"><div class="modal-header">Gerenciar Jogos</div><button onclick="window.abrirNovoJogo()" class="admin-btn" style="margin-bottom:15px; margin-top:0;">+ NOVO JOGO</button><div id="admin-games-list"></div><button onclick="document.getElementById('modal-manage-games').style.display='none'" class="secondary-btn">Fechar</button></div></div>
+    <div id="modal-manage-games" class="modal"><div class="modal-box"><div class="modal-header">Gerenciar Confrontos</div><button onclick="window.abrirNovoJogo()" class="admin-btn" style="margin-bottom:15px; margin-top:0;">+ NOVO CONFRONTO</button><div id="admin-games-list"></div><button onclick="document.getElementById('modal-manage-games').style.display='none'" class="secondary-btn">Fechar</button></div></div>
     <div id="modal-winner" class="modal">
         <div class="modal-box">
             <div class="modal-header" id="history-title">Quem venceu?</div>
@@ -418,23 +426,20 @@
         window.abrirGestaoJogos = async () => { document.getElementById('modal-manage-games').style.display = 'flex'; const snap = await getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))); const div = document.getElementById('admin-games-list'); div.innerHTML = ""; snap.forEach(d => { const m = {id:d.id, ...d.data()}; const winnerText = m.winner ? `<span style="color:green">V: ${m.winner}</span>` : `<span style="color:orange">Aberto</span>`; div.innerHTML += `<div style="border:1px solid #eee; padding:10px; margin-bottom:5px; border-radius:8px;"><div style="font-weight:bold">${m.teamA} x ${m.teamB}</div><div style="font-size:12px; color:#666;">${m.competition} | ${winnerText}</div><div class="admin-actions"><button class="btn-small btn-edit" onclick="window.abrirEditarJogo('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', '${m.competition}', '${m.round}', '${m.deadline ? m.deadline.toDate().toISOString() : ''}')">Editar</button><button class="btn-small btn-edit" onclick="window.abrirDefinirVencedor('${m.id}','${m.teamA}','${m.teamB}', '${m.round}')">Vencedor</button><button class="btn-small btn-danger" onclick="window.excluirJogo('${m.id}')">Excluir</button></div></div>`; }); };
         
         window.abrirNovoJogo = () => { 
-            document.getElementById('modal-game-title').innerText = "Novo Jogo"; 
+            document.getElementById('modal-game-title').innerText = "Novo Confronto"; 
             document.getElementById('edit-match-id').value = ""; 
             document.getElementById('adm-tA').value = ""; 
             document.getElementById('adm-tB').value = ""; 
             document.getElementById('adm-urlA').value = ""; 
             document.getElementById('adm-urlB').value = ""; 
             document.getElementById('adm-date').value = ""; 
-            
-            // Destrava a data para novos jogos
             document.getElementById('adm-date').disabled = false;
             document.getElementById('adm-date').style.backgroundColor = "#f9f9f9";
-
             document.getElementById('modal-game-editor').style.display = 'flex'; 
         }
 
         window.abrirEditarJogo = (id, tA, tB, urlA, urlB, comp, round, dateIso) => { 
-            document.getElementById('modal-game-title').innerText = "Editar Jogo"; 
+            document.getElementById('modal-game-title').innerText = "Editar Confronto"; 
             document.getElementById('edit-match-id').value = id; 
             document.getElementById('adm-tA').value = tA; 
             document.getElementById('adm-tB').value = tB; 
@@ -452,11 +457,9 @@
                 const localISOTime = (new Date(d - tzOffset)).toISOString().slice(0, 16); 
                 dateInput.value = localISOTime; 
                 
-                // LÓGICA DE TRAVAMENTO WEB
-                // Se a data do jogo for MENOR que agora (já passou), bloqueia.
                 if (d < now) {
                     dateInput.disabled = true;
-                    dateInput.style.backgroundColor = "#e0e0e0"; // Cinza visual
+                    dateInput.style.backgroundColor = "#e0e0e0"; 
                     dateInput.title = "Data bloqueada pois a votação já encerrou.";
                 } else {
                     dateInput.disabled = false;
@@ -479,7 +482,7 @@
         };
 
         window.setWinner = async (winner) => { const id = document.getElementById('winner-match-id').value; if(winner === null) await updateDoc(doc(db, "matches", id), {winner: null}); else await updateDoc(doc(db, "matches", id), {winner: winner}); alert("Salvo!"); document.getElementById('modal-winner').style.display = 'none'; window.abrirGestaoJogos(); };
-        window.excluirJogo = async (id) => { if(confirm("Tem certeza? Isso apaga todos os palpites desse jogo.")) { await deleteDoc(doc(db, "matches", id)); alert("Excluído!"); window.abrirGestaoJogos(); } };
+        window.excluirJogo = async (id) => { if(confirm("Tem certeza? Isso apaga todos os palpites desse confronto.")) { await deleteDoc(doc(db, "matches", id)); alert("Excluído!"); window.abrirGestaoJogos(); } };
         
         window.salvarJogo = async () => { 
             const id = document.getElementById('edit-match-id').value; 
@@ -500,15 +503,15 @@
 
             if(id) { 
                 await updateDoc(doc(db, "matches", id), data); 
-                msgPushTitle = `Jogo Atualizado: ${tA} x ${tB}`;
+                msgPushTitle = `Confronto Atualizado: ${tA} x ${tB}`;
                 msgPushBody = `Novo prazo: ${formattedDate}`;
-                msgWpp = `📢 *ATENÇÃO: JOGO ATUALIZADO NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Novo Prazo: ${formattedDate}\n\n📲 *Confira se seus palpites ainda valem!* https://bolao112-site.vercel.app`;
+                msgWpp = `📢 *ATENÇÃO: CONFRONTO ATUALIZADO NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Novo Prazo: ${formattedDate}\n\n📲 *Confira se seus palpites ainda valem!* https://bolao112-site.vercel.app`;
             } else { 
                 data.winner = null; 
                 await addDoc(collection(db, "matches"), data); 
-                msgPushTitle = `Novo Jogo: ${tA} x ${tB}`;
+                msgPushTitle = `Novo Confronto: ${tA} x ${tB}`;
                 msgPushBody = `Corre pra votar! Prazo: ${formattedDate}`;
-                msgWpp = `📢 *NOVO JOGO DISPONÍVEL NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Prazo: ${formattedDate}\n\n📲 *Não fica moscando, entre agora e deixe seu palpite!* https://bolao112-site.vercel.app`; 
+                msgWpp = `📢 *NOVO CONFRONTO DISPONÍVEL NO BOLÃO 112!*\n\n⚽ *${tA} x ${tB}*\n🏆 ${comp}\n⏰ Prazo: ${formattedDate}\n\n📲 *Não fica moscando, entre agora e deixe seu palpite!* https://bolao112-site.vercel.app`; 
             }
             
             if(notifyWpp) window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msgWpp)}`);
@@ -523,7 +526,7 @@
                 } catch(e) { console.error("Erro push:", e); }
             }
 
-            alert("Jogo Salvo!");
+            alert("Confronto Salvo!");
             document.getElementById('modal-game-editor').style.display='none'; 
             window.abrirGestaoJogos(); 
         };
@@ -548,8 +551,6 @@
             const now = new Date(); const openMatches = [], waitingMatches = [], finishedMatches = []; 
             allMatches.forEach(m => { 
                 m.dateObj = m.deadline ? m.deadline.toDate() : new Date(0);
-                
-                // --- NOVA LÓGICA (SE TEM VENCEDOR = FINALIZADO) ---
                 if (m.winner) {
                     finishedMatches.push(m);
                 } else if (m.dateObj > now) {
@@ -557,7 +558,6 @@
                 } else {
                     waitingMatches.push(m);
                 }
-                // --------------------------------------------------
             }); 
             openMatches.sort((a,b) => a.dateObj - b.dateObj); waitingMatches.sort((a,b) => b.dateObj - a.dateObj); finishedMatches.sort((a,b) => b.dateObj - a.dateObj); 
             
@@ -581,9 +581,20 @@
                     const headerLogo = logoUrl ? `<img src="${logoUrl}" style="width:24px;height:24px;object-fit:contain;margin-right:5px;">` : ""; 
                     
                     let statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header">${m.round || ''}<br>${prazoText} ${dateStr}</div>`; 
-                    if(isExpired) statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header" style="color:#d32f2f; font-weight:bold;">🔒 ENCERRADO<br>${m.winner ? 'Vencedor: <b style="color:green">'+m.winner+'</b>' : 'Aguardando resultado...'}</div>`; 
                     
-                    const div = document.createElement('div'); div.className = "card"; if(isExpired) div.style.background = "#f7f7f7"; 
+                    // --- LÓGICA DE CAMPEÃO E CARD DOURADO ---
+                    let labelVencedor = "Vencedor";
+                    let cardClass = "card"; // Classe padrão
+                    
+                    if (m.round === "Final") {
+                        cardClass = "card card-final"; // Adiciona classe dourada
+                        labelVencedor = "🏆 Campeão";   // Muda texto
+                    }
+                    
+                    if(isExpired) statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header" style="color:#d32f2f; font-weight:bold;">🔒 ENCERRADO<br>${m.winner ? labelVencedor+': <b style="color:green">'+m.winner+'</b>' : 'Aguardando resultado...'}</div>`; 
+                    // ----------------------------------------
+                    
+                    const div = document.createElement('div'); div.className = cardClass; if(isExpired && m.round !== "Final") div.style.background = "#f7f7f7"; 
                     const imgA = `<img src="${m.teamAUrl}" class="team-img" onerror="this.src='https://placehold.co/50?text=A'">`; 
                     const imgB = `<img src="${m.teamBUrl}" class="team-img" onerror="this.src='https://placehold.co/50?text=B'">`; 
                     const clickA = isExpired ? "" : `onclick="window.votar('${m.id}', '${m.teamA}', '${m.teamA}', '${m.teamB}')"`; 
@@ -602,10 +613,10 @@
                     document.getElementById('lista-jogos').appendChild(div); 
                 }); 
             }; 
-            renderSection("✅ JOGOS DISPONÍVEIS ✅", openMatches, "#006400"); 
+            renderSection("✅ CONFRONTOS DISPONÍVEIS ✅", openMatches, "#006400"); 
             renderSection("⏳ AGUARDANDO RESULTADO FINAL ⏳", waitingMatches, "#F9A825"); 
-            renderSection("🚫 JOGOS FINALIZADOS 🚫", finishedMatches, "#D32F2F"); 
-            if(allMatches.length === 0) document.getElementById('lista-jogos').innerHTML = "<div style='text-align:center; color:#999; padding:40px;'>Nenhum jogo cadastrado.</div>"; 
+            renderSection("🚫 CONFRONTOS FINALIZADOS 🚫", finishedMatches, "#D32F2F"); 
+            if(allMatches.length === 0) document.getElementById('lista-jogos').innerHTML = "<div style='text-align:center; color:#999; padding:40px;'>Nenhum confronto cadastrado.</div>"; 
             document.getElementById('loading-jogos').classList.add('hidden'); 
         };
 
@@ -643,24 +654,12 @@
         };
 
         window.verNovidades = () => { 
-    const list = document.getElementById('history-list'); 
-    document.getElementById('history-title').innerText = "Novidades v1.3.13"; 
-    list.innerHTML = `
-        <div class="guide-title">🛡️ SEGURANÇA MÁXIMA</div>
-        <div class="log-item" style="background:#e8f5e9; border-left:4px solid #006400; padding:10px;">
-            <b>TRAVA ANTI-FRAUDE:</b> Implementamos o bloqueio técnico de datas. Após o início do jogo, <b>ninguém</b> (nem o Admin) consegue alterar o horário para reabrir votos. Transparência total!
-        </div>
-        <br>
-        <div class="guide-title">📢 OUTRAS MELHORIAS</div>
-        <div class="log-item">• <b>NOTIFICAÇÕES:</b> Controle total pelo Site e App.</div>
-        <div class="log-item">• <b>EMPATE:</b> Opção para fase de testes.</div>
-        <div class="log-item">• <b>HISTÓRICO:</b> Ícones ✅ e ❌ nos palpites.</div>
-    `; 
-    document.getElementById('modal-history').style.display = 'flex'; 
-};
+            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Novidades v1.3.13"; 
+            list.innerHTML = `<div class="guide-title">🛡️ SEGURANÇA MÁXIMA</div><div class="log-item" style="background:#e8f5e9; border-left:4px solid #006400; padding:10px;"><b>TRAVA ANTI-FRAUDE:</b> Implementamos o bloqueio técnico de datas. Após o início do confronto, <b>ninguém</b> (nem o Admin) consegue alterar o horário para reabrir votos. Transparência total!</div><br><div class="guide-title">📢 OUTRAS MELHORIAS</div><div class="log-item">• <b>NOTIFICAÇÕES:</b> Controle total pelo Site e App.</div><div class="log-item">• <b>EMPATE:</b> Opção para fase de testes.</div><div class="log-item">• <b>HISTÓRICO:</b> Ícones ✅ e ❌ nos palpites.</div>`; 
+            document.getElementById('modal-history').style.display = 'flex'; 
+        };
 
         onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.13", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
     </script>
 </body>
 </html>
-
