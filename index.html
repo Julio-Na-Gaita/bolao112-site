@@ -27,7 +27,7 @@
         #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: white; padding: 20px; box-sizing: border-box; position: relative; z-index: 5000; }
         
         /* INPUTS PADRÃO (TEXTO/DATA) */
-        input:not([type="checkbox"]), select { 
+        input:not([type="checkbox"]), select, textarea { 
             padding: 14px; 
             margin: 8px 0; 
             width: 100%; 
@@ -40,17 +40,17 @@
             transition: 0.3s; 
             -webkit-appearance: none; /* Remove estilo iOS apenas de textos */
         }
-        input:focus, select:focus { border-color: var(--primary); outline: none; background: #fff; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; background: #fff; }
         
-        /* CORREÇÃO DAS CHECKBOXES (ELAS SUMIRAM POR CAUSA DO WEBKIT-APPEARANCE) */
+        /* CORREÇÃO DAS CHECKBOXES */
         input[type="checkbox"] {
-            -webkit-appearance: checkbox; /* Traz de volta o visual de checkbox */
+            -webkit-appearance: checkbox; 
             appearance: checkbox;
             width: 20px;
             height: 20px;
             margin-right: 10px;
             cursor: pointer;
-            accent-color: var(--primary); /* Deixa a caixa verde quando marcada */
+            accent-color: var(--primary); 
         }
 
         button { padding: 16px; background-color: var(--primary); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; width: 100%; font-weight: 700; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,100,0,0.2); transition: transform 0.1s; }
@@ -117,7 +117,7 @@
         .comp-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         .search-icon-btn { cursor: pointer; color: #555; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-left: 5px; background: #eee; }
         
-        /* ESTILO CORRIGIDO PARA CHECKBOXES DE NOTIFICAÇÃO */
+        /* ESTILO PARA CHECKBOXES DE NOTIFICAÇÃO */
         .notify-option { display: flex; align-items: center; margin-bottom: 12px; font-size: 14px; color: #333; font-weight: 500; }
         .notify-option input { margin-right: 12px; }
     </style>
@@ -164,7 +164,17 @@
             </table>
         </div>
 
-        <div id="container-regras" class="container hidden"><div id="regras-texto" class="rules-box">...</div></div>
+        <div id="container-regras" class="container hidden">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+                <button id="btn-edit-rules" class="btn-small hidden" style="width:auto; background-color:#333; color:white;" onclick="window.editarRegras()">✏️ Editar</button>
+            </div>
+            <div id="regras-texto" class="rules-box">...</div>
+            <textarea id="regras-input" class="rules-box hidden" style="width:100%; height:400px; font-family:inherit;"></textarea>
+            <div id="rules-actions" class="hidden" style="margin-top:10px; display:flex; gap:10px; justify-content:flex-end;">
+                <button onclick="window.cancelarEdicaoRegras()" class="secondary-btn" style="margin:0; width:auto;">Cancelar</button>
+                <button onclick="window.salvarRegras()" style="margin:0; width:auto;">Salvar</button>
+            </div>
+        </div>
 
         <div id="container-perfil" class="container hidden">
             <div class="profile-header">
@@ -266,10 +276,7 @@
                 }); 
                 const totalValue = totalPayments * 10; 
                 document.getElementById('pote-valor').innerText = totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            } catch(e) {
-                console.error("Erro pote:", e);
-                document.getElementById('pote-valor').innerText = "Erro ao calcular";
-            }
+            } catch(e) { console.error("Erro pote:", e); document.getElementById('pote-valor').innerText = "Erro ao calcular"; }
         };
 
         window.votar = async (matchId, time, teamA, teamB) => {
@@ -304,7 +311,6 @@
                             if(voted === tA.trim().toLowerCase()) teamIcon = `<img src="${urlA}" style="width:20px; height:20px; object-fit:contain; margin-left:auto;">`;
                             else if(voted === tB.trim().toLowerCase()) teamIcon = `<img src="${urlB}" style="width:20px; height:20px; object-fit:contain; margin-left:auto;">`;
                             
-                            // Lógica do ✅ ou ❌ com TRIM
                             if(winner && winner !== "Empate") {
                                 if(data.teamSelected.trim() === winner.trim()) statusIcon = `<span class="material-icons-round" style="color:green; font-size:16px; margin-left:5px;">check_circle</span>`;
                                 else statusIcon = `<span class="material-icons-round" style="color:red; font-size:16px; margin-left:5px;">cancel</span>`;
@@ -325,17 +331,8 @@
                 const i = new Image(); 
                 i.src = e.target.result; 
                 i.onload = () => { 
-                    const c = document.createElement('canvas'); 
-                    const ctx = c.getContext('2d'); 
-                    const scale = 300/i.width; 
-                    c.width=300; 
-                    c.height=i.height*scale; 
-                    ctx.drawImage(i,0,0,c.width,c.height); 
-                    const b64 = c.toDataURL('image/jpeg',0.7).split(',')[1]; 
-                    updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.13"}).then(() => { 
-                        document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; 
-                        alert("Foto salva!"); 
-                    }); 
+                    const c = document.createElement('canvas'); const ctx = c.getContext('2d'); const scale = 300/i.width; c.width=300; c.height=i.height*scale; ctx.drawImage(i,0,0,c.width,c.height); const b64 = c.toDataURL('image/jpeg',0.7).split(',')[1]; 
+                    updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.13"}).then(() => { document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; alert("Foto salva!"); }); 
                 }; 
             }; 
             r.readAsDataURL(file); 
@@ -344,10 +341,16 @@
         window.carregarRegras = async () => { 
             try {
                 const d = await getDoc(doc(db, "settings", "general")); 
-                document.getElementById('regras-texto').innerText = d.exists() ? d.data().rulesText : "Carregando..."; 
+                const texto = d.exists() ? d.data().rulesText : "Carregando...";
+                document.getElementById('regras-texto').innerText = texto;
+                document.getElementById('regras-input').value = texto; 
             } catch(e) { console.log(e); }
         };
         
+        window.editarRegras = () => { document.getElementById('regras-texto').classList.add('hidden'); document.getElementById('regras-input').classList.remove('hidden'); document.getElementById('rules-actions').classList.remove('hidden'); document.getElementById('btn-edit-rules').classList.add('hidden'); };
+        window.cancelarEdicaoRegras = () => { document.getElementById('regras-texto').classList.remove('hidden'); document.getElementById('regras-input').classList.add('hidden'); document.getElementById('rules-actions').classList.add('hidden'); document.getElementById('btn-edit-rules').classList.remove('hidden'); document.getElementById('regras-input').value = document.getElementById('regras-texto').innerText; };
+        window.salvarRegras = async () => { const novoTexto = document.getElementById('regras-input').value; await updateDoc(doc(db, "settings", "general"), { rulesText: novoTexto }); document.getElementById('regras-texto').innerText = novoTexto; window.cancelarEdicaoRegras(); alert("Regras atualizadas!"); };
+
         window.carregarPerfil = async () => {
             if(!currentUser) return;
             try {
@@ -360,6 +363,7 @@
                     
                     if(u.isAdmin) { 
                         document.getElementById('btn-admin-painel').style.display = 'flex'; 
+                        document.getElementById('btn-edit-rules').classList.remove('hidden');
                         window.loadCompetitions();
                     }
                     updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.13" });
@@ -384,42 +388,22 @@
         window.loadCompetitions = async () => {
             const docRef = doc(db, "settings", "competitions");
             const snap = await getDoc(docRef);
-            if (snap.exists()) {
-                currentCompetitions = snap.data().items || [];
-            } else {
-                currentCompetitions = [{name: "Copa do Mundo", logo: ""}, {name: "Champions League", logo: ""}];
-                await setDoc(docRef, { items: currentCompetitions });
-            }
+            if (snap.exists()) { currentCompetitions = snap.data().items || []; } else { currentCompetitions = [{name: "Copa do Mundo", logo: ""}, {name: "Champions League", logo: ""}]; await setDoc(docRef, { items: currentCompetitions }); }
             window.updateCompSelect();
         }
 
         window.updateCompSelect = () => {
             const select = document.getElementById('adm-comp');
             select.innerHTML = "";
-            currentCompetitions.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.name; opt.innerText = c.name;
-                select.appendChild(opt);
-            });
+            currentCompetitions.forEach(c => { const opt = document.createElement('option'); opt.value = c.name; opt.innerText = c.name; select.appendChild(opt); });
         }
 
         window.abrirGestaoCompeticoes = () => { document.getElementById('modal-manage-comps').style.display = 'flex'; window.renderCompList(); }
         window.limparFormComp = () => { document.getElementById('new-comp-name').value = ""; document.getElementById('new-comp-logo').value = ""; document.getElementById('edit-comp-original-name').value = ""; }
         
         window.renderCompList = () => {
-            const div = document.getElementById('comp-list');
-            div.innerHTML = "";
-            currentCompetitions.forEach(c => {
-                const logoImg = c.logo ? `<img src="${c.logo}" style="width:20px;height:20px;object-fit:contain;margin-right:5px;">` : "";
-                div.innerHTML += `
-                    <div class="comp-item">
-                        <div style="display:flex;align-items:center;">${logoImg}<span>${c.name}</span></div>
-                        <div>
-                            <span style="color:blue; cursor:pointer; margin-right:10px; font-weight:bold;" onclick="window.prepararEdicaoComp('${c.name}', '${c.logo}')">EDITAR</span>
-                            <span style="color:red; cursor:pointer; font-weight:bold;" onclick="window.removeComp('${c.name}')">EXCLUIR</span>
-                        </div>
-                    </div>`;
-            });
+            const div = document.getElementById('comp-list'); div.innerHTML = "";
+            currentCompetitions.forEach(c => { const logoImg = c.logo ? `<img src="${c.logo}" style="width:20px;height:20px;object-fit:contain;margin-right:5px;">` : ""; div.innerHTML += `<div class="comp-item"><div style="display:flex;align-items:center;">${logoImg}<span>${c.name}</span></div><div><span style="color:blue; cursor:pointer; margin-right:10px; font-weight:bold;" onclick="window.prepararEdicaoComp('${c.name}', '${c.logo}')">EDITAR</span><span style="color:red; cursor:pointer; font-weight:bold;" onclick="window.removeComp('${c.name}')">EXCLUIR</span></div></div>`; });
         }
 
         window.prepararEdicaoComp = (name, logo) => { document.getElementById('new-comp-name').value = name; document.getElementById('new-comp-logo').value = logo; document.getElementById('edit-comp-original-name').value = name; }
@@ -488,11 +472,9 @@
             document.getElementById('winner-round').value = round;
             document.getElementById('btn-win-A').innerText = tA; 
             document.getElementById('btn-win-B').innerText = tB; 
-            // Lógica do botão de Empate
             const btnDraw = document.getElementById('btn-win-draw');
             if(round === "Fase de Grupos (Apenas para teste)") btnDraw.style.display = "block";
             else btnDraw.style.display = "none";
-            
             document.getElementById('modal-winner').style.display = 'flex'; 
         };
 
@@ -564,7 +546,19 @@
             const myGuesses = {}; gSnap.forEach(d => { if(d.data().userId === currentUser.uid) myGuesses[d.data().matchId] = d.data().teamSelected; }); 
             let allMatches = []; mSnap.forEach(d => allMatches.push({id: d.id, ...d.data()})); 
             const now = new Date(); const openMatches = [], waitingMatches = [], finishedMatches = []; 
-            allMatches.forEach(m => { m.dateObj = m.deadline ? m.deadline.toDate() : new Date(0); if (m.dateObj > now) openMatches.push(m); else if (!m.winner) waitingMatches.push(m); else finishedMatches.push(m); }); 
+            allMatches.forEach(m => { 
+                m.dateObj = m.deadline ? m.deadline.toDate() : new Date(0);
+                
+                // --- NOVA LÓGICA (SE TEM VENCEDOR = FINALIZADO) ---
+                if (m.winner) {
+                    finishedMatches.push(m);
+                } else if (m.dateObj > now) {
+                    openMatches.push(m);
+                } else {
+                    waitingMatches.push(m);
+                }
+                // --------------------------------------------------
+            }); 
             openMatches.sort((a,b) => a.dateObj - b.dateObj); waitingMatches.sort((a,b) => b.dateObj - a.dateObj); finishedMatches.sort((a,b) => b.dateObj - a.dateObj); 
             
             const renderSection = (title, matches, color) => { 
@@ -658,4 +652,3 @@
     </script>
 </body>
 </html>
-
