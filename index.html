@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#006400">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
-    <title>Bolão 112 F.C 2026</title>
+    <title>Bolão 112 F.C - v1.3.2</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         :root { 
@@ -17,7 +17,7 @@
             --gold: #FFD700;
             --bg: #f8f9fa; 
             --text: #1c1e21;
-            /* Fonte Serifada - Classic Badge */
+            /* Fonte Serifada - Identidade v1.3.2 Classic Badge */
             --font-stack: "Times New Roman", Times, serif;
         }
 
@@ -30,15 +30,9 @@
             transition: background-image 0.3s ease-in-out;
         }
 
-        /* --- ESTILO CLASSIC BADGE (CANTOS CORTADOS) --- */
-        .cut-corner {
-            clip-path: polygon(
-                10px 0, 100% 0, 
-                100% calc(100% - 10px), calc(100% - 10px) 100%, 
-                0 100%, 0 10px
-            );
-        }
-
+        /* --- FORMAS CLASSIC BADGE (CANTOS CORTADOS) --- */
+        .cut-corner { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+        
         header { 
             background-color: var(--primary); color: white; padding: 15px; 
             padding-top: max(15px, env(safe-area-inset-top)); 
@@ -98,19 +92,23 @@
             background: linear-gradient(145deg, #FFFDE7, #FFF9C4) !important;
         }
         .match-comp { font-size: 12px; font-weight: 900; color: var(--primary); text-transform: uppercase; text-align: center; margin-bottom: 2px; }
-        .match-info { font-size: 12px; color: #666; text-align: center; font-weight: 600; margin-bottom: 12px; }
+        .match-info { font-size: 13px; color: #666; text-align: center; font-weight: 600; margin-bottom: 12px; }
         .teams { display: flex; justify-content: space-between; align-items: center; }
         .team-box { width: 35%; display: flex; flex-direction: column; align-items: center; cursor: pointer; padding: 8px; background: #f0f0f0; border: 1px solid transparent; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); transition: 0.2s; }
         .team-box.selected { background: var(--primary); color: white; border-color: var(--gold); }
         .team-box img { width: 45px; height: 45px; object-fit: contain; margin-bottom: 5px; }
-        .team-name { font-size: 11px; font-weight: 800; text-align: center; line-height: 1.1; height: 24px; display: flex; align-items: center; justify-content: center; }
+        .team-name { font-size: 12px; font-weight: 800; text-align: center; line-height: 1.1; height: 26px; display: flex; align-items: center; justify-content: center; }
         .vs { font-size: 22px; font-weight: 900; color: #ccc; font-family: sans-serif; }
         
         /* Tabelas */
         table { width: 100%; border-collapse: collapse; background: white; border: 2px solid var(--primary); font-size: 14px; }
         th { background: #eee; padding: 10px 4px; font-weight: 900; color: #444; border-bottom: 2px solid #ccc; font-size: 11px; text-transform: uppercase; }
         td { padding: 12px 4px; text-align: center; border-bottom: 1px solid #eee; font-weight: 600; }
+        .td-nome { text-align: left; display: flex; align-items: center; font-weight: 700; cursor: pointer; padding-left: 10px; font-size: 15px; }
         .rank-avatar { width: 32px; height: 32px; border-radius: 50%; vertical-align: middle; margin-right: 8px; border: 1px solid #999; }
+        .debit { color: #d32f2f; font-weight: 900; }
+        .points { font-weight: 900; font-size: 18px; color: #000; }
+        .clickable-stats { cursor: pointer; text-decoration: underline; text-decoration-color: #ccc; }
         .row-gold { background: #FFF9C4; } .row-silver { background: #E0E0E0; } .row-bronze { background: #FFCCBC; }
 
         /* Modals */
@@ -124,10 +122,9 @@
         .month-item.paid { background: #2E7D32; color: white; border-color: #2E7D32; }
 
         /* Whitelist Items */
-        .whitelist-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f5f5f5; border-bottom: 1px solid #ddd; font-weight: bold; font-size: 14px; }
+        .whitelist-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f5f5f5; border-bottom: 1px solid #ddd; font-weight: bold; font-size: 14px; margin-bottom: 5px; }
         .btn-delete { background: none; border: none; color: #d32f2f; cursor: pointer; padding: 5px; width: auto; margin: 0; clip-path: none; }
 
-        /* Section Header */
         .section-tag { background: rgba(255,255,255,0.95); border: 2px solid; padding: 8px; text-align: center; font-weight: 900; text-transform: uppercase; font-size: 14px; margin: 20px auto 10px auto; width: fit-content; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
         .hidden { display: none !important; }
@@ -143,7 +140,7 @@
             <input type="text" id="fullname" placeholder="Nome de Exibição" class="hidden">
             <input type="text" id="email" placeholder="Usuário" autocapitalize="none">
             <input type="password" id="password" placeholder="Senha">
-            <button onclick="window.processarAuth()" id="btn-login">ENTRAR</button>
+            <button onclick="window.processarAuth()" id="btn-login" style="background-color: var(--primary); border: 2px solid #004d00;">ENTRAR</button>
             <p id="login-msg" class="error"></p>
             <div class="toggle-link" onclick="window.alternarModo()" id="toggle-btn">NÃO TEM CONTA? CRIAR</div>
         </div>
@@ -181,7 +178,7 @@
                 <div id="last-update" style="color: white; font-style: italic; margin-top: 4px;">...</div>
             </div>
             <table id="tabela-ranking">
-                <thead><tr><th>Pos</th><th>Participante</th><th>D</th><th>V</th><th>F</th><th>PTS</th></tr></thead>
+                <thead><tr><th>Pos</th><th>Nome</th><th>D</th><th>V</th><th>F</th><th>PTS</th></tr></thead>
                 <tbody id="lista-ranking"></tbody>
             </table>
         </div>
@@ -227,9 +224,7 @@
     </div>
 
     <div id="modal-foto" class="modal" onclick="this.style.display='none'"><img id="modal-img" style="max-width: 90%; max-height: 80%; border: 5px solid white;"></div>
-    
     <div id="modal-pote" class="modal"><div class="modal-box" style="text-align: center;"><div class="modal-header">💰 POTE DE OURO 💰</div><div style="color: #666;">Total acumulado:</div><div id="pote-valor" class="pot-value">...</div><div style="font-size: 11px; color: #888; margin-top: 15px;">Quanto mais pagantes, maior o prêmio!</div><button onclick="document.getElementById('modal-pote').style.display='none'" style="margin-top: 20px;">SHOW!</button></div></div>
-    
     <div id="modal-history" class="modal"><div class="modal-box"><div class="modal-header" id="history-title">...</div><div id="history-list"></div><button onclick="document.getElementById('modal-history').style.display='none'" class="secondary-btn" style="margin-top: 15px;">FECHAR</button></div></div>
 
     <div id="modal-whitelist" class="modal">
@@ -241,10 +236,7 @@
                 <button onclick="window.criarConvite()" style="margin: 0; width: auto; background: var(--primary);">+</button>
             </div>
             <hr style="margin: 15px 0; border: 0; border-top: 1px solid #ccc;">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 10px;">
-                <span>Convites Vigentes:</span>
-                <span style="color: #888;">Ordem A-Z</span>
-            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; margin-bottom: 10px;"><span>Convites Vigentes:</span><span style="color: #888;">Ordem A-Z</span></div>
             <div id="whitelist-list" style="max-height: 200px; overflow-y: auto;"></div>
             <button onclick="document.getElementById('modal-whitelist').style.display='none'" class="secondary-btn" style="margin-top: 15px;">FECHAR</button>
         </div>
@@ -264,6 +256,7 @@
     </div>
 
     <div id="modal-finance" class="modal"><div class="modal-box" style="max-width: 600px;"><div class="modal-header">Gestão Financeira</div><div id="finance-list"></div><button onclick="document.getElementById('modal-finance').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
+    <div id="modal-manage-games" class="modal"><div class="modal-box"><div class="modal-header">Gerenciar Confrontos</div><div id="admin-games-list"></div><button onclick="document.getElementById('modal-manage-games').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
     
     <div id="modal-game-editor" class="modal">
         <div class="modal-box">
@@ -296,8 +289,8 @@
             <button onclick="document.getElementById('modal-winner').style.display='none'" class="secondary-btn">CANCELAR</button>
         </div>
     </div>
-
-    <div id="modal-manage-comps" class="modal"><div class="modal-box"><div class="modal-header">Competições</div><div style="background:#eee;padding:10px;margin-bottom:10px;"><input type="hidden" id="edit-comp-orig"><input id="new-comp-name" placeholder="Nome"><div style="display:flex;gap:5px;"><input id="new-comp-logo" placeholder="URL Logo"><span class="material-icons-round search-icon-btn" onclick="window.buscarLogo('new-comp-name')">search</span></div><div style="text-align:right;margin-top:5px;"><button onclick="window.limparComp()" class="btn-small secondary-btn" style="width:auto;margin:0;">Limpar</button><button onclick="window.salvarCompeticao()" class="btn-small" style="width:auto;margin:0 0 0 5px;">Salvar</button></div></div><div id="comp-list"></div><button onclick="document.getElementById('modal-manage-comps').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
+    
+    <div id="modal-manage-comps" class="modal"><div class="modal-box"><div class="modal-header">Competições</div><div style="background:#f9f9f9;padding:10px;margin-bottom:10px;border:1px solid #ccc;"><input type="hidden" id="edit-comp-orig"><input id="new-comp-name" placeholder="Nome"><div style="display:flex;gap:5px;"><input id="new-comp-logo" placeholder="URL Logo"><span class="material-icons-round search-icon-btn" onclick="window.buscarLogo('new-comp-name')">search</span></div><div style="text-align:right;margin-top:5px;"><button onclick="window.limparComp()" class="btn-small secondary-btn" style="width:auto;margin:0;">Limpar</button><button onclick="window.salvarCompeticao()" class="btn-small" style="width:auto;margin:0 0 0 5px;">Salvar</button></div></div><div id="comp-list"></div><button onclick="document.getElementById('modal-manage-comps').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
@@ -308,7 +301,7 @@
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
         let currentUser = null; let isRegisterMode = false; let currentCompetitions = []; let inviteToDeleteId = "";
 
-        // --- FUNÇÕES DE NAVEGAÇÃO ---
+        // --- NAVEGAÇÃO ---
         window.mudarAba = (aba) => {
             const bgs = {jogos:'bg_jogos.png', ranking:'bg_ranking.png', regras:'bg_regras.png', perfil:'bg_perfil.png'};
             document.body.style.backgroundImage = `url('${bgs[aba]}')`;
@@ -320,53 +313,25 @@
             if(aba==='jogos') window.carregarJogos(); if(aba==='ranking') window.carregarRanking(); if(aba==='regras') window.carregarRegras(); if(aba==='perfil') window.carregarPerfil();
         };
 
-        // --- GESTÃO DE CONVITES (WHITELIST) ---
+        // --- GESTÃO DE CONVITES ---
         window.abrirGestaoConvites = () => {
             document.getElementById('modal-whitelist').style.display = 'flex';
-            const listDiv = document.getElementById('whitelist-list');
-            // Listener em tempo real para whitelist
             onSnapshot(collection(db, "whitelist"), (snap) => {
                 let html = "";
                 const invites = [];
                 snap.forEach(d => invites.push(d.id));
-                invites.sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase())); // Ordem A-Z
+                invites.sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase()));
                 invites.forEach(u => {
-                    html += `<div class="whitelist-item">
-                        <span style="display:flex;align-items:center;"><span class="material-icons-round" style="font-size:16px;margin-right:5px;color:#888;">person</span>${u}</span>
-                        <button class="btn-delete" onclick="window.confirmarExclusaoConvite('${u}')"><span class="material-icons-round">delete</span></button>
-                    </div>`;
+                    html += `<div class="whitelist-item"><span><span class="material-icons-round" style="font-size:16px;vertical-align:middle;margin-right:5px;color:#888;">person</span>${u}</span><button class="btn-delete" onclick="window.confirmarExclusaoConvite('${u}')"><span class="material-icons-round">delete</span></button></div>`;
                 });
-                listDiv.innerHTML = html || "<div style='text-align:center;padding:10px;color:#999;'>Nenhum convite ativo.</div>";
+                document.getElementById('whitelist-list').innerHTML = html || "<div style='text-align:center;padding:10px;color:#999;'>Nenhum convite ativo.</div>";
             });
         };
+        window.criarConvite = async () => { const input = document.getElementById('new-invite-user'); const user = input.value.trim().toLowerCase(); if(!user) return alert("Digite o usuário."); await setDoc(doc(db,"whitelist",user), {active:true}); input.value=""; alert("Criado!"); };
+        window.confirmarExclusaoConvite = (uid) => { inviteToDeleteId = uid; document.getElementById('delete-target-user').innerText = uid.toUpperCase(); document.getElementById('modal-delete-confirm').style.display = 'flex'; };
+        window.executarExclusaoConvite = async () => { await deleteDoc(doc(db,"whitelist",inviteToDeleteId)); document.getElementById('modal-delete-confirm').style.display = 'none'; alert("Revogado!"); };
 
-        window.criarConvite = async () => {
-            const input = document.getElementById('new-invite-user');
-            const user = input.value.trim().toLowerCase();
-            if(!user) return alert("Digite o usuário.");
-            try {
-                await setDoc(doc(db, "whitelist", user), { active: true });
-                input.value = "";
-                alert("Convite criado com sucesso!");
-            } catch(e) { alert("Erro ao criar: " + e.message); }
-        };
-
-        window.confirmarExclusaoConvite = (userId) => {
-            inviteToDeleteId = userId;
-            document.getElementById('delete-target-user').innerText = userId.toUpperCase();
-            document.getElementById('modal-delete-confirm').style.display = 'flex';
-        };
-
-        window.executarExclusaoConvite = async () => {
-            if(!inviteToDeleteId) return;
-            try {
-                await deleteDoc(doc(db, "whitelist", inviteToDeleteId));
-                document.getElementById('modal-delete-confirm').style.display = 'none';
-                alert("Acesso revogado.");
-            } catch(e) { alert("Erro ao excluir: " + e.message); }
-        };
-
-        // --- CORE DO APP ---
+        // --- CORE ---
         window.processarAuth = async () => {
             const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg');
             const email = document.getElementById('email').value.trim().toLowerCase() + "@bolao112.com";
@@ -374,6 +339,7 @@
             btn.disabled = true; msg.innerText = "Verificando...";
             try {
                 if(isRegisterMode) {
+                    // CADASTRO: CHECA WHITELIST
                     const name = document.getElementById('fullname').value.trim();
                     const user = document.getElementById('email').value.trim().toLowerCase();
                     if(!name || pass.length < 6) throw new Error("Preencha corretamente.");
@@ -382,6 +348,7 @@
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
                     await setDoc(doc(db, "users", res.user.uid), { name: name, username: user, isAdmin: false, debts: 0, appVersion: "Web v1.3.2" });
                 } else {
+                    // LOGIN: NÃO CHECA WHITELIST (Evita travamento)
                     await signInWithEmailAndPassword(auth, email, pass);
                 }
             } catch(e) { msg.innerText = e.message; btn.disabled = false; }
@@ -392,13 +359,11 @@
             const [mSnap, gSnap, cSnap] = await Promise.all([getDocs(query(collection(db, "matches"))), getDocs(collection(db, "guesses")), getDoc(doc(db, "settings", "competitions"))]);
             const logos = {}; if(cSnap.exists()) (cSnap.data().items||[]).forEach(i => logos[i.name] = i.logo);
             const guesses = {}; gSnap.forEach(g => { if(g.data().userId === currentUser.uid) guesses[g.data().matchId] = g.data().teamSelected; });
-            
             const matches = []; mSnap.forEach(d => matches.push({id:d.id, ...d.data(), date: d.data().deadline?.toDate()}));
             const now = new Date();
             const open = matches.filter(m => m.date > now && !m.winner).sort((a,b) => a.date - b.date);
             const wait = matches.filter(m => m.date <= now && !m.winner).sort((a,b) => b.date - a.date);
             const done = matches.filter(m => m.winner).sort((a,b) => b.date - a.date);
-
             const render = (list, title, color) => {
                 if(!list.length) return;
                 const div = document.createElement('div');
@@ -408,18 +373,12 @@
                     const isExpired = m.date <= now;
                     const myVote = guesses[m.id];
                     const dateStr = m.date ? m.date.toLocaleDateString('pt-BR') + ' ' + m.date.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
-                    
                     let html = `<div class="card ${isFinal?'card-final':''}">`;
                     if(logos[m.competition]) html += `<img src="${logos[m.competition]}" class="comp-watermark">`;
                     if(isFinal) html += `<div style="text-align:center;color:#F57F17;font-weight:900;font-size:12px;margin-bottom:5px;">✨🏆 GRANDE FINAL • VALE DOBRO 🏆✨</div>`;
-                    
-                    // Header com Emoticons
                     let statusLine = isExpired ? `<span style="color:#d32f2f;">🔒 ENCERRADO: ${dateStr}</span>` : `<span class="material-icons-round" style="font-size:12px;vertical-align:middle;">schedule</span> PRAZO: ${dateStr}`;
                     if(isExpired && m.winner) statusLine = isFinal ? `<span style="color:#F57F17;font-size:16px;">🏆 CAMPEÃO: ${m.winner}</span>` : `<span style="color:#006400;font-size:14px;">VENCEDOR: ${m.winner}</span>`;
-                    
                     html += `<div class="match-comp">${m.competition}</div><div class="match-info">${m.round}<br>${statusLine}</div>`;
-                    
-                    // Times
                     html += `<div class="teams">
                         <div class="team-box ${myVote===m.teamA?'selected':''}" ${!isExpired ? `onclick="window.votar('${m.id}','${m.teamA}')"` : ''}>
                             <img src="${m.teamAUrl}" onerror="this.src='https://placehold.co/50?text=A'">
@@ -431,14 +390,12 @@
                             <div class="team-name">${m.teamB}</div>
                         </div>
                     </div>`;
-                    
                     if(myVote && !isExpired) html += `<div class="status-msg" style="color:#2e7d32;">✅ Voto confirmado: ${myVote}</div>`;
                     html += `<div class="status-msg"><span onclick="window.verPalpites('${m.id}','${m.teamA}','${m.teamB}',${isExpired},'${m.teamAUrl}','${m.teamBUrl}','${m.winner||''}')" style="text-decoration:underline;cursor:pointer;color:#555;">${isExpired?'Ver Palpites da Galera':'Quem já votou?'}</span></div></div>`;
                     div.innerHTML += html;
                 });
                 document.getElementById('lista-jogos').appendChild(div);
             };
-
             render(open, "✅ CONFRONTOS DISPONÍVEIS ✅", "#006400");
             render(wait, "⏳ AGUARDANDO RESULTADO ⏳", "#F9A825");
             render(done, "🚫 CONFRONTOS FINALIZADOS 🚫", "#D32F2F");
@@ -452,18 +409,13 @@
             const tbody = document.getElementById('lista-ranking'); tbody.innerHTML = "<tr><td colspan='6'>Calculando...</td></tr>";
             const [uSnap, gSnap, mSnap] = await Promise.all([getDocs(collection(db,"users")), getDocs(collection(db,"guesses")), getDocs(collection(db,"matches"))]);
             const matches = []; mSnap.forEach(d => { if(d.data().winner) matches.push({id:d.id, ...d.data()}); });
-            
-            // Last Update
             const lastM = matches.sort((a,b) => b.deadline?.toDate() - a.deadline?.toDate())[0];
             if(lastM) document.getElementById('last-update').innerText = "Última atualização: " + lastM.teamA + " x " + lastM.teamB;
-
             const rank = [];
             const oitavas = matches.filter(m => m.round === "Oitavas de final").reduce((acc, m) => { (acc[m.competition] = acc[m.competition] || []).push(m); return acc; }, {});
-
             uSnap.forEach(u => {
                 const ud = u.data(); let pts=0, v=0, f=0, d=ud.debts||0, hist=[];
                 const myGs = []; gSnap.forEach(g => { if(g.data().userId===u.id) myGs.push(g.data()); });
-                
                 myGs.forEach(g => {
                     const m = matches.find(x => x.id === g.matchId);
                     if(m && m.winner === g.teamSelected) {
@@ -472,133 +424,50 @@
                         else { pts+=3; v++; hist.push(`✅ Acerto: ${m.teamA} x ${m.teamB}`); }
                     }
                 });
-                
-                for(let c in oitavas) {
-                    const ms = oitavas[c];
-                    if(ms.every(m => myGs.some(g => g.matchId===m.id && g.teamSelected===m.winner))) { pts+=3; hist.push(`🌟 Bônus Oitavas: ${c}`); }
-                }
+                for(let c in oitavas) { if(oitavas[c].every(m => myGs.some(g => g.matchId===m.id && g.teamSelected===m.winner))) { pts+=3; hist.push(`🌟 Bônus Oitavas: ${c}`); } }
                 if(d>0) { pts-=d; hist.push(`🔻 Inadimplência (-${d})`); }
                 rank.push({name:ud.name, photo:ud.photoBase64, pts, v, f, d, hist});
             });
-
             rank.sort((a,b) => b.pts - a.pts || a.d - b.d || b.v - a.v || b.f - a.f);
             tbody.innerHTML = "";
             rank.forEach((r,i) => {
                 let cls = ""; if(i===0) cls="row-gold"; if(i===1) cls="row-silver"; if(i===2) cls="row-bronze";
                 const img = r.photo ? `data:image/jpeg;base64,${r.photo}` : 'https://via.placeholder.com/30';
-                tbody.innerHTML += `<tr class="${cls}">
-                    <td>${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'}</td>
-                    <td class="td-nome" onclick="window.verFoto('${img}')"><img src="${img}" class="rank-avatar">${r.name}</td>
-                    <td class="debit clickable-stats" onclick="window.verExtrato('${r.name}')">${r.d}</td>
-                    <td class="clickable-stats" onclick="window.verExtrato('${r.name}')">${r.v}</td>
-                    <td class="clickable-stats" onclick="window.verExtrato('${r.name}')">${r.f}</td>
-                    <td class="points clickable-stats" onclick="window.verExtrato('${r.name}')">${r.pts}</td>
-                </tr>`;
-                // Gambiarra pra salvar histórico no window pra abrir depois (simples)
+                tbody.innerHTML += `<tr class="${cls}"><td>${i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'º'}</td><td class="td-nome" onclick="window.verFoto('${img}')"><img src="${img}" class="rank-avatar">${r.name}</td><td class="debit clickable-stats" onclick="window.verExtrato('${r.name}')">${r.d}</td><td class="clickable-stats" onclick="window.verExtrato('${r.name}')">${r.v}</td><td class="clickable-stats" onclick="window.verExtrato('${r.name}')">${r.f}</td><td class="points clickable-stats" onclick="window.verExtrato('${r.name}')">${r.pts}</td></tr>`;
                 window['hist_'+r.name] = r.hist;
             });
         };
 
-        window.verExtrato = (name) => {
-            const h = window['hist_'+name] || [];
-            document.getElementById('history-title').innerText = "Extrato: " + name;
-            document.getElementById('history-list').innerHTML = h.length ? h.map(x=>`<div class="log-item">${x}</div>`).join('') : '<div style="padding:10px;">Sem pontos.</div>';
-            document.getElementById('modal-history').style.display = 'flex';
-        };
-        
+        window.verExtrato = (name) => { const h = window['hist_'+name] || []; document.getElementById('history-title').innerText = "Extrato: " + name; document.getElementById('history-list').innerHTML = h.length ? h.map(x=>`<div class="log-item">${x}</div>`).join('') : '<div style="padding:10px;">Sem pontos.</div>'; document.getElementById('modal-history').style.display = 'flex'; };
         window.verFoto = (src) => { document.getElementById('modal-img').src = src; document.getElementById('modal-foto').style.display = 'flex'; };
         
         window.verPalpites = async (mid, tA, tB, exp, uA, uB, win) => {
             document.getElementById('history-title').innerText = exp ? "Palpites (Encerrado)" : "Quem Votou";
-            const list = document.getElementById('history-list'); list.innerHTML = "Carregando...";
-            document.getElementById('modal-history').style.display = 'flex';
+            const list = document.getElementById('history-list'); list.innerHTML = "Carregando..."; document.getElementById('modal-history').style.display = 'flex';
             const [gSnap, uSnap] = await Promise.all([getDocs(query(collection(db,"guesses"))), getDocs(collection(db,"users"))]);
             const users = {}; uSnap.forEach(u => users[u.id] = u.data());
             let html = "";
             gSnap.forEach(g => {
                 if(g.data().matchId === mid) {
-                    const u = users[g.data().userId];
-                    const vote = g.data().teamSelected;
-                    let icon = "";
-                    if(exp) {
-                        if(vote === tA) icon = `<img src="${uA}" style="width:20px;">`;
-                        else if(vote === tB) icon = `<img src="${uB}" style="width:20px;">`;
-                        if(win && win !== "Empate") {
-                            icon += (vote === win) ? ' <span style="color:green">✔</span>' : ' <span style="color:red">✖</span>';
-                        }
-                    }
+                    const u = users[g.data().userId]; const vote = g.data().teamSelected; let icon = "";
+                    if(exp) { if(vote === tA) icon = `<img src="${uA}" style="width:20px;">`; else if(vote === tB) icon = `<img src="${uB}" style="width:20px;">`; if(win && win !== "Empate") icon += (vote === win) ? ' <span style="color:green">✔</span>' : ' <span style="color:red">✖</span>'; }
                     html += `<div class="log-item" style="display:flex;justify-content:space-between;"><span>${u.name}</span><span>${icon}</span></div>`;
                 }
             });
             list.innerHTML = html || "Nenhum voto.";
         };
 
-        // ADMIN FINANCEIRO E JOGOS (Lógica mantida, visual atualizado no HTML)
-        window.abrirGestaoUsuarios = async () => { 
-            document.getElementById('modal-finance').style.display = 'flex'; 
-            const list = document.getElementById('finance-list'); 
-            list.innerHTML = "Carregando..."; 
-            const snap = await getDocs(collection(db, "users")); 
-            let html = ""; 
-            const users = []; 
-            snap.forEach(d => users.push({id:d.id, ...d.data()})); 
-            users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); 
-            const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]; 
-            
-            users.forEach(u => { 
-                const debts = u.debts || 0; 
-                let monthsHtml = ""; 
-                months.forEach(m => { 
-                    const isPaid = u.payments && u.payments[m]; 
-                    monthsHtml += `<div class="month-item ${isPaid?'paid':''}" onclick="window.togglePayment('${u.id}', '${m}', ${!isPaid})">${m}</div>`; 
-                }); 
-                html += `
-                <div style="border-bottom:1px solid #eee; padding:10px 0;">
-                    <div style="display:flex; justify-content:space-between; font-weight:bold;">
-                        <span>${u.name} <small style="color:blue;">(${u.appVersion||'-'})</small></span>
-                        <span style="color:red">Déb: ${debts}</span>
-                    </div>
-                    <div style="display:flex; gap:10px; margin:5px 0;">
-                        <button class="btn-small" onclick="window.mudarDebito('${u.id}', ${debts-1})">-1</button>
-                        <button class="btn-small btn-danger" onclick="window.mudarDebito('${u.id}', ${debts+1})">+1</button>
-                    </div>
-                    <div class="month-grid">${monthsHtml}</div>
-                </div>`; 
-            }); 
-            list.innerHTML = html; 
-        };
+        window.abrirGestaoUsuarios = async () => { document.getElementById('modal-finance').style.display = 'flex'; const list = document.getElementById('finance-list'); list.innerHTML = "Carregando..."; const snap = await getDocs(collection(db, "users")); let html = ""; const users = []; snap.forEach(d => users.push({id:d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]; users.forEach(u => { const debts = u.debts || 0; let monthsHtml = ""; months.forEach(m => { const isPaid = u.payments && u.payments[m]; monthsHtml += `<div class="month-item ${isPaid?'paid':''}" onclick="window.togglePayment('${u.id}', '${m}', ${!isPaid})">${m}</div>`; }); html += `<div style="border-bottom:1px solid #eee; padding:10px 0;"><div style="display:flex; justify-content:space-between; font-weight:bold;"><span>${u.name} <small style="color:blue;">(${u.appVersion||'-'})</small></span><span style="color:red">Déb: ${debts}</span></div><div style="display:flex; gap:10px; margin:5px 0;"><button class="btn-small" onclick="window.mudarDebito('${u.id}', ${debts-1})">-1</button><button class="btn-small btn-danger" onclick="window.mudarDebito('${u.id}', ${debts+1})">+1</button></div><div class="month-grid">${monthsHtml}</div></div>`; }); list.innerHTML = html; };
         window.togglePayment = async (uid, month, status) => { const ref = doc(db, "users", uid); const key = `payments.${month}`; await updateDoc(ref, { [key]: status }); window.abrirGestaoUsuarios(); };
         window.mudarDebito = async (uid, val) => { if(val < 0) val = 0; await updateDoc(doc(db, "users", uid), { debts: val }); window.abrirGestaoUsuarios(); };
 
-        // Admin Jogos (Mantido simplificado, chamadas no HTML)
         window.abrirAdmin = () => { ['jogos', 'ranking', 'regras', 'perfil'].forEach(a => document.getElementById(`container-${a}`).classList.add('hidden')); document.getElementById('container-admin').classList.remove('hidden'); document.getElementById('header-title').innerText = "Painel Admin"; window.loadCompetitions(); };
         window.fecharAdmin = () => { document.getElementById('container-admin').classList.add('hidden'); document.getElementById('container-perfil').classList.remove('hidden'); window.mudarAba('perfil'); };
         window.abrirGestaoJogos = async () => { document.getElementById('modal-manage-games').style.display = 'flex'; const snap = await getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))); const div = document.getElementById('admin-games-list'); div.innerHTML = ""; snap.forEach(d => { const m = {id:d.id, ...d.data()}; div.innerHTML += `<div style="border:1px solid #ccc; padding:10px; margin-bottom:5px;"><div style="font-weight:bold">${m.teamA} x ${m.teamB}</div><div>${m.winner?'✅ '+m.winner:'⏳ Aberto'}</div><div class="admin-actions"><button class="btn-small btn-edit" onclick="window.abrirEditarJogo('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', '${m.competition}', '${m.round}', '${m.deadline ? m.deadline.toDate().toISOString() : ''}')">✏️</button><button class="btn-small btn-edit" onclick="window.abrirDefinirVencedor('${m.id}','${m.teamA}','${m.teamB}', '${m.round}')">🏆</button><button class="btn-small btn-danger" onclick="window.excluirJogo('${m.id}')">🗑️</button></div></div>`; }); };
         
-        // ... (Restante das funções auxiliares de admin como salvarJogo, definirVencedor, etc. permanecem iguais à versão anterior, apenas com o CSS atualizado) ...
-        // Re-declaring key admin functions for completeness in this block if not already present in memory:
         window.abrirNovoJogo = () => { document.getElementById('modal-game-title').innerText = "Novo Confronto"; document.getElementById('edit-match-id').value = ""; document.getElementById('modal-game-editor').style.display = 'flex'; }
-        window.salvarJogo = async () => { 
-            const id = document.getElementById('edit-match-id').value; 
-            const data = { 
-                teamA: document.getElementById('adm-tA').value, 
-                teamB: document.getElementById('adm-tB').value, 
-                teamAUrl: document.getElementById('adm-urlA').value, 
-                teamBUrl: document.getElementById('adm-urlB').value, 
-                competition: document.getElementById('adm-comp').value, 
-                round: document.getElementById('adm-round').value, 
-                deadline: new Date(document.getElementById('adm-date').value) 
-            };
-            if(id) await updateDoc(doc(db,"matches",id), data); else { data.winner=null; await addDoc(collection(db,"matches"), data); }
-            document.getElementById('modal-game-editor').style.display='none'; window.abrirGestaoJogos();
-        };
-        window.abrirEditarJogo = (id, tA, tB, uA, uB, c, r, d) => {
-            document.getElementById('modal-game-title').innerText = "Editar"; document.getElementById('edit-match-id').value=id;
-            document.getElementById('adm-tA').value=tA; document.getElementById('adm-tB').value=tB; document.getElementById('adm-urlA').value=uA; document.getElementById('adm-urlB').value=uB;
-            document.getElementById('adm-comp').value=c; document.getElementById('adm-round').value=r; 
-            if(d) { const date = new Date(d); const offset = date.getTimezoneOffset() * 60000; document.getElementById('adm-date').value = (new Date(date - offset)).toISOString().slice(0, 16); }
-            document.getElementById('modal-game-editor').style.display='flex';
-        };
+        window.salvarJogo = async () => { const id = document.getElementById('edit-match-id').value; const data = { teamA: document.getElementById('adm-tA').value, teamB: document.getElementById('adm-tB').value, teamAUrl: document.getElementById('adm-urlA').value, teamBUrl: document.getElementById('adm-urlB').value, competition: document.getElementById('adm-comp').value, round: document.getElementById('adm-round').value, deadline: new Date(document.getElementById('adm-date').value) }; if(id) await updateDoc(doc(db,"matches",id), data); else { data.winner=null; await addDoc(collection(db,"matches"), data); } document.getElementById('modal-game-editor').style.display='none'; window.abrirGestaoJogos(); };
+        window.abrirEditarJogo = (id, tA, tB, uA, uB, c, r, d) => { document.getElementById('modal-game-title').innerText = "Editar"; document.getElementById('edit-match-id').value=id; document.getElementById('adm-tA').value=tA; document.getElementById('adm-tB').value=tB; document.getElementById('adm-urlA').value=uA; document.getElementById('adm-urlB').value=uB; document.getElementById('adm-comp').value=c; document.getElementById('adm-round').value=r; if(d) { const date = new Date(d); const offset = date.getTimezoneOffset() * 60000; document.getElementById('adm-date').value = (new Date(date - offset)).toISOString().slice(0, 16); } document.getElementById('modal-game-editor').style.display='flex'; };
         window.excluirJogo = async (id) => { if(confirm("Apagar?")) { await deleteDoc(doc(db,"matches",id)); window.abrirGestaoJogos(); } };
         window.abrirDefinirVencedor = (id, tA, tB, round) => { document.getElementById('winner-match-id').value = id; document.getElementById('btn-win-A').innerText = tA; document.getElementById('btn-win-B').innerText = tB; document.getElementById('btn-win-draw').style.display = round.includes("Grupo") ? 'block' : 'none'; document.getElementById('modal-winner').style.display = 'flex'; };
         window.setWinner = async (w) => { const id = document.getElementById('winner-match-id').value; await updateDoc(doc(db,"matches",id), {winner:w}); document.getElementById('modal-winner').style.display='none'; window.abrirGestaoJogos(); };
@@ -606,7 +475,33 @@
         window.alternarModo = () => { isRegisterMode=!isRegisterMode; document.getElementById('btn-login').innerText=isRegisterMode?"CADASTRAR":"ENTRAR"; document.getElementById('fullname').classList.toggle('hidden'); };
         window.sair = () => signOut(auth);
         
-        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.2", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
+        // --- LOAD COMPETITIONS ---
+        window.loadCompetitions = async () => { const docRef = doc(db, "settings", "competitions"); const snap = await getDoc(docRef); if (snap.exists()) { currentCompetitions = snap.data().items || []; } else { currentCompetitions = [{name: "Copa do Mundo", logo: ""}, {name: "Champions League", logo: ""}]; await setDoc(docRef, { items: currentCompetitions }); } window.updateCompSelect(); };
+        window.updateCompSelect = () => { const select = document.getElementById('adm-comp'); select.innerHTML = ""; currentCompetitions.forEach(c => { const opt = document.createElement('option'); opt.value = c.name; opt.innerText = c.name; select.appendChild(opt); }); };
+        window.abrirGestaoCompeticoes = () => { document.getElementById('modal-manage-comps').style.display = 'flex'; window.renderCompList(); };
+        window.limparComp = () => { document.getElementById('new-comp-name').value = ""; document.getElementById('new-comp-logo').value = ""; document.getElementById('edit-comp-orig').value = ""; };
+        window.renderCompList = () => { const div = document.getElementById('comp-list'); div.innerHTML = ""; currentCompetitions.forEach(c => { const logoImg = c.logo ? `<img src="${c.logo}" style="width:20px;height:20px;object-fit:contain;margin-right:5px;">` : ""; div.innerHTML += `<div class="comp-item"><div style="display:flex;align-items:center;">${logoImg}<span>${c.name}</span></div><div><span style="color:blue; cursor:pointer; margin-right:10px; font-weight:bold;" onclick="window.prepararEdicaoComp('${c.name}', '${c.logo}')">EDITAR</span><span style="color:red; cursor:pointer; font-weight:bold;" onclick="window.removeComp('${c.name}')">EXCLUIR</span></div></div>`; }); };
+        window.prepararEdicaoComp = (name, logo) => { document.getElementById('new-comp-name').value = name; document.getElementById('new-comp-logo').value = logo; document.getElementById('edit-comp-orig').value = name; };
+        window.salvarCompeticao = async () => { const name = document.getElementById('new-comp-name').value.trim(); const logo = document.getElementById('new-comp-logo').value.trim(); const originalName = document.getElementById('edit-comp-orig').value; if(!name) return alert("Digite o nome."); let newList = [...currentCompetitions]; if (originalName) { newList = newList.map(c => c.name === originalName ? {name: name, logo: logo} : c); } else { if (newList.some(c => c.name === name)) return alert("Já existe."); newList.push({name: name, logo: logo}); } await updateDoc(doc(db, "settings", "competitions"), { items: newList }); currentCompetitions = newList; window.limparComp(); window.renderCompList(); window.updateCompSelect(); alert("Salvo!"); };
+        window.removeComp = async (name) => { if(confirm(`Excluir ${name}?`)) { const newList = currentCompetitions.filter(c => c.name !== name); await updateDoc(doc(db, "settings", "competitions"), { items: newList }); currentCompetitions = newList; window.renderCompList(); window.updateCompSelect(); } };
+        window.buscarLogo = (inputId) => { const name = document.getElementById(inputId).value; if(name) window.open(`https://www.google.com/search?tbm=isch&q=escudo+${encodeURIComponent(name)}+png`); else alert("Digite o nome primeiro!"); };
+
+        // --- AUTH LISTENER ---
+        onAuthStateChanged(auth, (u) => { 
+            if(u) { 
+                currentUser=u; 
+                verificarAdmin(u.uid); 
+                const userRef = doc(db, "users", u.uid); 
+                updateDoc(userRef, { appVersion: "Web v1.3.2", lastAccess: new Date() }); 
+                document.getElementById('login-screen').classList.add('hidden'); 
+                document.getElementById('app-screen').classList.remove('hidden'); 
+                window.mudarAba('jogos'); 
+            } else { 
+                currentUser=null; 
+                document.getElementById('login-screen').classList.remove('hidden'); 
+                document.getElementById('app-screen').classList.add('hidden'); 
+            } 
+        });
     </script>
 </body>
 </html>
