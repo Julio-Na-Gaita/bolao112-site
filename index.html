@@ -3,431 +3,659 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#006400">
-    <title>Bolão 112 F.C - v1.3.2</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <title>Bolão 112 F.C</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        :root { 
-            --primary: #006400; 
-            --gold: #FFD700; 
-            --gold-dark: #F57F17;
-            --bg: #f4f4f4; 
-            --text: #1c1e21; 
-            --font-stack: "Times New Roman", Times, serif; 
-        }
-        
-        body { 
-            font-family: var(--font-stack); background-color: var(--bg); margin: 0; padding: 0; color: var(--text); 
-            padding-bottom: 80px; /* Espaço para o menu */
-            background-image: url('bg_jogos.png'); background-attachment: fixed; background-size: cover; 
-            -webkit-tap-highlight-color: transparent; 
-        }
-        
-        /* --- ESTILO CLASSIC BADGE --- */
-        .cut-corner { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
-        .hidden { display: none !important; }
-
-        header { 
-            background-color: var(--primary); color: white; padding: 15px; 
-            display: flex; justify-content: space-between; align-items: center; 
-            position: sticky; top: 0; z-index: 100; border-bottom: 3px solid var(--gold); 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3); 
-        }
-        h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
-        
-        .container { padding: 15px; max-width: 550px; margin: 0 auto; }
-
-        /* INPUTS & BUTTONS */
-        input, select { padding: 12px; margin: 8px 0; width: 100%; border: 2px solid #ccc; font-family: inherit; box-sizing: border-box; border-radius: 0; }
-        button { 
-            padding: 14px; background: var(--primary); color: white; border: none; width: 100%; 
-            font-weight: 800; margin-top: 10px; cursor: pointer; text-transform: uppercase; 
-            font-family: inherit; letter-spacing: 0.5px;
-            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); 
-        }
-        .secondary-btn { background: #eee; color: #333; border: 1px solid #999; }
-        .danger-btn { background: #d32f2f; color: white; }
-
-        /* LOGIN */
-        #login-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: white; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-box { 
-            background: rgba(255,255,255,0.95); padding: 30px; border: 4px solid var(--primary); 
-            width: 85%; max-width: 350px; text-align: center; 
-            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px); 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+        /* --- VARIÁVEIS GLOBAIS (Visual Classic Badge - Android v1.3.2) --- */
+        :root {
+            --primary-color: #006400; /* Verde Escuro */
+            --gold-color: #FFFFD700; /* Dourado */
+            --bg-color: #f5f5f5;
+            --text-font: 'Merriweather', serif; /* Fonte Serifada */
+            /* Canto cortado (CutCornerShape) simulado com clip-path */
+            --cut-corner: polygon(0 0, 100% 0, 100% 90%, 90% 100%, 0 100%); 
         }
 
-        /* CARD JOGOS (LAYOUT CORRIGIDO) */
-        .card { 
-            background: white; padding: 12px; margin-bottom: 15px; position: relative; 
-            border: 1px solid #bbb; 
-            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: var(--text-font);
+            background-color: var(--bg-color);
+            color: #333;
+            padding-bottom: 80px; /* Espaço para navbar */
         }
-        .card-final { border: 4px solid var(--gold) !important; background: linear-gradient(145deg, #FFFDE7, #FFF9C4) !important; }
-        
-        .match-header { text-align: center; margin-bottom: 12px; position: relative; z-index: 2; }
-        .comp-name { color: var(--primary); font-weight: 900; font-size: 11px; text-transform: uppercase; margin-bottom: 2px; }
-        .round-name { color: #666; font-size: 12px; font-weight: 600; }
-        .status-text { font-size: 11px; font-weight: 900; margin-top: 4px; text-transform: uppercase; }
-        
-        /* CORREÇÃO DO LAYOUT DOS TIMES */
-        .teams-container { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; gap: 5px; }
-        .team-btn { 
-            width: 32%; /* FIXO PARA NÃO ESTOURAR */
-            background: #f0f0f0; padding: 10px 2px; 
-            display: flex; flex-direction: column; align-items: center; cursor: pointer; 
-            border: 2px solid transparent; transition: 0.2s; 
-            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); 
+
+        /* --- COMPONENTES VISUAIS --- */
+        .header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        .team-btn.selected { background: var(--primary); color: white; border-color: var(--gold); }
-        .team-btn img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); }
-        .team-name { font-size: 10px; font-weight: 800; text-align: center; line-height: 1.1; min-height: 24px; display: flex; align-items: center; justify-content: center; width: 100%; word-wrap: break-word; }
-        .vs { font-size: 20px; font-weight: 900; color: #ccc; width: 10%; text-align: center; }
-        
-        .comp-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.08; object-fit: cover; z-index: 0; pointer-events: none; }
 
-        /* RANKING (ALINHAMENTO CORRIGIDO) */
-        table { width: 100%; border-collapse: collapse; background: white; border: 2px solid var(--primary); font-size: 13px; table-layout: fixed; }
-        th { background: #eee; padding: 10px 2px; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid #aaa; color: #444; }
-        td { padding: 12px 2px; text-align: center; border-bottom: 1px solid #eee; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .header h1 { font-size: 1.2rem; font-weight: 900; letter-spacing: 1px; }
         
-        /* Larguras das colunas */
-        .col-pos { width: 35px; font-weight: bold; }
-        .col-name { text-align: left; padding-left: 5px; width: auto; }
-        .col-stat { width: 30px; cursor: pointer; text-decoration: underline; text-decoration-color: #ccc; }
-        .col-pts { width: 40px; font-weight: 900; font-size: 15px; }
-        
-        .rank-avatar { width: 28px; height: 28px; border-radius: 50%; vertical-align: middle; margin-right: 6px; border: 1px solid #999; object-fit: cover; }
-        .row-gold { background: #FFF9C4; } .row-silver { background: #E0E0E0; } .row-bronze { background: #FFCCBC; }
+        .pote-icon { 
+            color: var(--gold-color); 
+            font-size: 1.5rem; 
+            cursor: pointer; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
 
-        /* MENU INFERIOR */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 8px 0; border-top: 3px solid #ddd; z-index: 900; }
-        .nav-item { font-size: 9px; text-align: center; color: #888; flex: 1; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
-        .nav-item.active { color: var(--primary); }
-        .nav-icon { font-size: 24px; margin-bottom: 2px; }
+        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
 
-        /* MODALS */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 6000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-        .modal-box { background: white; width: 90%; max-width: 450px; max-height: 80vh; padding: 20px; overflow-y: auto; border: 3px solid var(--primary); position: relative; clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); }
-        .modal-header { text-align: center; font-weight: 900; font-size: 18px; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; text-transform: uppercase; }
+        /* CARDS */
+        .card {
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 0; 
+            /* Recorte no canto inferior direito igual ao Android */
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+        }
 
-        /* ADMIN & TAGS */
-        .section-tag { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 5px 15px; font-weight: 900; text-align: center; width: fit-content; margin: 20px auto 10px; text-transform: uppercase; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
-        .admin-btn { margin-top: 10px; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; text-shadow: 0 1px 1px rgba(0,0,0,0.3); }
-        .whitelist-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f9f9f9; border-bottom: 1px solid #ddd; font-weight: bold; font-size: 13px; }
+        .card.final-match {
+            background-color: #FFF9C4;
+            border: 2px solid var(--gold-color);
+        }
+
+        .section-header {
+            background: rgba(255,255,255,0.9);
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            text-align: center;
+            font-weight: bold;
+            padding: 10px;
+            margin-bottom: 15px;
+            /* Recorte leve no canto */
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+        }
+
+        /* BOTÕES */
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            font-family: var(--text-font);
+            font-weight: bold;
+            cursor: pointer;
+            /* Recorte leve */
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
+        }
+        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        /* INPUTS */
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .input-group input {
+            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px;
+            font-family: var(--text-font);
+        }
+
+        /* NAVBAR (Mobile Style) */
+        .navbar {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: white; border-top: 1px solid #ddd;
+            display: flex; justify-content: space-around;
+            padding: 10px 0; z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        .nav-item {
+            text-align: center; color: #aaa; font-size: 0.8rem; cursor: pointer;
+            flex: 1;
+        }
+        .nav-item.active { color: var(--primary-color); font-weight: bold; }
+        .nav-item i { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+
+        /* TELA DE LOGIN */
+        #login-screen {
+            /* Fundo padrão caso a imagem demore */
+            background-color: #eee;
+            /* Tenta carregar imagem local, senão fallback */
+            background-image: url('./background_login.png'); 
+            background-size: cover;
+            background-position: center;
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 200;
+        }
+        .login-card {
+            background: rgba(255,255,255,0.95);
+            padding: 30px; width: 85%; max-width: 400px;
+            border: 3px solid var(--primary-color);
+            clip-path: polygon(0 0, 100% 0, 100% 95%, 95% 100%, 0 100%);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        /* RANKING */
+        .ranking-row {
+            display: flex; align-items: center; padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .rank-pos { width: 40px; text-align: center; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .rank-avatar img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1px solid #999; }
+        .rank-name { flex: 1; padding-left: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .rank-stat { width: 30px; text-align: center; font-size: 0.9rem; }
+        .rank-pts { width: 45px; text-align: center; font-weight: 900; font-size: 1.1rem; }
         
-        /* PERFIL */
-        .profile-card { background: rgba(255,255,255,0.95); padding: 30px 20px; text-align: center; border: 3px solid var(--primary); clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); }
-        .big-avatar { width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--primary); object-fit: cover; margin-bottom: 10px; }
-        
-        /* GRID FINANCEIRO */
-        .month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-top: 5px; }
-        .month-item { font-size: 9px; text-align: center; padding: 6px 0; border: 1px solid #ccc; background: #fff; cursor: pointer; font-weight: bold; }
-        .month-item.paid { background: #2E7D32; color: white; }
+        .diff-indicator { font-size: 0.65rem; display: flex; align-items: center; font-weight: bold; margin-top: 2px;}
+        .diff-up { color: #2E7D32; }
+        .diff-down { color: #D32F2F; }
+        .diff-neutral { color: #999; }
+
+        /* JOGOS */
+        .match-teams { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .team-btn {
+            width: 100px; height: 90px;
+            background: #eee; border: 1px solid #ddd;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .team-btn img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; }
+        .team-btn span { font-size: 0.7rem; text-align: center; line-height: 1.1; font-weight: bold; }
+        .team-btn.selected {
+            background: var(--primary-color); color: white;
+            border: 2px solid var(--gold-color);
+        }
+        .vs { font-size: 1.5rem; font-weight: 900; color: #ccc; }
+
+        /* MODAL (POTE E OUTROS) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 1000;
+            display: none; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: white; width: 85%; max-width: 350px;
+            padding: 0; position: relative;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); /* Retangular clássico */
+        }
+        .modal-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('./bg_ranking.png') center/cover;
+            opacity: 0.15; z-index: 0; pointer-events: none;
+        }
+        .modal-body { position: relative; z-index: 1; padding: 24px; text-align: center; }
+
     </style>
 </head>
 <body>
 
     <div id="login-screen">
-        <div class="login-box">
-            <img src="background_login.png" onerror="this.src='favicon.png'" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); object-fit: cover; margin-bottom: 15px;">
-            <h2 style="color: var(--primary); margin-bottom: 20px;">BOLÃO 112 F.C</h2>
-            <input type="text" id="fullname" placeholder="Nome de Exibição" class="hidden">
-            <input type="text" id="email" placeholder="Usuário" autocapitalize="none">
-            <input type="password" id="password" placeholder="Senha">
-            <button onclick="window.processarAuth()" id="btn-login">ENTRAR</button>
-            <p id="login-msg" class="error"></p>
-            <div onclick="window.alternarModo()" id="toggle-btn" style="color:var(--primary); font-weight:bold; cursor:pointer; margin-top:20px; text-decoration:underline; font-size:12px;">NÃO TEM CONTA? CRIAR</div>
+        <div class="login-card">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: var(--primary-color); font-weight: 900; letter-spacing: 2px;">BOLÃO 112 F.C</h2>
+            </div>
+            
+            <div class="input-group">
+                <label>Usuário</label>
+                <input type="text" id="login-user" placeholder="ex: seu_usuario">
+            </div>
+            <div class="input-group">
+                <label>Senha</label>
+                <input type="password" id="login-pass" placeholder="Mínimo 6 caracteres">
+                <div style="text-align: right; margin-top: 5px;">
+                    <small onclick="toggleRegisterMode()" style="color: blue; cursor: pointer;">Criar nova conta</small>
+                </div>
+            </div>
+
+            <div class="input-group" id="name-field" style="display: none;">
+                <label>Nome de Exibição</label>
+                <input type="text" id="register-name" placeholder="Como quer ser chamado">
+            </div>
+
+            <button class="btn" id="btn-login-action" onclick="handleLogin()">ACESSAR</button>
         </div>
     </div>
 
-    <div id="app-screen" class="hidden">
-        <header>
+    <div id="app-screen" style="display: none;">
+        
+        <div class="header">
             <h1>BOLÃO 112 F.C</h1>
-            <span class="material-icons-round" onclick="window.verPote()" style="font-size:28px; color:var(--gold); cursor:pointer;">savings</span>
-        </header>
-
-        <div id="container-admin" class="container hidden">
-            <div class="section-tag" style="background:#333; color:white; border-color:#333;">PAINEL ADMIN</div>
-            <button onclick="window.fecharAdmin()" class="secondary-btn" style="margin-bottom: 20px;">VOLTAR</button>
-            
-            <button onclick="window.abrirGestaoUsuarios()" style="background:#2E7D32;">💰 FINANCEIRO & USUÁRIOS</button>
-            <button onclick="window.abrirNovoJogo()" style="background:#1565C0;">⚽ NOVO CONFRONTO</button>
-            <button onclick="window.abrirGestaoCompeticoes()" style="background:#EF6C00;">🏆 COMPETIÇÕES</button>
-            <button onclick="window.abrirGestaoConvites()" style="background:#4A148C;">📩 CONVITES (WHITELIST)</button>
-            
-            <div style="margin-top: 20px; font-weight: bold; border-bottom: 2px solid #ccc;">Gerenciar Confrontos:</div>
-            <div id="admin-games-list" style="margin-top: 10px;"></div>
-        </div>
-
-        <div id="container-jogos" class="container">
-            <div id="loading-jogos" style="text-align:center; padding:30px;">Carregando...</div>
-            <div id="lista-jogos"></div>
-        </div>
-
-        <div id="container-ranking" class="container hidden">
-            <div style="background:#222; color:#ffd700; padding:10px; font-size:10px; text-align:center; font-weight:bold; border:1px solid #ffd700; margin-bottom:10px;">
-                LEGENDA: D=Débitos(-1) | V=Vitórias | F=Finais | PTS=Pontos
-                <div id="last-update" style="color:white; margin-top:3px; font-style:italic;">...</div>
-            </div>
-            <table id="tabela-ranking">
-                <thead><tr><th class="col-pos">#</th><th class="col-name">NOME</th><th class="col-stat">D</th><th class="col-stat">V</th><th class="col-stat">F</th><th class="col-pts">PTS</th></tr></thead>
-                <tbody id="lista-ranking"></tbody>
-            </table>
-        </div>
-
-        <div id="container-regras" class="container hidden">
-            <div style="text-align:right;"><button id="btn-edit-rules" class="hidden" style="width:auto; padding:5px 10px; background:#333;" onclick="window.editarRegras()">✏️ Editar</button></div>
-            <div id="regras-texto" style="background:white; padding:15px; border:2px solid var(--primary); white-space:pre-wrap; font-size:13px; line-height:1.5;">...</div>
-            <textarea id="regras-input" class="hidden" style="width:100%; height:400px; padding:10px;"></textarea>
-            <div id="rules-actions" class="hidden" style="text-align:right; margin-top:10px;">
-                <button onclick="window.cancelarEdicaoRegras()" class="secondary-btn" style="width:auto;">Cancelar</button>
-                <button onclick="window.salvarRegras()" style="width:auto;">Salvar</button>
+            <div>
+                <i class="fa-solid fa-piggy-bank pote-icon" onclick="showPotDialog()"></i>
+                <i class="fa-solid fa-right-from-bracket" onclick="logout()" style="margin-left: 15px; cursor: pointer;"></i>
             </div>
         </div>
 
-        <div id="container-perfil" class="container hidden">
-            <div class="profile-card">
-                <div style="color:var(--primary); font-weight:900; margin-bottom:10px;">CARTÃO DE MEMBRO</div>
-                <img id="img-perfil" src="" class="big-avatar">
-                <button onclick="document.getElementById('file-input').click()" class="secondary-btn" style="width:auto; padding:5px 15px; font-size:10px;">ALTERAR FOTO</button>
-                <div id="nome-perfil" style="font-size:20px; font-weight:800; margin-top:10px;">...</div>
-                <div id="user-perfil" style="color:#666; margin-bottom:15px;">@...</div>
-                <input type="file" id="file-input" accept="image/*" class="hidden" onchange="window.processarFoto()">
-                
-                <button onclick="window.alterarSenha()" style="background:#1565C0;">TROCAR SENHA</button>
-                <button onclick="window.verNovidades()" class="secondary-btn" style="background:white; color:var(--primary); border:1px solid var(--primary); margin-top:10px;">✨ NOVIDADES</button>
-            </div>
-            <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn" style="margin-top:20px; background:black; border:2px solid #444; display:none;">PAINEL ADMIN</button>
-        </div>
+        <div id="content-home" class="container tab-content"></div>
+        <div id="content-ranking" class="container tab-content" style="display: none;"></div>
+        <div id="content-rules" class="container tab-content" style="display: none;"></div>
+        <div id="content-profile" class="container tab-content" style="display: none;"></div>
 
-        <div class="bottom-nav">
-            <div class="nav-item active" onclick="window.mudarAba('jogos')" id="btn-jogos"><span class="material-icons-round nav-icon">sports_soccer</span>Jogos</div>
-            <div class="nav-item" onclick="window.mudarAba('ranking')" id="btn-ranking"><span class="material-icons-round nav-icon">emoji_events</span>Ranking</div>
-            <div class="nav-item" onclick="window.mudarAba('regras')" id="btn-regras"><span class="material-icons-round nav-icon">gavel</span>Regras</div>
-            <div class="nav-item" onclick="window.mudarAba('perfil')" id="btn-perfil"><span class="material-icons-round nav-icon">person</span>Perfil</div>
-            <div class="nav-item" onclick="window.sair()"><span class="material-icons-round nav-icon">logout</span>Sair</div>
+        <div class="navbar">
+            <div class="nav-item active" onclick="switchTab('home')">
+                <i class="fa-solid fa-futbol"></i>Jogos
+            </div>
+            <div class="nav-item" onclick="switchTab('ranking')">
+                <i class="fa-solid fa-trophy"></i>Ranking
+            </div>
+            <div class="nav-item" onclick="switchTab('rules')">
+                <i class="fa-solid fa-scale-balanced"></i>Regras
+            </div>
+            <div class="nav-item" onclick="switchTab('profile')">
+                <i class="fa-solid fa-user"></i>Perfil
+            </div>
         </div>
     </div>
 
-    <div id="modal-pote" class="modal"><div class="modal-box" style="text-align:center;"><div class="modal-header">💰 POTE DE OURO</div><div id="pote-valor" style="font-size:36px; font-weight:900; color:var(--primary); margin:20px 0;">...</div><div style="font-size:12px; color:#666;">Prêmio acumulado atual!</div><button onclick="document.getElementById('modal-pote').style.display='none'">FECHAR</button></div></div>
-    
-    <div id="modal-history" class="modal"><div class="modal-box"><div class="modal-header" id="history-title">...</div><div id="history-list"></div><button onclick="document.getElementById('modal-history').style.display='none'" class="secondary-btn" style="margin-top:15px;">FECHAR</button></div></div>
-    <div id="modal-foto" class="modal" onclick="this.style.display='none'"><img id="modal-img" style="max-width:95%; max-height:85%; border:5px solid white; box-shadow:0 0 20px black;"></div>
-
-    <div id="modal-whitelist" class="modal"><div class="modal-box"><div class="modal-header">CONVITES</div><div style="display:flex; gap:5px;"><input id="new-invite-user" placeholder="Usuário (sem @)"><button onclick="window.criarConvite()" style="width:auto;">+</button></div><div id="whitelist-list" style="margin-top:15px; max-height:300px; overflow-y:auto;"></div><button onclick="document.getElementById('modal-whitelist').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
-    <div id="modal-delete-confirm" class="modal"><div class="modal-box" style="border-color:#d32f2f;"><div class="modal-header" style="color:#d32f2f;">⚠️ REVOGAR ACESSO?</div><div style="text-align:center;"><h3 id="delete-target-user" style="margin:10px 0;">...</h3><p style="font-size:12px;">Histórico NÃO será apagado.</p><button onclick="window.executarExclusaoConvite()" class="danger-btn">CONFIRMAR</button><button onclick="document.getElementById('modal-delete-confirm').style.display='none'" class="secondary-btn">CANCELAR</button></div></div></div>
-    <div id="modal-finance" class="modal"><div class="modal-box" style="max-width:600px;"><div class="modal-header">FINANCEIRO</div><div id="finance-list"></div><button onclick="document.getElementById('modal-finance').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
-    <div id="modal-game-editor" class="modal"><div class="modal-box"><div class="modal-header">EDITOR</div><input type="hidden" id="edit-match-id"><select id="adm-comp"></select><select id="adm-round"><option>Fase de Grupos (Apenas para teste)</option><option>Oitavas de final</option><option>Quartas de final</option><option>Semi final</option><option>Final</option></select><input id="adm-tA" placeholder="Time A"><input id="adm-urlA" placeholder="URL A"><input id="adm-tB" placeholder="Time B"><input id="adm-urlB" placeholder="URL B"><input type="datetime-local" id="adm-date"><button onclick="window.salvarJogo()">SALVAR</button><button onclick="document.getElementById('modal-game-editor').style.display='none'" class="secondary-btn">CANCELAR</button></div></div>
-    <div id="modal-manage-comps" class="modal"><div class="modal-box"><div class="modal-header">COMPETIÇÕES</div><input id="new-comp-name" placeholder="Nome"><input id="new-comp-logo" placeholder="URL Logo"><button onclick="window.salvarCompeticao()">SALVAR</button><div id="comp-list" style="margin-top:10px;"></div><button onclick="document.getElementById('modal-manage-comps').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
-    <div id="modal-manage-games" class="modal"><div class="modal-box"><div class="modal-header">JOGOS</div><div id="admin-games-list-modal"></div><button onclick="document.getElementById('modal-manage-games').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
-    <div id="modal-winner" class="modal"><div class="modal-box"><div class="modal-header">VENCEDOR</div><input type="hidden" id="winner-match-id"><button id="btn-win-A" onclick="window.setWinner(this.innerText)">A</button><button id="btn-win-B" onclick="window.setWinner(this.innerText)">B</button><button onclick="window.setWinner('Empate')" class="secondary-btn">EMPATE</button><button onclick="window.setWinner(null)" class="danger-btn">REMOVER</button><button onclick="document.getElementById('modal-winner').style.display='none'" class="secondary-btn">CANCELAR</button></div></div>
+    <div id="modal-pot" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-bg"></div> <div class="modal-body">
+                <i class="fa-solid fa-piggy-bank" style="font-size: 3rem; color: var(--gold-color);"></i>
+                <h2 style="margin: 15px 0; font-family: var(--text-font);">POTE DE OURO</h2>
+                <h1 id="pot-value" style="color: var(--primary-color); font-size: 2rem;">R$ 0,00</h1>
+                <p style="color: gray; margin-bottom: 20px;">Prêmio acumulado!</p>
+                <button class="btn" onclick="document.getElementById('modal-pot').style.display='none'">Show!</button>
+            </div>
+        </div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, setDoc, getDoc, updateDoc, deleteDoc, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-        const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f" };
-        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
-        let currentUser = null; let isRegisterMode = false; let currentCompetitions = []; let inviteToDeleteId = "";
-
-        // --- GLOBAL WINDOW FUNCTIONS (CORREÇÃO DE ESCOPO) ---
-        
-        window.mudarAba = (aba) => {
-            const bgs = {jogos:'bg_jogos.png', ranking:'bg_ranking.png', regras:'bg_regras.png', perfil:'bg_perfil.png'};
-            document.body.style.backgroundImage = `url('${bgs[aba]}')`;
-            ['jogos','ranking','regras','perfil','admin'].forEach(id => { document.getElementById(`container-${id}`).classList.add('hidden'); document.getElementById(`btn-${id}`)?.classList.remove('active'); });
-            document.getElementById(`container-${aba}`).classList.remove('hidden'); document.getElementById(`btn-${aba}`)?.classList.add('active');
-            if(aba==='jogos') window.carregarJogos(); if(aba==='ranking') window.carregarRanking(); if(aba==='regras') window.carregarRegras(); if(aba==='perfil') window.carregarPerfil();
+        // --- CONFIGURAÇÃO DO FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k",
+            authDomain: "bolao112fc.firebaseapp.com",
+            projectId: "bolao112fc",
+            storageBucket: "bolao112fc.firebasestorage.app",
+            messagingSenderId: "131329454158",
+            appId: "1:131329454158:web:983e4544dd651ec942131f",
+            measurementId: "G-5SGWJE6EKK"
         };
 
-        window.verificarAdmin = async (uid) => {
-            try { const d = await getDoc(doc(db,"users",uid)); if(d.exists() && d.data().isAdmin) { document.getElementById('btn-admin-painel').style.display='block'; document.getElementById('btn-edit-rules').classList.remove('hidden'); } else { document.getElementById('btn-admin-painel').style.display='none'; document.getElementById('btn-edit-rules').classList.add('hidden'); } } catch(e){}
-        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        window.processarAuth = async () => {
-            const btn=document.getElementById('btn-login'); const msg=document.getElementById('login-msg'); const email=document.getElementById('email').value.trim().toLowerCase()+"@bolao112.com"; const pass=document.getElementById('password').value;
-            btn.disabled=true; msg.innerText="Verificando...";
+        // ESTADO GLOBAL
+        let currentUser = null;
+        let isAdmin = false;
+        let isRegistering = false;
+
+        // --- REGULAMENTO 2026 ATUALIZADO (IGUAL AO ANDROID) ---
+        const REGULAMENTO_TEXTO = `📜 REGULAMENTO OFICIAL - TEMPORADA 2026
+
+1️⃣ INADIMPLÊNCIA & VOTO
+- Atraso no pagamento (após dia 10): -1 ponto + -1 a cada 5 dias.
+- 🚫 Quem estiver inadimplente no momento da votação NÃO PODE VOTAR.
+
+2️⃣ PONTUAÇÃO
+- ✅ Acerto: 3 pts
+- 🔥 Final: 6 pts (Peso 2)
+- 💥 Rodada Perfeita (Oitavas): Acertar 100% das oitavas de uma competição gera +3 pontos extras.
+
+3️⃣ COMPETIÇÕES & OBRIGATORIEDADE
+A) Mata-Mata Regular (Obrigatório):
+- Todas as fases principais das competições válidas entram AUTOMATICAMENTE (incluindo 64-avos da Copa do Brasil).
+
+B) Fases Preliminares (Play-offs/Pré-fases):
+- Inclusão apenas por sugestão e VOTAÇÃO no WhatsApp (Maioria Simples dos adimplentes).
+
+4️⃣ GOVERNANÇA
+- Inclusão de jogos extras fora do calendário oficial: Exigem 100% de aprovação dos ADIMPLENTES.
+- Alteração do Regulamento: 100% de aprovação geral.`;
+
+        // --- LOGIN & AUTH ---
+        window.handleLogin = async () => {
+            const user = document.getElementById('login-user').value.trim().toLowerCase();
+            const pass = document.getElementById('login-pass').value;
+            const email = `${user}@bolao112.com`; // Mesma lógica do Android
+
             try {
-                if(isRegisterMode) {
-                    const name=document.getElementById('fullname').value.trim(); const user=document.getElementById('email').value.trim().toLowerCase();
-                    if(!name || pass.length<6) throw new Error("Preencha corretamente.");
-                    const w=await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Usuário não convidado.");
-                    const res=await createUserWithEmailAndPassword(auth,email,pass);
-                    await setDoc(doc(db,"users",res.user.uid),{name:name,username:user,isAdmin:false,debts:0,appVersion:"Web v1.3.2"});
-                } else { await signInWithEmailAndPassword(auth,email,pass); }
-            } catch(e) { msg.innerText=e.message; btn.disabled=false; }
-        };
-        window.alternarModo = () => { isRegisterMode=!isRegisterMode; document.getElementById('btn-login').innerText=isRegisterMode?"CADASTRAR":"ENTRAR"; document.getElementById('fullname').classList.toggle('hidden'); };
-        window.sair = () => signOut(auth);
-
-        window.verPote = async () => { 
-            document.getElementById('modal-pote').style.display='flex'; 
-            try { const s=await getDocs(collection(db,"users")); let t=0; s.forEach(d=>{ const p=d.data().payments||{}; for(let k in p) if(p[k]) t++; }); document.getElementById('pote-valor').innerText=(t*10).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); } catch(e){} 
-        };
-
-        window.carregarJogos = async () => {
-            document.getElementById('loading-jogos').classList.remove('hidden'); document.getElementById('lista-jogos').innerHTML="";
-            const [mS, gS, cS] = await Promise.all([getDocs(query(collection(db,"matches"))), getDocs(collection(db,"guesses")), getDoc(doc(db,"settings","competitions"))]);
-            const logos={}; if(cS.exists()) (cS.data().items||[]).forEach(i=>logos[i.name]=i.logo);
-            const votes={}; gS.forEach(g=>{ if(g.data().userId===currentUser.uid) votes[g.data().matchId]=g.data().teamSelected; });
-            const matches=[]; mS.forEach(d=>matches.push({id:d.id,...d.data(), date:d.data().deadline?.toDate()}));
-            const now=new Date();
-            
-            const render=(list, title, color)=>{
-                if(!list.length) return;
-                let h=`<div class="section-tag" style="color:${color};border-color:${color};">${title}</div>`;
-                list.forEach(m=>{
-                    const isF=m.round==="Final"; const isExp=m.date<=now; const myV=votes[m.id];
-                    const dStr=m.date?m.date.toLocaleDateString('pt-BR')+' '+m.date.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
-                    h+=`<div class="card ${isF?'card-final':''}">`;
-                    if(logos[m.competition]) h+=`<img src="${logos[m.competition]}" class="comp-bg">`;
-                    if(isF) h+=`<div style="text-align:center;color:#F57F17;font-weight:900;font-size:11px;margin-bottom:5px;">✨🏆 GRANDE FINAL • VALE DOBRO 🏆✨</div>`;
-                    let st = isExp ? `<span style="color:#d32f2f;">🔒 ENCERRADO: ${dStr}</span>` : `<span class="material-icons-round" style="font-size:12px;vertical-align:middle;">schedule</span> PRAZO: ${dStr}`;
-                    if(isExp && m.winner) st = `<span style="color:${isF?'#F57F17':'#006400'};font-size:13px;">${isF?'🏆 CAMPEÃO':'VENCEDOR'}: ${m.winner}</span>`;
-                    h+=`<div class="match-header"><div class="comp-name">${m.competition}</div><div class="round-name">${m.round}</div><div class="status-text">${st}</div></div>`;
-                    h+=`<div class="teams-container">
-                        <div class="team-btn ${myV===m.teamA?'selected':''}" ${!isExp?`onclick="window.votar('${m.id}','${m.teamA}')"`:''}><img src="${m.teamAUrl}" onerror="this.src='https://placehold.co/50?text=A'"><div class="team-name">${m.teamA}</div></div>
-                        <div class="vs">X</div>
-                        <div class="team-btn ${myV===m.teamB?'selected':''}" ${!isExp?`onclick="window.votar('${m.id}','${m.teamB}')"`:''}><img src="${m.teamBUrl}" onerror="this.src='https://placehold.co/50?text=B'"><div class="team-name">${m.teamB}</div></div>
-                    </div>`;
-                    if(myV && !isExp) h+=`<div style="text-align:center;font-size:12px;color:#2e7d32;font-weight:bold;margin-top:5px;position:relative;z-index:10;">✅ Voto: ${myV}</div>`;
-                    h+=`<div style="text-align:center;margin-top:8px;position:relative;z-index:10;"><span onclick="window.verPalpites('${m.id}','${m.teamA}','${m.teamB}',${isExp},'${m.teamAUrl}','${m.teamBUrl}','${m.winner||''}')" style="cursor:pointer;text-decoration:underline;color:#555;font-size:11px;">${isExp?'Ver Palpites':'Quem votou?'}</span></div></div>`;
-                });
-                document.getElementById('lista-jogos').innerHTML+=h;
-            };
-            
-            render(matches.filter(m=>m.date>now&&!m.winner).sort((a,b)=>a.date-b.date), "✅ DISPONÍVEIS", "#006400");
-            render(matches.filter(m=>m.date<=now&&!m.winner).sort((a,b)=>b.date-a.date), "⏳ AGUARDANDO", "#F9A825");
-            render(matches.filter(m=>m.winner).sort((a,b)=>b.date-a.date), "🚫 FINALIZADOS", "#D32F2F");
-            document.getElementById('loading-jogos').classList.add('hidden');
-        };
-        window.votar = async (mid, t) => { await setDoc(doc(db,"guesses",`${mid}_${currentUser.uid}`), {matchId:mid, userId:currentUser.uid, teamSelected:t, timestamp:new Date()}); window.carregarJogos(); };
-
-        window.carregarRanking = async () => {
-            const tb=document.getElementById('lista-ranking'); tb.innerHTML="<tr><td colspan='6'>Calculando...</td></tr>";
-            const [uS, gS, mS] = await Promise.all([getDocs(collection(db,"users")), getDocs(collection(db,"guesses")), getDocs(collection(db,"matches"))]);
-            const matches=[]; mS.forEach(d=>{if(d.data().winner) matches.push({id:d.id,...d.data()})});
-            const last=matches.sort((a,b)=>b.deadline?.toDate()-a.deadline?.toDate())[0];
-            if(last) document.getElementById('last-update').innerText="Últ. Jogo: "+last.teamA+" x "+last.teamB;
-            
-            const rank=[]; const oitavas=matches.filter(m=>m.round==="Oitavas de final").reduce((a,m)=>{(a[m.competition]=a[m.competition]||[]).push(m);return a},{});
-            uS.forEach(u=>{
-                const d=u.data(); let pts=0,v=0,f=0,deb=d.debts||0,hist=[];
-                const gs=[]; gS.forEach(g=>{if(g.data().userId===u.id) gs.push(g.data())});
-                gs.forEach(g=>{
-                    const m=matches.find(x=>x.id===g.matchId);
-                    if(m && m.winner===g.teamSelected) {
-                        const isF=m.round==="Final";
-                        if(isF){pts+=6;v++;f++;hist.push(`🏆 Final: ${m.teamA} x ${m.teamB} (+6)`)}
-                        else{pts+=3;v++;hist.push(`✅ ${m.teamA} x ${m.teamB} (+3)`)}
+                if (isRegistering) {
+                    const name = document.getElementById('register-name').value;
+                    // Checa Whitelist
+                    const whiteRef = doc(db, "whitelist", user);
+                    const whiteSnap = await getDoc(whiteRef);
+                    
+                    if (whiteSnap.exists()) {
+                        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                        await setDoc(doc(db, "users", cred.user.uid), {
+                            name: name, username: user, photoBase64: "", isAdmin: false, debts: 0, 
+                            appVersion: "Web v1.0", lastRank: 0
+                        });
+                        alert("Bem-vindo ao Clube!");
+                    } else {
+                        alert("🚫 Acesso Negado: Usuário não convidado.");
                     }
-                });
-                for(let c in oitavas) if(oitavas[c].every(m=>gs.some(g=>g.matchId===m.id && g.teamSelected===m.winner))){pts+=3;hist.push(`🌟 Bônus Oitavas: ${c} (+3)`)}
-                if(deb>0){pts-=deb;hist.push(`🔻 Inadimplência (-${deb})`)}
-                rank.push({name:d.name,photo:d.photoBase64,pts,v,f,deb,hist});
-            });
-            rank.sort((a,b)=>b.pts-a.pts || a.deb-b.deb || b.v-a.v || b.f-a.f);
-            tb.innerHTML="";
-            rank.forEach((r,i)=>{
-                let cls=""; if(i===0)cls="row-gold";if(i===1)cls="row-silver";if(i===2)cls="row-bronze";
-                const img=r.photo?`data:image/jpeg;base64,${r.photo}`:'https://via.placeholder.com/30';
-                tb.innerHTML+=`<tr class="${cls}"><td class="col-pos">${i+1}º</td><td class="col-name td-nome" onclick="window.verFoto('${img}')"><img src="${img}" class="rank-avatar">${r.name}</td><td class="col-stat debit" onclick="window.verExtrato('${r.name}')">${r.deb}</td><td class="col-stat" onclick="window.verExtrato('${r.name}')">${r.v}</td><td class="col-stat" onclick="window.verExtrato('${r.name}')">${r.f}</td><td class="col-pts" onclick="window.verExtrato('${r.name}')">${r.pts}</td></tr>`;
-                window['hist_'+r.name]=r.hist;
-            });
+                } else {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                }
+            } catch (e) {
+                alert("Erro: " + e.message);
+            }
         };
-        window.verExtrato=(n)=>{const h=window['hist_'+n]||[];document.getElementById('history-title').innerText=n;document.getElementById('history-list').innerHTML=h.map(x=>`<div style="padding:8px;border-bottom:1px solid #eee;font-size:13px;">${x}</div>`).join('')||"<div style='padding:10px;'>Sem pontos.</div>";document.getElementById('modal-history').style.display='flex'};
-        window.verFoto=(s)=>{document.getElementById('modal-img').src=s;document.getElementById('modal-foto').style.display='flex'};
-        
-        window.verPalpites = async (mid, tA, tB, exp, uA, uB, win) => {
-            const list = document.getElementById('history-list'); list.innerHTML="..."; document.getElementById('history-title').innerText=exp?"Palpites":"Votantes"; document.getElementById('modal-history').style.display='flex';
-            const [gS, uS] = await Promise.all([getDocs(query(collection(db,"guesses"))), getDocs(collection(db,"users"))]);
-            const us={}; uS.forEach(u=>us[u.id]=u.data());
-            let h="";
-            gS.forEach(g=>{
-                if(g.data().matchId===mid) {
-                    const u=us[g.data().userId]; const v=g.data().teamSelected;
-                    let i=""; if(exp){ if(v===tA) i=`<img src="${uA}" style="width:20px;">`; else if(v===tB) i=`<img src="${uB}" style="width:20px;">`; if(win && win!=="Empate") i+=(v===win)?' <span style="color:green">✔</span>':' <span style="color:red">✖</span>'; }
-                    h+=`<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee;font-size:13px;"><span>${u.name}</span><span>${i}</span></div>`;
+
+        window.toggleRegisterMode = () => {
+            isRegistering = !isRegistering;
+            document.getElementById('name-field').style.display = isRegistering ? 'block' : 'none';
+            document.getElementById('btn-login-action').innerText = isRegistering ? 'REGISTRAR' : 'ACESSAR';
+        };
+
+        window.logout = () => signOut(auth);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-screen').style.display = 'block';
+                currentUser = user;
+                
+                // Checa Admin
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                isAdmin = userDoc.data().isAdmin === true;
+                
+                loadHome(); // Carrega tela inicial
+            } else {
+                document.getElementById('app-screen').style.display = 'none';
+                document.getElementById('login-screen').style.display = 'flex';
+            }
+        });
+
+        // --- NAVEGAÇÃO ---
+        window.switchTab = (tab) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`content-${tab}`).style.display = 'block';
+            event.currentTarget.classList.add('active'); // Ajuste visual simples
+
+            if(tab === 'home') loadHome();
+            if(tab === 'ranking') loadRanking();
+            if(tab === 'rules') loadRules();
+            if(tab === 'profile') loadProfile();
+        };
+
+        // --- TELA: JOGOS (HOME) ---
+        async function loadHome() {
+            const container = document.getElementById('content-home');
+            container.innerHTML = '<p style="text-align:center; margin-top:20px;">Carregando confrontos...</p>';
+
+            // Pega configurações de Competição (Logos)
+            const compSnap = await getDoc(doc(db, "settings", "competitions"));
+            const compMap = {};
+            if(compSnap.exists()) {
+                compSnap.data().items.forEach(i => compMap[i.name] = i.logo);
+            }
+
+            // Pega Jogos
+            const matchesSnap = await getDocs(collection(db, "matches"));
+            let matches = [];
+            matchesSnap.forEach(d => matches.push({id: d.id, ...d.data(), deadline: d.data().deadline.toDate()}));
+
+            // Separação
+            const now = new Date();
+            const open = matches.filter(m => m.deadline > now).sort((a,b) => a.deadline - b.deadline);
+            const waiting = matches.filter(m => m.deadline <= now && !m.winner).sort((a,b) => b.deadline - a.deadline);
+            const finished = matches.filter(m => m.deadline <= now && m.winner).sort((a,b) => b.deadline - a.deadline);
+
+            let html = '';
+
+            // Renderiza Seção
+            const renderSection = (title, color, list) => {
+                if(list.length === 0) return '';
+                let sectionHtml = `<div class="section-header" style="color:${color}; border-color:${color}">${title}</div>`;
+                
+                list.forEach(m => {
+                    const isFinal = m.round && m.round.toLowerCase() === 'final';
+                    const cardClass = isFinal ? 'card final-match' : 'card';
+                    const deadlineStr = m.deadline.toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                    
+                    sectionHtml += `
+                    <div class="${cardClass}" id="card-${m.id}">
+                        <div style="text-align:center;">
+                            ${isFinal ? '<div style="color:#F57F17; font-weight:900; margin-bottom:5px;">★ 🏆 FINAL (VALE O DOBRO) 🏆 ★</div>' : ''}
+                            <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:gray;">
+                                <span style="color:var(--primary-color); font-weight:bold;">${(m.competition || '').toUpperCase()}</span>
+                                <span>${m.round || '-'}</span>
+                            </div>
+                            <div style="font-size:0.8rem; margin-bottom:10px;">${m.deadline <= now ? 'Encerrado' : 'Prazo'}: ${deadlineStr}</div>
+                            
+                            ${m.winner ? `<div style="color:var(--primary-color); font-weight:900; font-size:1.2rem; margin:10px 0;">VENCEDOR: ${m.winner}</div>` : ''}
+
+                            <div class="match-teams">
+                                <div class="team-btn" id="btn-${m.id}-${m.teamA}" onclick="vote('${m.id}', '${m.teamA}', '${m.deadline}')">
+                                    <img src="${m.teamAUrl}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/16/16480.png'">
+                                    <span>${m.teamA}</span>
+                                </div>
+                                <div class="vs">X</div>
+                                <div class="team-btn" id="btn-${m.id}-${m.teamB}" onclick="vote('${m.id}', '${m.teamB}', '${m.deadline}')">
+                                    <img src="${m.teamBUrl}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/16/16480.png'">
+                                    <span>${m.teamB}</span>
+                                </div>
+                            </div>
+                            <div id="voted-${m.id}" style="margin-top:10px; font-weight:bold; color:var(--primary-color); font-size:0.8rem;"></div>
+                        </div>
+                    </div>`;
+                });
+                return sectionHtml;
+            };
+
+            html += renderSection('✅ CONFRONTOS DISPONÍVEIS ✅', '#006400', open);
+            html += renderSection('⏳ AGUARDANDO RESULTADO ⏳', '#F9A825', waiting);
+            html += renderSection('🚫 CONFRONTOS FINALIZADOS 🚫', '#D32F2F', finished);
+
+            container.innerHTML = html;
+
+            // Carrega os votos do usuário para pintar de verde
+            const guessesSnap = await getDocs(query(collection(db, "guesses"))); 
+            guessesSnap.forEach(doc => {
+                const g = doc.data();
+                if(g.userId === currentUser.uid) {
+                    // Tenta encontrar o botão correspondente (pode não existir se o time mudou de nome, por ex)
+                    try {
+                        const btn = document.getElementById(`btn-${g.matchId}-${g.teamSelected}`);
+                        if(btn) btn.classList.add('selected');
+                        const label = document.getElementById(`voted-${g.matchId}`);
+                        if(label) label.innerText = `Voto: ${g.teamSelected}`;
+                    } catch(e) {}
                 }
             });
-            list.innerHTML=h||"<div style='padding:10px;text-align:center;'>Nenhum voto.</div>";
-        };
+        }
 
-        // ADMIN
-        window.abrirAdmin=()=>{ ['jogos','ranking','regras','perfil'].forEach(id=>document.getElementById(`container-${id}`).classList.add('hidden')); document.getElementById('container-admin').classList.remove('hidden'); document.querySelector('header h1').innerText="ADMIN"; };
-        window.fecharAdmin=()=>{ document.getElementById('container-admin').classList.add('hidden'); document.getElementById('container-perfil').classList.remove('hidden'); window.mudarAba('perfil'); };
-        
-        window.abrirGestaoConvites=()=>{
-            document.getElementById('modal-whitelist').style.display='flex';
-            onSnapshot(collection(db,"whitelist"), s=>{
-                let h=""; const l=[]; s.forEach(d=>l.push(d.id)); l.sort();
-                l.forEach(u=>h+=`<div class="whitelist-item"><span>${u}</span><button class="btn-delete" style="color:red;background:none;border:none;" onclick="window.confirmarExclusaoConvite('${u}')">🗑️</button></div>`);
-                document.getElementById('whitelist-list').innerHTML=h||"Vazio";
+        window.vote = async (matchId, team, deadlineIso) => {
+            const deadline = new Date(deadlineIso);
+            if(new Date() > deadline) return alert("Tempo esgotado!");
+
+            // Limpa seleção visual anterior
+            document.querySelectorAll(`[id^='btn-${matchId}-']`).forEach(el => el.classList.remove('selected'));
+            document.getElementById(`btn-${matchId}-${team}`).classList.add('selected');
+            document.getElementById(`voted-${matchId}`).innerText = `Voto: ${team}`;
+
+            // Salva no banco
+            await setDoc(doc(db, "guesses", `${matchId}_${currentUser.uid}`), {
+                matchId: matchId, userId: currentUser.uid, teamSelected: team, timestamp: new Date()
             });
         };
-        window.criarConvite=async()=>{const u=document.getElementById('new-invite-user').value.trim().toLowerCase(); if(u){await setDoc(doc(db,"whitelist",u),{active:true});document.getElementById('new-invite-user').value="";}};
-        window.confirmarExclusaoConvite=(u)=>{inviteToDeleteId=u;document.getElementById('delete-target-user').innerText=u.toUpperCase();document.getElementById('modal-delete-confirm').style.display='flex'};
-        window.executarExclusaoConvite=async()=>{await deleteDoc(doc(db,"whitelist",inviteToDeleteId));document.getElementById('modal-delete-confirm').style.display='none';alert("Revogado!");};
 
-        window.abrirGestaoUsuarios=async()=>{
-            document.getElementById('modal-finance').style.display='flex'; const l=document.getElementById('finance-list'); l.innerHTML="...";
-            const s=await getDocs(collection(db,"users")); let h=""; const u=[]; s.forEach(d=>u.push({id:d.id,...d.data()})); u.sort((a,b)=>a.name.localeCompare(b.name));
-            const ms=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-            u.forEach(x=>{
-                h+=`<div style="border-bottom:1px solid #ccc;padding:10px;"><div style="display:flex;justify-content:space-between;"><b>${x.name}</b><b style="color:red">Déb: ${x.debts||0}</b></div>
-                <div style="margin:5px 0;"><button style="width:30px;padding:5px;" onclick="window.setD('${x.id}',${(x.debts||0)-1})">-</button> <button style="width:30px;padding:5px;background:#d32f2f;" onclick="window.setD('${x.id}',${(x.debts||0)+1})">+</button></div>
-                <div class="month-grid">`;
-                ms.forEach(m=>{ const p=x.payments?.[m]; h+=`<div class="month-item ${p?'paid':''}" onclick="window.pay('${x.id}','${m}',${!p})">${m}</div>`});
-                h+=`</div></div>`;
+        // --- TELA: RANKING (COM SETINHAS & BÔNUS OITAVAS) ---
+        async function loadRanking() {
+            const container = document.getElementById('content-ranking');
+            container.innerHTML = '<p style="text-align:center;">Calculando classificação...</p>';
+
+            // 1. Pega Dados
+            const [usersSnap, guessesSnap, matchesSnap] = await Promise.all([
+                getDocs(collection(db, "users")),
+                getDocs(collection(db, "guesses")),
+                getDocs(collection(db, "matches"))
+            ]);
+
+            const matches = [];
+            matchesSnap.forEach(d => {
+                const data = d.data();
+                if(data.winner) matches.push({id: d.id, ...data});
             });
-            l.innerHTML=h;
+
+            // 2. Calcula Pontos
+            let ranking = [];
+            
+            // Agrupamento para bônus de Oitavas
+            const oitavasByComp = {}; 
+            matches.filter(m => m.round === "Oitavas de final").forEach(m => {
+                if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = [];
+                oitavasByComp[m.competition].push(m);
+            });
+
+            usersSnap.forEach(uDoc => {
+                const u = uDoc.data();
+                const uId = uDoc.id;
+                let pts = 0, v = 0, f = 0;
+                const debts = u.debts || 0;
+                const lastRank = u.lastRank || 0;
+
+                const userGuesses = [];
+                guessesSnap.forEach(g => {
+                    if(g.data().userId === uId) userGuesses.push(g.data());
+                });
+
+                // Pontos Normais e Finais
+                userGuesses.forEach(g => {
+                    const match = matches.find(m => m.id === g.matchId);
+                    if(match && match.winner === g.teamSelected) {
+                        if(match.round && match.round.toLowerCase() === "final") { pts += 6; v++; f++; }
+                        else { pts += 3; v++; }
+                    }
+                });
+
+                // Bônus Oitavas
+                for (const comp in oitavasByComp) {
+                    const compMatches = oitavasByComp[comp];
+                    const hits = compMatches.filter(m => {
+                        const guess = userGuesses.find(g => g.matchId === m.id);
+                        return guess && guess.teamSelected === m.winner;
+                    }).length;
+                    if(hits === 8) pts += 3;
+                }
+
+                pts -= debts;
+                ranking.push({ 
+                    id: uId, name: u.name || u.username, photo: u.photoBase64, 
+                    pts, v, f, debts, lastRank 
+                });
+            });
+
+            // 3. Ordena
+            ranking.sort((a,b) => {
+                if(b.pts !== a.pts) return b.pts - a.pts;
+                if(a.debts !== b.debts) return a.debts - b.debts; // Menor débito ganha
+                if(b.v !== a.v) return b.v - a.v;
+                return b.f - a.f;
+            });
+
+            // 4. Renderiza
+            let html = `
+            <div class="card" style="margin-bottom:10px;">
+                <h3 style="text-align:center;">Classificação Geral</h3>
+                <div style="display:flex; font-size:0.8rem; color:gray; margin-top:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
+                    <div style="width:40px; text-align:center;">Pos</div>
+                    <div style="flex:1;">Nome</div>
+                    <div style="width:30px; text-align:center; color:red;">D</div>
+                    <div style="width:30px; text-align:center;">V</div>
+                    <div style="width:30px; text-align:center;">F</div>
+                    <div style="width:45px; text-align:center; color:black;">PTS</div>
+                </div>
+            `;
+
+            ranking.forEach((u, index) => {
+                const pos = index + 1;
+                let medal = pos;
+                if(pos===1) medal = '🥇';
+                if(pos===2) medal = '🥈';
+                if(pos===3) medal = '🥉';
+
+                // Lógica da Setinha
+                let diffHtml = '<span class="diff-indicator diff-neutral"><i class="fa-solid fa-minus"></i></span>';
+                if(u.lastRank > 0) {
+                    if(pos < u.lastRank) {
+                        const diff = u.lastRank - pos;
+                        diffHtml = `<span class="diff-indicator diff-up"><i class="fa-solid fa-caret-up"></i> ${diff}</span>`;
+                    } else if(pos > u.lastRank) {
+                        const diff = pos - u.lastRank;
+                        diffHtml = `<span class="diff-indicator diff-down"><i class="fa-solid fa-caret-down"></i> ${diff}</span>`;
+                    }
+                }
+
+                const bg = pos===1 ? '#FFF9C4' : (pos===2 ? '#F5F5F5' : (pos===3 ? '#FFCCBC' : 'white'));
+
+                html += `
+                <div class="ranking-row" style="background:${bg}; padding: 12px 5px;">
+                    <div class="rank-pos">
+                        <span>${medal}</span>
+                        ${diffHtml}
+                    </div>
+                    <div class="rank-avatar">
+                        ${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}">` : '<i class="fa-solid fa-circle-user" style="font-size:35px; color:#ccc;"></i>'}
+                    </div>
+                    <div class="rank-name">${u.name}</div>
+                    <div class="rank-stat" style="color:red; font-weight:bold;">${u.debts}</div>
+                    <div class="rank-stat">${u.v}</div>
+                    <div class="rank-stat">${u.f}</div>
+                    <div class="rank-pts">${u.pts}</div>
+                </div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // --- TELA: REGRAS ---
+        function loadRules() {
+            document.getElementById('content-rules').innerHTML = `
+                <div class="card">
+                    <pre style="white-space: pre-wrap; font-family: var(--text-font); font-size: 0.85rem; line-height: 1.5;">${REGULAMENTO_TEXTO}</pre>
+                </div>
+            `;
+        }
+
+        // --- TELA: PERFIL ---
+        async function loadProfile() {
+            const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+            const u = userDoc.data();
+            
+            document.getElementById('content-profile').innerHTML = `
+                <div class="card" style="text-align:center;">
+                    <h2>CARTÃO DE MEMBRO</h2>
+                    <br>
+                    ${u.photoBase64 ? `<img src="data:image/jpeg;base64,${u.photoBase64}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #ccc;">` : '<i class="fa-solid fa-circle-user" style="font-size:120px; color:#ccc;"></i>'}
+                    <br><br>
+                    <h3>${u.name}</h3>
+                    <p style="color:gray;">@${u.username}</p>
+                    <br>
+                    <p style="font-size:0.8rem; color:blue;">Alterar foto e Admin: Apenas no Android</p>
+                </div>
+            `;
+        }
+
+        // --- MODAL: POTE ---
+        window.showPotDialog = async () => {
+            // Calcula valor
+            const usersSnap = await getDocs(collection(db, "users"));
+            let total = 0;
+            usersSnap.forEach(d => {
+                const payments = d.data().payments || {};
+                Object.values(payments).forEach(paid => { if(paid) total += 10; });
+            });
+            
+            const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+            document.getElementById('pot-value').innerText = fmt;
+            document.getElementById('modal-pot').style.display = 'flex';
         };
-        window.pay=async(id,m,v)=>{await updateDoc(doc(db,"users",id),{[`payments.${m}`]:v});window.abrirGestaoUsuarios()};
-        window.setD=async(id,v)=>{if(v<0)v=0;await updateDoc(doc(db,"users",id),{debts:v});window.abrirGestaoUsuarios()};
 
-        window.abrirGestaoJogos=async()=>{document.getElementById('modal-manage-games').style.display='flex';const s=await getDocs(query(collection(db,"matches"),orderBy("deadline","desc")));let h="";s.forEach(d=>{const m={id:d.id,...d.data()};h+=`<div style="border:1px solid #ccc;padding:5px;margin-bottom:5px;"><b>${m.teamA} x ${m.teamB}</b><br>${m.winner||'Aberto'}<br><button onclick="window.editM('${m.id}','${m.teamA}','${m.teamB}','${m.teamAUrl}','${m.teamBUrl}','${m.competition}','${m.round}','${m.deadline?m.deadline.toDate().toISOString():''}')" style="width:auto;padding:5px;">✏️</button> <button onclick="window.winM('${m.id}','${m.teamA}','${m.teamB}')" style="width:auto;padding:5px;">🏆</button> <button onclick="window.delM('${m.id}')" style="width:auto;padding:5px;background:red;">🗑️</button></div>`});document.getElementById('admin-games-list-modal').innerHTML=h;};
-        window.abrirNovoJogo=()=>{document.getElementById('modal-game-title').innerText="Novo";document.getElementById('edit-match-id').value="";document.getElementById('modal-game-editor').style.display='flex'};
-        window.editM=(id,tA,tB,uA,uB,c,r,d)=>{document.getElementById('edit-match-id').value=id;document.getElementById('adm-tA').value=tA;document.getElementById('adm-tB').value=tB;document.getElementById('adm-urlA').value=uA;document.getElementById('adm-urlB').value=uB;document.getElementById('adm-comp').value=c;document.getElementById('adm-round').value=r;if(d){const dt=new Date(d);const o=dt.getTimezoneOffset()*60000;document.getElementById('adm-date').value=(new Date(dt-o)).toISOString().slice(0,16)}document.getElementById('modal-game-editor').style.display='flex'};
-        window.salvarJogo=async()=>{const id=document.getElementById('edit-match-id').value;const d={teamA:document.getElementById('adm-tA').value,teamB:document.getElementById('adm-tB').value,teamAUrl:document.getElementById('adm-urlA').value,teamBUrl:document.getElementById('adm-urlB').value,competition:document.getElementById('adm-comp').value,round:document.getElementById('adm-round').value,deadline:new Date(document.getElementById('adm-date').value)};if(id)await updateDoc(doc(db,"matches",id),d);else{d.winner=null;await addDoc(collection(db,"matches"),d)}document.getElementById('modal-game-editor').style.display='none';window.abrirGestaoJogos()};
-        window.delM=async(id)=>{if(confirm("Apagar?"))await deleteDoc(doc(db,"matches",id));window.abrirGestaoJogos()};
-        window.winM=(id,a,b)=>{document.getElementById('winner-match-id').value=id;document.getElementById('btn-win-A').innerText=a;document.getElementById('btn-win-B').innerText=b;document.getElementById('modal-winner').style.display='flex'};
-        window.setWinner=async(w)=>{await updateDoc(doc(db,"matches",document.getElementById('winner-match-id').value),{winner:w});document.getElementById('modal-winner').style.display='none';window.abrirGestaoJogos()};
-
-        window.abrirGestaoCompeticoes=async()=>{document.getElementById('modal-manage-comps').style.display='flex';const s=await getDoc(doc(db,"settings","competitions"));currentCompetitions=s.exists()?s.data().items||[]:[];window.renderComps()};
-        window.renderComps=()=>{let h="";currentCompetitions.forEach(c=>h+=`<div style="display:flex;justify-content:space-between;padding:5px;border-bottom:1px solid #ccc;"><span>${c.name}</span><button style="width:auto;padding:5px;background:red;" onclick="window.delComp('${c.name}')">🗑️</button></div>`);document.getElementById('comp-list').innerHTML=h; window.updateCompSelect()};
-        window.salvarCompeticao=async()=>{const n=document.getElementById('new-comp-name').value;const l=document.getElementById('new-comp-logo').value;if(n){currentCompetitions.push({name:n,logo:l});await updateDoc(doc(db,"settings","competitions"),{items:currentCompetitions});window.renderComps()}};
-        window.delComp=async(n)=>{if(confirm("Apagar?")){currentCompetitions=currentCompetitions.filter(c=>c.name!==n);await updateDoc(doc(db,"settings","competitions"),{items:currentCompetitions});window.renderComps()}};
-        window.updateCompSelect=()=>{const s=document.getElementById('adm-comp');s.innerHTML="";currentCompetitions.forEach(c=>{const o=document.createElement('option');o.value=c.name;o.innerText=c.name;s.appendChild(o)})};
-        window.buscarLogo=(id)=>{const n=document.getElementById(id).value;if(n)window.open(`https://www.google.com/search?tbm=isch&q=escudo+${n}+png`)};
-
-        // PROFILE
-        window.carregarPerfil=async()=>{try{const u=await getDoc(doc(db,"users",currentUser.uid));const d=u.data();document.getElementById('nome-perfil').innerText=d.name;document.getElementById('user-perfil').innerText="@"+d.username;if(d.photoBase64)document.getElementById('img-perfil').src="data:image/jpeg;base64,"+d.photoBase64}catch(e){}};
-        window.processarFoto=()=>{const f=document.getElementById('file-input').files[0];if(f){const r=new FileReader();r.onload=(e)=>{const i=new Image();i.src=e.target.result;i.onload=()=>{const c=document.createElement('canvas');const ctx=c.getContext('2d');const s=300/i.width;c.width=300;c.height=i.height*s;ctx.drawImage(i,0,0,c.width,c.height);const b=c.toDataURL('image/jpeg',0.7).split(',')[1];updateDoc(doc(db,"users",currentUser.uid),{photoBase64:b}).then(()=>{document.getElementById('img-perfil').src="data:image/jpeg;base64,"+b;alert("Salvo!");})}};r.readAsDataURL(f)}};
-        window.alterarSenha=()=>{const p=prompt("Nova senha (min 6):");if(p&&p.length>=6)updatePassword(currentUser,p).then(()=>alert("Sucesso!")).catch(e=>alert(e.message))};
-        window.verNovidades=()=>{document.getElementById('history-title').innerText="Histórico";document.getElementById('history-list').innerHTML=`<div style="padding:10px;"><b>v1.3.2:</b> Visual Classic, Fontes Serifadas, Ranking 'F' e Whitelist.</div><div style="padding:10px;">1. JOGOS: Toque no escudo para votar.<br>2. RANKING: Toque na foto para zoom.<br>3. POTE: Clique no porquinho.</div>`;document.getElementById('modal-history').style.display='flex'};
-        window.carregarRegras=async()=>{const d=await getDoc(doc(db,"settings","general"));document.getElementById('regras-texto').innerText=d.exists()?d.data().rulesText:"...";document.getElementById('regras-input').value=d.exists()?d.data().rulesText:""};
-        window.editarRegras=()=>{document.getElementById('regras-texto').classList.add('hidden');document.getElementById('regras-input').classList.remove('hidden');document.getElementById('rules-actions').classList.remove('hidden');document.getElementById('btn-edit-rules').classList.add('hidden')};
-        window.cancelarEdicaoRegras=()=>{document.getElementById('regras-texto').classList.remove('hidden');document.getElementById('regras-input').classList.add('hidden');document.getElementById('rules-actions').classList.add('hidden');document.getElementById('btn-edit-rules').classList.remove('hidden')};
-        window.salvarRegras=async()=>{await updateDoc(doc(db,"settings","general"),{rulesText:document.getElementById('regras-input').value});window.carregarRegras();window.cancelarEdicaoRegras();alert("Salvo!")};
-
-        onAuthStateChanged(auth, async (u) => { 
-            if(u) { 
-                currentUser=u; 
-                await verificarAdmin(u.uid);
-                try { await setDoc(doc(db, "users", u.uid), { appVersion: "Web v1.3.2", lastAccess: new Date() }, { merge: true }); } catch(e){}
-                document.getElementById('login-screen').classList.add('hidden'); 
-                document.getElementById('app-screen').classList.remove('hidden'); 
-                window.mudarAba('jogos');
-                window.loadCompetitions();
-            } else { 
-                currentUser=null; 
-                document.getElementById('login-screen').classList.remove('hidden'); 
-                document.getElementById('app-screen').classList.add('hidden'); 
-            } 
-        });
     </script>
 </body>
 </html>
