@@ -4,71 +4,127 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#006400">
-    <link rel="icon" type="image/png" href="favicon.png">
     <title>Bolão 112 F.C - v1.3.2</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
-        :root { --primary: #006400; --gold: #FFD700; --bg: #f4f4f4; --text: #1c1e21; --font-stack: "Times New Roman", Times, serif; }
-        body { font-family: var(--font-stack); background-color: var(--bg); margin: 0; padding: 0; color: var(--text); padding-bottom: 70px; background-image: url('bg_jogos.png'); background-attachment: fixed; background-size: cover; -webkit-tap-highlight-color: transparent; }
+        :root { 
+            --primary: #006400; 
+            --gold: #FFD700; 
+            --gold-dark: #F57F17;
+            --bg: #f4f4f4; 
+            --text: #1c1e21; 
+            --font-stack: "Times New Roman", Times, serif; 
+        }
         
-        /* LAYOUT GERAL */
-        header { background-color: var(--primary); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 3px solid var(--gold); box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-        h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
-        .container { padding: 10px; max-width: 500px; margin: 0 auto; }
+        body { 
+            font-family: var(--font-stack); background-color: var(--bg); margin: 0; padding: 0; color: var(--text); 
+            padding-bottom: 80px; /* Espaço para o menu */
+            background-image: url('bg_jogos.png'); background-attachment: fixed; background-size: cover; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        
+        /* --- ESTILO CLASSIC BADGE --- */
+        .cut-corner { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
         .hidden { display: none !important; }
+
+        header { 
+            background-color: var(--primary); color: white; padding: 15px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            position: sticky; top: 0; z-index: 100; border-bottom: 3px solid var(--gold); 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3); 
+        }
+        h1 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
         
+        .container { padding: 15px; max-width: 550px; margin: 0 auto; }
+
+        /* INPUTS & BUTTONS */
+        input, select { padding: 12px; margin: 8px 0; width: 100%; border: 2px solid #ccc; font-family: inherit; box-sizing: border-box; border-radius: 0; }
+        button { 
+            padding: 14px; background: var(--primary); color: white; border: none; width: 100%; 
+            font-weight: 800; margin-top: 10px; cursor: pointer; text-transform: uppercase; 
+            font-family: inherit; letter-spacing: 0.5px;
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); 
+        }
+        .secondary-btn { background: #eee; color: #333; border: 1px solid #999; }
+        .danger-btn { background: #d32f2f; color: white; }
+
         /* LOGIN */
         #login-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: white; z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-box { background: rgba(255,255,255,0.95); padding: 30px; border: 4px solid var(--primary); width: 80%; max-width: 350px; text-align: center; clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        input { padding: 12px; margin: 8px 0; width: 100%; border: 2px solid #ccc; font-family: inherit; box-sizing: border-box; }
-        button { padding: 14px; background: var(--primary); color: white; border: none; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; text-transform: uppercase; font-family: inherit; clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
-        
-        /* CARD DE JOGO (CORRIGIDO) */
-        .card { background: white; padding: 15px; margin-bottom: 15px; position: relative; border: 1px solid #bbb; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .login-box { 
+            background: rgba(255,255,255,0.95); padding: 30px; border: 4px solid var(--primary); 
+            width: 85%; max-width: 350px; text-align: center; 
+            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); 
+        }
+
+        /* CARD JOGOS (LAYOUT CORRIGIDO) */
+        .card { 
+            background: white; padding: 12px; margin-bottom: 15px; position: relative; 
+            border: 1px solid #bbb; 
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+        }
         .card-final { border: 4px solid var(--gold) !important; background: linear-gradient(145deg, #FFFDE7, #FFF9C4) !important; }
         
-        .match-header { text-align: center; margin-bottom: 10px; position: relative; z-index: 2; }
-        .comp-name { color: var(--primary); font-weight: 900; font-size: 11px; text-transform: uppercase; }
+        .match-header { text-align: center; margin-bottom: 12px; position: relative; z-index: 2; }
+        .comp-name { color: var(--primary); font-weight: 900; font-size: 11px; text-transform: uppercase; margin-bottom: 2px; }
         .round-name { color: #666; font-size: 12px; font-weight: 600; }
-        .match-time { font-size: 12px; font-weight: bold; margin-top: 2px; }
+        .status-text { font-size: 11px; font-weight: 900; margin-top: 4px; text-transform: uppercase; }
         
-        .teams-container { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; margin: 10px 0; }
-        .team-btn { width: 38%; background: #f0f0f0; padding: 10px 5px; display: flex; flex-direction: column; align-items: center; cursor: pointer; border: 2px solid transparent; transition: 0.2s; clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
+        /* CORREÇÃO DO LAYOUT DOS TIMES */
+        .teams-container { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; gap: 5px; }
+        .team-btn { 
+            width: 32%; /* FIXO PARA NÃO ESTOURAR */
+            background: #f0f0f0; padding: 10px 2px; 
+            display: flex; flex-direction: column; align-items: center; cursor: pointer; 
+            border: 2px solid transparent; transition: 0.2s; 
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); 
+        }
         .team-btn.selected { background: var(--primary); color: white; border-color: var(--gold); }
-        .team-btn img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; }
-        .team-name { font-size: 11px; font-weight: 800; text-align: center; line-height: 1.1; min-height: 24px; display: flex; align-items: center; justify-content: center; }
-        .vs { font-size: 18px; font-weight: 900; color: #ccc; }
+        .team-btn img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); }
+        .team-name { font-size: 10px; font-weight: 800; text-align: center; line-height: 1.1; min-height: 24px; display: flex; align-items: center; justify-content: center; width: 100%; word-wrap: break-word; }
+        .vs { font-size: 20px; font-weight: 900; color: #ccc; width: 10%; text-align: center; }
         
-        .status-bar { text-align: center; font-size: 12px; font-weight: bold; margin-top: 8px; position: relative; z-index: 2; }
         .comp-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.08; object-fit: cover; z-index: 0; pointer-events: none; }
 
-        /* RANKING (CORRIGIDO) */
+        /* RANKING (ALINHAMENTO CORRIGIDO) */
         table { width: 100%; border-collapse: collapse; background: white; border: 2px solid var(--primary); font-size: 13px; table-layout: fixed; }
-        th { background: #eee; padding: 10px 2px; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid #aaa; }
-        td { padding: 12px 2px; text-align: center; border-bottom: 1px solid #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .col-pos { width: 30px; font-weight: bold; }
+        th { background: #eee; padding: 10px 2px; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid #aaa; color: #444; }
+        td { padding: 12px 2px; text-align: center; border-bottom: 1px solid #eee; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* Larguras das colunas */
+        .col-pos { width: 35px; font-weight: bold; }
         .col-name { text-align: left; padding-left: 5px; width: auto; }
-        .col-stat { width: 25px; cursor: pointer; text-decoration: underline; text-decoration-color: #ccc; }
-        .col-pts { width: 35px; font-weight: 900; font-size: 15px; }
-        .avatar-small { width: 28px; height: 28px; border-radius: 50%; vertical-align: middle; margin-right: 5px; border: 1px solid #999; }
+        .col-stat { width: 30px; cursor: pointer; text-decoration: underline; text-decoration-color: #ccc; }
+        .col-pts { width: 40px; font-weight: 900; font-size: 15px; }
+        
+        .rank-avatar { width: 28px; height: 28px; border-radius: 50%; vertical-align: middle; margin-right: 6px; border: 1px solid #999; object-fit: cover; }
         .row-gold { background: #FFF9C4; } .row-silver { background: #E0E0E0; } .row-bronze { background: #FFCCBC; }
 
-        /* ADMIN & NAV */
-        .section-tag { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 5px 15px; font-weight: 900; text-align: center; width: fit-content; margin: 20px auto 10px; text-transform: uppercase; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 8px 0; border-top: 2px solid #ddd; z-index: 900; }
-        .nav-item { font-size: 9px; text-align: center; color: #888; flex: 1; font-weight: bold; cursor: pointer; }
+        /* MENU INFERIOR */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 8px 0; border-top: 3px solid #ddd; z-index: 900; }
+        .nav-item { font-size: 9px; text-align: center; color: #888; flex: 1; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; }
         .nav-item.active { color: var(--primary); }
-        .nav-icon { font-size: 24px; display: block; margin-bottom: 2px; }
+        .nav-icon { font-size: 24px; margin-bottom: 2px; }
 
         /* MODALS */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 6000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
         .modal-box { background: white; width: 90%; max-width: 450px; max-height: 80vh; padding: 20px; overflow-y: auto; border: 3px solid var(--primary); position: relative; clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); }
+        .modal-header { text-align: center; font-weight: 900; font-size: 18px; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; text-transform: uppercase; }
+
+        /* ADMIN & TAGS */
+        .section-tag { background: white; border: 2px solid var(--primary); color: var(--primary); padding: 5px 15px; font-weight: 900; text-align: center; width: fit-content; margin: 20px auto 10px; text-transform: uppercase; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+        .admin-btn { margin-top: 10px; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; text-shadow: 0 1px 1px rgba(0,0,0,0.3); }
+        .whitelist-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f9f9f9; border-bottom: 1px solid #ddd; font-weight: bold; font-size: 13px; }
         
         /* PERFIL */
         .profile-card { background: rgba(255,255,255,0.95); padding: 30px 20px; text-align: center; border: 3px solid var(--primary); clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); }
         .big-avatar { width: 100px; height: 100px; border-radius: 50%; border: 4px solid var(--primary); object-fit: cover; margin-bottom: 10px; }
         
-        .admin-btn { display: block; margin-top: 10px; color: white; text-align: center; padding: 12px; font-weight: bold; border-radius: 4px; text-decoration: none; }
+        /* GRID FINANCEIRO */
+        .month-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-top: 5px; }
+        .month-item { font-size: 9px; text-align: center; padding: 6px 0; border: 1px solid #ccc; background: #fff; cursor: pointer; font-weight: bold; }
+        .month-item.paid { background: #2E7D32; color: white; }
     </style>
 </head>
 <body>
@@ -77,11 +133,11 @@
         <div class="login-box">
             <img src="background_login.png" onerror="this.src='favicon.png'" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary); object-fit: cover; margin-bottom: 15px;">
             <h2 style="color: var(--primary); margin-bottom: 20px;">BOLÃO 112 F.C</h2>
-            <input type="text" id="fullname" placeholder="Nome de Exibição (Cadastro)" class="hidden">
+            <input type="text" id="fullname" placeholder="Nome de Exibição" class="hidden">
             <input type="text" id="email" placeholder="Usuário" autocapitalize="none">
             <input type="password" id="password" placeholder="Senha">
             <button onclick="window.processarAuth()" id="btn-login">ENTRAR</button>
-            <p id="login-msg" class="error" style="color:red; font-size:12px; margin-top:10px;"></p>
+            <p id="login-msg" class="error"></p>
             <div onclick="window.alternarModo()" id="toggle-btn" style="color:var(--primary); font-weight:bold; cursor:pointer; margin-top:20px; text-decoration:underline; font-size:12px;">NÃO TEM CONTA? CRIAR</div>
         </div>
     </div>
@@ -94,12 +150,15 @@
 
         <div id="container-admin" class="container hidden">
             <div class="section-tag" style="background:#333; color:white; border-color:#333;">PAINEL ADMIN</div>
-            <button onclick="window.fecharAdmin()" style="background:#ccc; color:black; margin-bottom:20px;">VOLTAR</button>
+            <button onclick="window.fecharAdmin()" class="secondary-btn" style="margin-bottom: 20px;">VOLTAR</button>
+            
             <button onclick="window.abrirGestaoUsuarios()" style="background:#2E7D32;">💰 FINANCEIRO & USUÁRIOS</button>
             <button onclick="window.abrirNovoJogo()" style="background:#1565C0;">⚽ NOVO CONFRONTO</button>
             <button onclick="window.abrirGestaoCompeticoes()" style="background:#EF6C00;">🏆 COMPETIÇÕES</button>
             <button onclick="window.abrirGestaoConvites()" style="background:#4A148C;">📩 CONVITES (WHITELIST)</button>
-            <div id="admin-games-list" style="margin-top:20px;"></div>
+            
+            <div style="margin-top: 20px; font-weight: bold; border-bottom: 2px solid #ccc;">Gerenciar Confrontos:</div>
+            <div id="admin-games-list" style="margin-top: 10px;"></div>
         </div>
 
         <div id="container-jogos" class="container">
@@ -108,22 +167,22 @@
         </div>
 
         <div id="container-ranking" class="container hidden">
-            <div style="background:black; color:gold; padding:10px; font-size:10px; text-align:center; font-weight:bold; border:1px solid gold; margin-bottom:10px;">
-                LEGENDA: D=Débitos | V=Vitórias | F=Finais | PTS=Pontos
+            <div style="background:#222; color:#ffd700; padding:10px; font-size:10px; text-align:center; font-weight:bold; border:1px solid #ffd700; margin-bottom:10px;">
+                LEGENDA: D=Débitos(-1) | V=Vitórias | F=Finais | PTS=Pontos
                 <div id="last-update" style="color:white; margin-top:3px; font-style:italic;">...</div>
             </div>
             <table id="tabela-ranking">
-                <thead><tr><th class="col-pos">#</th><th class="col-name">PARTICIPANTE</th><th class="col-stat">D</th><th class="col-stat">V</th><th class="col-stat">F</th><th class="col-pts">PTS</th></tr></thead>
+                <thead><tr><th class="col-pos">#</th><th class="col-name">NOME</th><th class="col-stat">D</th><th class="col-stat">V</th><th class="col-stat">F</th><th class="col-pts">PTS</th></tr></thead>
                 <tbody id="lista-ranking"></tbody>
             </table>
         </div>
 
         <div id="container-regras" class="container hidden">
-            <div style="text-align:right;"><button id="btn-edit-rules" class="hidden" style="width:auto; padding:5px 10px; background:#333;" onclick="window.editarRegras()">Editar</button></div>
+            <div style="text-align:right;"><button id="btn-edit-rules" class="hidden" style="width:auto; padding:5px 10px; background:#333;" onclick="window.editarRegras()">✏️ Editar</button></div>
             <div id="regras-texto" style="background:white; padding:15px; border:2px solid var(--primary); white-space:pre-wrap; font-size:13px; line-height:1.5;">...</div>
-            <textarea id="regras-input" class="hidden" style="width:100%; height:400px;"></textarea>
+            <textarea id="regras-input" class="hidden" style="width:100%; height:400px; padding:10px;"></textarea>
             <div id="rules-actions" class="hidden" style="text-align:right; margin-top:10px;">
-                <button onclick="window.cancelarEdicaoRegras()" style="width:auto; background:#ccc; color:black;">Cancelar</button>
+                <button onclick="window.cancelarEdicaoRegras()" class="secondary-btn" style="width:auto;">Cancelar</button>
                 <button onclick="window.salvarRegras()" style="width:auto;">Salvar</button>
             </div>
         </div>
@@ -132,14 +191,15 @@
             <div class="profile-card">
                 <div style="color:var(--primary); font-weight:900; margin-bottom:10px;">CARTÃO DE MEMBRO</div>
                 <img id="img-perfil" src="" class="big-avatar">
-                <button onclick="document.getElementById('file-input').click()" style="width:auto; padding:5px 10px; font-size:10px; background:#eee; color:black; border:1px solid #ccc;">ALTERAR FOTO</button>
+                <button onclick="document.getElementById('file-input').click()" class="secondary-btn" style="width:auto; padding:5px 15px; font-size:10px;">ALTERAR FOTO</button>
                 <div id="nome-perfil" style="font-size:20px; font-weight:800; margin-top:10px;">...</div>
                 <div id="user-perfil" style="color:#666; margin-bottom:15px;">@...</div>
                 <input type="file" id="file-input" accept="image/*" class="hidden" onchange="window.processarFoto()">
+                
                 <button onclick="window.alterarSenha()" style="background:#1565C0;">TROCAR SENHA</button>
-                <button onclick="window.verNovidades()" style="background:white; color:var(--primary); border:1px solid var(--primary);">✨ NOVIDADES</button>
+                <button onclick="window.verNovidades()" class="secondary-btn" style="background:white; color:var(--primary); border:1px solid var(--primary); margin-top:10px;">✨ NOVIDADES</button>
             </div>
-            <button id="btn-admin-painel" onclick="window.abrirAdmin()" style="margin-top:20px; background:black; display:none;">PAINEL ADMIN</button>
+            <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn" style="margin-top:20px; background:black; border:2px solid #444; display:none;">PAINEL ADMIN</button>
         </div>
 
         <div class="bottom-nav">
@@ -151,17 +211,18 @@
         </div>
     </div>
 
-    <div id="modal-pote" class="modal"><div class="modal-box" style="text-align:center;"><div class="modal-header">💰 POTE DE OURO</div><div id="pote-valor" style="font-size:32px; font-weight:900; color:var(--primary); margin:20px 0;">...</div><div style="font-size:12px; color:#666;">Prêmio acumulado atual!</div><button onclick="document.getElementById('modal-pote').style.display='none'">FECHAR</button></div></div>
+    <div id="modal-pote" class="modal"><div class="modal-box" style="text-align:center;"><div class="modal-header">💰 POTE DE OURO</div><div id="pote-valor" style="font-size:36px; font-weight:900; color:var(--primary); margin:20px 0;">...</div><div style="font-size:12px; color:#666;">Prêmio acumulado atual!</div><button onclick="document.getElementById('modal-pote').style.display='none'">FECHAR</button></div></div>
     
-    <div id="modal-history" class="modal"><div class="modal-box"><div class="modal-header" id="history-title">...</div><div id="history-list"></div><button onclick="document.getElementById('modal-history').style.display='none'" style="background:#ccc; color:black; margin-top:15px;">FECHAR</button></div></div>
-    <div id="modal-foto" class="modal" onclick="this.style.display='none'"><img id="modal-img" style="max-width:90%; max-height:80%; border:5px solid white;"></div>
+    <div id="modal-history" class="modal"><div class="modal-box"><div class="modal-header" id="history-title">...</div><div id="history-list"></div><button onclick="document.getElementById('modal-history').style.display='none'" class="secondary-btn" style="margin-top:15px;">FECHAR</button></div></div>
+    <div id="modal-foto" class="modal" onclick="this.style.display='none'"><img id="modal-img" style="max-width:95%; max-height:85%; border:5px solid white; box-shadow:0 0 20px black;"></div>
 
-    <div id="modal-whitelist" class="modal"><div class="modal-box"><div class="modal-header">CONVITES</div><div style="display:flex; gap:5px;"><input id="new-invite-user" placeholder="Usuário (sem @)"><button onclick="window.criarConvite()" style="width:auto;">+</button></div><div id="whitelist-list" style="margin-top:15px; max-height:300px; overflow-y:auto;"></div><button onclick="document.getElementById('modal-whitelist').style.display='none'" style="background:#ccc; color:black; margin-top:10px;">FECHAR</button></div></div>
-    <div id="modal-finance" class="modal"><div class="modal-box" style="max-width:600px;"><div class="modal-header">FINANCEIRO</div><div id="finance-list"></div><button onclick="document.getElementById('modal-finance').style.display='none'" style="background:#ccc; color:black; margin-top:10px;">FECHAR</button></div></div>
-    <div id="modal-game-editor" class="modal"><div class="modal-box"><div class="modal-header">EDITOR</div><input type="hidden" id="edit-match-id"><select id="adm-comp"></select><select id="adm-round"><option>Fase de Grupos (Apenas para teste)</option><option>Oitavas de final</option><option>Quartas de final</option><option>Semi final</option><option>Final</option></select><input id="adm-tA" placeholder="Time A"><input id="adm-urlA" placeholder="URL A"><input id="adm-tB" placeholder="Time B"><input id="adm-urlB" placeholder="URL B"><input type="datetime-local" id="adm-date"><button onclick="window.salvarJogo()">SALVAR</button><button onclick="document.getElementById('modal-game-editor').style.display='none'" style="background:#ccc; color:black;">CANCELAR</button></div></div>
-    <div id="modal-manage-comps" class="modal"><div class="modal-box"><div class="modal-header">COMPETIÇÕES</div><input id="new-comp-name" placeholder="Nome"><input id="new-comp-logo" placeholder="URL Logo"><button onclick="window.salvarCompeticao()">SALVAR</button><div id="comp-list" style="margin-top:10px;"></div><button onclick="document.getElementById('modal-manage-comps').style.display='none'" style="background:#ccc; color:black; margin-top:10px;">FECHAR</button></div></div>
-    <div id="modal-manage-games" class="modal"><div class="modal-box"><div class="modal-header">JOGOS</div><div id="admin-games-list-modal"></div><button onclick="document.getElementById('modal-manage-games').style.display='none'" style="background:#ccc; color:black; margin-top:10px;">FECHAR</button></div></div>
-    <div id="modal-winner" class="modal"><div class="modal-box"><div class="modal-header">RESULTADO</div><input type="hidden" id="winner-match-id"><button id="btn-win-A" onclick="window.setWinner(this.innerText)">A</button><button id="btn-win-B" onclick="window.setWinner(this.innerText)">B</button><button onclick="window.setWinner('Empate')" style="background:#777;">EMPATE</button><button onclick="window.setWinner(null)" style="background:#d32f2f;">REMOVER</button><button onclick="document.getElementById('modal-winner').style.display='none'" style="background:#ccc; color:black;">CANCELAR</button></div></div>
+    <div id="modal-whitelist" class="modal"><div class="modal-box"><div class="modal-header">CONVITES</div><div style="display:flex; gap:5px;"><input id="new-invite-user" placeholder="Usuário (sem @)"><button onclick="window.criarConvite()" style="width:auto;">+</button></div><div id="whitelist-list" style="margin-top:15px; max-height:300px; overflow-y:auto;"></div><button onclick="document.getElementById('modal-whitelist').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
+    <div id="modal-delete-confirm" class="modal"><div class="modal-box" style="border-color:#d32f2f;"><div class="modal-header" style="color:#d32f2f;">⚠️ REVOGAR ACESSO?</div><div style="text-align:center;"><h3 id="delete-target-user" style="margin:10px 0;">...</h3><p style="font-size:12px;">Histórico NÃO será apagado.</p><button onclick="window.executarExclusaoConvite()" class="danger-btn">CONFIRMAR</button><button onclick="document.getElementById('modal-delete-confirm').style.display='none'" class="secondary-btn">CANCELAR</button></div></div></div>
+    <div id="modal-finance" class="modal"><div class="modal-box" style="max-width:600px;"><div class="modal-header">FINANCEIRO</div><div id="finance-list"></div><button onclick="document.getElementById('modal-finance').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
+    <div id="modal-game-editor" class="modal"><div class="modal-box"><div class="modal-header">EDITOR</div><input type="hidden" id="edit-match-id"><select id="adm-comp"></select><select id="adm-round"><option>Fase de Grupos (Apenas para teste)</option><option>Oitavas de final</option><option>Quartas de final</option><option>Semi final</option><option>Final</option></select><input id="adm-tA" placeholder="Time A"><input id="adm-urlA" placeholder="URL A"><input id="adm-tB" placeholder="Time B"><input id="adm-urlB" placeholder="URL B"><input type="datetime-local" id="adm-date"><button onclick="window.salvarJogo()">SALVAR</button><button onclick="document.getElementById('modal-game-editor').style.display='none'" class="secondary-btn">CANCELAR</button></div></div>
+    <div id="modal-manage-comps" class="modal"><div class="modal-box"><div class="modal-header">COMPETIÇÕES</div><input id="new-comp-name" placeholder="Nome"><input id="new-comp-logo" placeholder="URL Logo"><button onclick="window.salvarCompeticao()">SALVAR</button><div id="comp-list" style="margin-top:10px;"></div><button onclick="document.getElementById('modal-manage-comps').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
+    <div id="modal-manage-games" class="modal"><div class="modal-box"><div class="modal-header">JOGOS</div><div id="admin-games-list-modal"></div><button onclick="document.getElementById('modal-manage-games').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
+    <div id="modal-winner" class="modal"><div class="modal-box"><div class="modal-header">VENCEDOR</div><input type="hidden" id="winner-match-id"><button id="btn-win-A" onclick="window.setWinner(this.innerText)">A</button><button id="btn-win-B" onclick="window.setWinner(this.innerText)">B</button><button onclick="window.setWinner('Empate')" class="secondary-btn">EMPATE</button><button onclick="window.setWinner(null)" class="danger-btn">REMOVER</button><button onclick="document.getElementById('modal-winner').style.display='none'" class="secondary-btn">CANCELAR</button></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
@@ -170,9 +231,10 @@
 
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f" };
         const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
-        let currentUser = null; let isRegisterMode = false; let currentCompetitions = [];
+        let currentUser = null; let isRegisterMode = false; let currentCompetitions = []; let inviteToDeleteId = "";
 
-        // --- GLOBAL FUNCTIONS (WINDOW) ---
+        // --- GLOBAL WINDOW FUNCTIONS (CORREÇÃO DE ESCOPO) ---
+        
         window.mudarAba = (aba) => {
             const bgs = {jogos:'bg_jogos.png', ranking:'bg_ranking.png', regras:'bg_regras.png', perfil:'bg_perfil.png'};
             document.body.style.backgroundImage = `url('${bgs[aba]}')`;
@@ -223,16 +285,16 @@
                     h+=`<div class="card ${isF?'card-final':''}">`;
                     if(logos[m.competition]) h+=`<img src="${logos[m.competition]}" class="comp-bg">`;
                     if(isF) h+=`<div style="text-align:center;color:#F57F17;font-weight:900;font-size:11px;margin-bottom:5px;">✨🏆 GRANDE FINAL • VALE DOBRO 🏆✨</div>`;
-                    h+=`<div class="match-header"><div class="comp-name">${m.competition}</div><div class="round-name">${m.round}</div>`;
-                    if(isExp) h+=`<div class="match-time" style="color:${m.winner? (isF?'#F57F17':'#006400') : '#d32f2f'}">${m.winner ? (isF?'🏆 CAMPEÃO: '+m.winner : 'VENCEDOR: '+m.winner) : '🔒 ENCERRADO'}</div>`;
-                    else h+=`<div class="match-time">📅 ${dStr}</div>`;
-                    h+=`</div><div class="teams-container">
-                        <div class="team-btn ${myV===m.teamA?'selected':''}" ${!isExp?`onclick="window.votar('${m.id}','${m.teamA}')"`:''}><img src="${m.teamAUrl}"><div class="team-name">${m.teamA}</div></div>
+                    let st = isExp ? `<span style="color:#d32f2f;">🔒 ENCERRADO: ${dStr}</span>` : `<span class="material-icons-round" style="font-size:12px;vertical-align:middle;">schedule</span> PRAZO: ${dStr}`;
+                    if(isExp && m.winner) st = `<span style="color:${isF?'#F57F17':'#006400'};font-size:13px;">${isF?'🏆 CAMPEÃO':'VENCEDOR'}: ${m.winner}</span>`;
+                    h+=`<div class="match-header"><div class="comp-name">${m.competition}</div><div class="round-name">${m.round}</div><div class="status-text">${st}</div></div>`;
+                    h+=`<div class="teams-container">
+                        <div class="team-btn ${myV===m.teamA?'selected':''}" ${!isExp?`onclick="window.votar('${m.id}','${m.teamA}')"`:''}><img src="${m.teamAUrl}" onerror="this.src='https://placehold.co/50?text=A'"><div class="team-name">${m.teamA}</div></div>
                         <div class="vs">X</div>
-                        <div class="team-btn ${myV===m.teamB?'selected':''}" ${!isExp?`onclick="window.votar('${m.id}','${m.teamB}')"`:''}><img src="${m.teamBUrl}"><div class="team-name">${m.teamB}</div></div>
+                        <div class="team-btn ${myV===m.teamB?'selected':''}" ${!isExp?`onclick="window.votar('${m.id}','${m.teamB}')"`:''}><img src="${m.teamBUrl}" onerror="this.src='https://placehold.co/50?text=B'"><div class="team-name">${m.teamB}</div></div>
                     </div>`;
-                    if(myV && !isExp) h+=`<div class="status-bar" style="color:#2e7d32;">✅ Voto: ${myV}</div>`;
-                    h+=`<div class="status-bar"><span onclick="window.verPalpites('${m.id}','${m.teamA}','${m.teamB}',${isExp},'${m.teamAUrl}','${m.teamBUrl}','${m.winner||''}')" style="cursor:pointer;text-decoration:underline;color:#555;">${isExp?'Ver Palpites':'Quem votou?'}</span></div></div>`;
+                    if(myV && !isExp) h+=`<div style="text-align:center;font-size:12px;color:#2e7d32;font-weight:bold;margin-top:5px;position:relative;z-index:10;">✅ Voto: ${myV}</div>`;
+                    h+=`<div style="text-align:center;margin-top:8px;position:relative;z-index:10;"><span onclick="window.verPalpites('${m.id}','${m.teamA}','${m.teamB}',${isExp},'${m.teamAUrl}','${m.teamBUrl}','${m.winner||''}')" style="cursor:pointer;text-decoration:underline;color:#555;font-size:11px;">${isExp?'Ver Palpites':'Quem votou?'}</span></div></div>`;
                 });
                 document.getElementById('lista-jogos').innerHTML+=h;
             };
@@ -272,11 +334,11 @@
             rank.forEach((r,i)=>{
                 let cls=""; if(i===0)cls="row-gold";if(i===1)cls="row-silver";if(i===2)cls="row-bronze";
                 const img=r.photo?`data:image/jpeg;base64,${r.photo}`:'https://via.placeholder.com/30';
-                tb.innerHTML+=`<tr class="${cls}"><td class="col-pos">${i+1}º</td><td class="col-name td-nome" onclick="window.verFoto('${img}')"><img src="${img}" class="avatar-small">${r.name}</td><td class="col-stat debit" onclick="window.verExtrato('${r.name}')">${r.deb}</td><td class="col-stat" onclick="window.verExtrato('${r.name}')">${r.v}</td><td class="col-stat" onclick="window.verExtrato('${r.name}')">${r.f}</td><td class="col-pts" onclick="window.verExtrato('${r.name}')">${r.pts}</td></tr>`;
+                tb.innerHTML+=`<tr class="${cls}"><td class="col-pos">${i+1}º</td><td class="col-name td-nome" onclick="window.verFoto('${img}')"><img src="${img}" class="rank-avatar">${r.name}</td><td class="col-stat debit" onclick="window.verExtrato('${r.name}')">${r.deb}</td><td class="col-stat" onclick="window.verExtrato('${r.name}')">${r.v}</td><td class="col-stat" onclick="window.verExtrato('${r.name}')">${r.f}</td><td class="col-pts" onclick="window.verExtrato('${r.name}')">${r.pts}</td></tr>`;
                 window['hist_'+r.name]=r.hist;
             });
         };
-        window.verExtrato=(n)=>{const h=window['hist_'+n]||[];document.getElementById('history-title').innerText=n;document.getElementById('history-list').innerHTML=h.map(x=>`<div style="padding:5px;border-bottom:1px solid #eee;">${x}</div>`).join('')||"Vazio";document.getElementById('modal-history').style.display='flex'};
+        window.verExtrato=(n)=>{const h=window['hist_'+n]||[];document.getElementById('history-title').innerText=n;document.getElementById('history-list').innerHTML=h.map(x=>`<div style="padding:8px;border-bottom:1px solid #eee;font-size:13px;">${x}</div>`).join('')||"<div style='padding:10px;'>Sem pontos.</div>";document.getElementById('modal-history').style.display='flex'};
         window.verFoto=(s)=>{document.getElementById('modal-img').src=s;document.getElementById('modal-foto').style.display='flex'};
         
         window.verPalpites = async (mid, tA, tB, exp, uA, uB, win) => {
@@ -288,10 +350,10 @@
                 if(g.data().matchId===mid) {
                     const u=us[g.data().userId]; const v=g.data().teamSelected;
                     let i=""; if(exp){ if(v===tA) i=`<img src="${uA}" style="width:20px;">`; else if(v===tB) i=`<img src="${uB}" style="width:20px;">`; if(win && win!=="Empate") i+=(v===win)?' <span style="color:green">✔</span>':' <span style="color:red">✖</span>'; }
-                    h+=`<div style="display:flex;justify-content:space-between;padding:5px;border-bottom:1px solid #eee;"><span>${u.name}</span><span>${i}</span></div>`;
+                    h+=`<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee;font-size:13px;"><span>${u.name}</span><span>${i}</span></div>`;
                 }
             });
-            list.innerHTML=h||"Nenhum voto.";
+            list.innerHTML=h||"<div style='padding:10px;text-align:center;'>Nenhum voto.</div>";
         };
 
         // ADMIN
@@ -302,12 +364,13 @@
             document.getElementById('modal-whitelist').style.display='flex';
             onSnapshot(collection(db,"whitelist"), s=>{
                 let h=""; const l=[]; s.forEach(d=>l.push(d.id)); l.sort();
-                l.forEach(u=>h+=`<div class="whitelist-item"><span>${u}</span><button class="btn-delete" style="color:red;background:none;border:none;" onclick="window.delInvite('${u}')">🗑️</button></div>`);
+                l.forEach(u=>h+=`<div class="whitelist-item"><span>${u}</span><button class="btn-delete" style="color:red;background:none;border:none;" onclick="window.confirmarExclusaoConvite('${u}')">🗑️</button></div>`);
                 document.getElementById('whitelist-list').innerHTML=h||"Vazio";
             });
         };
         window.criarConvite=async()=>{const u=document.getElementById('new-invite-user').value.trim().toLowerCase(); if(u){await setDoc(doc(db,"whitelist",u),{active:true});document.getElementById('new-invite-user').value="";}};
-        window.delInvite=async(u)=>{if(confirm("Revogar "+u+"?"))await deleteDoc(doc(db,"whitelist",u));};
+        window.confirmarExclusaoConvite=(u)=>{inviteToDeleteId=u;document.getElementById('delete-target-user').innerText=u.toUpperCase();document.getElementById('modal-delete-confirm').style.display='flex'};
+        window.executarExclusaoConvite=async()=>{await deleteDoc(doc(db,"whitelist",inviteToDeleteId));document.getElementById('modal-delete-confirm').style.display='none';alert("Revogado!");};
 
         window.abrirGestaoUsuarios=async()=>{
             document.getElementById('modal-finance').style.display='flex'; const l=document.getElementById('finance-list'); l.innerHTML="...";
@@ -344,7 +407,7 @@
         window.carregarPerfil=async()=>{try{const u=await getDoc(doc(db,"users",currentUser.uid));const d=u.data();document.getElementById('nome-perfil').innerText=d.name;document.getElementById('user-perfil').innerText="@"+d.username;if(d.photoBase64)document.getElementById('img-perfil').src="data:image/jpeg;base64,"+d.photoBase64}catch(e){}};
         window.processarFoto=()=>{const f=document.getElementById('file-input').files[0];if(f){const r=new FileReader();r.onload=(e)=>{const i=new Image();i.src=e.target.result;i.onload=()=>{const c=document.createElement('canvas');const ctx=c.getContext('2d');const s=300/i.width;c.width=300;c.height=i.height*s;ctx.drawImage(i,0,0,c.width,c.height);const b=c.toDataURL('image/jpeg',0.7).split(',')[1];updateDoc(doc(db,"users",currentUser.uid),{photoBase64:b}).then(()=>{document.getElementById('img-perfil').src="data:image/jpeg;base64,"+b;alert("Salvo!");})}};r.readAsDataURL(f)}};
         window.alterarSenha=()=>{const p=prompt("Nova senha (min 6):");if(p&&p.length>=6)updatePassword(currentUser,p).then(()=>alert("Sucesso!")).catch(e=>alert(e.message))};
-        window.verNovidades=()=>{document.getElementById('history-title').innerText="Histórico";document.getElementById('history-list').innerHTML=`<div style="padding:10px;"><b>v1.3.2:</b> Visual Classic, Fontes Serifadas, Ranking 'F' e Whitelist.</div>`;document.getElementById('modal-history').style.display='flex'};
+        window.verNovidades=()=>{document.getElementById('history-title').innerText="Histórico";document.getElementById('history-list').innerHTML=`<div style="padding:10px;"><b>v1.3.2:</b> Visual Classic, Fontes Serifadas, Ranking 'F' e Whitelist.</div><div style="padding:10px;">1. JOGOS: Toque no escudo para votar.<br>2. RANKING: Toque na foto para zoom.<br>3. POTE: Clique no porquinho.</div>`;document.getElementById('modal-history').style.display='flex'};
         window.carregarRegras=async()=>{const d=await getDoc(doc(db,"settings","general"));document.getElementById('regras-texto').innerText=d.exists()?d.data().rulesText:"...";document.getElementById('regras-input').value=d.exists()?d.data().rulesText:""};
         window.editarRegras=()=>{document.getElementById('regras-texto').classList.add('hidden');document.getElementById('regras-input').classList.remove('hidden');document.getElementById('rules-actions').classList.remove('hidden');document.getElementById('btn-edit-rules').classList.add('hidden')};
         window.cancelarEdicaoRegras=()=>{document.getElementById('regras-texto').classList.remove('hidden');document.getElementById('regras-input').classList.add('hidden');document.getElementById('rules-actions').classList.add('hidden');document.getElementById('btn-edit-rules').classList.remove('hidden')};
@@ -353,12 +416,12 @@
         onAuthStateChanged(auth, async (u) => { 
             if(u) { 
                 currentUser=u; 
-                verificarAdmin(u.uid);
+                await verificarAdmin(u.uid);
                 try { await setDoc(doc(db, "users", u.uid), { appVersion: "Web v1.3.2", lastAccess: new Date() }, { merge: true }); } catch(e){}
                 document.getElementById('login-screen').classList.add('hidden'); 
                 document.getElementById('app-screen').classList.remove('hidden'); 
                 window.mudarAba('jogos');
-                window.loadCompetitions(); // Pre-load competitions
+                window.loadCompetitions();
             } else { 
                 currentUser=null; 
                 document.getElementById('login-screen').classList.remove('hidden'); 
