@@ -12,159 +12,225 @@
     <title>Bolão 112 F.C 2026</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
-        :root { --primary: #006400; --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21; --gray: #65676b; }
+        :root { 
+            --primary: #006400; 
+            --gold: #FFD700;
+            --gold-dark: #F57F17;
+            --bg: #f0f2f5; 
+            --card: #ffffff; 
+            --text: #1c1e21; 
+            --gray: #65676b; 
+            /* Fonte Serifada para o tema Classic Badge */
+            --font-stack: "Times New Roman", Times, serif;
+        }
+
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            font-family: var(--font-stack); /* Fonte Serifada Global */
             background-color: var(--bg); margin: 0; padding: 0; color: var(--text); 
             -webkit-tap-highlight-color: transparent; padding-bottom: 20px;
             background-position: center; background-repeat: no-repeat; background-attachment: fixed; background-size: cover; 
             transition: background-image 0.3s ease-in-out;
         }
-        header { background-color: var(--primary); color: white; padding: 15px; padding-top: max(15px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-        h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; flex-grow: 1; text-align: left; padding-left: 10px;}
-        .header-icon { font-size: 28px; cursor: pointer; padding: 5px; color: #FFD700; text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
+
+        /* --- COMPONENTES CLASSIC BADGE (CANTOS CORTADOS) --- */
+        .cut-corner {
+            clip-path: polygon(
+                10px 0, 100% 0, 
+                100% calc(100% - 10px), calc(100% - 10px) 100%, 
+                0 100%, 0 10px
+            );
+        }
+        
+        .cut-corner-btn {
+            clip-path: polygon(
+                6px 0, 100% 0, 
+                100% calc(100% - 6px), calc(100% - 6px) 100%, 
+                0 100%, 0 6px
+            );
+        }
+
+        header { background-color: var(--primary); color: white; padding: 15px; padding-top: max(15px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border-bottom: 3px solid var(--gold); }
+        h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 1px; flex-grow: 1; text-align: left; padding-left: 10px; text-transform: uppercase; }
+        .header-icon { font-size: 28px; cursor: pointer; padding: 5px; color: var(--gold); text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
         .container { padding: 15px; max-width: 600px; margin: 0 auto; padding-bottom: 90px; }
+        
         #login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: white; padding: 20px; box-sizing: border-box; position: relative; z-index: 5000; }
         
-        /* INPUTS PADRÃO (TEXTO/DATA) */
+        /* Inputs com visual clássico */
         input:not([type="checkbox"]), select, textarea { 
-            padding: 14px; 
-            margin: 8px 0; 
-            width: 100%; 
-            border: 1px solid #ccc; 
-            border-radius: 12px; 
-            font-size: 16px; 
-            box-sizing: border-box; 
-            background: #f9f9f9; 
-            color: #333;
-            transition: 0.3s; 
-            -webkit-appearance: none; /* Remove estilo iOS apenas de textos */
+            padding: 14px; margin: 8px 0; width: 100%; 
+            border: 2px solid #ccc; /* Borda mais grossa */
+            border-radius: 4px; /* Levemente arredondado, quase quadrado */
+            font-size: 16px; box-sizing: border-box; background: #f9f9f9; color: #333; 
+            font-family: var(--font-stack);
+            transition: 0.3s; -webkit-appearance: none; 
         }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); outline: none; background: #fff; }
         
-        /* CORREÇÃO DAS CHECKBOXES */
-        input[type="checkbox"] {
-            -webkit-appearance: checkbox; 
-            appearance: checkbox;
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
-            cursor: pointer;
-            accent-color: var(--primary); 
-        }
+        input[type="checkbox"] { width: 20px; height: 20px; margin-right: 10px; cursor: pointer; accent-color: var(--primary); }
 
-        button { padding: 16px; background-color: var(--primary); color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; width: 100%; font-weight: 700; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,100,0,0.2); transition: transform 0.1s; }
+        /* Botões Classic Badge */
+        button { 
+            padding: 16px; background-color: var(--primary); color: white; border: none; 
+            cursor: pointer; font-size: 16px; width: 100%; font-weight: 800; margin-top: 15px; 
+            font-family: var(--font-stack); text-transform: uppercase; letter-spacing: 1px;
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); /* Cut Corner */
+            transition: transform 0.1s;
+        }
         button:active { transform: scale(0.98); }
         button:disabled { background-color: #ccc; box-shadow: none; }
-        .secondary-btn { background-color: transparent; color: var(--gray); border: 1px solid #ddd; margin-top: 10px; box-shadow: none; }
-        .toggle-link { color: var(--primary); font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 14px; }
+        .secondary-btn { background-color: #eee; color: #333; border: 1px solid #ccc; margin-top: 10px; box-shadow: none; }
+        .toggle-link { color: var(--primary); font-weight: bold; cursor: pointer; margin-top: 25px; font-size: 14px; text-transform: uppercase; text-decoration: underline; }
         
+        /* Perfil */
         .profile-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; margin-top: 20px; position: relative; z-index: 5; width: 100%; }
-        .glass-box { background: rgba(255,255,255,0.9); padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); backdrop-filter: blur(5px); width: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .glass-box { 
+            background: rgba(255,255,255,0.95); padding: 25px; 
+            border: 3px solid var(--primary); /* Borda sólida */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); backdrop-filter: blur(5px); width: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; 
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+        }
         .big-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary); margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .profile-name { font-size: 22px; font-weight: 800; }
-        .profile-user { color: #888; font-size: 15px; margin-bottom: 25px; }
+        .profile-name { font-size: 24px; font-weight: 800; text-transform: uppercase; }
+        .profile-user { color: #555; font-size: 16px; margin-bottom: 25px; font-style: italic; }
 
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; padding-bottom: max(12px, env(safe-area-inset-bottom)); border-top: 1px solid #eee; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 100; }
-        .nav-item { cursor: pointer; font-size: 10px; text-align: center; color: #aaa; flex: 1; display: flex; flex-direction: column; align-items: center; transition: color 0.2s; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 12px 0; padding-bottom: max(12px, env(safe-area-inset-bottom)); border-top: 2px solid #ddd; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 100; }
+        .nav-item { cursor: pointer; font-size: 11px; text-align: center; color: #888; flex: 1; display: flex; flex-direction: column; align-items: center; transition: color 0.2s; font-family: var(--font-stack); font-weight: bold; }
         .nav-item .material-icons-round { font-size: 26px; margin-bottom: 2px; }
-        .nav-item.active { color: var(--primary); font-weight: 600; }
-        .section-header { text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin: 25px 0 10px 0; font-size: 14px; background: rgba(255,255,255,0.8); padding: 8px; border-radius: 20px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .nav-item.active { color: var(--primary); font-weight: 900; }
         
-        /* CARD PADRÃO */
-        .card { background: var(--card); border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.03); position: relative; overflow: hidden; }
+        .section-header { 
+            text-align: center; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin: 25px 0 10px 0; font-size: 15px; 
+            background: rgba(255,255,255,0.9); padding: 10px 20px; 
+            width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 2px solid; /* A cor da borda será definida inline */
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        }
         
-        /* ESTILO ESPECIAL PARA A FINAL (DOURADO) */
+        /* CARD DE JOGO (CLASSIC BADGE) */
+        .card { 
+            background: var(--card); padding: 16px; margin-bottom: 16px; 
+            position: relative; overflow: hidden; 
+            border: 1px solid #ccc;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        /* ESTILO ESPECIAL PARA A FINAL (DOURADO & POMPOSO) */
         .card-final {
-            border: 2px solid #FFD700 !important;
-            background: linear-gradient(145deg, #ffffff, #fffde7) !important;
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
+            border: 4px solid var(--gold) !important;
+            background: linear-gradient(145deg, #FFFDE7, #FFF9C4) !important;
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5) !important;
         }
 
         .comp-watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.1; z-index: 0; pointer-events: none; object-fit: cover; }
-        .match-comp { font-size: 11px; color: var(--primary); font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 0.8px; position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; }
-        .match-header { font-size: 12px; color: #888; text-align: center; margin-bottom: 15px; margin-top: 4px; line-height: 1.4; position: relative; z-index: 2; }
+        .match-comp { font-size: 13px; color: var(--primary); font-weight: 900; text-align: center; text-transform: uppercase; letter-spacing: 1px; position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; }
+        .match-header { font-size: 13px; color: #555; text-align: center; margin-bottom: 15px; margin-top: 4px; line-height: 1.4; position: relative; z-index: 2; font-weight: 600; }
         .teams { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; }
-        .team-btn { display: flex; flex-direction: column; align-items: center; width: 40%; padding: 12px 5px; border: 2px solid transparent; border-radius: 12px; background: rgba(249,249,249,0.8); cursor: pointer; transition: all 0.2s; position: relative; backdrop-filter: blur(2px); z-index: 11; }
-        .team-btn.selected { background-color: rgba(232,245,233,0.9); border-color: #4CAF50; color: var(--primary); }
+        
+        /* BOTÃO DE TIME (CLASSIC) */
+        .team-btn { 
+            display: flex; flex-direction: column; align-items: center; width: 40%; padding: 12px 5px; 
+            border: 2px solid transparent; background: #eee; cursor: pointer; transition: all 0.2s; position: relative; z-index: 11; 
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+        }
+        .team-btn.selected { background-color: var(--primary); border-color: var(--gold); color: white; }
+        .team-btn.selected .team-name { color: white !important; }
+        
         .team-img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
-        .team-name { font-size: 11px; font-weight: 700; text-align: center; line-height: 1.2; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 28px; display: flex; align-items: center; justify-content: center; }
-        .vs { font-weight: 900; color: #d32f2f; font-size: 16px; position: relative; z-index: 2; }
-        .status-msg { text-align:center; margin-top:10px; position:relative; z-index:10; font-size:12px; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-        th { text-align: center; color: #888; font-size: 11px; background: #fafafa; padding: 12px 5px; border-bottom: 1px solid #eee; text-transform: uppercase; font-weight: 700; }
-        td { padding: 14px 5px; vertical-align: middle; text-align: center; border-bottom: 1px solid #eee; font-size: 14px; }
-        .td-nome { text-align: left; display: flex; align-items: center; font-weight: 600; cursor: pointer; padding-left: 10px; }
+        .team-name { font-size: 12px; font-weight: 800; text-align: center; line-height: 1.2; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 28px; display: flex; align-items: center; justify-content: center; color: #000; }
+        .vs { font-weight: 900; color: #bbb; font-size: 24px; position: relative; z-index: 2; font-family: sans-serif; /* VS fica melhor sans */ }
+        .status-msg { text-align:center; margin-top:10px; position:relative; z-index:10; font-size:13px; font-weight: bold; }
+        
+        /* TABELA DE RANKING (ESTILO JORNAL) */
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 6px rgba(0,0,0,0.05); border: 2px solid var(--primary); }
+        th { text-align: center; color: #555; font-size: 12px; background: #f0f0f0; padding: 12px 5px; border-bottom: 2px solid #ccc; text-transform: uppercase; font-weight: 900; letter-spacing: 0.5px; }
+        td { padding: 14px 5px; vertical-align: middle; text-align: center; border-bottom: 1px solid #eee; font-size: 15px; font-weight: 600; }
+        .td-nome { text-align: left; display: flex; align-items: center; font-weight: 700; cursor: pointer; padding-left: 10px; font-size: 15px; }
         .rank-avatar { width: 36px; height: 36px; border-radius: 50%; background: #eee; margin-right: 12px; object-fit: cover; border: 1px solid #999; }
-        .debit { color: #d32f2f; font-weight: bold; }
-        .points { font-weight: 900; font-size: 16px; color: #000; }
-        .clickable-stats { cursor: pointer; }
+        .debit { color: #d32f2f; font-weight: 900; }
+        .points { font-weight: 900; font-size: 18px; color: #000; }
+        .clickable-stats { cursor: pointer; text-decoration: underline; text-decoration-color: #ccc; }
         .rank-row-1 { background-color: #fff9c4 !important; } .rank-row-2 { background-color: #e0e0e0 !important; } .rank-row-3 { background-color: #ffccbc !important; } 
-        .rules-box { background: rgba(255,255,255,0.95); padding: 25px; border-radius: 16px; font-size: 15px; line-height: 1.7; white-space: pre-wrap; box-shadow: 0 2px 6px rgba(0,0,0,0.05); color: #444; }
-        .admin-btn { background-color: #333; color: #ffd700; margin-top: 20px; border: 1px solid #ffd700; font-weight: bold; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .payment-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-top: 10px; }
-        .month-box { font-size: 10px; text-align: center; padding: 5px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; background: white; }
+        
+        .rules-box { 
+            background: rgba(255,255,255,0.95); padding: 25px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; box-shadow: 0 2px 6px rgba(0,0,0,0.05); color: #222; 
+            border: 2px solid var(--primary);
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        }
+        
+        /* BOTÕES ADMIN COLORIDOS */
+        .admin-btn { margin-top: 20px; border: 1px solid rgba(0,0,0,0.1); font-weight: 900; padding: 14px; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        
+        /* FINANCEIRO GRID (CALENDÁRIO) */
+        .payment-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 10px; }
+        .month-box { font-size: 11px; text-align: center; padding: 8px 2px; border: 1px solid #999; cursor: pointer; background: white; font-weight: bold; clip-path: polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px); }
         .month-box.paid { background-color: #2e7d32; color: white; border-color: #2e7d32; }
+        
         .admin-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; }
-        .btn-small { padding: 8px 12px; font-size: 12px; margin: 0; width: auto; }
+        .btn-small { padding: 8px 12px; font-size: 12px; margin: 0; width: auto; clip-path: none; border-radius: 4px; }
         .btn-danger { background-color: #d32f2f; }
         .btn-edit { background-color: #1976d2; }
-        .modal { display: none; position: fixed; z-index: 6000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        
+        .modal { display: none; position: fixed; z-index: 6000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); align-items: center; justify-content: center; backdrop-filter: blur(3px); }
         #modal-pote { z-index: 9999 !important; }
         #modal-manage-games { z-index: 7000; }
         #modal-game-editor { z-index: 8000; }
         #modal-winner { z-index: 8000; }
-        .modal-box { background: white; width: 90%; max-width: 500px; max-height: 80vh; border-radius: 20px; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; }
-        .modal-header { font-weight: 800; font-size: 18px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; text-align: center; }
+        .modal-box { background: white; width: 90%; max-width: 500px; max-height: 80vh; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.5); position: relative; border: 3px solid var(--primary); clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); }
+        .modal-header { font-weight: 900; font-size: 20px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #eee; text-align: center; text-transform: uppercase; color: var(--primary); }
+        
         .log-item { padding: 10px 0; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
         .guide-title { color: var(--primary); font-weight: 800; margin-top: 20px; margin-bottom: 8px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
         .hidden { display: none !important; }
-        .error { color: #d32f2f; margin-top: 10px; font-size: 13px; text-align: center; }
-        .alert-box { background: #333; color: white; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 12px; text-align: center; display: none; }
-        .legenda { color: #ffd700; font-weight: 800; margin-bottom: 5px; font-size: 11px; text-transform: uppercase; }
+        .error { color: #d32f2f; margin-top: 10px; font-size: 14px; text-align: center; font-weight: bold; }
+        .alert-box { background: #222; color: #ffd700; padding: 12px; margin-bottom: 20px; font-size: 12px; text-align: center; display: none; border: 1px solid #ffd700; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px); }
+        .legenda { color: white; font-weight: 800; margin-bottom: 5px; font-size: 11px; text-transform: uppercase; }
         .icon-text { display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .pot-value { font-size: 32px; font-weight: 900; color: var(--primary); text-align: center; margin: 10px 0; }
+        .pot-value { font-size: 36px; font-weight: 900; color: var(--primary); text-align: center; margin: 10px 0; font-family: "Courier New", Courier, monospace; letter-spacing: -1px; }
         .comp-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
-        .search-icon-btn { cursor: pointer; color: #555; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-left: 5px; background: #eee; }
-        .notify-option { display: flex; align-items: center; margin-bottom: 12px; font-size: 14px; color: #333; font-weight: 500; }
+        .search-icon-btn { cursor: pointer; color: #555; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-left: 5px; background: #eee; }
+        .notify-option { display: flex; align-items: center; margin-bottom: 12px; font-size: 14px; color: #333; font-weight: 600; }
         .notify-option input { margin-right: 12px; }
     </style>
 </head>
 <body>
     <div id="login-screen">
-        <img src="background_login.png" onerror="this.src='favicon.png'" style="margin-bottom: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 120px; height: 120px; object-fit: cover;"> 
-        <h2 style="color: #333; margin-bottom: 30px; font-weight: 800;">Bolão 112 F.C 2026</h2>
-        <input type="text" id="fullname" placeholder="Nome de Exibição" class="hidden">
-        <input type="text" id="email" placeholder="Usuário" autocapitalize="none">
-        <input type="password" id="password" placeholder="Senha">
-        <button onclick="window.processarAuth()" id="btn-login">ENTRAR</button>
-        <p id="login-msg" class="error"></p>
-        <div class="toggle-link" onclick="window.alternarModo()" id="toggle-btn">Não tem conta? Criar agora</div>
+        <div style="background: rgba(255,255,255,0.9); padding: 30px; border: 4px solid var(--primary); clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px); width: 100%; max-width: 350px; text-align: center;">
+            <img src="background_login.png" onerror="this.src='favicon.png'" style="margin-bottom: 20px; border: 2px solid var(--primary); width: 100px; height: 100px; object-fit: cover; border-radius: 50%;"> 
+            <h2 style="color: var(--primary); margin-bottom: 30px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">Bolão 112 F.C</h2>
+            <input type="text" id="fullname" placeholder="Nome de Exibição" class="hidden">
+            <input type="text" id="email" placeholder="Usuário" autocapitalize="none">
+            <input type="password" id="password" placeholder="Senha">
+            <button onclick="window.processarAuth()" id="btn-login" style="background-color: var(--primary); border: 2px solid #004d00;">ENTRAR</button>
+            <p id="login-msg" class="error"></p>
+            <div class="toggle-link" onclick="window.alternarModo()" id="toggle-btn">NÃO TEM CONTA? CRIAR</div>
+        </div>
     </div>
 
     <div id="app-screen" class="hidden">
         <header>
-            <h1 id="header-title">Bolão 112 F.C</h1>
+            <h1 id="header-title">BOLÃO 112 F.C</h1>
             <span class="material-icons-round header-icon" onclick="window.verPote()">savings</span>
         </header>
 
         <div id="container-admin" class="container hidden">
-            <div class="section-header" style="color: #333;">PAINEL ADMINISTRATIVO</div>
-            <button onclick="document.getElementById('container-admin').classList.add('hidden'); document.getElementById('container-perfil').classList.remove('hidden');" class="secondary-btn" style="margin-bottom: 20px;">Voltar</button>
-            <button onclick="window.abrirGestaoJogos()" class="admin-btn icon-text"><span class="material-icons-round">sports_soccer</span> GERENCIAR CONFRONTOS</button>
-            <button onclick="window.abrirGestaoUsuarios()" class="admin-btn icon-text"><span class="material-icons-round">attach_money</span> FINANCEIRO & USUÁRIOS</button>
-            <button onclick="window.abrirGestaoCompeticoes()" class="admin-btn icon-text" style="background-color: #1976D2; border-color: #1976D2;"><span class="material-icons-round">list</span> GERENCIAR COMPETIÇÕES</button>
+            <div class="section-header" style="color: #333; border-color: #333;">PAINEL ADMINISTRATIVO</div>
+            <button onclick="document.getElementById('container-admin').classList.add('hidden'); document.getElementById('container-perfil').classList.remove('hidden');" class="secondary-btn" style="margin-bottom: 20px;">VOLTAR</button>
+            <button onclick="window.abrirGestaoUsuarios()" class="admin-btn icon-text" style="background-color: #2E7D32;">💰 FINANCEIRO & USUÁRIOS 👥</button>
+            <button onclick="window.abrirGestaoJogos()" class="admin-btn icon-text" style="background-color: #1565C0;">⚽ NOVO CONFRONTO ➕</button>
+            <button onclick="window.abrirGestaoCompeticoes()" class="admin-btn icon-text" style="background-color: #EF6C00;"><span class="material-icons-round">list</span> COMPETIÇÕES 🎖️</button>
         </div>
 
         <div id="container-jogos" class="container">
-            <div id="loading-jogos" style="text-align: center; padding: 40px; color: #999;">Carregando confrontos...</div>
+            <div id="loading-jogos" style="text-align: center; padding: 40px; color: #999; font-weight: bold;">Carregando confrontos...</div>
             <div id="lista-jogos"></div>
         </div>
 
         <div id="container-ranking" class="container hidden">
             <div id="ranking-footer" class="alert-box" style="display:block;">
                 <div class="legenda">Legenda: D=Débitos(-1) | V=Vitórias | F=Finais | PTS=Pontos</div>
-                <div id="last-update">...</div>
+                <div id="last-update" style="color: white; font-style: italic;">...</div>
             </div>
             <table id="tabela-ranking">
                 <thead><tr><th>Pos</th><th>Nome</th><th>D</th><th>V</th><th>F</th><th>PTS</th></tr></thead>
@@ -187,21 +253,23 @@
         <div id="container-perfil" class="container hidden">
             <div class="profile-header">
                 <div class="glass-box">
+                    <div style="font-weight: 900; font-size: 18px; margin-bottom: 15px; color: var(--primary);">CARTÃO DE MEMBRO</div>
                     <img id="img-perfil" src="" class="big-avatar">
+                    <button onclick="document.getElementById('file-input').click()" class="secondary-btn icon-text" style="width:auto; padding:8px 20px; font-size: 12px; margin-bottom: 15px;"><span class="material-icons-round" style="font-size:16px;">edit</span> Alterar Foto</button>
                     <div class="profile-name" id="nome-perfil">...</div>
                     <div class="profile-user" id="user-perfil">@...</div>
                     <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="window.processarFoto()">
-                    <button onclick="document.getElementById('file-input').click()" class="secondary-btn icon-text" style="width:auto; padding:10px 25px;"><span class="material-icons-round" style="font-size:18px;">photo_camera</span> Alterar Foto</button>
-                    <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn icon-text" style="margin-top: 20px; display: none;">
-                        <span class="material-icons-round">admin_panel_settings</span> PAINEL ADMIN
-                    </button>
                 </div>
             </div>
-            <div class="glass-box" style="margin-top: 20px;">
+            <div class="glass-box" style="margin-top: 20px; padding: 20px;">
                 <input type="password" id="new-password" placeholder="Nova Senha">
-                <button onclick="window.alterarSenha()" style="margin-top: 10px;">Salvar Nova Senha</button>
-                <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:15px; color:#006400; border-color: #006400; background: #f0fff4; width: 100%;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.14 & Guia</button>
+                <button onclick="window.alterarSenha()" style="margin-top: 10px; background-color: #1565C0;">TROCAR SENHA</button>
+                <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:15px; color:#006400; border-color: #006400; background: #fff; width: 100%;">✨ NOVIDADES & HISTÓRICO</button>
             </div>
+            
+            <button id="btn-admin-painel" onclick="window.abrirAdmin()" class="admin-btn icon-text" style="margin-top: 25px; background-color: #000; border: 2px solid #444; display: none;">
+                <span class="material-icons-round">settings</span> PAINEL ADMIN
+            </button>
         </div>
 
         <div class="bottom-nav">
@@ -213,9 +281,9 @@
         </div>
     </div>
 
-    <div id="modal-foto" class="modal" onclick="this.style.display='none'"><img id="modal-img" class="modal-content"></div>
-    <div id="modal-history" class="modal"><div class="modal-box"><div class="modal-header" id="history-title">...</div><div id="history-list"></div><button onclick="this.parentElement.parentElement.style.display='none'" style="margin-top:20px; background:#eee; color:#333;">Fechar</button></div></div>
-    <div id="modal-pote" class="modal"><div class="modal-box" style="text-align: center;"><div class="modal-header" style="color: #006400;">💰 POTE DE OURO 💰</div><div style="font-size: 16px; color: #555;">Valor total arrecadado:</div><div id="pote-valor" class="pot-value">Calculando...</div><div style="font-size: 12px; color: #999; margin-top: 15px;">Quanto mais gente pagar em dia, maior o prêmio! 🚀</div><button onclick="document.getElementById('modal-pote').style.display='none'" style="margin-top:20px;">Sensacional!</button></div></div>
+    <div id="modal-foto" class="modal" onclick="this.style.display='none'"><img id="modal-img" class="modal-content" style="max-width: 90%; max-height: 80%; border: 5px solid white; box-shadow: 0 0 20px rgba(0,0,0,0.5);"></div>
+    <div id="modal-history" class="modal"><div class="modal-box"><div class="modal-header" id="history-title">...</div><div id="history-list"></div><button onclick="this.parentElement.parentElement.style.display='none'" style="margin-top:20px; background:#333; color:white;">FECHAR</button></div></div>
+    <div id="modal-pote" class="modal"><div class="modal-box" style="text-align: center;"><div class="modal-header" style="color: #006400;">💰 POTE DE OURO 💰</div><div style="font-size: 16px; color: #555;">Valor total arrecadado:</div><div id="pote-valor" class="pot-value">Calculando...</div><div style="font-size: 12px; color: #999; margin-top: 15px;">Quanto mais gente pagar em dia, maior o prêmio! 🚀</div><button onclick="document.getElementById('modal-pote').style.display='none'" style="margin-top:20px;">SHOW!</button></div></div>
 
     <div id="modal-game-editor" class="modal">
         <div class="modal-box">
@@ -241,14 +309,16 @@
                 <label class="notify-option"><input type="checkbox" id="notify-push" checked> Enviar Notificação Push (App)</label>
             </div>
 
-            <button onclick="window.salvarJogo()" style="margin-top:15px;">Salvar Confronto</button>
-            <button onclick="document.getElementById('modal-game-editor').style.display='none'" class="secondary-btn">Cancelar</button>
+            <button onclick="window.salvarJogo()" style="margin-top:15px;">SALVAR CONFRONTO</button>
+            <button onclick="document.getElementById('modal-game-editor').style.display='none'" class="secondary-btn">CANCELAR</button>
         </div>
     </div>
 
-    <div id="modal-manage-comps" class="modal"><div class="modal-box"><div class="modal-header">Competições</div><div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:15px;"><input type="hidden" id="edit-comp-original-name"><input id="new-comp-name" placeholder="Nome (ex: Brasileirão)"><div style="display:flex; align-items:center; margin-top:5px;"><input id="new-comp-logo" placeholder="URL do Logo" style="flex:1;"><span onclick="window.buscarLogo('new-comp-name')" class="material-icons-round search-icon-btn">search</span></div><div style="display:flex; justify-content:flex-end; margin-top:10px; gap:5px;"><button onclick="window.limparFormComp()" class="btn-small btn-danger" style="background:#ccc; color:#333; border:none;">Limpar</button><button onclick="window.salvarCompeticao()" class="btn-small" style="width:auto;">Salvar</button></div></div><div id="comp-list"></div><button onclick="document.getElementById('modal-manage-comps').style.display='none'" class="secondary-btn">Fechar</button></div></div>
-    <div id="modal-finance" class="modal"><div class="modal-box" style="width: 95%; max-width: 600px;"><div class="modal-header">Gestão Financeira</div><div id="finance-list"></div><button onclick="document.getElementById('modal-finance').style.display='none'" style="margin-top:10px;">Fechar</button></div></div>
-    <div id="modal-manage-games" class="modal"><div class="modal-box"><div class="modal-header">Gerenciar Confrontos</div><button onclick="window.abrirNovoJogo()" class="admin-btn" style="margin-bottom:15px; margin-top:0;">+ NOVO CONFRONTO</button><div id="admin-games-list"></div><button onclick="document.getElementById('modal-manage-games').style.display='none'" class="secondary-btn">Fechar</button></div></div>
+    <div id="modal-manage-comps" class="modal"><div class="modal-box"><div class="modal-header">Competições</div><div style="background:#f9f9f9; padding:10px; border:1px solid #ccc; margin-bottom:15px;"><input type="hidden" id="edit-comp-original-name"><input id="new-comp-name" placeholder="Nome (ex: Brasileirão)"><div style="display:flex; align-items:center; margin-top:5px;"><input id="new-comp-logo" placeholder="URL do Logo" style="flex:1;"><span onclick="window.buscarLogo('new-comp-name')" class="material-icons-round search-icon-btn">search</span></div><div style="display:flex; justify-content:flex-end; margin-top:10px; gap:5px;"><button onclick="window.limparFormComp()" class="btn-small btn-danger" style="background:#ccc; color:#333; border:none;">Limpar</button><button onclick="window.salvarCompeticao()" class="btn-small" style="width:auto;">Salvar</button></div></div><div id="comp-list"></div><button onclick="document.getElementById('modal-manage-comps').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
+    
+    <div id="modal-finance" class="modal"><div class="modal-box" style="width: 95%; max-width: 600px;"><div class="modal-header">Gestão Financeira</div><div id="finance-list"></div><button onclick="document.getElementById('modal-finance').style.display='none'" style="margin-top:10px;">FECHAR</button></div></div>
+    
+    <div id="modal-manage-games" class="modal"><div class="modal-box"><div class="modal-header">Gerenciar Confrontos</div><div id="admin-games-list"></div><button onclick="document.getElementById('modal-manage-games').style.display='none'" class="secondary-btn">FECHAR</button></div></div>
     <div id="modal-winner" class="modal">
         <div class="modal-box">
             <div class="modal-header" id="history-title">Quem venceu?</div>
@@ -257,7 +327,7 @@
             <button id="btn-win-A" onclick="window.setWinner(this.innerText)">Time A</button>
             <button id="btn-win-B" onclick="window.setWinner(this.innerText)">Time B</button>
             <button id="btn-win-draw" onclick="window.setWinner('Empate')" class="secondary-btn" style="background:#eee; display:none;">Empate (Sem Pontos)</button>
-            <button onclick="window.setWinner(null)" class="btn-danger" style="margin-top:10px;">Remover Vencedor</button>
+            <button onclick="window.setWinner(null)" class="btn-danger" style="margin-top:10px; background-color: #d32f2f;">Remover Vencedor</button>
             <button onclick="document.getElementById('modal-winner').style.display='none'" class="secondary-btn">Cancelar</button>
         </div>
     </div>
@@ -340,7 +410,7 @@
                 i.src = e.target.result; 
                 i.onload = () => { 
                     const c = document.createElement('canvas'); const ctx = c.getContext('2d'); const scale = 300/i.width; c.width=300; c.height=i.height*scale; ctx.drawImage(i,0,0,c.width,c.height); const b64 = c.toDataURL('image/jpeg',0.7).split(',')[1]; 
-                    updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.14"}).then(() => { document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; alert("Foto salva!"); }); 
+                    updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.2"}).then(() => { document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; alert("Foto salva!"); }); 
                 }; 
             }; 
             r.readAsDataURL(file); 
@@ -374,7 +444,7 @@
                         document.getElementById('btn-edit-rules').classList.remove('hidden');
                         window.loadCompetitions();
                     }
-                    updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.14" });
+                    updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.2" });
                 }
             } catch(e) { console.log(e); }
         };
@@ -419,11 +489,11 @@
         window.removeComp = async (name) => { if(confirm(`Excluir ${name}?`)) { const newList = currentCompetitions.filter(c => c.name !== name); await updateDoc(doc(db, "settings", "competitions"), { items: newList }); currentCompetitions = newList; window.renderCompList(); window.updateCompSelect(); } };
         window.buscarLogo = (inputId) => { const name = document.getElementById(inputId).value; if(name) window.open(`https://www.google.com/search?tbm=isch&q=escudo+${encodeURIComponent(name)}+png`); else alert("Digite o nome primeiro!"); };
 
-        window.processarAuth = async () => { const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg'); const user = document.getElementById('email').value.trim().toLowerCase(); const pass = document.getElementById('password').value; const fullName = document.getElementById('fullname').value.trim(); const email = user + "@bolao112.com"; btn.disabled = true; msg.innerText = "Conectando..."; try { if (isRegisterMode) { if(!fullName || pass.length < 6) throw new Error("Preencha campos."); const w = await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Não convidado."); const c = await createUserWithEmailAndPassword(auth, email, pass); await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.14"}); } else await signInWithEmailAndPassword(auth, email, pass); } catch(e) { msg.innerText = e.message; btn.disabled = false; } };
+        window.processarAuth = async () => { const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg'); const user = document.getElementById('email').value.trim().toLowerCase(); const pass = document.getElementById('password').value; const fullName = document.getElementById('fullname').value.trim(); const email = user + "@bolao112.com"; btn.disabled = true; msg.innerText = "Conectando..."; try { if (isRegisterMode) { if(!fullName || pass.length < 6) throw new Error("Preencha campos."); const w = await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Não convidado."); const c = await createUserWithEmailAndPassword(auth, email, pass); await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.2"}); } else await signInWithEmailAndPassword(auth, email, pass); } catch(e) { msg.innerText = e.message; btn.disabled = false; } };
         window.alternarModo = () => { isRegisterMode=!isRegisterMode; document.getElementById('btn-login').innerText=isRegisterMode?"CADASTRAR":"ENTRAR"; document.getElementById('fullname').classList.toggle('hidden'); };
         window.sair = () => signOut(auth);
         window.abrirAdmin = () => { ['jogos', 'ranking', 'regras', 'perfil'].forEach(a => document.getElementById(`container-${a}`).classList.add('hidden')); document.getElementById('container-admin').classList.remove('hidden'); document.getElementById('header-title').innerText = "Painel Admin"; window.loadCompetitions(); };
-        window.abrirGestaoJogos = async () => { document.getElementById('modal-manage-games').style.display = 'flex'; const snap = await getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))); const div = document.getElementById('admin-games-list'); div.innerHTML = ""; snap.forEach(d => { const m = {id:d.id, ...d.data()}; const winnerText = m.winner ? `<span style="color:green">V: ${m.winner}</span>` : `<span style="color:orange">Aberto</span>`; div.innerHTML += `<div style="border:1px solid #eee; padding:10px; margin-bottom:5px; border-radius:8px;"><div style="font-weight:bold">${m.teamA} x ${m.teamB}</div><div style="font-size:12px; color:#666;">${m.competition} | ${winnerText}</div><div class="admin-actions"><button class="btn-small btn-edit" onclick="window.abrirEditarJogo('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', '${m.competition}', '${m.round}', '${m.deadline ? m.deadline.toDate().toISOString() : ''}')">Editar</button><button class="btn-small btn-edit" onclick="window.abrirDefinirVencedor('${m.id}','${m.teamA}','${m.teamB}', '${m.round}')">Vencedor</button><button class="btn-small btn-danger" onclick="window.excluirJogo('${m.id}')">Excluir</button></div></div>`; }); };
+        window.abrirGestaoJogos = async () => { document.getElementById('modal-manage-games').style.display = 'flex'; const snap = await getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))); const div = document.getElementById('admin-games-list'); div.innerHTML = ""; snap.forEach(d => { const m = {id:d.id, ...d.data()}; const winnerText = m.winner ? `<span style="color:green">V: ${m.winner}</span>` : `<span style="color:orange">Aberto</span>`; div.innerHTML += `<div style="border:1px solid #ccc; padding:10px; margin-bottom:5px; border-radius:4px;"><div style="font-weight:bold; font-size:14px;">${m.teamA} x ${m.teamB}</div><div style="font-size:12px; color:#555;">${m.competition} | ${winnerText}</div><div class="admin-actions"><button class="btn-small btn-edit" onclick="window.abrirEditarJogo('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', '${m.competition}', '${m.round}', '${m.deadline ? m.deadline.toDate().toISOString() : ''}')">Editar</button><button class="btn-small btn-edit" onclick="window.abrirDefinirVencedor('${m.id}','${m.teamA}','${m.teamB}', '${m.round}')">Vencedor</button><button class="btn-small btn-danger" onclick="window.excluirJogo('${m.id}')">Excluir</button></div></div>`; }); };
         
         window.abrirNovoJogo = () => { 
             document.getElementById('modal-game-title').innerText = "Novo Confronto"; 
@@ -531,7 +601,39 @@
             window.abrirGestaoJogos(); 
         };
 
-        window.abrirGestaoUsuarios = async () => { document.getElementById('modal-finance').style.display = 'flex'; const list = document.getElementById('finance-list'); list.innerHTML = "Carregando..."; const snap = await getDocs(collection(db, "users")); let html = ""; const users = []; snap.forEach(d => users.push({id:d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]; users.forEach(u => { const debts = u.debts || 0; let monthsHtml = ""; months.forEach(m => { const isPaid = u.payments && u.payments[m]; monthsHtml += `<div class="month-box ${isPaid?'paid':''}" onclick="window.togglePayment('${u.id}', '${m}', ${!isPaid})">${m}</div>`; }); html += `<div style="border-bottom:1px solid #eee; padding:10px 0;"><div style="display:flex; justify-content:space-between; font-weight:bold;"><span>${u.name} <small style="color:blue; font-weight:normal;">(${u.appVersion||'-'})</small></span><span style="color:red">Déb: ${debts}</span></div><div style="display:flex; gap:10px; margin:5px 0;"><button class="btn-small" onclick="window.mudarDebito('${u.id}', ${debts-1})">-1</button><button class="btn-small btn-danger" onclick="window.mudarDebito('${u.id}', ${debts+1})">+1</button></div><div class="payment-grid">${monthsHtml}</div></div>`; }); list.innerHTML = html; };
+        window.abrirGestaoUsuarios = async () => { 
+            document.getElementById('modal-finance').style.display = 'flex'; 
+            const list = document.getElementById('finance-list'); 
+            list.innerHTML = "Carregando..."; 
+            const snap = await getDocs(collection(db, "users")); 
+            let html = ""; 
+            const users = []; 
+            snap.forEach(d => users.push({id:d.id, ...d.data()})); 
+            users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); 
+            const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]; 
+            
+            users.forEach(u => { 
+                const debts = u.debts || 0; 
+                let monthsHtml = ""; 
+                months.forEach(m => { 
+                    const isPaid = u.payments && u.payments[m]; 
+                    monthsHtml += `<div class="month-box ${isPaid?'paid':''}" onclick="window.togglePayment('${u.id}', '${m}', ${!isPaid})">${m}</div>`; 
+                }); 
+                html += `
+                <div style="border-bottom:1px solid #eee; padding:10px 0;">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                        <span>${u.name} <small style="color:blue; font-weight:normal;">(${u.appVersion||'-'})</small></span>
+                        <span style="color:red">Déb: ${debts}</span>
+                    </div>
+                    <div style="display:flex; gap:10px; margin:5px 0;">
+                        <button class="btn-small" onclick="window.mudarDebito('${u.id}', ${debts-1})">-1</button>
+                        <button class="btn-small btn-danger" onclick="window.mudarDebito('${u.id}', ${debts+1})">+1</button>
+                    </div>
+                    <div class="payment-grid">${monthsHtml}</div>
+                </div>`; 
+            }); 
+            list.innerHTML = html; 
+        };
         window.togglePayment = async (uid, month, status) => { const ref = doc(db, "users", uid); const key = `payments.${month}`; await updateDoc(ref, { [key]: status }); window.abrirGestaoUsuarios(); };
         window.mudarDebito = async (uid, val) => { if(val < 0) val = 0; await updateDoc(doc(db, "users", uid), { debts: val }); window.abrirGestaoUsuarios(); };
 
@@ -562,7 +664,7 @@
             openMatches.sort((a,b) => a.dateObj - b.dateObj); waitingMatches.sort((a,b) => b.dateObj - a.dateObj); finishedMatches.sort((a,b) => b.dateObj - a.dateObj); 
             
             const renderSection = (title, matches, color) => { 
-                if(matches.length === 0) return; const header = document.createElement('div'); header.className = 'section-header'; header.innerText = title; header.style.color = color; document.getElementById('lista-jogos').appendChild(header); 
+                if(matches.length === 0) return; const header = document.createElement('div'); header.className = 'section-header'; header.innerText = title; header.style.color = color; header.style.borderColor = color; document.getElementById('lista-jogos').appendChild(header); 
                 matches.forEach(m => { 
                     const isExpired = m.dateObj < now; 
                     const day = String(m.dateObj.getDate()).padStart(2, '0');
@@ -573,34 +675,42 @@
                     const dateStr = `${day}/${month}/${year} ${hour}:${min}`;
 
                     const userVote = myGuesses[m.id]; 
-                    const prazoText = isExpired ? "Encerrou em:" : "Encerra em:"; 
+                    const prazoText = isExpired ? "Encerrado:" : "Prazo:"; 
                     const isTeamASelected = userVote && userVote.trim().toLowerCase() === m.teamA.trim().toLowerCase(); 
                     const isTeamBSelected = userVote && userVote.trim().toLowerCase() === m.teamB.trim().toLowerCase(); 
                     const logoUrl = compLogos[m.competition] || ""; 
                     const watermarkHtml = logoUrl ? `<img src="${logoUrl}" class="comp-watermark">` : ""; 
                     const headerLogo = logoUrl ? `<img src="${logoUrl}" style="width:24px;height:24px;object-fit:contain;margin-right:5px;">` : ""; 
                     
-                    let statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header">${m.round || ''}<br>${prazoText} ${dateStr}</div>`; 
+                    // Ícone de Relógio
+                    const timeIcon = `<span class="material-icons-round" style="font-size:12px; vertical-align:middle; margin-right:2px; color:${isExpired?'red':'black'}">schedule</span>`;
+                    
+                    let statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header">${m.round || ''}<br>${timeIcon} ${prazoText} ${dateStr}</div>`; 
                     
                     // --- LÓGICA DE CAMPEÃO E CARD DOURADO ---
-                    let labelVencedor = "Vencedor";
+                    let labelVencedor = "VENCEDOR";
                     let cardClass = "card"; // Classe padrão
                     
                     if (m.round === "Final") {
                         cardClass = "card card-final"; // Adiciona classe dourada
-                        labelVencedor = "🏆 Campeão";   // Muda texto
+                        labelVencedor = "🏆 CAMPEÃO";   // Muda texto
                     }
                     
-                    if(isExpired) statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header" style="color:#d32f2f; font-weight:bold;">🔒 ENCERRADO<br>${m.winner ? labelVencedor+': <b style="color:green">'+m.winner+'</b>' : 'Aguardando resultado...'}</div>`; 
+                    if(isExpired) statusHtml = `<div class="match-comp">${headerLogo}${m.competition || ''}</div><div class="match-header" style="color:#d32f2f; font-weight:bold;">🔒 ENCERRADO<br>${m.winner ? labelVencedor+': <b style="color:' + (m.round === "Final" ? "#F57F17" : "#006400") + '">'+m.winner+'</b>' : 'Aguardando resultado...'}</div>`; 
                     // ----------------------------------------
                     
                     const div = document.createElement('div'); div.className = cardClass; if(isExpired && m.round !== "Final") div.style.background = "#f7f7f7"; 
+                    
+                    if (m.round === "Final") {
+                        div.innerHTML += `<div style="text-align:center; color:#F57F17; font-weight:900; font-size:12px; margin-bottom:8px; letter-spacing:1px;">✨🏆 GRANDE FINAL • VALE DOBRO 🏆✨</div>`;
+                    }
+
                     const imgA = `<img src="${m.teamAUrl}" class="team-img" onerror="this.src='https://placehold.co/50?text=A'">`; 
                     const imgB = `<img src="${m.teamBUrl}" class="team-img" onerror="this.src='https://placehold.co/50?text=B'">`; 
                     const clickA = isExpired ? "" : `onclick="window.votar('${m.id}', '${m.teamA}', '${m.teamA}', '${m.teamB}')"`; 
                     const clickB = isExpired ? "" : `onclick="window.votar('${m.id}', '${m.teamB}', '${m.teamA}', '${m.teamB}')"`; 
                     
-                    div.innerHTML = `${watermarkHtml} ${statusHtml} 
+                    div.innerHTML += `${watermarkHtml} ${statusHtml} 
                         <div class="teams">
                             <div class="team-btn ${isTeamASelected?'selected':''}" id="btn-${m.id}-${m.teamA}" ${clickA}>${imgA}<div class="team-name">${m.teamA}</div></div>
                             <span class="vs">X</span>
@@ -614,7 +724,7 @@
                 }); 
             }; 
             renderSection("✅ CONFRONTOS DISPONÍVEIS ✅", openMatches, "#006400"); 
-            renderSection("⏳ AGUARDANDO RESULTADO FINAL ⏳", waitingMatches, "#F9A825"); 
+            renderSection("⏳ AGUARDANDO RESULTADO ⏳", waitingMatches, "#F9A825"); 
             renderSection("🚫 CONFRONTOS FINALIZADOS 🚫", finishedMatches, "#D32F2F"); 
             if(allMatches.length === 0) document.getElementById('lista-jogos').innerHTML = "<div style='text-align:center; color:#999; padding:40px;'>Nenhum confronto cadastrado.</div>"; 
             document.getElementById('loading-jogos').classList.add('hidden'); 
@@ -654,12 +764,26 @@
         };
 
         window.verNovidades = () => { 
-            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Novidades v1.3.14"; 
-            list.innerHTML = `<div class="guide-title">🛡️ SEGURANÇA MÁXIMA</div><div class="log-item" style="background:#e8f5e9; border-left:4px solid #006400; padding:10px;"><b>TRAVA ANTI-FRAUDE:</b> Implementamos o bloqueio técnico de datas. Após o início do confronto, <b>ninguém</b> (nem o Admin) consegue alterar o horário para reabrir votos. Transparência total!</div><br><div class="guide-title">📢 OUTRAS MELHORIAS</div><div class="log-item">• <b>SEMÂNTICA:</b> Adotado termo "Confronto".</div><div class="log-item">• <b>VISUAL GOLD:</b> Finais agora têm destaque especial.</div><div class="log-item">• <b>HISTÓRICO:</b> Ícones ✅ e ❌ nos palpites.</div>`; 
+            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Linha do Tempo"; 
+            list.innerHTML = `
+                <div class="guide-title">💡 GUIA RÁPIDO</div>
+                <div class="log-item">1. <b>JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</div>
+                <div class="log-item">2. <b>RANKING:</b> Toque na foto para zoom. Toque nos pontos para extrato.</div>
+                <div class="log-item">3. <b>PERFIL:</b> Altere foto e senha aqui.</div>
+                <div class="log-item">4. <b>POTE:</b> Clique no porquinho para ver o prêmio acumulado.</div>
+                
+                <div class="guide-title">📜 HISTÓRICO DE VERSÕES</div>
+                <div class="log-item" style="background:#e8f5e9; border-left:4px solid #006400; padding:10px;">
+                    <b>• v1.3.2 (Atual):</b> ✨ Visual 'Classic Badge' (Brasão), Fontes Serifadas, Grid Financeiro e Coluna Finais (F).
+                </div>
+                <div class="log-item">• <b>v1.3.14:</b> Visual Gold para Finais e termo 'Confronto'.</div>
+                <div class="log-item">• <b>v1.3.13:</b> Trava de Segurança em datas vencidas.</div>
+                <div class="log-item">• <b>v1.3.12:</b> Correções visuais.</div>
+            `; 
             document.getElementById('modal-history').style.display = 'flex'; 
         };
 
-        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.14", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
+        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.2", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
     </script>
 </body>
 </html>
