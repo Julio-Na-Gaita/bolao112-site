@@ -643,12 +643,24 @@
         };
 
         window.verNovidades = () => { 
-            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Novidades v1.3.13"; 
-            list.innerHTML = `<div class="guide-title">📢 O QUE MUDOU?</div><div class="log-item">• <b>NOTIFICAÇÕES (WEB):</b> Agora você controla os avisos do app pelo site!</div><div class="log-item">• <b>EMPATE:</b> Nova opção para testes na fase de grupos.</div><div class="log-item">• <b>HISTÓRICO:</b> Ícones ✅ e ❌ para saber quem acertou.</div><div class="log-item">• <b>VISUAL:</b> Correções para iPhone.</div>`; 
-            document.getElementById('modal-history').style.display = 'flex'; 
-        };
+    const list = document.getElementById('history-list'); 
+    document.getElementById('history-title').innerText = "Novidades v1.3.13"; 
+    list.innerHTML = `
+        <div class="guide-title">🛡️ SEGURANÇA MÁXIMA</div>
+        <div class="log-item" style="background:#e8f5e9; border-left:4px solid #006400; padding:10px;">
+            <b>TRAVA ANTI-FRAUDE:</b> Implementamos o bloqueio técnico de datas. Após o início do jogo, <b>ninguém</b> (nem o Admin) consegue alterar o horário para reabrir votos. Transparência total!
+        </div>
+        <br>
+        <div class="guide-title">📢 OUTRAS MELHORIAS</div>
+        <div class="log-item">• <b>NOTIFICAÇÕES:</b> Controle total pelo Site e App.</div>
+        <div class="log-item">• <b>EMPATE:</b> Opção para fase de testes.</div>
+        <div class="log-item">• <b>HISTÓRICO:</b> Ícones ✅ e ❌ nos palpites.</div>
+    `; 
+    document.getElementById('modal-history').style.display = 'flex'; 
+};
 
         onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.13", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
     </script>
 </body>
 </html>
+
