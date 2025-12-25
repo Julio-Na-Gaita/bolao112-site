@@ -200,7 +200,7 @@
             <div class="glass-box" style="margin-top: 20px;">
                 <input type="password" id="new-password" placeholder="Nova Senha">
                 <button onclick="window.alterarSenha()" style="margin-top: 10px;">Salvar Nova Senha</button>
-                <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:15px; color:#006400; border-color: #006400; background: #f0fff4; width: 100%;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.13 & Guia</button>
+                <button onclick="window.verNovidades()" class="secondary-btn icon-text" style="margin-top:15px; color:#006400; border-color: #006400; background: #f0fff4; width: 100%;"><span class="material-icons-round">auto_awesome</span> Novidades v1.3.14 & Guia</button>
             </div>
         </div>
 
@@ -340,7 +340,7 @@
                 i.src = e.target.result; 
                 i.onload = () => { 
                     const c = document.createElement('canvas'); const ctx = c.getContext('2d'); const scale = 300/i.width; c.width=300; c.height=i.height*scale; ctx.drawImage(i,0,0,c.width,c.height); const b64 = c.toDataURL('image/jpeg',0.7).split(',')[1]; 
-                    updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.13"}).then(() => { document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; alert("Foto salva!"); }); 
+                    updateDoc(doc(db,"users",currentUser.uid), {photoBase64: b64, appVersion: "Web v1.3.14"}).then(() => { document.getElementById('img-perfil').src = "data:image/jpeg;base64,"+b64; alert("Foto salva!"); }); 
                 }; 
             }; 
             r.readAsDataURL(file); 
@@ -374,7 +374,7 @@
                         document.getElementById('btn-edit-rules').classList.remove('hidden');
                         window.loadCompetitions();
                     }
-                    updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.13" });
+                    updateDoc(doc(db, "users", currentUser.uid), { appVersion: "Web v1.3.14" });
                 }
             } catch(e) { console.log(e); }
         };
@@ -419,7 +419,7 @@
         window.removeComp = async (name) => { if(confirm(`Excluir ${name}?`)) { const newList = currentCompetitions.filter(c => c.name !== name); await updateDoc(doc(db, "settings", "competitions"), { items: newList }); currentCompetitions = newList; window.renderCompList(); window.updateCompSelect(); } };
         window.buscarLogo = (inputId) => { const name = document.getElementById(inputId).value; if(name) window.open(`https://www.google.com/search?tbm=isch&q=escudo+${encodeURIComponent(name)}+png`); else alert("Digite o nome primeiro!"); };
 
-        window.processarAuth = async () => { const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg'); const user = document.getElementById('email').value.trim().toLowerCase(); const pass = document.getElementById('password').value; const fullName = document.getElementById('fullname').value.trim(); const email = user + "@bolao112.com"; btn.disabled = true; msg.innerText = "Conectando..."; try { if (isRegisterMode) { if(!fullName || pass.length < 6) throw new Error("Preencha campos."); const w = await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Não convidado."); const c = await createUserWithEmailAndPassword(auth, email, pass); await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.13"}); } else await signInWithEmailAndPassword(auth, email, pass); } catch(e) { msg.innerText = e.message; btn.disabled = false; } };
+        window.processarAuth = async () => { const btn = document.getElementById('btn-login'); const msg = document.getElementById('login-msg'); const user = document.getElementById('email').value.trim().toLowerCase(); const pass = document.getElementById('password').value; const fullName = document.getElementById('fullname').value.trim(); const email = user + "@bolao112.com"; btn.disabled = true; msg.innerText = "Conectando..."; try { if (isRegisterMode) { if(!fullName || pass.length < 6) throw new Error("Preencha campos."); const w = await getDoc(doc(db,"whitelist",user)); if(!w.exists()) throw new Error("Não convidado."); const c = await createUserWithEmailAndPassword(auth, email, pass); await setDoc(doc(db,"users",c.user.uid),{name:fullName,username:user,photoBase64:"",isAdmin:false,debts:0,appVersion:"Web v1.3.14"}); } else await signInWithEmailAndPassword(auth, email, pass); } catch(e) { msg.innerText = e.message; btn.disabled = false; } };
         window.alternarModo = () => { isRegisterMode=!isRegisterMode; document.getElementById('btn-login').innerText=isRegisterMode?"CADASTRAR":"ENTRAR"; document.getElementById('fullname').classList.toggle('hidden'); };
         window.sair = () => signOut(auth);
         window.abrirAdmin = () => { ['jogos', 'ranking', 'regras', 'perfil'].forEach(a => document.getElementById(`container-${a}`).classList.add('hidden')); document.getElementById('container-admin').classList.remove('hidden'); document.getElementById('header-title').innerText = "Painel Admin"; window.loadCompetitions(); };
@@ -654,12 +654,12 @@
         };
 
         window.verNovidades = () => { 
-            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Novidades v1.3.13"; 
-            list.innerHTML = `<div class="guide-title">🛡️ SEGURANÇA MÁXIMA</div><div class="log-item" style="background:#e8f5e9; border-left:4px solid #006400; padding:10px;"><b>TRAVA ANTI-FRAUDE:</b> Implementamos o bloqueio técnico de datas. Após o início do confronto, <b>ninguém</b> (nem o Admin) consegue alterar o horário para reabrir votos. Transparência total!</div><br><div class="guide-title">📢 OUTRAS MELHORIAS</div><div class="log-item">• <b>NOTIFICAÇÕES:</b> Controle total pelo Site e App.</div><div class="log-item">• <b>EMPATE:</b> Opção para fase de testes.</div><div class="log-item">• <b>HISTÓRICO:</b> Ícones ✅ e ❌ nos palpites.</div>`; 
+            const list = document.getElementById('history-list'); document.getElementById('history-title').innerText = "Novidades v1.3.14"; 
+            list.innerHTML = `<div class="guide-title">🛡️ SEGURANÇA MÁXIMA</div><div class="log-item" style="background:#e8f5e9; border-left:4px solid #006400; padding:10px;"><b>TRAVA ANTI-FRAUDE:</b> Implementamos o bloqueio técnico de datas. Após o início do confronto, <b>ninguém</b> (nem o Admin) consegue alterar o horário para reabrir votos. Transparência total!</div><br><div class="guide-title">📢 OUTRAS MELHORIAS</div><div class="log-item">• <b>SEMÂNTICA:</b> Adotado termo "Confronto".</div><div class="log-item">• <b>VISUAL GOLD:</b> Finais agora têm destaque especial.</div><div class="log-item">• <b>HISTÓRICO:</b> Ícones ✅ e ❌ nos palpites.</div>`; 
             document.getElementById('modal-history').style.display = 'flex'; 
         };
 
-        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.13", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
+        onAuthStateChanged(auth, (u) => { if(u) { currentUser=u; verificarAdmin(u.uid); const userRef = doc(db, "users", u.uid); updateDoc(userRef, { appVersion: "Web v1.3.14", lastAccess: new Date() }); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-screen').classList.remove('hidden'); window.mudarAba('jogos'); } else { currentUser=null; document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-screen').classList.add('hidden'); } });
     </script>
 </body>
 </html>
