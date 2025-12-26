@@ -1,659 +1,191 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bolão 112 F.C</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolão 112 F.C - Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* --- VARIÁVEIS GLOBAIS (Visual Classic Badge - Android v1.3.2) --- */
-        :root {
-            --primary-color: #006400; /* Verde Escuro */
-            --gold-color: #FFFFD700; /* Dourado */
-            --bg-color: #f5f5f5;
-            --text-font: 'Merriweather', serif; /* Fonte Serifada */
-            /* Canto cortado (CutCornerShape) simulado com clip-path */
-            --cut-corner: polygon(0 0, 100% 0, 100% 90%, 90% 100%, 0 100%); 
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        
-        body {
-            font-family: var(--text-font);
-            background-color: var(--bg-color);
-            color: #333;
-            padding-bottom: 80px; /* Espaço para navbar */
-        }
-
-        /* --- COMPONENTES VISUAIS --- */
-        .header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .header h1 { font-size: 1.2rem; font-weight: 900; letter-spacing: 1px; }
-        
-        .pote-icon { 
-            color: var(--gold-color); 
-            font-size: 1.5rem; 
-            cursor: pointer; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .container { padding: 16px; max-width: 600px; margin: 0 auto; }
-
-        /* CARDS */
-        .card {
-            background: white;
-            border: 1px solid #ccc;
-            border-radius: 0; 
-            /* Recorte no canto inferior direito igual ao Android */
-            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
-            padding: 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            position: relative;
-        }
-
-        .card.final-match {
-            background-color: #FFF9C4;
-            border: 2px solid var(--gold-color);
-        }
-
-        .section-header {
-            background: rgba(255,255,255,0.9);
-            border: 1px solid var(--primary-color);
-            color: var(--primary-color);
-            text-align: center;
-            font-weight: bold;
-            padding: 10px;
-            margin-bottom: 15px;
-            /* Recorte leve no canto */
-            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
-        }
-
-        /* BOTÕES */
-        .btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px;
-            width: 100%;
-            font-family: var(--text-font);
-            font-weight: bold;
-            cursor: pointer;
-            /* Recorte leve */
-            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%);
-        }
-        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
-
-        /* INPUTS */
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .input-group input {
-            width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px;
-            font-family: var(--text-font);
-        }
-
-        /* NAVBAR (Mobile Style) */
-        .navbar {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: white; border-top: 1px solid #ddd;
-            display: flex; justify-content: space-around;
-            padding: 10px 0; z-index: 100;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-        }
-        .nav-item {
-            text-align: center; color: #aaa; font-size: 0.8rem; cursor: pointer;
-            flex: 1;
-        }
-        .nav-item.active { color: var(--primary-color); font-weight: bold; }
-        .nav-item i { font-size: 1.4rem; display: block; margin-bottom: 4px; }
-
-        /* TELA DE LOGIN */
-        #login-screen {
-            /* Fundo padrão caso a imagem demore */
-            background-color: #eee;
-            /* Tenta carregar imagem local, senão fallback */
-            background-image: url('./background_login.png'); 
-            background-size: cover;
-            background-position: center;
-            height: 100vh; display: flex; align-items: center; justify-content: center;
-            position: fixed; top: 0; left: 0; width: 100%; z-index: 200;
-        }
-        .login-card {
-            background: rgba(255,255,255,0.95);
-            padding: 30px; width: 85%; max-width: 400px;
-            border: 3px solid var(--primary-color);
-            clip-path: polygon(0 0, 100% 0, 100% 95%, 95% 100%, 0 100%);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-
-        /* RANKING */
-        .ranking-row {
-            display: flex; align-items: center; padding: 10px 0;
-            border-bottom: 1px solid #eee;
-        }
-        .rank-pos { width: 40px; text-align: center; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .rank-avatar img { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1px solid #999; }
-        .rank-name { flex: 1; padding-left: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .rank-stat { width: 30px; text-align: center; font-size: 0.9rem; }
-        .rank-pts { width: 45px; text-align: center; font-weight: 900; font-size: 1.1rem; }
-        
-        .diff-indicator { font-size: 0.65rem; display: flex; align-items: center; font-weight: bold; margin-top: 2px;}
-        .diff-up { color: #2E7D32; }
-        .diff-down { color: #D32F2F; }
-        .diff-neutral { color: #999; }
-
-        /* JOGOS */
-        .match-teams { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
-        .team-btn {
-            width: 100px; height: 90px;
-            background: #eee; border: 1px solid #ddd;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border-radius: 8px; cursor: pointer; transition: all 0.2s;
-        }
-        .team-btn img { width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px; }
-        .team-btn span { font-size: 0.7rem; text-align: center; line-height: 1.1; font-weight: bold; }
-        .team-btn.selected {
-            background: var(--primary-color); color: white;
-            border: 2px solid var(--gold-color);
-        }
-        .vs { font-size: 1.5rem; font-weight: 900; color: #ccc; }
-
-        /* MODAL (POTE E OUTROS) */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 1000;
-            display: none; align-items: center; justify-content: center;
-        }
-        .modal-content {
-            background: white; width: 85%; max-width: 350px;
-            padding: 0; position: relative;
-            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); /* Retangular clássico */
-        }
-        .modal-bg {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('./bg_ranking.png') center/cover;
-            opacity: 0.15; z-index: 0; pointer-events: none;
-        }
-        .modal-body { position: relative; z-index: 1; padding: 24px; text-align: center; }
-
+        @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&display=swap');
+        body { font-family: 'PT Serif', serif; }
+        .bg-app { background-image: url('bg_jogos.png'); background-attachment: fixed; background-size: cover; }
+        .gold-border { border: 2px solid #FFD700; }
+        .card-cut { clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%); }
+        .btn-press:active { transform: scale(0.95); transition: 0.1s; }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen">
 
-    <div id="login-screen">
-        <div class="login-card">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="color: var(--primary-color); font-weight: 900; letter-spacing: 2px;">BOLÃO 112 F.C</h2>
-            </div>
-            
-            <div class="input-group">
-                <label>Usuário</label>
-                <input type="text" id="login-user" placeholder="ex: seu_usuario">
-            </div>
-            <div class="input-group">
-                <label>Senha</label>
-                <input type="password" id="login-pass" placeholder="Mínimo 6 caracteres">
-                <div style="text-align: right; margin-top: 5px;">
-                    <small onclick="toggleRegisterMode()" style="color: blue; cursor: pointer;">Criar nova conta</small>
+    <nav class="bg-[#006400] text-white p-4 sticky top-0 z-50 shadow-lg flex justify-between items-center">
+        <h1 class="text-xl font-bold tracking-widest">BOLÃO 112 F.C</h1>
+        <div class="flex gap-4">
+            <button id="btnRefresh" class="text-white hover:text-yellow-400 transition"><i class="fas fa-sync-alt"></i></button>
+            <button id="btnLogout" class="hidden"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+    </nav>
+
+    <main id="appContent" class="p-4 max-w-2xl mx-auto pb-24">
+        <section id="loginScreen" class="bg-white p-8 rounded-lg shadow-xl text-center">
+            <h2 class="text-2xl font-black text-[#006400] mb-6">ACESSO MEMBROS</h2>
+            <input type="text" id="userInput" placeholder="Usuário" class="w-full p-3 border mb-4 rounded">
+            <input type="password" id="passInput" placeholder="Senha" class="w-full p-3 border mb-6 rounded">
+            <button id="btnLoginAction" class="bg-[#006400] text-white w-full py-3 font-bold rounded hover:bg-green-800 transition">ACESSAR</button>
+        </section>
+
+        <section id="matchesScreen" class="hidden space-y-6">
+            <div id="loadingMatches" class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-3xl text-green-700"></i></div>
+            <div id="matchesList"></div>
+        </section>
+
+        <section id="rankingScreen" class="hidden">
+            <div class="bg-white p-4 rounded-lg shadow mb-4">
+                <h3 class="text-center font-bold text-lg mb-4">Classificação Geral</h3>
+                <div class="grid grid-cols-6 text-xs font-bold text-gray-500 uppercase pb-2 border-b">
+                    <span>Pos</span>
+                    <span class="col-span-2">Nome</span>
+                    <span class="text-center text-red-600">D</span>
+                    <span class="text-center">V</span>
+                    <span class="text-center text-green-700">PTS</span>
                 </div>
+                <div id="rankingList" class="mt-2 space-y-2 text-sm"></div>
             </div>
+            <div class="bg-black/80 text-yellow-400 p-2 text-[10px] text-center rounded">
+                Legenda: D=Débitos | V=Vitórias | PTS=Pontos
+            </div>
+        </section>
+    </main>
 
-            <div class="input-group" id="name-field" style="display: none;">
-                <label>Nome de Exibição</label>
-                <input type="text" id="register-name" placeholder="Como quer ser chamado">
-            </div>
-
-            <button class="btn" id="btn-login-action" onclick="handleLogin()">ACESSAR</button>
-        </div>
-    </div>
-
-    <div id="app-screen" style="display: none;">
-        
-        <div class="header">
-            <h1>BOLÃO 112 F.C</h1>
-            <div>
-                <i class="fa-solid fa-piggy-bank pote-icon" onclick="showPotDialog()"></i>
-                <i class="fa-solid fa-right-from-bracket" onclick="logout()" style="margin-left: 15px; cursor: pointer;"></i>
-            </div>
-        </div>
-
-        <div id="content-home" class="container tab-content"></div>
-        <div id="content-ranking" class="container tab-content" style="display: none;"></div>
-        <div id="content-rules" class="container tab-content" style="display: none;"></div>
-        <div id="content-profile" class="container tab-content" style="display: none;"></div>
-
-        <div class="navbar">
-            <div class="nav-item active" onclick="switchTab('home')">
-                <i class="fa-solid fa-futbol"></i>Jogos
-            </div>
-            <div class="nav-item" onclick="switchTab('ranking')">
-                <i class="fa-solid fa-trophy"></i>Ranking
-            </div>
-            <div class="nav-item" onclick="switchTab('rules')">
-                <i class="fa-solid fa-scale-balanced"></i>Regras
-            </div>
-            <div class="nav-item" onclick="switchTab('profile')">
-                <i class="fa-solid fa-user"></i>Perfil
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-pot" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-bg"></div> <div class="modal-body">
-                <i class="fa-solid fa-piggy-bank" style="font-size: 3rem; color: var(--gold-color);"></i>
-                <h2 style="margin: 15px 0; font-family: var(--text-font);">POTE DE OURO</h2>
-                <h1 id="pot-value" style="color: var(--primary-color); font-size: 2rem;">R$ 0,00</h1>
-                <p style="color: gray; margin-bottom: 20px;">Prêmio acumulado!</p>
-                <button class="btn" onclick="document.getElementById('modal-pot').style.display='none'">Show!</button>
-            </div>
-        </div>
-    </div>
+    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 z-50">
+        <button onclick="showTab('matches')" class="flex flex-col items-center text-[#006400]"><i class="fas fa-soccer-ball"></i><span class="text-[10px]">Jogos</span></button>
+        <button onclick="showTab('ranking')" class="flex flex-col items-center text-gray-400"><i class="fas fa-trophy"></i><span class="text-[10px]">Ranking</span></button>
+        <button onclick="showTab('rules')" class="flex flex-col items-center text-gray-400"><i class="fas fa-gavel"></i><span class="text-[10px]">Regras</span></button>
+        <button onclick="showTab('profile')" class="flex flex-col items-center text-gray-400"><i class="fas fa-user"></i><span class="text-[10px]">Perfil</span></button>
+    </nav>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO DO FIREBASE ---
+        // CONFIGURAÇÃO FIREBASE (Substitua pelos seus dados do APK)
         const firebaseConfig = {
-            apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k",
-            authDomain: "bolao112fc.firebaseapp.com",
-            projectId: "bolao112fc",
-            storageBucket: "bolao112fc.firebasestorage.app",
-            messagingSenderId: "131329454158",
-            appId: "1:131329454158:web:983e4544dd651ec942131f",
-            measurementId: "G-5SGWJE6EKK"
+            apiKey: "SUA_API_KEY",
+            authDomain: "bolao112-site.firebaseapp.com",
+            projectId: "bolao112-site",
+            storageBucket: "bolao112-site.appspot.com",
+            messagingSenderId: "SEU_SENDER_ID",
+            appId: "SEU_APP_ID"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // ESTADO GLOBAL
         let currentUser = null;
-        let isAdmin = false;
-        let isRegistering = false;
 
-        // --- REGULAMENTO 2026 ATUALIZADO (IGUAL AO ANDROID) ---
-        const REGULAMENTO_TEXTO = `📜 REGULAMENTO OFICIAL - TEMPORADA 2026
-
-1️⃣ INADIMPLÊNCIA & VOTO
-- Atraso no pagamento (após dia 10): -1 ponto + -1 a cada 5 dias.
-- 🚫 Quem estiver inadimplente no momento da votação NÃO PODE VOTAR.
-
-2️⃣ PONTUAÇÃO
-- ✅ Acerto: 3 pts
-- 🔥 Final: 6 pts (Peso 2)
-- 💥 Rodada Perfeita (Oitavas): Acertar 100% das oitavas de uma competição gera +3 pontos extras.
-
-3️⃣ COMPETIÇÕES & OBRIGATORIEDADE
-A) Mata-Mata Regular (Obrigatório):
-- Todas as fases principais das competições válidas entram AUTOMATICAMENTE (incluindo 64-avos da Copa do Brasil).
-
-B) Fases Preliminares (Play-offs/Pré-fases):
-- Inclusão apenas por sugestão e VOTAÇÃO no WhatsApp (Maioria Simples dos adimplentes).
-
-4️⃣ GOVERNANÇA
-- Inclusão de jogos extras fora do calendário oficial: Exigem 100% de aprovação dos ADIMPLENTES.
-- Alteração do Regulamento: 100% de aprovação geral.`;
-
-        // --- LOGIN & AUTH ---
-        window.handleLogin = async () => {
-            const user = document.getElementById('login-user').value.trim().toLowerCase();
-            const pass = document.getElementById('login-pass').value;
-            const email = `${user}@bolao112.com`; // Mesma lógica do Android
-
+        // Login Simplificado (@bolao112.com)
+        document.getElementById('btnLoginAction').onclick = async () => {
+            const user = document.getElementById('userInput').value.trim().toLowerCase();
+            const pass = document.getElementById('passInput').value;
+            const email = `${user}@bolao112.com`;
+            
             try {
-                if (isRegistering) {
-                    const name = document.getElementById('register-name').value;
-                    // Checa Whitelist
-                    const whiteRef = doc(db, "whitelist", user);
-                    const whiteSnap = await getDoc(whiteRef);
-                    
-                    if (whiteSnap.exists()) {
-                        const cred = await createUserWithEmailAndPassword(auth, email, pass);
-                        await setDoc(doc(db, "users", cred.user.uid), {
-                            name: name, username: user, photoBase64: "", isAdmin: false, debts: 0, 
-                            appVersion: "Web v1.0", lastRank: 0
-                        });
-                        alert("Bem-vindo ao Clube!");
-                    } else {
-                        alert("🚫 Acesso Negado: Usuário não convidado.");
-                    }
-                } else {
-                    await signInWithEmailAndPassword(auth, email, pass);
-                }
+                await signInWithEmailAndPassword(auth, email, pass);
             } catch (e) {
-                alert("Erro: " + e.message);
+                alert("Erro no login! Verifique usuário e senha.");
             }
         };
 
-        window.toggleRegisterMode = () => {
-            isRegistering = !isRegistering;
-            document.getElementById('name-field').style.display = isRegistering ? 'block' : 'none';
-            document.getElementById('btn-login-action').innerText = isRegistering ? 'REGISTRAR' : 'ACESSAR';
-        };
-
-        window.logout = () => signOut(auth);
-
-        onAuthStateChanged(auth, async (user) => {
+        // Escutador de Autenticação
+        onAuthStateChanged(auth, (user) => {
             if (user) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('app-screen').style.display = 'block';
                 currentUser = user;
-                
-                // Checa Admin
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                isAdmin = userDoc.data().isAdmin === true;
-                
-                loadHome(); // Carrega tela inicial
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('bottomNav').classList.remove('hidden');
+                document.getElementById('btnLogout').classList.remove('hidden');
+                showTab('matches');
             } else {
-                document.getElementById('app-screen').style.display = 'none';
-                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('bottomNav').classList.add('hidden');
             }
         });
 
-        // --- NAVEGAÇÃO ---
-        window.switchTab = (tab) => {
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById(`content-${tab}`).style.display = 'block';
-            event.currentTarget.classList.add('active'); // Ajuste visual simples
-
-            if(tab === 'home') loadHome();
-            if(tab === 'ranking') loadRanking();
-            if(tab === 'rules') loadRules();
-            if(tab === 'profile') loadProfile();
-        };
-
-        // --- TELA: JOGOS (HOME) ---
-        async function loadHome() {
-            const container = document.getElementById('content-home');
-            container.innerHTML = '<p style="text-align:center; margin-top:20px;">Carregando confrontos...</p>';
-
-            // Pega configurações de Competição (Logos)
-            const compSnap = await getDoc(doc(db, "settings", "competitions"));
-            const compMap = {};
-            if(compSnap.exists()) {
-                compSnap.data().items.forEach(i => compMap[i.name] = i.logo);
+        // Troca de Abas
+        window.showTab = (tab) => {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            if(tab === 'matches') {
+                document.getElementById('matchesScreen').classList.remove('hidden');
+                loadMatches();
+            } else if(tab === 'ranking') {
+                document.getElementById('rankingScreen').classList.remove('hidden');
+                loadRanking();
             }
-
-            // Pega Jogos
-            const matchesSnap = await getDocs(collection(db, "matches"));
-            let matches = [];
-            matchesSnap.forEach(d => matches.push({id: d.id, ...d.data(), deadline: d.data().deadline.toDate()}));
-
-            // Separação
-            const now = new Date();
-            const open = matches.filter(m => m.deadline > now).sort((a,b) => a.deadline - b.deadline);
-            const waiting = matches.filter(m => m.deadline <= now && !m.winner).sort((a,b) => b.deadline - a.deadline);
-            const finished = matches.filter(m => m.deadline <= now && m.winner).sort((a,b) => b.deadline - a.deadline);
-
-            let html = '';
-
-            // Renderiza Seção
-            const renderSection = (title, color, list) => {
-                if(list.length === 0) return '';
-                let sectionHtml = `<div class="section-header" style="color:${color}; border-color:${color}">${title}</div>`;
-                
-                list.forEach(m => {
-                    const isFinal = m.round && m.round.toLowerCase() === 'final';
-                    const cardClass = isFinal ? 'card final-match' : 'card';
-                    const deadlineStr = m.deadline.toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
-                    
-                    sectionHtml += `
-                    <div class="${cardClass}" id="card-${m.id}">
-                        <div style="text-align:center;">
-                            ${isFinal ? '<div style="color:#F57F17; font-weight:900; margin-bottom:5px;">★ 🏆 FINAL (VALE O DOBRO) 🏆 ★</div>' : ''}
-                            <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:gray;">
-                                <span style="color:var(--primary-color); font-weight:bold;">${(m.competition || '').toUpperCase()}</span>
-                                <span>${m.round || '-'}</span>
-                            </div>
-                            <div style="font-size:0.8rem; margin-bottom:10px;">${m.deadline <= now ? 'Encerrado' : 'Prazo'}: ${deadlineStr}</div>
-                            
-                            ${m.winner ? `<div style="color:var(--primary-color); font-weight:900; font-size:1.2rem; margin:10px 0;">VENCEDOR: ${m.winner}</div>` : ''}
-
-                            <div class="match-teams">
-                                <div class="team-btn" id="btn-${m.id}-${m.teamA}" onclick="vote('${m.id}', '${m.teamA}', '${m.deadline}')">
-                                    <img src="${m.teamAUrl}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/16/16480.png'">
-                                    <span>${m.teamA}</span>
-                                </div>
-                                <div class="vs">X</div>
-                                <div class="team-btn" id="btn-${m.id}-${m.teamB}" onclick="vote('${m.id}', '${m.teamB}', '${m.deadline}')">
-                                    <img src="${m.teamBUrl}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/16/16480.png'">
-                                    <span>${m.teamB}</span>
-                                </div>
-                            </div>
-                            <div id="voted-${m.id}" style="margin-top:10px; font-weight:bold; color:var(--primary-color); font-size:0.8rem;"></div>
-                        </div>
-                    </div>`;
-                });
-                return sectionHtml;
-            };
-
-            html += renderSection('✅ CONFRONTOS DISPONÍVEIS ✅', '#006400', open);
-            html += renderSection('⏳ AGUARDANDO RESULTADO ⏳', '#F9A825', waiting);
-            html += renderSection('🚫 CONFRONTOS FINALIZADOS 🚫', '#D32F2F', finished);
-
-            container.innerHTML = html;
-
-            // Carrega os votos do usuário para pintar de verde
-            const guessesSnap = await getDocs(query(collection(db, "guesses"))); 
-            guessesSnap.forEach(doc => {
-                const g = doc.data();
-                if(g.userId === currentUser.uid) {
-                    // Tenta encontrar o botão correspondente (pode não existir se o time mudou de nome, por ex)
-                    try {
-                        const btn = document.getElementById(`btn-${g.matchId}-${g.teamSelected}`);
-                        if(btn) btn.classList.add('selected');
-                        const label = document.getElementById(`voted-${g.matchId}`);
-                        if(label) label.innerText = `Voto: ${g.teamSelected}`;
-                    } catch(e) {}
-                }
-            });
-        }
-
-        window.vote = async (matchId, team, deadlineIso) => {
-            const deadline = new Date(deadlineIso);
-            if(new Date() > deadline) return alert("Tempo esgotado!");
-
-            // Limpa seleção visual anterior
-            document.querySelectorAll(`[id^='btn-${matchId}-']`).forEach(el => el.classList.remove('selected'));
-            document.getElementById(`btn-${matchId}-${team}`).classList.add('selected');
-            document.getElementById(`voted-${matchId}`).innerText = `Voto: ${team}`;
-
-            // Salva no banco
-            await setDoc(doc(db, "guesses", `${matchId}_${currentUser.uid}`), {
-                matchId: matchId, userId: currentUser.uid, teamSelected: team, timestamp: new Date()
-            });
         };
 
-        // --- TELA: RANKING (COM SETINHAS & BÔNUS OITAVAS) ---
-        async function loadRanking() {
-            const container = document.getElementById('content-ranking');
-            container.innerHTML = '<p style="text-align:center;">Calculando classificação...</p>';
+        // Carregar Jogos
+        async function loadMatches() {
+            const listDiv = document.getElementById('matchesList');
+            listDiv.innerHTML = "";
+            document.getElementById('loadingMatches').classList.remove('hidden');
 
-            // 1. Pega Dados
-            const [usersSnap, guessesSnap, matchesSnap] = await Promise.all([
-                getDocs(collection(db, "users")),
-                getDocs(collection(db, "guesses")),
-                getDocs(collection(db, "matches"))
-            ]);
-
-            const matches = [];
-            matchesSnap.forEach(d => {
-                const data = d.data();
-                if(data.winner) matches.push({id: d.id, ...data});
-            });
-
-            // 2. Calcula Pontos
-            let ranking = [];
+            const snap = await getDocs(collection(db, "matches"));
+            const now = new Date();
             
-            // Agrupamento para bônus de Oitavas
-            const oitavasByComp = {}; 
-            matches.filter(m => m.round === "Oitavas de final").forEach(m => {
-                if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = [];
-                oitavasByComp[m.competition].push(m);
-            });
+            snap.forEach(async (matchDoc) => {
+                const match = matchDoc.data();
+                const deadline = match.deadline.toDate();
+                const isExpired = now > deadline;
+                
+                // Carregar voto do usuário
+                const voteRef = doc(db, "guesses", `${matchDoc.id}_${currentUser.uid}`);
+                const voteSnap = await getDoc(voteRef);
+                const userVote = voteSnap.exists() ? voteSnap.data().teamSelected : "";
 
-            usersSnap.forEach(uDoc => {
-                const u = uDoc.data();
-                const uId = uDoc.id;
-                let pts = 0, v = 0, f = 0;
-                const debts = u.debts || 0;
-                const lastRank = u.lastRank || 0;
-
-                const userGuesses = [];
-                guessesSnap.forEach(g => {
-                    if(g.data().userId === uId) userGuesses.push(g.data());
-                });
-
-                // Pontos Normais e Finais
-                userGuesses.forEach(g => {
-                    const match = matches.find(m => m.id === g.matchId);
-                    if(match && match.winner === g.teamSelected) {
-                        if(match.round && match.round.toLowerCase() === "final") { pts += 6; v++; f++; }
-                        else { pts += 3; v++; }
-                    }
-                });
-
-                // Bônus Oitavas
-                for (const comp in oitavasByComp) {
-                    const compMatches = oitavasByComp[comp];
-                    const hits = compMatches.filter(m => {
-                        const guess = userGuesses.find(g => g.matchId === m.id);
-                        return guess && guess.teamSelected === m.winner;
-                    }).length;
-                    if(hits === 8) pts += 3;
-                }
-
-                pts -= debts;
-                ranking.push({ 
-                    id: uId, name: u.name || u.username, photo: u.photoBase64, 
-                    pts, v, f, debts, lastRank 
-                });
-            });
-
-            // 3. Ordena
-            ranking.sort((a,b) => {
-                if(b.pts !== a.pts) return b.pts - a.pts;
-                if(a.debts !== b.debts) return a.debts - b.debts; // Menor débito ganha
-                if(b.v !== a.v) return b.v - a.v;
-                return b.f - a.f;
-            });
-
-            // 4. Renderiza
-            let html = `
-            <div class="card" style="margin-bottom:10px;">
-                <h3 style="text-align:center;">Classificação Geral</h3>
-                <div style="display:flex; font-size:0.8rem; color:gray; margin-top:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
-                    <div style="width:40px; text-align:center;">Pos</div>
-                    <div style="flex:1;">Nome</div>
-                    <div style="width:30px; text-align:center; color:red;">D</div>
-                    <div style="width:30px; text-align:center;">V</div>
-                    <div style="width:30px; text-align:center;">F</div>
-                    <div style="width:45px; text-align:center; color:black;">PTS</div>
-                </div>
-            `;
-
-            ranking.forEach((u, index) => {
-                const pos = index + 1;
-                let medal = pos;
-                if(pos===1) medal = '🥇';
-                if(pos===2) medal = '🥈';
-                if(pos===3) medal = '🥉';
-
-                // Lógica da Setinha
-                let diffHtml = '<span class="diff-indicator diff-neutral"><i class="fa-solid fa-minus"></i></span>';
-                if(u.lastRank > 0) {
-                    if(pos < u.lastRank) {
-                        const diff = u.lastRank - pos;
-                        diffHtml = `<span class="diff-indicator diff-up"><i class="fa-solid fa-caret-up"></i> ${diff}</span>`;
-                    } else if(pos > u.lastRank) {
-                        const diff = pos - u.lastRank;
-                        diffHtml = `<span class="diff-indicator diff-down"><i class="fa-solid fa-caret-down"></i> ${diff}</span>`;
-                    }
-                }
-
-                const bg = pos===1 ? '#FFF9C4' : (pos===2 ? '#F5F5F5' : (pos===3 ? '#FFCCBC' : 'white'));
-
-                html += `
-                <div class="ranking-row" style="background:${bg}; padding: 12px 5px;">
-                    <div class="rank-pos">
-                        <span>${medal}</span>
-                        ${diffHtml}
+                const card = `
+                    <div class="bg-white rounded-lg shadow-md border-l-4 ${match.round === 'Final' ? 'border-yellow-400 bg-yellow-50' : 'border-green-800'} p-4">
+                        <div class="flex justify-between text-[10px] text-gray-500 font-bold mb-2">
+                            <span>${match.competition.toUpperCase()} - ${match.round}</span>
+                            <span class="${isExpired ? 'text-red-600' : 'text-black'}">${isExpired ? 'Encerrado' : 'Prazo: ' + deadline.toLocaleString()}</span>
+                        </div>
+                        <div class="flex items-center justify-around py-4">
+                            <button onclick="vote('${matchDoc.id}', '${match.teamA}')" ${isExpired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-1/3">
+                                <img src="${match.teamAUrl}" class="w-12 h-12 mb-2">
+                                <span class="text-xs font-bold text-center ${userVote === match.teamA ? 'text-green-700 underline' : ''}">${match.teamA}</span>
+                            </button>
+                            <span class="text-xl font-black italic text-gray-300">X</span>
+                            <button onclick="vote('${matchDoc.id}', '${match.teamB}')" ${isExpired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-1/3">
+                                <img src="${match.teamBUrl}" class="w-12 h-12 mb-2">
+                                <span class="text-xs font-bold text-center ${userVote === match.teamB ? 'text-green-700 underline' : ''}">${match.teamB}</span>
+                            </button>
+                        </div>
+                        ${match.winner ? `<div class="text-center mt-2 p-1 bg-green-100 rounded text-xs font-bold">VENCEDOR: ${match.winner}</div>` : ''}
                     </div>
-                    <div class="rank-avatar">
-                        ${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}">` : '<i class="fa-solid fa-circle-user" style="font-size:35px; color:#ccc;"></i>'}
-                    </div>
-                    <div class="rank-name">${u.name}</div>
-                    <div class="rank-stat" style="color:red; font-weight:bold;">${u.debts}</div>
-                    <div class="rank-stat">${u.v}</div>
-                    <div class="rank-stat">${u.f}</div>
-                    <div class="rank-pts">${u.pts}</div>
-                </div>`;
+                `;
+                listDiv.innerHTML += card;
             });
-            html += '</div>';
-            container.innerHTML = html;
+            document.getElementById('loadingMatches').classList.add('hidden');
         }
 
-        // --- TELA: REGRAS ---
-        function loadRules() {
-            document.getElementById('content-rules').innerHTML = `
-                <div class="card">
-                    <pre style="white-space: pre-wrap; font-family: var(--text-font); font-size: 0.85rem; line-height: 1.5;">${REGULAMENTO_TEXTO}</pre>
-                </div>
-            `;
-        }
+        // Votar (Lógica idêntica ao Android)
+        window.vote = async (matchId, teamName) => {
+            try {
+                await setDoc(doc(db, "guesses", `${matchId}_${currentUser.uid}`), {
+                    matchId: matchId,
+                    userId: currentUser.uid,
+                    teamSelected: teamName,
+                    timestamp: new Date()
+                });
+                loadMatches();
+            } catch (e) { alert("Erro ao salvar voto."); }
+        };
 
-        // --- TELA: PERFIL ---
-        async function loadProfile() {
-            const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-            const u = userDoc.data();
-            
-            document.getElementById('content-profile').innerHTML = `
-                <div class="card" style="text-align:center;">
-                    <h2>CARTÃO DE MEMBRO</h2>
-                    <br>
-                    ${u.photoBase64 ? `<img src="data:image/jpeg;base64,${u.photoBase64}" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:3px solid #ccc;">` : '<i class="fa-solid fa-circle-user" style="font-size:120px; color:#ccc;"></i>'}
-                    <br><br>
-                    <h3>${u.name}</h3>
-                    <p style="color:gray;">@${u.username}</p>
-                    <br>
-                    <p style="font-size:0.8rem; color:blue;">Alterar foto e Admin: Apenas no Android</p>
-                </div>
-            `;
-        }
-
-        // --- MODAL: POTE ---
-        window.showPotDialog = async () => {
-            // Calcula valor
-            const usersSnap = await getDocs(collection(db, "users"));
-            let total = 0;
-            usersSnap.forEach(d => {
-                const payments = d.data().payments || {};
-                Object.values(payments).forEach(paid => { if(paid) total += 10; });
-            });
-            
-            const fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
-            document.getElementById('pot-value').innerText = fmt;
-            document.getElementById('modal-pot').style.display = 'flex';
+        // Logout
+        document.getElementById('btnLogout').onclick = () => signOut(auth);
+        document.getElementById('btnRefresh').onclick = () => {
+            const activeTab = document.querySelector('section:not(.hidden)').id;
+            if(activeTab.includes('matches')) loadMatches();
+            if(activeTab.includes('ranking')) loadRanking();
         };
 
     </script>
