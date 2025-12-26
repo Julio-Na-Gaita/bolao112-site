@@ -42,6 +42,9 @@
         .safe-top { padding-top: env(safe-area-inset-top); }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
         ::-webkit-scrollbar { display: none; }
+        
+        /* Estilo específico para o texto das regras (quebra de linha) */
+        .rules-text { white-space: pre-wrap; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -91,15 +94,20 @@
             </div>
 
             <div id="rulesScreen" class="hidden space-y-4">
-                <div class="card-cut p-6 border-2 border-[#006400] text-center bg-yellow-50">
-                    <h2 class="text-xl font-black text-[#006400] mb-2">REGULAMENTO 2026</h2>
-                    <p class="text-xs text-gray-600 leading-relaxed text-left">
-                        🎯 <b>Objetivo:</b> Competição de palpites esportivos entre amigos.<br>
-                        🗓️ <b>Vigência:</b> 01/01/2026 a 31/12/2026.<br>
-                        ✅ A participação implica aceitação total das regras.
+                <div class="card-cut p-6 border-l-4 border-yellow-400 bg-[#FFF9C4] text-left shadow-sm">
+                    <p class="text-xs text-gray-800 leading-relaxed rules-text">
+🎯 <b>Objetivo</b>
+Competição de palpites esportivos entre amigos, baseada exclusivamente nos principais torneios de futebol em formato mata-mata, com sistema de pontuação, classificação geral e premiação anual.
+
+🗓️ <b>VIGÊNCIA DO BOLÃO</b>
+Início oficial: 01 de janeiro de 2026
+Término oficial: 31 de dezembro de 2026
+
+✅ ✍️ A participação no bolão implica aceitação integral e irrestrita deste regulamento.
                     </p>
                 </div>
-                <div id="rulesList" class="space-y-3"></div>
+                <div id="rulesList" class="space-y-2"></div>
+                <div class="h-10"></div>
             </div>
 
             <div id="profileScreen" class="hidden">
@@ -180,13 +188,48 @@
         let currentUser = null;
         let currentRankingData = [];
 
+        // TEXTO COMPLETO DAS REGRAS (IDÊNTICO AO ANDROID)
         const rulesData = [
-            { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal: R$ 10,00 (Venc. dia 10).\n⚠️ Inadimplência: -1 ponto a cada 5 dias de atraso." },
-            { t: "2️⃣ PREMIAÇÃO FINAL", c: "🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%\nDo pote anual acumulado." },
-            { t: "3️⃣ PONTUAÇÃO", c: "✅ Acerto: 3 pts.\n🔥 Finais: 6 pts (Peso 2).\n💥 Oitavas Perfeitas: +3 pts bônus." },
-            { t: "4️⃣ COMPETIÇÕES", c: "Copa do Mundo, Champions, Libertadores, Copa do Brasil e outras matas-matas." },
-            { t: "5️⃣ DESEMPATE", c: "1. Menor inadimplência.\n2. Vitórias.\n3. Finais.\n4. Sorteio." },
-            { t: "6️⃣ PLATAFORMAS", c: "Palpites apenas pelo App ou Site." }
+            { 
+                t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", 
+                c: "💰 Aporte Mensal\nValor: R$ 10,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" 
+            },
+            { 
+                t: "2️⃣ PREMIAÇÃO FINAL (CLASSIFICAÇÃO GERAL)", 
+                c: "O valor total arrecadado ao longo da temporada formará o Pote Anual.\nDistribuição:\n🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%" 
+            },
+            { 
+                t: "3️⃣ SISTEMA DE PONTUAÇÃO", 
+                c: "✅ Acerto do vencedor/classificado: 3 pontos\n\n🔥 Finais (Peso 2)\nFinais de qualquer competição válida possuem pontuação dobrada\nCada acerto em final: 6 pontos\n\n💥 Rodada Perfeita – Oitavas de Final\nA rodada perfeita será considerada exclusivamente nas oitavas de final, em todas as competições válidas\nO participante que acertar 100% dos confrontos das oitavas receberá:\n+3 pontos extras, além da pontuação regular\n\n📌 Não existe rodada perfeita em quartas, semifinais ou finais." 
+            },
+            { 
+                t: "4️⃣ COMPETIÇÕES E OBRIGATORIEDADE DE FASES", 
+                c: "As competições abaixo compõem a base do bolão. A inclusão dos jogos segue a seguinte regra hierárquica:\n\nA) Competições Válidas:\n🌍 Copa do Mundo\n🏆 UEFA Champions League\n🏆 UEFA Europa League\n🇧🇷 Copa do Brasil\n🌎 Copa Libertadores\n🌎 Copa Sul-Americana\n🇧🇷 Supercopa do Brasil\n🇪🇺 Supercopa da UEFA\n🌎 CONMEBOL Recopa\n🌍 FIFA Intercontinental Cup\n\nB) Fases de Mata-Mata Regular (Obrigatórias)\nTodas as fases eliminatórias da chave principal das competições listadas são de inclusão OBRIGATÓRIA e AUTOMÁTICA.\n- Isso inclui fases iniciais extensas, como 64-avos e 32-avos da Copa do Brasil.\n\n📌 FASES PRELIMINARES (PLAY-OFFS) E DEMAIS JOGOS\n\nJogos de fases preliminares (ex: \"Pré-Libertadores\", Play-offs da Sul-Americana, Repescagens), fases de grupos, ligas corridas ou pontos corridos não pontuam." 
+            },
+            { 
+                t: "5️⃣ CRITÉRIOS DE DESEMPATE", 
+                c: "(Aplicados somente se houver empate no número total de pontos)\n1- Menor número de inadimplências (D)\n2- Maior número total de acertos (V)\n3- Maior número de acertos em finais (F)\n4- Sorteio\n\n📌 Nenhum critério de desempate será aplicado se não houver empate em pontos." 
+            },
+            { 
+                t: "6️⃣ PALPITES E PLATAFORMAS OFICIAIS", 
+                c: "Os palpites serão realizados exclusivamente nas plataformas oficiais do bolão:\n📱 Aplicativo (Android)\n🌐 Site (compatível com iOS e computador)\n\n📌 Palpites feitos fora dessas plataformas não serão considerados, mesmo que publicados no grupo." 
+            },
+            { 
+                t: "7️⃣ CLASSIFICAÇÃO E TRANSPARÊNCIA", 
+                c: "A classificação geral oficial será mantida e atualizada exclusivamente:\n📱 No aplicativo Android\n🌐 No site (iOS e PC)\nO link de acesso será disponibilizado no grupo oficial do WhatsApp\nO app/site será a única fonte oficial, contendo:\nPontuação total\nInadimplências (D)\nTotal de acertos (V)\nAcertos em finais (F)\n\n📌 Para garantir a total lisura da competição, o sistema possui travas técnicas de segurança:\n\n🔒 Bloqueio de Edição\nApós o horário limite estipulado para um jogo, o sistema bloqueia automaticamente a edição da data/hora. É tecnicamente impossível para a organização alterar o prazo de um jogo vencido para reabrir a votação." 
+            },
+            { 
+                t: "8️⃣ CONDUTAS, INTERPRETAÇÕES E ALTERAÇÕES", 
+                c: "🧭 Interpretação das regras\nEm caso de dúvida ou divergência na interpretação de uma regra já existente, será adotada a decisão da maioria simples dos participantes.\n\n📌 Essa regra vale exclusivamente para interpretação de regras já previstas neste regulamento.\n\n🚫 Criação ou alteração de regras\n\nCriação, exclusão ou alteração de regras exige 100% de concordância dos participantes, conforme já estabelecido.\n\n📌A regra de maioria simples não se aplica nesses casos." 
+            },
+            { 
+                t: "9️⃣ SISTEMA DE NOTIFICAÇÕES (BÔNUS)", 
+                c: "O serviço de notificações push (exclusivo para Android) informando sobre novos jogos, edições ou lembretes de prazo (1h antes) é uma funcionalidade bônus de cortesia.\n\n⚠️ Importante:\nFalhas no envio ou não recebimento da notificação (por falta de internet, configuração do celular ou erro de sistema) NÃO justificam o esquecimento do voto.\nÉ de inteira e exclusiva responsabilidade do participante acessar regularmente as plataformas e verificar os jogos disponíveis." 
+            },
+            { 
+                t: "🔟 VALIDAÇÃO DO VOTO E FALHAS TÉCNICAS", 
+                c: "Para garantir a integridade da competição e evitar contestações tardias:\n\n✅ A única comprovação válida de um voto é o seu registro visual no sistema (Botão destacado em VERDE ou mensagem \"Voto confirmado\").\n\n🚫 Não serão aceitas reclamações posteriores ao encerramento da votação sob alegações de falha técnica individual (ex: \"Votei mas o app não salvou\", \"Minha internet caiu\").\n\n📌 Princípio da Integridade Sistêmica:\nConsiderando que a plataforma (App/Site) é única e distribuída uniformemente a todos, presume-se que, se o sistema permitiu a votação para a coletividade, eventuais falhas isoladas de registro são decorrentes de fatores locais do próprio usuário (instabilidade de conexão, falhas no dispositivo ou erro de manuseio), e não de instabilidade da plataforma.\n\n💡 Recomendação de Segurança: Após votar, atualize a página ou feche e abra o app novamente para certificar-se de que seu palpite persiste gravado. Se não estiver verde, o voto não foi computado." 
+            }
         ];
 
         document.getElementById('btnLoginAction').onclick = async () => {
@@ -228,7 +271,7 @@
             if(tab === 'profile') loadProfile();
         };
 
-        // --- MATCHES (Corrigido para 3 seções + Votantes) ---
+        // --- MATCHES ---
         const SectionHeader = (title, color) => `
             <div class="card-container mb-3">
                 <div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm">
@@ -239,7 +282,6 @@
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
-            
             try {
                 const snap = await getDocs(collection(db, "matches"));
                 const now = new Date();
@@ -255,7 +297,6 @@
                     else open.push(m);
                 }
 
-                // Sort logic like Android
                 open.sort((a,b)=>a.deadline.toDate()-b.deadline.toDate());
                 waiting.sort((a,b)=>b.deadline.toDate()-a.deadline.toDate());
                 finished.sort((a,b)=>b.deadline.toDate()-a.deadline.toDate());
@@ -382,7 +423,7 @@
             `;
         };
 
-        // --- RANKING (Recalculado como no Android) ---
+        // --- RANKING ---
         async function loadRanking() {
             const list = document.getElementById('rankingListContent');
             const footer = document.getElementById('lastUpdateRanking');
