@@ -2,97 +2,95 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Bolão 112 F.C</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Bolão 112">
+    <link rel="apple-touch-icon" href="favicon.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&display=swap');
-        :root { --dark-green: #006400; --gold: #FFD700; }
-        body { font-family: 'PT Serif', serif; -webkit-tap-highlight-color: transparent; }
         
-        .card-cut {
-            background: white;
-            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        :root { --dark-green: #006400; --gold: #FFD700; }
+        
+        body { 
+            font-family: 'PT Serif', serif; 
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            background-color: #f3f4f6;
         }
 
-        .bg-app { background-size: cover; background-attachment: fixed; background-position: center; }
-        .bg-jogos { background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('bg_jogos.png'); }
-        .bg-ranking { background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('bg_ranking.png'); }
-        .bg-regras { background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('bg_regras.png'); }
-        .bg-perfil { background-image: linear-gradient(rgba(255,255,255,0.8), rgba(255,255,255,0.8)), url('bg_perfil.png'); }
+        /* Replica o CutCornerShape idêntico ao APK */
+        .card-cut {
+            background: white;
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+            filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07));
+        }
 
-        .btn-press:active { transform: scale(0.92); transition: transform 0.1s; }
+        /* Fundos Dinâmicos do APK */
+        .bg-main { background-size: cover; background-attachment: fixed; background-position: center; transition: background 0.3s ease; }
+        .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.png'); }
+        .tab-ranking { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_ranking.png'); }
+        .tab-rules { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_regras.png'); }
+        .tab-profile { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_perfil.png'); }
+
+        .btn-press:active { transform: scale(0.90); transition: 0.1s; }
+        
+        /* SafeArea para iPhones com Notch */
+        .safe-top { padding-top: env(safe-area-inset-top); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col">
 
-    <nav class="bg-[#006400] text-white p-4 sticky top-0 z-50 shadow-md flex justify-between items-center">
-        <h1 class="text-lg font-bold uppercase">Bolão 112 F.C</h1>
-        <div class="flex gap-3">
-            <button id="btnRefresh" class="p-2"><i class="fas fa-sync-alt"></i></button>
-            <button id="btnLogout" class="hidden p-2"><i class="fas fa-sign-out-alt"></i></button>
+    <nav class="bg-[#006400] text-white pt-[env(safe-area-inset-top)] sticky top-0 z-50 shadow-md">
+        <div class="p-4 flex justify-between items-center">
+            <h1 class="text-lg font-bold tracking-tighter uppercase">Bolão 112 F.C</h1>
+            <div class="flex gap-4">
+                <button id="btnRefresh" class="btn-press"><i class="fas fa-sync-alt text-xl"></i></button>
+                <button id="btnLogout" class="hidden btn-press"><i class="fas fa-sign-out-alt text-xl"></i></button>
+            </div>
         </div>
     </nav>
 
-    <main id="appContent" class="flex-1 overflow-y-auto relative pb-24 transition-all duration-300">
+    <main id="appContent" class="flex-1 overflow-y-auto bg-main tab-matches pb-32">
         
-        <section id="loginScreen" class="flex flex-col items-center justify-center min-h-[80vh] p-6">
-            <div class="card-cut w-full max-w-sm p-8 border-2 border-[#006400]">
-                <h2 class="text-xl font-black text-center text-[#006400] mb-8 uppercase">Acesso Membros</h2>
-                <input type="text" id="userInput" placeholder="Usuário" class="w-full p-3 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-green-700">
-                <input type="password" id="passInput" placeholder="Senha" class="w-full p-3 border rounded-lg mb-6 outline-none focus:ring-2 focus:ring-green-700">
-                <button id="btnLoginAction" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg btn-press">ACESSAR</button>
+        <section id="loginScreen" class="flex flex-col items-center justify-center min-h-[70vh] p-6">
+            <div class="card-cut w-full max-w-sm p-8 border-t-4 border-[#006400]">
+                <h2 class="text-xl font-black text-center text-[#006400] mb-8 uppercase tracking-widest">Acesso Membros</h2>
+                <input type="text" id="userInput" placeholder="Usuário" class="w-full p-4 bg-gray-50 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-green-700 transition-all">
+                <input type="password" id="passInput" placeholder="Senha" class="w-full p-4 bg-gray-50 border rounded-lg mb-8 outline-none focus:ring-2 focus:ring-green-700 transition-all">
+                <button id="btnLoginAction" class="w-full bg-[#006400] text-white py-4 font-bold rounded-lg btn-press shadow-lg">ACESSAR</button>
             </div>
         </section>
 
-        <section id="matchesScreen" class="hidden p-4 space-y-4"></section>
-
-        <section id="rankingScreen" class="hidden p-4">
-            <div class="card-cut p-4 mb-4">
-                <h3 class="text-center font-bold text-lg mb-4">Classificação</h3>
-                <div class="grid grid-cols-6 text-[10px] font-bold text-gray-400 uppercase text-center border-b pb-2">
-                    <span>Pos</span><span class="col-span-2 text-left">Nome</span><span>D</span><span>V</span><span>PTS</span>
-                </div>
-                <div id="rankingList" class="mt-2 space-y-2"></div>
-            </div>
-        </section>
-
-        <section id="rulesScreen" class="hidden p-4 space-y-4">
-            <div class="card-cut p-6 border-2 border-[#006400] text-center mb-6">
-                <h2 class="text-xl font-black text-[#006400]">REGULAMENTO 2026</h2>
-            </div>
-            <div id="rulesAccordion" class="space-y-2"></div>
-        </section>
-
-        <section id="profileScreen" class="hidden p-4">
-            <div class="card-cut p-8 border-2 border-[#006400] text-center">
-                <h2 class="font-bold text-gray-500 mb-4 tracking-widest">CARTÃO DE MEMBRO</h2>
-                <div id="profileAvatar" class="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 border-2 border-gray-300 overflow-hidden flex items-center justify-center">
-                    <i class="fas fa-user text-4xl text-gray-400"></i>
-                </div>
-                <h3 id="profileName" class="text-xl font-black uppercase">...</h3>
-                <p id="profileUser" class="text-gray-500 text-sm mb-6">@...</p>
-                <div id="financialStatus" class="p-4 rounded-lg font-bold text-sm mb-4">Carregando status...</div>
-            </div>
-        </section>
-
+        <div id="mainLists" class="hidden p-4 space-y-4">
+            <div id="matchesList" class="space-y-6"></div>
+            <div id="rankingContainer" class="hidden"></div>
+            <div id="rulesContainer" class="hidden"></div>
+            <div id="profileContainer" class="hidden"></div>
+        </div>
     </main>
 
-    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 pb-6 z-50">
-        <button onclick="showTab('matches')" class="nav-item flex flex-col items-center text-gray-400" id="nav-matches"><i class="fas fa-soccer-ball"></i><span class="text-[10px]">Jogos</span></button>
-        <button onclick="showTab('ranking')" class="nav-item flex flex-col items-center text-gray-400" id="nav-ranking"><i class="fas fa-trophy"></i><span class="text-[10px]">Ranking</span></button>
-        <button onclick="showTab('rules')" class="nav-item flex flex-col items-center text-gray-400" id="nav-rules"><i class="fas fa-gavel"></i><span class="text-[10px]">Regras</span></button>
-        <button onclick="showTab('profile')" class="nav-item flex flex-col items-center text-gray-400" id="nav-profile"><i class="fas fa-user"></i><span class="text-[10px]">Perfil</span></button>
+    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t safe-bottom flex justify-around p-2 z-50 shadow-2xl">
+        <button onclick="showTab('matches')" class="nav-btn flex flex-col items-center text-[#006400]" id="nav-matches"><i class="fas fa-soccer-ball text-lg"></i><span class="text-[10px] mt-1">Confrontos</span></button>
+        <button onclick="showTab('ranking')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-ranking"><i class="fas fa-trophy text-lg"></i><span class="text-[10px] mt-1">Ranking</span></button>
+        <button onclick="showTab('rules')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-rules"><i class="fas fa-gavel text-lg"></i><span class="text-[10px] mt-1">Regras</span></button>
+        <button onclick="showTab('profile')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-profile"><i class="fas fa-user text-lg"></i><span class="text-[10px] mt-1">Perfil</span></button>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // Credenciais Oficiais
         const firebaseConfig = {
             apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k",
             authDomain: "bolao112fc.firebaseapp.com",
@@ -107,117 +105,97 @@
         const db = getFirestore(app);
         let currentUser = null;
 
-        // Regras (Accordion)
-        const rules = [
-            { t: "1️⃣ FINANCEIRO", c: "💰 Aporte Mensal: R$ 10,00. Vencimento: todo dia 10." },
-            { t: "3️⃣ PONTUAÇÃO", c: "✅ Acerto: 3 pts. 🏆 Finais: 6 pts. 🌟 Oitavas Perfeitas: +3 pts." },
-            { t: "5️⃣ DESEMPATE", c: "1. Menor inadimplência. 2. Vitórias. 3. Finais ganhas." }
-        ];
-
+        // Lógica de Login
         document.getElementById('btnLoginAction').onclick = async () => {
             const user = document.getElementById('userInput').value.trim().toLowerCase();
             const pass = document.getElementById('passInput').value;
             try { await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); } 
-            catch (e) { alert("Acesso negado."); }
+            catch (e) { alert("Usuário ou Senha incorretos."); }
         };
 
         onAuthStateChanged(auth, user => {
             if (user) {
                 currentUser = user;
                 document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainLists').classList.remove('hidden');
                 document.getElementById('bottomNav').classList.remove('hidden');
                 document.getElementById('btnLogout').classList.remove('hidden');
                 showTab('matches');
             } else {
-                document.getElementById('loginScreen').classList.remove('hidden');
-                document.getElementById('bottomNav').classList.add('hidden');
+                window.location.reload();
             }
         });
 
         window.showTab = (tab) => {
-            const screens = ['matchesScreen', 'rankingScreen', 'rulesScreen', 'profileScreen'];
-            screens.forEach(s => document.getElementById(s).classList.add('hidden'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.replace('text-[#006400]', 'text-gray-400'));
+            const content = document.getElementById('appContent');
+            content.className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
             
-            const main = document.getElementById('appContent');
-            main.className = `flex-1 overflow-y-auto bg-app pb-24 bg-${tab}`;
-            document.getElementById(`${tab}Screen`).classList.remove('hidden');
+            // Gerenciar Visibilidade
+            document.getElementById('matchesList').classList.toggle('hidden', tab !== 'matches');
+            document.getElementById('rankingContainer').classList.toggle('hidden', tab !== 'ranking');
+            document.getElementById('rulesContainer').classList.toggle('hidden', tab !== 'rules');
+            document.getElementById('profileContainer').classList.toggle('hidden', tab !== 'profile');
+
+            // Gerenciar Cores do Menu
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-[#006400]', 'text-gray-400'));
             document.getElementById(`nav-${tab}`).classList.replace('text-gray-400', 'text-[#006400]');
 
             if(tab === 'matches') loadMatches();
-            if(tab === 'rules') renderRules();
-            if(tab === 'profile') loadProfile();
+            if(tab === 'ranking') loadRanking();
         };
 
         async function loadMatches() {
-            const container = document.getElementById('matchesScreen');
-            container.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-2xl"></i></div>`;
+            const list = document.getElementById('matchesList');
+            list.innerHTML = `<div class="text-center py-20 text-green-800"><i class="fas fa-spinner fa-spin fa-2x"></i></div>`;
             const snap = await getDocs(collection(db, "matches"));
             const now = new Date();
-            container.innerHTML = "";
+            list.innerHTML = "";
 
             snap.forEach(async mDoc => {
                 const m = mDoc.data();
                 const deadline = m.deadline.toDate();
-                const expired = now > deadline;
+                const isExpired = now > deadline;
+                
                 const vRef = doc(db, "guesses", `${mDoc.id}_${currentUser.uid}`);
                 const vSnap = await getDoc(vRef);
                 const userVote = vSnap.exists() ? vSnap.data().teamSelected : "";
 
-                container.innerHTML += `
-                    <div class="card-cut p-4 border-l-4 ${expired ? 'border-red-500' : 'border-[#006400]'}">
-                        <div class="flex justify-between text-[10px] font-bold text-gray-500 mb-4 uppercase">
-                            <span>${m.competition}</span>
-                            <span class="${expired ? 'text-red-600' : 'text-black'}">${expired ? 'ENCERRADO' : 'FECHA: ' + deadline.toLocaleTimeString()}</span>
+                const card = `
+                    <div class="card-cut p-5 relative border-l-[6px] ${isExpired ? 'border-red-600' : 'border-[#006400]'}">
+                        <div class="flex justify-between text-[11px] font-bold text-gray-400 mb-5 uppercase tracking-wider">
+                            <span>${m.competition} • ${m.round}</span>
+                            <span class="${isExpired ? 'text-red-600' : 'text-black'}">${isExpired ? 'Encerrado' : 'Prazo: ' + deadline.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <button onclick="vote('${mDoc.id}', '${m.teamA}')" ${expired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-5/12">
-                                <img src="${m.teamAUrl}" class="w-10 h-10 mb-2 object-contain">
-                                <span class="text-[11px] font-bold ${userVote === m.teamA ? 'text-blue-600 underline' : ''}">${m.teamA}</span>
+                        
+                        <div class="flex items-center justify-between px-2">
+                            <button onclick="vote('${mDoc.id}', '${m.teamA}')" ${isExpired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-[42%]">
+                                <img src="${m.teamAUrl}" class="w-14 h-14 object-contain mb-3 drop-shadow-sm">
+                                <span class="text-[12px] font-black text-center leading-tight ${userVote === m.teamA ? 'text-green-700 underline decoration-2 underline-offset-4' : 'text-gray-800'}">${m.teamA}</span>
                             </button>
-                            <span class="italic text-gray-300 font-black">VS</span>
-                            <button onclick="vote('${mDoc.id}', '${m.teamB}')" ${expired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-5/12">
-                                <img src="${m.teamBUrl}" class="w-10 h-10 mb-2 object-contain">
-                                <span class="text-[11px] font-bold ${userVote === m.teamB ? 'text-blue-600 underline' : ''}">${m.teamB}</span>
+                            
+                            <span class="italic font-black text-gray-200 text-2xl">VS</span>
+                            
+                            <button onclick="vote('${mDoc.id}', '${m.teamB}')" ${isExpired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-[42%]">
+                                <img src="${m.teamBUrl}" class="w-14 h-14 object-contain mb-3 drop-shadow-sm">
+                                <span class="text-[12px] font-black text-center leading-tight ${userVote === m.teamB ? 'text-green-700 underline decoration-2 underline-offset-4' : 'text-gray-800'}">${m.teamB}</span>
                             </button>
                         </div>
-                    </div>`;
+                        ${userVote && !isExpired ? `<p class="text-center text-[11px] text-green-700 font-bold mt-5 bg-green-50 py-1 rounded">Seu voto: ${userVote}</p>` : ''}
+                        ${m.winner ? `<div class="mt-5 text-center border-t pt-3"><span class="text-[10px] text-gray-400 font-bold">RESULTADO</span><p class="text-green-700 font-black text-lg">${m.winner}</p></div>` : ''}
+                    </div>
+                `;
+                list.innerHTML += card;
             });
         }
 
-        window.vote = async (id, team) => {
-            await setDoc(doc(db, "guesses", `${id}_${currentUser.uid}`), { matchId: id, userId: currentUser.uid, teamSelected: team, timestamp: new Date() });
+        window.vote = async (mId, team) => {
+            await setDoc(doc(db, "guesses", `${mId}_${currentUser.uid}`), { matchId: mId, userId: currentUser.uid, teamSelected: team, timestamp: new Date() });
             loadMatches();
         };
 
-        function renderRules() {
-            const acc = document.getElementById('rulesAccordion');
-            acc.innerHTML = rules.map(r => `
-                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                    <button class="w-full text-left font-bold text-sm text-[#006400] flex justify-between items-center" onclick="this.nextElementSibling.classList.toggle('hidden')">
-                        ${r.t} <i class="fas fa-chevron-down text-[10px]"></i>
-                    </button>
-                    <div class="hidden mt-2 text-xs text-gray-600 leading-relaxed">${r.c}</div>
-                </div>`).join('');
-        }
-
-        async function loadProfile() {
-            const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-            if(userDoc.exists()) {
-                const d = userDoc.data();
-                document.getElementById('profileName').innerText = d.name || "Sem Nome";
-                document.getElementById('profileUser').innerText = `@${d.username || "user"}`;
-                if(d.photoBase64) document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${d.photoBase64}" class="w-full h-full object-cover">`;
-                
-                const statusBox = document.getElementById('financialStatus');
-                const isPaid = d.payments && d.payments['Jan']; // Exemplo simplificado
-                statusBox.innerText = isPaid ? "MENSALIDADE EM DIA" : "PAGAMENTO PENDENTE";
-                statusBox.className = `p-4 rounded-lg font-bold text-sm mb-4 ${isPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
-            }
-        }
-
         document.getElementById('btnRefresh').onclick = () => loadMatches();
         document.getElementById('btnLogout').onclick = () => signOut(auth);
+
     </script>
 </body>
 </html>
