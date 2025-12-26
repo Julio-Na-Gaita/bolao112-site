@@ -10,8 +10,6 @@
         @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&display=swap');
         body { font-family: 'PT Serif', serif; }
         .bg-app { background-image: url('bg_jogos.png'); background-attachment: fixed; background-size: cover; }
-        .gold-border { border: 2px solid #FFD700; }
-        .card-cut { clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%); }
         .btn-press:active { transform: scale(0.95); transition: 0.1s; }
     </style>
 </head>
@@ -26,10 +24,11 @@
     </nav>
 
     <main id="appContent" class="p-4 max-w-2xl mx-auto pb-24">
+        
         <section id="loginScreen" class="bg-white p-8 rounded-lg shadow-xl text-center">
             <h2 class="text-2xl font-black text-[#006400] mb-6">ACESSO MEMBROS</h2>
-            <input type="text" id="userInput" placeholder="Usuário" class="w-full p-3 border mb-4 rounded">
-            <input type="password" id="passInput" placeholder="Senha" class="w-full p-3 border mb-6 rounded">
+            <input type="text" id="userInput" placeholder="Usuário" class="w-full p-3 border mb-4 rounded focus:outline-none focus:ring-2 focus:ring-green-600">
+            <input type="password" id="passInput" placeholder="Senha" class="w-full p-3 border mb-6 rounded focus:outline-none focus:ring-2 focus:ring-green-600">
             <button id="btnLoginAction" class="bg-[#006400] text-white w-full py-3 font-bold rounded hover:bg-green-800 transition">ACESSAR</button>
         </section>
 
@@ -40,51 +39,45 @@
 
         <section id="rankingScreen" class="hidden">
             <div class="bg-white p-4 rounded-lg shadow mb-4">
-                <h3 class="text-center font-bold text-lg mb-4">Classificação Geral</h3>
-                <div class="grid grid-cols-6 text-xs font-bold text-gray-500 uppercase pb-2 border-b">
-                    <span>Pos</span>
-                    <span class="col-span-2">Nome</span>
-                    <span class="text-center text-red-600">D</span>
-                    <span class="text-center">V</span>
-                    <span class="text-center text-green-700">PTS</span>
-                </div>
-                <div id="rankingList" class="mt-2 space-y-2 text-sm"></div>
-            </div>
-            <div class="bg-black/80 text-yellow-400 p-2 text-[10px] text-center rounded">
-                Legenda: D=Débitos | V=Vitórias | PTS=Pontos
+                <h3 class="text-center font-bold text-lg mb-4 text-[#006400]">Classificação Geral</h3>
+                <div id="rankingList" class="mt-2 space-y-2 text-sm">
+                    </div>
             </div>
         </section>
+
     </main>
 
-    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 z-50">
+    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.1)]">
         <button onclick="showTab('matches')" class="flex flex-col items-center text-[#006400]"><i class="fas fa-soccer-ball"></i><span class="text-[10px]">Jogos</span></button>
         <button onclick="showTab('ranking')" class="flex flex-col items-center text-gray-400"><i class="fas fa-trophy"></i><span class="text-[10px]">Ranking</span></button>
-        <button onclick="showTab('rules')" class="flex flex-col items-center text-gray-400"><i class="fas fa-gavel"></i><span class="text-[10px]">Regras</span></button>
         <button onclick="showTab('profile')" class="flex flex-col items-center text-gray-400"><i class="fas fa-user"></i><span class="text-[10px]">Perfil</span></button>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 
-        // CONFIGURAÇÃO FIREBASE (Substitua pelos seus dados do APK)
+        // Configuração OFICIAL que você forneceu
         const firebaseConfig = {
-            apiKey: "SUA_API_KEY",
-            authDomain: "bolao112-site.firebaseapp.com",
-            projectId: "bolao112-site",
-            storageBucket: "bolao112-site.appspot.com",
-            messagingSenderId: "SEU_SENDER_ID",
-            appId: "SEU_APP_ID"
+            apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k",
+            authDomain: "bolao112fc.firebaseapp.com",
+            projectId: "bolao112fc",
+            storageBucket: "bolao112fc.firebasestorage.app",
+            messagingSenderId: "131329454158",
+            appId: "1:131329454158:web:983e4544dd651ec942131f",
+            measurementId: "G-5SGWJE6EKK"
         };
 
         const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
         let currentUser = null;
 
-        // Login Simplificado (@bolao112.com)
+        // Lógica de Login
         document.getElementById('btnLoginAction').onclick = async () => {
             const user = document.getElementById('userInput').value.trim().toLowerCase();
             const pass = document.getElementById('passInput').value;
@@ -93,11 +86,11 @@
             try {
                 await signInWithEmailAndPassword(auth, email, pass);
             } catch (e) {
-                alert("Erro no login! Verifique usuário e senha.");
+                alert("Erro: Usuário ou senha incorretos.");
             }
         };
 
-        // Escutador de Autenticação
+        // Escutador de Estado do Usuário
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -108,10 +101,12 @@
             } else {
                 document.getElementById('loginScreen').classList.remove('hidden');
                 document.getElementById('bottomNav').classList.add('hidden');
+                document.getElementById('btnLogout').classList.add('hidden');
+                document.getElementById('matchesScreen').classList.add('hidden');
             }
         });
 
-        // Troca de Abas
+        // Navegação de Abas
         window.showTab = (tab) => {
             document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
             if(tab === 'matches') {
@@ -119,56 +114,62 @@
                 loadMatches();
             } else if(tab === 'ranking') {
                 document.getElementById('rankingScreen').classList.remove('hidden');
-                loadRanking();
+                // loadRanking(); -> Implementar lógica de ranking futuramente
             }
         };
 
-        // Carregar Jogos
+        // Carregar Jogos do Firestore
         async function loadMatches() {
             const listDiv = document.getElementById('matchesList');
             listDiv.innerHTML = "";
             document.getElementById('loadingMatches').classList.remove('hidden');
 
-            const snap = await getDocs(collection(db, "matches"));
-            const now = new Date();
-            
-            snap.forEach(async (matchDoc) => {
-                const match = matchDoc.data();
-                const deadline = match.deadline.toDate();
-                const isExpired = now > deadline;
+            try {
+                const snap = await getDocs(collection(db, "matches"));
+                const now = new Date();
                 
-                // Carregar voto do usuário
-                const voteRef = doc(db, "guesses", `${matchDoc.id}_${currentUser.uid}`);
-                const voteSnap = await getDoc(voteRef);
-                const userVote = voteSnap.exists() ? voteSnap.data().teamSelected : "";
+                for (const matchDoc of snap.docs) {
+                    const match = matchDoc.data();
+                    const deadline = match.deadline.toDate();
+                    const isExpired = now > deadline;
+                    
+                    // Busca se o usuário já votou neste jogo
+                    const voteRef = doc(db, "guesses", `${matchDoc.id}_${currentUser.uid}`);
+                    const voteSnap = await getDoc(voteRef);
+                    const userVote = voteSnap.exists() ? voteSnap.data().teamSelected : "";
 
-                const card = `
-                    <div class="bg-white rounded-lg shadow-md border-l-4 ${match.round === 'Final' ? 'border-yellow-400 bg-yellow-50' : 'border-green-800'} p-4">
-                        <div class="flex justify-between text-[10px] text-gray-500 font-bold mb-2">
-                            <span>${match.competition.toUpperCase()} - ${match.round}</span>
-                            <span class="${isExpired ? 'text-red-600' : 'text-black'}">${isExpired ? 'Encerrado' : 'Prazo: ' + deadline.toLocaleString()}</span>
+                    const card = `
+                        <div class="bg-white rounded-lg shadow-md border-l-4 ${isExpired ? 'border-gray-400' : 'border-green-700'} p-4">
+                            <div class="flex justify-between text-[10px] text-gray-500 font-bold mb-2">
+                                <span>${match.competition || 'CAMPEONATO'}</span>
+                                <span class="${isExpired ? 'text-red-600' : 'text-green-700'}">
+                                    ${isExpired ? 'ENCERRADO' : 'FECHA: ' + deadline.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-around py-2">
+                                <button onclick="vote('${matchDoc.id}', '${match.teamA}')" ${isExpired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-5/12">
+                                    <img src="${match.teamAUrl}" class="w-10 h-10 object-contain mb-1">
+                                    <span class="text-[11px] font-bold ${userVote === match.teamA ? 'text-blue-600 underline' : 'text-gray-800'}">${match.teamA}</span>
+                                </button>
+                                <span class="font-black italic text-gray-400">VS</span>
+                                <button onclick="vote('${matchDoc.id}', '${match.teamB}')" ${isExpired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-5/12">
+                                    <img src="${match.teamBUrl}" class="w-10 h-10 object-contain mb-1">
+                                    <span class="text-[11px] font-bold ${userVote === match.teamB ? 'text-blue-600 underline' : 'text-gray-800'}">${match.teamB}</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-around py-4">
-                            <button onclick="vote('${matchDoc.id}', '${match.teamA}')" ${isExpired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-1/3">
-                                <img src="${match.teamAUrl}" class="w-12 h-12 mb-2">
-                                <span class="text-xs font-bold text-center ${userVote === match.teamA ? 'text-green-700 underline' : ''}">${match.teamA}</span>
-                            </button>
-                            <span class="text-xl font-black italic text-gray-300">X</span>
-                            <button onclick="vote('${matchDoc.id}', '${match.teamB}')" ${isExpired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-1/3">
-                                <img src="${match.teamBUrl}" class="w-12 h-12 mb-2">
-                                <span class="text-xs font-bold text-center ${userVote === match.teamB ? 'text-green-700 underline' : ''}">${match.teamB}</span>
-                            </button>
-                        </div>
-                        ${match.winner ? `<div class="text-center mt-2 p-1 bg-green-100 rounded text-xs font-bold">VENCEDOR: ${match.winner}</div>` : ''}
-                    </div>
-                `;
-                listDiv.innerHTML += card;
-            });
+                    `;
+                    listDiv.innerHTML += card;
+                }
+            } catch (error) {
+                console.error("Erro ao carregar jogos:", error);
+            }
             document.getElementById('loadingMatches').classList.add('hidden');
         }
 
-        // Votar (Lógica idêntica ao Android)
+        // Função de Voto
         window.vote = async (matchId, teamName) => {
+            if (!currentUser) return;
             try {
                 await setDoc(doc(db, "guesses", `${matchId}_${currentUser.uid}`), {
                     matchId: matchId,
@@ -176,17 +177,15 @@
                     teamSelected: teamName,
                     timestamp: new Date()
                 });
-                loadMatches();
-            } catch (e) { alert("Erro ao salvar voto."); }
+                loadMatches(); // Atualiza a tela para mostrar o sublinhado no voto
+            } catch (e) {
+                alert("Erro ao salvar seu voto.");
+            }
         };
 
-        // Logout
+        // Botões de Ação
         document.getElementById('btnLogout').onclick = () => signOut(auth);
-        document.getElementById('btnRefresh').onclick = () => {
-            const activeTab = document.querySelector('section:not(.hidden)').id;
-            if(activeTab.includes('matches')) loadMatches();
-            if(activeTab.includes('ranking')) loadRanking();
-        };
+        document.getElementById('btnRefresh').onclick = () => loadMatches();
 
     </script>
 </body>
