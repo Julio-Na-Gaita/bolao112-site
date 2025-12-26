@@ -31,6 +31,7 @@
             border: 1px solid #e5e7eb;
         }
 
+        /* Fundos Dinâmicos */
         .bg-main { background-size: cover; background-attachment: fixed; background-position: center; transition: background 0.3s ease; }
         .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.png'); }
         .tab-ranking { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_ranking.png'); }
@@ -59,6 +60,7 @@
     </nav>
 
     <main id="appContent" class="flex-1 overflow-y-auto bg-main tab-matches pb-32">
+        
         <section id="loginScreen" class="flex flex-col items-center justify-center min-h-[70vh] p-6">
             <div class="card-cut w-full max-w-sm p-8 border-t-4 border-[#006400]">
                 <h2 class="text-xl font-black text-center text-[#006400] mb-8 uppercase tracking-widest">Acesso Membros</h2>
@@ -69,6 +71,7 @@
         </section>
 
         <div id="mainScreens" class="hidden p-4 space-y-4">
+            
             <div id="matchesScreen" class="hidden space-y-6"></div>
 
             <div id="rankingScreen" class="hidden">
@@ -138,7 +141,7 @@ Término oficial: 31 de dezembro de 2026
                 <div id="pixArea" class="hidden bg-white p-4 rounded-lg border border-gray-200 text-left space-y-3 mb-4 shadow-sm">
                     <div class="text-center mb-2"><i class="fas fa-qrcode text-3xl text-[#006400]"></i><p class="font-bold text-[#006400]">PAGAMENTO PIX</p><p class="text-2xl font-black">R$ 10,00</p></div>
                     <div class="text-center text-[10px] text-gray-500 mb-2">Beneficiário:<br><b class="text-[#006400] text-xs">MATHEUS FERREIRA ALVES</b></div>
-                    <div><label class="text-[10px] text-gray-500 font-bold">CHAVE PIX</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-gray-50 border rounded"><button id="btnCopyPix" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-copy"></i></button></div></div>
+                    <div><label class="text-[10px] text-gray-500 font-bold">CHAVE PIX</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded"><button id="btnCopyPix" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-copy"></i></button></div></div>
                     <button id="btnSendProof" class="w-full bg-green-500 text-white py-2 rounded font-bold text-xs shadow btn-press"><i class="fab fa-whatsapp"></i> ENVIAR COMPROVANTE</button>
                 </div>
 
@@ -179,7 +182,7 @@ Término oficial: 31 de dezembro de 2026
         let currentUser = null;
         let currentRankingData = [];
 
-        // REGRAS (Original restaurado)
+        // --- REGRAS (DATA) ---
         const rulesData = [
             { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal\nValor: R$ 10,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" },
             { t: "2️⃣ PREMIAÇÃO FINAL (CLASSIFICAÇÃO GERAL)", c: "O valor total arrecadado ao longo da temporada formará o Pote Anual.\nDistribuição:\n🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%" },
@@ -231,6 +234,7 @@ Término oficial: 31 de dezembro de 2026
             if(tab === 'profile') loadProfile();
         };
 
+        // --- JOGOS (PRESERVADO) ---
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
@@ -314,7 +318,7 @@ Término oficial: 31 de dezembro de 2026
             cont.innerHTML = `<div class="bg-gray-50 p-3 border-b flex justify-between items-center"><h3 class="font-bold text-[#006400] uppercase text-xs">${exp ? 'Palpites' : 'Quem já votou?'}</h3><button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button></div><div class="bg-white max-h-[60vh] overflow-y-auto p-2">${rows || '<p class="text-xs text-center p-4">Sem votos.</p>'}</div><div class="bg-gray-50 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div>`;
         };
 
-        // --- RANKING ---
+        // --- RANKING (PRESERVADO) ---
         async function loadRanking() {
             const list = document.getElementById('rankingListContent');
             const footer = document.getElementById('lastUpdateRanking');
@@ -369,7 +373,7 @@ Término oficial: 31 de dezembro de 2026
                 </div>`).join(''); 
         }
 
-        // --- ADMIN PANEL CORRIGIDO ---
+        // --- ADMIN PANEL (CORRIGIDO: MENU E SEGURANÇA) ---
         window.openAdminMenu = () => {
             const modal = document.getElementById('modalOverlay');
             const cont = document.getElementById('modalContainer');
@@ -382,8 +386,8 @@ Término oficial: 31 de dezembro de 2026
                     </div>
                     <div class="p-4 space-y-3">
                         <button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button>
-                        <button onclick="alert('Funcionalidade em breve')" class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-plus-circle"></i> NOVO CONFRONTO</button>
-                        <button onclick="alert('Funcionalidade em breve')" class="w-full bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> COMPETIÇÕES</button>
+                        <button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-plus-circle"></i> NOVO CONFRONTO</button>
+                        <button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="w-full bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> COMPETIÇÕES</button>
                         <hr class="border-gray-200 my-2">
                         <h4 class="font-bold text-[#006400] text-xs uppercase mb-2">Gerenciar Confrontos</h4>
                         <div id="adminMatchList" class="max-h-[30vh] overflow-y-auto text-xs text-gray-500">
@@ -391,8 +395,6 @@ Término oficial: 31 de dezembro de 2026
                         </div>
                     </div>
                 </div>`;
-            
-            // Carregar lista de jogos para gestão (placeholder visual)
             loadAdminMatches();
         };
 
@@ -406,8 +408,8 @@ Término oficial: 31 de dezembro de 2026
                 html += `<div class="flex justify-between items-center p-2 border-b border-gray-100">
                     <span class="truncate w-2/3 font-bold">${m.teamA} x ${m.teamB}</span>
                     <div class="flex gap-2">
-                        <button class="text-blue-500"><i class="fas fa-edit"></i></button>
-                        <button class="text-red-500"><i class="fas fa-trash"></i></button>
+                        <button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500" onclick="alert('Exclusão apenas no App')"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>`;
             });
@@ -438,9 +440,9 @@ Término oficial: 31 de dezembro de 2026
                     <div class="flex justify-between items-center mb-2">
                         <span class="font-bold text-xs text-gray-800">${u.name}</span>
                         <div class="flex items-center gap-2">
-                            <button onclick="changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus"></i></button>
+                            <button onclick="changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus-circle"></i></button>
                             <span class="text-red-600 font-black text-xs min-w-[30px] text-center">${u.debts||0}</span>
-                            <button onclick="changeDebt('${u.id}', 1)" class="text-red-500 bg-red-50 p-1 rounded"><i class="fas fa-plus"></i></button>
+                            <button onclick="changeDebt('${u.id}', 1)" class="text-red-500 bg-red-50 p-1 rounded"><i class="fas fa-plus-circle"></i></button>
                         </div>
                     </div>
                     <div class="grid grid-cols-6 gap-1">`;
@@ -477,10 +479,18 @@ Término oficial: 31 de dezembro de 2026
             openFinancialScreen();
         };
 
-        // --- PERFIL ---
+        // --- PERFIL (SEGURANÇA ATIVADA) ---
         async function loadProfile() { 
             const docRef = doc(db, "users", currentUser.uid); const snap = await getDoc(docRef); if(!snap.exists()) return; const u = snap.data(); document.getElementById('profileName').innerText = u.name || "MEMBRO"; document.getElementById('profileUser').innerText = `@${u.username}`; if(u.photoBase64) document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`; 
-            if(u.isAdmin) document.getElementById('btnAdminPanel').classList.remove('hidden');
+            
+            // CORREÇÃO SEGURANÇA: Só mostra se isAdmin for true no banco
+            const adminBtn = document.getElementById('btnAdminPanel');
+            if(u.isAdmin === true) {
+                adminBtn.classList.remove('hidden');
+            } else {
+                adminBtn.classList.add('hidden');
+            }
+
             const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const currMonth = months[new Date().getMonth()]; const isPaid = u.payments && u.payments[currMonth]; const stCard = document.getElementById('financialCard'); const stText = document.getElementById('financialStatusText'); const stIcon = document.getElementById('financialIcon'); if(isPaid || new Date().getFullYear() < 2026) { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800"; stText.innerText = "MENSALIDADE EM DIA"; stIcon.className = "fas fa-check-circle text-2xl"; } else { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800"; stText.innerText = "PAGAMENTO PENDENTE"; stIcon.className = "fas fa-exclamation-circle text-2xl"; } const finSnap = await getDoc(doc(db, "settings", "financial")); if(finSnap.exists()) { const fin = finSnap.data(); document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com"; document.getElementById('btnSendProof').onclick = () => { const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112."); window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank'); }; } 
         }
         document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onloadend = async () => { const base64 = reader.result.split(',')[1]; await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }; reader.readAsDataURL(file); } };
