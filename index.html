@@ -4,25 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Bolão 112 F.C</title>
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="favicon.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&display=swap');
+        
         :root { --dark-green: #006400; --gold: #FFD700; }
-        body { font-family: 'PT Serif', serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f3f4f6; }
-        .card-cut { background: white; clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)); border: 1px solid #e5e7eb; }
+        
+        body { 
+            font-family: 'PT Serif', serif; 
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            background-color: #f3f4f6;
+        }
+
+        .card-cut {
+            background: white;
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+            filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07));
+            border: 1px solid #e5e7eb;
+        }
+
+        /* Fundos Dinâmicos */
         .bg-main { background-size: cover; background-attachment: fixed; background-position: center; transition: background 0.3s ease; }
         .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.png'); }
         .tab-ranking { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_ranking.png'); }
         .tab-rules { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_regras.png'); }
         .tab-profile { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_perfil.png'); }
+
         .btn-press:active { transform: scale(0.95); transition: 0.1s; }
         .safe-top { padding-top: env(safe-area-inset-top); }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
         ::-webkit-scrollbar { display: none; }
+        
+        .rules-text { white-space: pre-wrap; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -40,6 +61,7 @@
     </nav>
 
     <main id="appContent" class="flex-1 overflow-y-auto bg-main tab-matches pb-32">
+        
         <section id="loginScreen" class="flex flex-col items-center justify-center min-h-[70vh] p-6">
             <div class="card-cut w-full max-w-sm p-8 border-t-4 border-[#006400]">
                 <h2 class="text-xl font-black text-center text-[#006400] mb-8 uppercase tracking-widest">Acesso Membros</h2>
@@ -50,6 +72,7 @@
         </section>
 
         <div id="mainScreens" class="hidden p-4 space-y-4">
+            
             <div id="matchesScreen" class="hidden space-y-6"></div>
 
             <div id="rankingScreen" class="hidden">
@@ -70,11 +93,18 @@
             </div>
 
             <div id="rulesScreen" class="hidden space-y-4">
-                <div class="card-cut p-6 border-2 border-[#006400] text-center bg-yellow-50">
-                    <h2 class="text-xl font-black text-[#006400] mb-2">REGULAMENTO 2026</h2>
-                    <p class="text-xs text-gray-600 leading-relaxed text-left rules-text">🎯 <b>Objetivo:</b> Competição de palpites esportivos entre amigos.<br>🗓️ <b>Vigência:</b> 01/01/2026 a 31/12/2026.<br>✅ A participação implica aceitação total.</p>
+                <div class="card-cut p-6 border-l-4 border-yellow-400 bg-[#FFF9C4] text-left shadow-sm">
+                    <p class="text-xs text-gray-800 leading-relaxed rules-text">🎯 <b>Objetivo</b>
+Competição de palpites esportivos entre amigos, baseada exclusivamente nos principais torneios de futebol em formato mata-mata, com sistema de pontuação, classificação geral e premiação anual.
+
+🗓️ <b>VIGÊNCIA DO BOLÃO</b>
+Início oficial: 01 de janeiro de 2026
+Término oficial: 31 de dezembro de 2026
+
+✅ ✍️ A participação no bolão implica aceitação integral e irrestrita deste regulamento.</p>
                 </div>
-                <div id="rulesList" class="space-y-3"></div>
+                <div id="rulesList" class="space-y-2"></div>
+                <div class="h-10"></div>
             </div>
 
             <div id="profileScreen" class="hidden">
@@ -112,11 +142,11 @@
                 <div id="pixArea" class="hidden bg-white p-4 rounded-lg border border-gray-200 text-left space-y-3 mb-4 shadow-sm">
                     <div class="text-center mb-2"><i class="fas fa-qrcode text-3xl text-[#006400]"></i><p class="font-bold text-[#006400]">PAGAMENTO PIX</p><p class="text-2xl font-black">R$ 10,00</p></div>
                     <div class="text-center text-[10px] text-gray-500 mb-2">Beneficiário:<br><b class="text-[#006400] text-xs">MATHEUS FERREIRA ALVES</b></div>
-                    <div><label class="text-[10px] text-gray-500 font-bold">CHAVE PIX</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-gray-50 border rounded"><button id="btnCopyPix" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-copy"></i></button></div></div>
+                    <div><label class="text-[10px] text-gray-500 font-bold">CHAVE PIX</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded"><button id="btnCopyPix" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-copy"></i></button></div></div>
                     <button id="btnSendProof" class="w-full bg-green-500 text-white py-2 rounded font-bold text-xs shadow btn-press"><i class="fab fa-whatsapp"></i> ENVIAR COMPROVANTE</button>
                 </div>
 
-                <button id="btnAdminPanel" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-10"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
+                <button id="btnAdminPanel" onclick="openAdminPanel()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-10"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
             </div>
         </div>
     </main>
@@ -153,11 +183,25 @@
         let currentUser = null;
         let currentRankingData = [];
 
-        // --- AUTH ---
+        // --- DADOS DAS REGRAS (RESTAURADO COMPLETO) ---
+        const rulesData = [
+            { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal\nValor: R$ 10,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" },
+            { t: "2️⃣ PREMIAÇÃO FINAL (CLASSIFICAÇÃO GERAL)", c: "O valor total arrecadado ao longo da temporada formará o Pote Anual.\nDistribuição:\n🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%" },
+            { t: "3️⃣ SISTEMA DE PONTUAÇÃO", c: "✅ Acerto do vencedor/classificado: 3 pontos\n\n🔥 Finais (Peso 2)\nFinais de qualquer competição válida possuem pontuação dobrada\nCada acerto em final: 6 pontos\n\n💥 Rodada Perfeita – Oitavas de Final\nA rodada perfeita será considerada exclusivamente nas oitavas de final, em todas as competições válidas\nO participante que acertar 100% dos confrontos das oitavas receberá:\n+3 pontos extras, além da pontuação regular\n\n📌 Não existe rodada perfeita em quartas, semifinais ou finais." },
+            { t: "4️⃣ COMPETIÇÕES E OBRIGATORIEDADE DE FASES", c: "As competições abaixo compõem a base do bolão. A inclusão dos jogos segue a seguinte regra hierárquica:\n\nA) Competições Válidas:\n🌍 Copa do Mundo\n🏆 UEFA Champions League\n🏆 UEFA Europa League\n🇧🇷 Copa do Brasil\n🌎 Copa Libertadores\n🌎 Copa Sul-Americana\n🇧🇷 Supercopa do Brasil\n🇪🇺 Supercopa da UEFA\n🌎 CONMEBOL Recopa\n🌍 FIFA Intercontinental Cup\n\nB) Fases de Mata-Mata Regular (Obrigatórias)\nTodas as fases eliminatórias da chave principal das competições listadas são de inclusão OBRIGATÓRIA e AUTOMÁTICA.\n- Isso inclui fases iniciais extensas, como 64-avos e 32-avos da Copa do Brasil.\n\n📌 FASES PRELIMINARES (PLAY-OFFS) E DEMAIS JOGOS\n\nJogos de fases preliminares (ex: \"Pré-Libertadores\", Play-offs da Sul-Americana, Repescagens), fases de grupos, ligas corridas ou pontos corridos não pontuam." },
+            { t: "5️⃣ CRITÉRIOS DE DESEMPATE", c: "(Aplicados somente se houver empate no número total de pontos)\n1- Menor número de inadimplências (D)\n2- Maior número total de acertos (V)\n3- Maior número de acertos em finais (F)\n4- Sorteio\n\n📌 Nenhum critério de desempate será aplicado se não houver empate em pontos." },
+            { t: "6️⃣ PALPITES E PLATAFORMAS OFICIAIS", c: "Os palpites serão realizados exclusivamente nas plataformas oficiais do bolão:\n📱 Aplicativo (Android)\n🌐 Site (compatível com iOS e computador)\n\n📌 Palpites feitos fora dessas plataformas não serão considerados, mesmo que publicados no grupo." },
+            { t: "7️⃣ CLASSIFICAÇÃO E TRANSPARÊNCIA", c: "A classificação geral oficial será mantida e atualizada exclusivamente:\n📱 No aplicativo Android\n🌐 No site (iOS e PC)\nO link de acesso será disponibilizado no grupo oficial do WhatsApp\nO app/site será a única fonte oficial, contendo:\nPontuação total\nInadimplências (D)\nTotal de acertos (V)\nAcertos em finais (F)\n\n📌 Para garantir a total lisura da competição, o sistema possui travas técnicas de segurança:\n\n🔒 Bloqueio de Edição\nApós o horário limite estipulado para um jogo, o sistema bloqueia automaticamente a edição da data/hora. É tecnicamente impossível para a organização alterar o prazo de um jogo vencido para reabrir a votação." },
+            { t: "8️⃣ CONDUTAS, INTERPRETAÇÕES E ALTERAÇÕES", c: "🧭 Interpretação das regras\nEm caso de dúvida ou divergência na interpretação de uma regra já existente, será adotada a decisão da maioria simples dos participantes.\n\n📌 Essa regra vale exclusivamente para interpretação de regras já previstas neste regulamento.\n\n🚫 Criação ou alteração de regras\n\nCriação, exclusão ou alteração de regras exige 100% de concordância dos participantes, conforme já estabelecido.\n\n📌A regra de maioria simples não se aplica nesses casos." },
+            { t: "9️⃣ SISTEMA DE NOTIFICAÇÕES (BÔNUS)", c: "O serviço de notificações push (exclusivo para Android) informando sobre novos jogos, edições ou lembretes de prazo (1h antes) é uma funcionalidade bônus de cortesia.\n\n⚠️ Importante:\nFalhas no envio ou não recebimento da notificação (por falta de internet, configuração do celular ou erro de sistema) NÃO justificam o esquecimento do voto.\nÉ de inteira e exclusiva responsabilidade do participante acessar regularmente as plataformas e verificar os jogos disponíveis." },
+            { t: "🔟 VALIDAÇÃO DO VOTO E FALHAS TÉCNICAS", c: "Para garantir a integridade da competição e evitar contestações tardias:\n\n✅ A única comprovação válida de um voto é o seu registro visual no sistema (Botão destacado em VERDE ou mensagem \"Voto confirmado\").\n\n🚫 Não serão aceitas reclamações posteriores ao encerramento da votação sob alegações de falha técnica individual (ex: \"Votei mas o app não salvou\", \"Minha internet caiu\").\n\n📌 Princípio da Integridade Sistêmica:\nConsiderando que a plataforma (App/Site) é única e distribuída uniformemente a todos, presume-se que, se o sistema permitiu a votação para a coletividade, eventuais falhas isoladas de registro são decorrentes de fatores locais do próprio usuário (instabilidade de conexão, falhas no dispositivo ou erro de manuseio), e não de instabilidade da plataforma.\n\n💡 Recomendação de Segurança: Após votar, atualize a página ou feche e abra o app novamente para certificar-se de que seu palpite persiste gravado. Se não estiver verde, o voto não foi computado." }
+        ];
+
         document.getElementById('btnLoginAction').onclick = async () => {
             const user = document.getElementById('userInput').value.trim().toLowerCase();
             const pass = document.getElementById('passInput').value;
-            try { await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); } catch (e) { alert("Dados incorretos."); }
+            try { await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); } 
+            catch (e) { alert("Dados incorretos."); }
         };
 
         onAuthStateChanged(auth, user => {
@@ -176,7 +220,6 @@
             }
         });
 
-        // --- NAVEGAÇÃO ---
         window.showTab = (tab) => {
             const content = document.getElementById('appContent');
             content.className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
@@ -319,17 +362,76 @@
         window.showModalPhoto = (idx) => { const u = currentRankingData[idx]; if(!u.photo) return; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="bg-white p-4 text-center"><img src="data:image/jpeg;base64,${u.photo}" class="w-full rounded mb-4 shadow-lg"><h3 class="font-bold uppercase text-[#006400]">${u.name}</h3><button onclick="closeModal()" class="mt-4 text-gray-500 font-bold text-xs border border-gray-300 px-4 py-2 rounded">FECHAR</button></div>`; };
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b py-2 text-xs ${h.type==='bad'?'text-red-500':'text-black'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="bg-gray-50 p-3 border-b"><h3 class="font-bold text-[#006400] uppercase text-xs">Extrato: ${u.name}</h3></div><div class="bg-white p-4 max-h-[50vh] overflow-y-auto">${html}</div><div class="bg-gray-50 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div>`; };
 
-        // --- REGRAS ---
-        const rulesData = [
-            { t: "1️⃣ FINANCEIRO", c: "💰 Aporte Mensal: R$ 10,00 (Venc. dia 10).\n⚠️ Inadimplência: -1 ponto a cada 5 dias de atraso." },
-            { t: "2️⃣ PREMIAÇÃO", c: "🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%\nDo pote anual acumulado." },
-            { t: "3️⃣ PONTUAÇÃO", c: "✅ Acerto: 3 pts.\n🔥 Finais: 6 pts (Peso 2).\n💥 Oitavas Perfeitas: +3 pts bônus." },
-            { t: "4️⃣ COMPETIÇÕES", c: "Copa do Mundo, Champions, Libertadores, Copa do Brasil e outras matas-matas." },
-            { t: "5️⃣ DESEMPATE", c: "1. Menor inadimplência.\n2. Vitórias.\n3. Finais.\n4. Sorteio." },
-            { t: "6️⃣ PLATAFORMAS", c: "Palpites apenas pelo App ou Site." },
-            { t: "7️⃣ AUDITORIA", c: "Votos travados após o prazo. Transparência total." }
-        ];
-        function renderRules() { document.getElementById('rulesList').innerHTML = rulesData.map(r => `<div class="bg-white rounded p-3 shadow-sm border border-gray-100"><button class="w-full text-left font-bold text-xs text-[#006400] flex justify-between" onclick="this.nextElementSibling.classList.toggle('hidden')">${r.t} <i class="fas fa-chevron-down"></i></button><div class="hidden mt-2 text-xs text-gray-600 border-t pt-2 whitespace-pre-line">${r.c}</div></div>`).join(''); }
+        // --- REGRAS (RESTAURADO E CORRIGIDO) ---
+        function renderRules() { 
+            const list = document.getElementById('rulesList');
+            if(list.innerHTML !== "") return;
+            list.innerHTML = rulesData.map(r => `
+                <div class="bg-white rounded p-3 shadow-sm border border-gray-100">
+                    <button class="w-full text-left font-bold text-xs text-[#006400] flex justify-between" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                        ${r.t} <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="hidden mt-2 text-xs text-gray-600 border-t pt-2 whitespace-pre-line">${r.c}</div>
+                </div>`).join(''); 
+        }
+
+        // --- ADMIN PANEL (FUNCIONAL) ---
+        window.openAdminPanel = async () => {
+            const modal = document.getElementById('modalOverlay');
+            const cont = document.getElementById('modalContainer');
+            modal.classList.remove('hidden');
+            cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
+            
+            const usersSnap = await getDocs(collection(db, "users"));
+            const users = [];
+            usersSnap.forEach(d => users.push({id: d.id, ...d.data()}));
+            users.sort((a,b) => (a.name||"").localeCompare(b.name||""));
+
+            let html = `<div class="bg-gray-50 p-3 border-b"><h3 class="font-bold text-[#006400] uppercase">Gerenciar Usuários (Admin)</h3></div><div class="max-h-[60vh] overflow-y-auto p-2">`;
+            
+            users.forEach(u => {
+                html += `
+                <div class="bg-white border rounded p-2 mb-2">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-xs">${u.name}</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeDebt('${u.id}', -1)" class="text-gray-400"><i class="fas fa-minus-circle"></i></button>
+                            <span class="text-red-500 font-bold text-xs">${u.debts||0} pts</span>
+                            <button onclick="changeDebt('${u.id}', 1)" class="text-red-500"><i class="fas fa-plus-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 flex-wrap">`;
+                    
+                const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                months.forEach(m => {
+                    const isPaid = u.payments && u.payments[m];
+                    const bg = isPaid ? "bg-green-600 text-white border-green-600" : "bg-gray-200 text-gray-400 border-gray-300";
+                    html += `<div onclick="togglePay('${u.id}', '${m}', ${!isPaid})" class="${bg} border text-[8px] font-bold px-1.5 py-0.5 rounded cursor-pointer">${m}</div>`;
+                });
+                html += `</div></div>`;
+            });
+            html += `</div><div class="bg-gray-50 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div>`;
+            cont.innerHTML = html;
+        };
+
+        window.togglePay = async (uid, month, status) => {
+            const ref = doc(db, "users", uid);
+            const u = await getDoc(ref);
+            const payments = u.data().payments || {};
+            payments[month] = status;
+            await updateDoc(ref, { payments: payments });
+            openAdminPanel(); // Refresh logic
+        };
+
+        window.changeDebt = async (uid, delta) => {
+            const ref = doc(db, "users", uid);
+            const u = await getDoc(ref);
+            let debts = u.data().debts || 0;
+            debts += delta;
+            if(debts < 0) debts = 0;
+            await updateDoc(ref, { debts: debts });
+            openAdminPanel();
+        };
 
         // --- PERFIL ---
         async function loadProfile() { 
@@ -347,7 +449,7 @@
         };
         window.showChangelog = () => {
             document.getElementById('modalOverlay').classList.remove('hidden');
-            document.getElementById('modalContainer').innerHTML = `<div class="bg-white p-6"><h3 class="font-bold text-lg mb-4">Linha do Tempo</h3><p class="text-xs text-gray-600 mb-4"><b>v1.3.8 (Web):</b> Paridade completa com Android. Ranking interativo, upload de foto e extrato de pontos.</p><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-2 rounded">ENTENDI</button></div>`;
+            document.getElementById('modalContainer').innerHTML = `<div class="bg-white p-6"><h3 class="font-bold text-lg mb-4">Linha do Tempo</h3><p class="text-xs text-gray-600 mb-4"><b>v1.3.6 (Web):</b> Paridade completa com Android. Ranking interativo, upload de foto e extrato de pontos.</p><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-2 rounded">ENTENDI</button></div>`;
         };
         async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'}); }
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
