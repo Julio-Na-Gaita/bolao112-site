@@ -24,14 +24,13 @@
             background-color: #f3f4f6;
         }
 
-        /* Replica o CutCornerShape idêntico ao APK */
         .card-cut {
             background: white;
             clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
             filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07));
         }
 
-        /* Fundos Dinâmicos do APK */
+        /* Fundos Dinâmicos */
         .bg-main { background-size: cover; background-attachment: fixed; background-position: center; transition: background 0.3s ease; }
         .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.png'); }
         .tab-ranking { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_ranking.png'); }
@@ -39,11 +38,8 @@
         .tab-profile { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_perfil.png'); }
 
         .btn-press:active { transform: scale(0.90); transition: 0.1s; }
-        
-        /* SafeArea para iPhones com Notch */
         .safe-top { padding-top: env(safe-area-inset-top); }
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
@@ -53,6 +49,7 @@
         <div class="p-4 flex justify-between items-center">
             <h1 class="text-lg font-bold tracking-tighter uppercase">Bolão 112 F.C</h1>
             <div class="flex gap-4">
+                <button id="btnPot" class="btn-press text-[#FFD700]"><i class="fas fa-piggy-bank text-xl drop-shadow-md"></i></button>
                 <button id="btnRefresh" class="btn-press"><i class="fas fa-sync-alt text-xl"></i></button>
                 <button id="btnLogout" class="hidden btn-press"><i class="fas fa-sign-out-alt text-xl"></i></button>
             </div>
@@ -71,15 +68,102 @@
         </section>
 
         <div id="mainLists" class="hidden p-4 space-y-4">
+            
             <div id="matchesList" class="space-y-6"></div>
-            <div id="rankingContainer" class="hidden"></div>
-            <div id="rulesContainer" class="hidden"></div>
-            <div id="profileContainer" class="hidden"></div>
+            
+            <div id="rankingContainer" class="hidden">
+                <div class="card-cut p-4 mb-4 border-t-2 border-[#FFD700]">
+                    <div class="flex justify-between items-center border-b pb-2 mb-2">
+                        <h3 class="font-bold text-lg text-gray-800">Classificação</h3>
+                        <span id="lastUpdateRanking" class="text-[10px] text-gray-400">Atualizado agora</span>
+                    </div>
+                    <div class="grid grid-cols-[30px_1fr_30px_30px_30px_40px] text-[10px] font-bold text-gray-400 uppercase text-center items-center">
+                        <span>Pos</span><span class="text-left pl-2">Nome</span><span class="text-red-500">D</span><span>V</span><span>F</span><span class="text-black">PTS</span>
+                    </div>
+                    <div id="rankingListContent" class="mt-2 space-y-2"></div>
+                </div>
+                <div class="bg-black/80 text-[#FFD700] p-3 text-[10px] text-center rounded-lg shadow-lg">
+                    Legenda: D=Débitos(-1) | V=Vitórias | F=Finais | PTS=Pontos
+                </div>
+            </div>
+
+            <div id="rulesContainer" class="hidden space-y-4">
+                <div class="card-cut p-6 border-2 border-[#006400] text-center bg-yellow-50">
+                    <h2 class="text-xl font-black text-[#006400] mb-2">REGULAMENTO 2026</h2>
+                    <p class="text-xs text-gray-600 leading-relaxed">
+                        🎯 <b>Objetivo:</b> Competição de palpites esportivos entre amigos.<br>
+                        🗓️ <b>Vigência:</b> 01/01/2026 a 31/12/2026.<br>
+                        ✅ A participação implica aceitação total das regras.
+                    </p>
+                </div>
+                <div id="rulesList" class="space-y-3"></div>
+            </div>
+
+            <div id="profileContainer" class="hidden">
+                <div class="card-cut p-6 border-t-4 border-[#006400] text-center relative">
+                    <h2 class="font-bold text-gray-400 text-xs mb-6 tracking-[0.2em]">CARTÃO DE MEMBRO</h2>
+                    
+                    <div class="relative w-28 h-28 mx-auto mb-4">
+                        <div id="profileAvatar" class="w-full h-full bg-gray-200 rounded-full border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                            <i class="fas fa-user text-4xl text-gray-400"></i>
+                        </div>
+                        <label class="absolute bottom-0 right-0 bg-[#006400] text-white p-2 rounded-full shadow-md cursor-pointer btn-press">
+                            <i class="fas fa-camera text-xs"></i>
+                            <input type="file" id="uploadPhoto" accept="image/*" class="hidden">
+                        </label>
+                    </div>
+
+                    <h3 id="profileName" class="text-2xl font-black text-gray-800 uppercase leading-none">...</h3>
+                    <p id="profileUser" class="text-gray-500 text-sm mb-6">@...</p>
+
+                    <div id="financialCard" class="p-4 rounded-lg border mb-4 cursor-pointer btn-press transition-colors">
+                        <div class="flex justify-between items-center">
+                            <div class="text-left">
+                                <p id="financialStatusText" class="font-black text-sm">VERIFICANDO...</p>
+                                <p id="financialSubtext" class="text-[10px] text-gray-500 font-bold">Toque para detalhes</p>
+                            </div>
+                            <i id="financialIcon" class="fas fa-circle-notch fa-spin text-2xl"></i>
+                        </div>
+                    </div>
+                    
+                    <div id="pixArea" class="hidden bg-gray-50 p-4 rounded-lg border border-gray-200 text-left space-y-3">
+                        <div class="text-center mb-2">
+                            <i class="fas fa-qrcode text-3xl text-[#006400]"></i>
+                            <p class="font-bold text-[#006400]">PAGAMENTO PIX</p>
+                            <p class="text-2xl font-black">R$ 10,00</p>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 font-bold">CHAVE PIX</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded">
+                                <button id="btnCopyPix" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+                        <button id="btnSendProof" class="w-full bg-green-500 text-white py-2 rounded font-bold text-xs shadow btn-press">
+                            <i class="fab fa-whatsapp"></i> ENVIAR COMPROVANTE
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
         </div>
     </main>
 
+    <div id="potModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
+        <div class="card-cut w-full max-w-sm p-8 text-center relative border-t-4 border-[#FFD700]">
+            <i class="fas fa-piggy-bank text-5xl text-[#FFD700] mb-4 drop-shadow-sm"></i>
+            <h2 class="text-xl font-bold text-gray-800">POTE DE OURO</h2>
+            <div class="my-6">
+                <p id="potValue" class="text-4xl font-black text-[#006400]">R$ 0,00</p>
+                <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Prêmio Acumulado</p>
+            </div>
+            <button onclick="document.getElementById('potModal').classList.add('hidden')" class="w-full bg-[#006400] text-white py-3 font-bold rounded shadow-lg btn-press">SHOW!</button>
+        </div>
+    </div>
+
     <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t safe-bottom flex justify-around p-2 z-50 shadow-2xl">
-        <button onclick="showTab('matches')" class="nav-btn flex flex-col items-center text-[#006400]" id="nav-matches"><i class="fas fa-soccer-ball text-lg"></i><span class="text-[10px] mt-1">Confrontos</span></button>
+        <button onclick="showTab('matches')" class="nav-btn flex flex-col items-center text-[#006400]" id="nav-matches"><i class="fas fa-soccer-ball text-lg"></i><span class="text-[10px] mt-1">Jogos</span></button>
         <button onclick="showTab('ranking')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-ranking"><i class="fas fa-trophy text-lg"></i><span class="text-[10px] mt-1">Ranking</span></button>
         <button onclick="showTab('rules')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-rules"><i class="fas fa-gavel text-lg"></i><span class="text-[10px] mt-1">Regras</span></button>
         <button onclick="showTab('profile')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-profile"><i class="fas fa-user text-lg"></i><span class="text-[10px] mt-1">Perfil</span></button>
@@ -88,16 +172,16 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Credenciais Oficiais
         const firebaseConfig = {
             apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k",
             authDomain: "bolao112fc.firebaseapp.com",
             projectId: "bolao112fc",
             storageBucket: "bolao112fc.firebasestorage.app",
             messagingSenderId: "131329454158",
-            appId: "1:131329454158:web:983e4544dd651ec942131f"
+            appId: "1:131329454158:web:983e4544dd651ec942131f",
+            measurementId: "G-5SGWJE6EKK"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -105,12 +189,22 @@
         const db = getFirestore(app);
         let currentUser = null;
 
-        // Lógica de Login
+        // --- DADOS DAS REGRAS (Igual ao Android) ---
+        const rulesData = [
+            { t: "1️⃣ FINANCEIRO", c: "💰 Mensalidade: R$ 10,00 (Venc. dia 10). Inadimplência gera perda de pontos (-1 a cada 5 dias) e perda do direito de voto." },
+            { t: "2️⃣ PREMIAÇÃO", c: "🥇 1º: 60% | 🥈 2º: 30% | 🥉 3º: 10% do pote anual acumulado." },
+            { t: "3️⃣ PONTUAÇÃO", c: "✅ Acerto: 3 pts. 🏆 Finais: 6 pts (Peso 2). 🌟 Oitavas Perfeitas: +3 pts bônus." },
+            { t: "4️⃣ COMPETIÇÕES", c: "Copa do Mundo, Champions, Libertadores, Copa do Brasil, Sul-Americana, etc. Apenas mata-mata conta." },
+            { t: "5️⃣ DESEMPATE", c: "1. Menor inadimplência. 2. Mais Vitórias. 3. Mais Finais. 4. Sorteio." },
+            { t: "6️⃣ SISTEMA", c: "Votos exclusivos pelo App/Site. O sistema trava edições após o prazo automaticamente." }
+        ];
+
+        // --- AUTH ---
         document.getElementById('btnLoginAction').onclick = async () => {
             const user = document.getElementById('userInput').value.trim().toLowerCase();
             const pass = document.getElementById('passInput').value;
             try { await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); } 
-            catch (e) { alert("Usuário ou Senha incorretos."); }
+            catch (e) { alert("Dados incorretos."); }
         };
 
         onAuthStateChanged(auth, user => {
@@ -121,29 +215,55 @@
                 document.getElementById('bottomNav').classList.remove('hidden');
                 document.getElementById('btnLogout').classList.remove('hidden');
                 showTab('matches');
+                calculatePot();
             } else {
-                window.location.reload();
+                // Reset visual para login
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('mainLists').classList.add('hidden');
+                document.getElementById('bottomNav').classList.add('hidden');
+                document.getElementById('btnLogout').classList.add('hidden');
             }
         });
 
+        // --- NAVEGAÇÃO ---
         window.showTab = (tab) => {
             const content = document.getElementById('appContent');
-            content.className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
+            // Remove classes antigas de fundo
+            content.classList.remove('tab-matches', 'tab-ranking', 'tab-rules', 'tab-profile');
+            content.classList.add(`tab-${tab}`);
             
-            // Gerenciar Visibilidade
-            document.getElementById('matchesList').classList.toggle('hidden', tab !== 'matches');
-            document.getElementById('rankingContainer').classList.toggle('hidden', tab !== 'ranking');
-            document.getElementById('rulesContainer').classList.toggle('hidden', tab !== 'rules');
-            document.getElementById('profileContainer').classList.toggle('hidden', tab !== 'profile');
+            ['matches', 'ranking', 'rules', 'profile'].forEach(t => {
+                document.getElementById(`${t}Container`)?.classList.add('hidden');
+                document.getElementById('matchesList')?.classList.add('hidden'); // match list fica fora do container generico no html
+                document.getElementById(`nav-${t}`).classList.replace('text-[#006400]', 'text-gray-400');
+            });
 
-            // Gerenciar Cores do Menu
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.replace('text-[#006400]', 'text-gray-400'));
+            if(tab === 'matches') {
+                document.getElementById('matchesList').classList.remove('hidden');
+                loadMatches();
+            } else {
+                document.getElementById(`${tab}Container`).classList.remove('hidden');
+                if(tab === 'ranking') loadRanking();
+                if(tab === 'rules') renderRules();
+                if(tab === 'profile') loadProfile();
+            }
             document.getElementById(`nav-${tab}`).classList.replace('text-gray-400', 'text-[#006400]');
-
-            if(tab === 'matches') loadMatches();
-            if(tab === 'ranking') loadRanking();
         };
 
+        // --- REGRAS ---
+        function renderRules() {
+            const list = document.getElementById('rulesList');
+            if(list.innerHTML !== "") return; // Evita re-render
+            list.innerHTML = rulesData.map(r => `
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                    <button class="w-full text-left font-bold text-sm text-[#006400] flex justify-between items-center" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                        ${r.t} <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    <div class="hidden mt-3 text-xs text-gray-700 leading-relaxed border-t pt-2">${r.c}</div>
+                </div>`).join('');
+        }
+
+        // --- JOGOS ---
         async function loadMatches() {
             const list = document.getElementById('matchesList');
             list.innerHTML = `<div class="text-center py-20 text-green-800"><i class="fas fa-spinner fa-spin fa-2x"></i></div>`;
@@ -151,49 +271,232 @@
             const now = new Date();
             list.innerHTML = "";
 
-            snap.forEach(async mDoc => {
-                const m = mDoc.data();
+            // Filtra e ordena
+            let matches = [];
+            snap.forEach(doc => matches.push({id: doc.id, ...doc.data()}));
+            
+            // Ordenação: Abertos primeiro, depois fechados sem resultado, depois finalizados
+            matches.sort((a, b) => {
+                const dateA = a.deadline.toDate();
+                const dateB = b.deadline.toDate();
+                // Lógica simplificada: ordena por data
+                return dateA - dateB;
+            });
+
+            for (const m of matches) {
                 const deadline = m.deadline.toDate();
-                const isExpired = now > deadline;
+                const expired = now > deadline;
                 
-                const vRef = doc(db, "guesses", `${mDoc.id}_${currentUser.uid}`);
+                // Pega voto
+                const vRef = doc(db, "guesses", `${m.id}_${currentUser.uid}`);
                 const vSnap = await getDoc(vRef);
                 const userVote = vSnap.exists() ? vSnap.data().teamSelected : "";
 
                 const card = `
-                    <div class="card-cut p-5 relative border-l-[6px] ${isExpired ? 'border-red-600' : 'border-[#006400]'}">
+                    <div class="card-cut p-5 relative border-l-[6px] ${m.winner ? 'border-gray-400 opacity-90' : (expired ? 'border-yellow-500' : 'border-[#006400]')}">
                         <div class="flex justify-between text-[11px] font-bold text-gray-400 mb-5 uppercase tracking-wider">
                             <span>${m.competition} • ${m.round}</span>
-                            <span class="${isExpired ? 'text-red-600' : 'text-black'}">${isExpired ? 'Encerrado' : 'Prazo: ' + deadline.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                            <span class="${expired ? 'text-red-600' : 'text-green-700'}">
+                                ${expired ? 'ENCERRADO' : 'FECHA: ' + deadline.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}
+                            </span>
                         </div>
                         
                         <div class="flex items-center justify-between px-2">
-                            <button onclick="vote('${mDoc.id}', '${m.teamA}')" ${isExpired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-[42%]">
+                            <button onclick="vote('${m.id}', '${m.teamA}')" ${expired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-[42%]">
                                 <img src="${m.teamAUrl}" class="w-14 h-14 object-contain mb-3 drop-shadow-sm">
-                                <span class="text-[12px] font-black text-center leading-tight ${userVote === m.teamA ? 'text-green-700 underline decoration-2 underline-offset-4' : 'text-gray-800'}">${m.teamA}</span>
+                                <span class="text-[12px] font-black text-center leading-tight ${userVote === m.teamA ? 'text-[#006400] underline decoration-2 underline-offset-4' : 'text-gray-800'}">${m.teamA}</span>
                             </button>
                             
                             <span class="italic font-black text-gray-200 text-2xl">VS</span>
                             
-                            <button onclick="vote('${mDoc.id}', '${m.teamB}')" ${isExpired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-[42%]">
+                            <button onclick="vote('${m.id}', '${m.teamB}')" ${expired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-[42%]">
                                 <img src="${m.teamBUrl}" class="w-14 h-14 object-contain mb-3 drop-shadow-sm">
-                                <span class="text-[12px] font-black text-center leading-tight ${userVote === m.teamB ? 'text-green-700 underline decoration-2 underline-offset-4' : 'text-gray-800'}">${m.teamB}</span>
+                                <span class="text-[12px] font-black text-center leading-tight ${userVote === m.teamB ? 'text-[#006400] underline decoration-2 underline-offset-4' : 'text-gray-800'}">${m.teamB}</span>
                             </button>
                         </div>
-                        ${userVote && !isExpired ? `<p class="text-center text-[11px] text-green-700 font-bold mt-5 bg-green-50 py-1 rounded">Seu voto: ${userVote}</p>` : ''}
-                        ${m.winner ? `<div class="mt-5 text-center border-t pt-3"><span class="text-[10px] text-gray-400 font-bold">RESULTADO</span><p class="text-green-700 font-black text-lg">${m.winner}</p></div>` : ''}
+                        ${userVote && !expired ? `<p class="text-center text-[10px] text-green-700 font-bold mt-4 bg-green-50 py-1 rounded border border-green-100">Voto confirmado: ${userVote}</p>` : ''}
+                        ${m.winner ? `<div class="mt-4 text-center border-t pt-2"><span class="text-[10px] text-gray-400 font-bold">VENCEDOR</span><p class="text-[#006400] font-black text-lg">${m.winner}</p></div>` : ''}
                     </div>
                 `;
                 list.innerHTML += card;
-            });
+            }
+            if(matches.length === 0) list.innerHTML = `<div class="text-center text-gray-500 mt-10">Nenhum jogo encontrado.</div>`;
         }
 
         window.vote = async (mId, team) => {
-            await setDoc(doc(db, "guesses", `${mId}_${currentUser.uid}`), { matchId: mId, userId: currentUser.uid, teamSelected: team, timestamp: new Date() });
-            loadMatches();
+            if(!currentUser) return;
+            try {
+                await setDoc(doc(db, "guesses", `${mId}_${currentUser.uid}`), { matchId: mId, userId: currentUser.uid, teamSelected: team, timestamp: new Date() });
+                loadMatches();
+            } catch(e) { console.error(e); }
         };
 
-        document.getElementById('btnRefresh').onclick = () => loadMatches();
+        // --- RANKING ---
+        async function loadRanking() {
+            const list = document.getElementById('rankingListContent');
+            list.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin"></i></div>`;
+            
+            // Busca dados
+            const [usersSnap, guessesSnap, matchesSnap] = await Promise.all([
+                getDocs(collection(db, "users")),
+                getDocs(collection(db, "guesses")),
+                getDocs(collection(db, "matches"))
+            ]);
+
+            const matches = [];
+            matchesSnap.forEach(d => matches.push({id: d.id, ...d.data()}));
+            const finishedMatches = matches.filter(m => m.winner);
+            
+            let users = [];
+            usersSnap.forEach(uDoc => {
+                const u = uDoc.data();
+                let points = 0, vics = 0, finals = 0;
+                
+                // Calcula pontos
+                const userGuesses = [];
+                guessesSnap.forEach(g => { if(g.data().userId === uDoc.id) userGuesses.push(g.data()); });
+
+                userGuesses.forEach(g => {
+                    const m = finishedMatches.find(fm => fm.id === g.matchId);
+                    if(m && m.winner === g.teamSelected) {
+                        const isFinal = m.round === "Final";
+                        points += isFinal ? 6 : 3;
+                        vics++;
+                        if(isFinal) finals++;
+                    }
+                });
+
+                // Penalidade Débitos
+                const debts = u.debts || 0;
+                points -= debts;
+
+                users.push({
+                    name: u.name || "Sem Nome",
+                    points, vics, finals, debts,
+                    photo: u.photoBase64 || ""
+                });
+            });
+
+            // Ordenação (Pontos > Débitos > Vitórias > Finais)
+            users.sort((a,b) => {
+                if(b.points !== a.points) return b.points - a.points;
+                if(a.debts !== b.debts) return a.debts - b.debts;
+                if(b.vics !== a.vics) return b.vics - a.vics;
+                return b.finals - a.finals;
+            });
+
+            list.innerHTML = "";
+            users.forEach((u, i) => {
+                const pos = i + 1;
+                const medal = pos === 1 ? '🥇' : (pos === 2 ? '🥈' : (pos === 3 ? '🥉' : `${pos}º`));
+                const bgClass = pos === 1 ? 'bg-yellow-50' : (pos === 2 ? 'bg-gray-50' : (pos === 3 ? 'bg-orange-50' : 'bg-white'));
+                
+                list.innerHTML += `
+                    <div class="${bgClass} rounded-lg p-3 flex items-center border border-gray-100 shadow-sm">
+                        <div class="w-[30px] font-bold text-center text-gray-700">${medal}</div>
+                        <div class="flex-1 flex items-center pl-2 gap-2 overflow-hidden">
+                            ${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-6 h-6 rounded-full object-cover border border-gray-300">` : `<i class="fas fa-user-circle text-gray-300 text-xl"></i>`}
+                            <span class="text-xs font-bold truncate">${u.name}</span>
+                        </div>
+                        <div class="w-[30px] text-center text-red-500 font-bold text-xs">${u.debts}</div>
+                        <div class="w-[30px] text-center text-gray-500 text-xs">${u.vics}</div>
+                        <div class="w-[30px] text-center text-gray-500 text-xs">${u.finals}</div>
+                        <div class="w-[40px] text-center font-black text-sm text-[#006400]">${u.points}</div>
+                    </div>
+                `;
+            });
+            document.getElementById('lastUpdateRanking').innerText = `Atualizado: ${new Date().toLocaleTimeString().slice(0,5)}`;
+        }
+
+        // --- PERFIL & FINANCEIRO ---
+        async function loadProfile() {
+            const docRef = doc(db, "users", currentUser.uid);
+            const snap = await getDoc(docRef);
+            if(!snap.exists()) return;
+            const u = snap.data();
+
+            document.getElementById('profileName').innerText = u.name || "MEMBRO";
+            document.getElementById('profileUser').innerText = `@${u.username}`;
+            if(u.photoBase64) {
+                document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`;
+            }
+
+            // Lógica Financeira (Mockup de data atual)
+            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            const currMonth = months[new Date().getMonth()];
+            const isPaid = u.payments && u.payments[currMonth];
+            
+            const stCard = document.getElementById('financialCard');
+            const stText = document.getElementById('financialStatusText');
+            const stIcon = document.getElementById('financialIcon');
+
+            if(isPaid || new Date().getFullYear() < 2026) {
+                stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800";
+                stText.innerText = "MENSALIDADE EM DIA";
+                stIcon.className = "fas fa-check-circle text-2xl";
+            } else {
+                stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800";
+                stText.innerText = "PAGAMENTO PENDENTE";
+                stIcon.className = "fas fa-exclamation-circle text-2xl";
+            }
+
+            // Carregar dados do PIX Admin
+            const finSnap = await getDoc(doc(db, "settings", "financial"));
+            if(finSnap.exists()) {
+                const fin = finSnap.data();
+                document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com";
+                // Botão Whats
+                document.getElementById('btnSendProof').onclick = () => {
+                    const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112.");
+                    window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank');
+                };
+            }
+        }
+
+        // Upload Foto
+        document.getElementById('uploadPhoto').onchange = (e) => {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                    const base64 = reader.result.split(',')[1];
+                    await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 });
+                    loadProfile();
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        // Toggle Pix Area
+        document.getElementById('financialCard').onclick = () => {
+            document.getElementById('pixArea').classList.toggle('hidden');
+        };
+
+        // Copiar Pix
+        document.getElementById('btnCopyPix').onclick = () => {
+            const key = document.getElementById('pixKey');
+            key.select();
+            document.execCommand('copy');
+            alert("Chave Pix Copiada!");
+        };
+
+        // Pote de Ouro
+        async function calculatePot() {
+            const snap = await getDocs(collection(db, "users"));
+            let total = 0;
+            snap.forEach(d => {
+                const p = d.data().payments;
+                if(p) total += Object.values(p).filter(v => v).length * 10;
+            });
+            document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style: 'currency', currency: 'BRL'});
+        }
+
+        // Actions TopBar
+        document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
+        document.getElementById('btnRefresh').onclick = () => {
+            const tab = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-','');
+            showTab(tab);
+        };
         document.getElementById('btnLogout').onclick = () => signOut(auth);
 
     </script>
