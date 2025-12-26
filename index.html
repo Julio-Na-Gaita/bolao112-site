@@ -181,8 +181,8 @@
         let currentRankingData = [];
 
         const rulesData = [
-            { t: "1️⃣ FINANCEIRO", c: "💰 Mensalidade: R$ 10,00 (Venc. dia 10).\n⚠️ Inadimplência: -1 ponto a cada 5 dias de atraso." },
-            { t: "2️⃣ PREMIAÇÃO", c: "🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%\nDo pote anual acumulado." },
+            { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal: R$ 10,00 (Venc. dia 10).\n⚠️ Inadimplência: -1 ponto a cada 5 dias de atraso." },
+            { t: "2️⃣ PREMIAÇÃO FINAL", c: "🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%\nDo pote anual acumulado." },
             { t: "3️⃣ PONTUAÇÃO", c: "✅ Acerto: 3 pts.\n🔥 Finais: 6 pts (Peso 2).\n💥 Oitavas Perfeitas: +3 pts bônus." },
             { t: "4️⃣ COMPETIÇÕES", c: "Copa do Mundo, Champions, Libertadores, Copa do Brasil e outras matas-matas." },
             { t: "5️⃣ DESEMPATE", c: "1. Menor inadimplência.\n2. Vitórias.\n3. Finais.\n4. Sorteio." },
@@ -228,7 +228,7 @@
             if(tab === 'profile') loadProfile();
         };
 
-        // --- MATCHES ---
+        // --- MATCHES (Corrigido para 3 seções + Votantes) ---
         const SectionHeader = (title, color) => `
             <div class="card-container mb-3">
                 <div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm">
@@ -239,6 +239,7 @@
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
+            
             try {
                 const snap = await getDocs(collection(db, "matches"));
                 const now = new Date();
@@ -254,6 +255,7 @@
                     else open.push(m);
                 }
 
+                // Sort logic like Android
                 open.sort((a,b)=>a.deadline.toDate()-b.deadline.toDate());
                 waiting.sort((a,b)=>b.deadline.toDate()-a.deadline.toDate());
                 finished.sort((a,b)=>b.deadline.toDate()-a.deadline.toDate());
@@ -333,11 +335,25 @@
             const uMap = {}; uSnap.forEach(u => uMap[u.id] = u.data());
 
             let rows = "";
-            gSnap.forEach(g => {
-                const d = g.data();
+            const guesses = [];
+            gSnap.forEach(g => guesses.push(g.data()));
+            
+            // Sort votes like Android
+            guesses.sort((a,b) => {
+                const uA = uMap[a.userId]?.name || "";
+                const uB = uMap[b.userId]?.name || "";
+                if(win) {
+                    const wa = a.teamSelected===win, wb = b.teamSelected===win;
+                    if(wa && !wb) return -1; if(!wa && wb) return 1;
+                }
+                return uA.localeCompare(uB);
+            });
+
+            guesses.forEach(d => {
                 const u = uMap[d.userId] || {name: "Desc.", photoBase64: ""};
                 let voteDisplay = `<span class="text-[10px] text-gray-400 italic"><i class="fas fa-lock"></i> Sigilo</span>`;
                 let bg = "bg-white";
+                
                 if (exp) {
                     voteDisplay = `<span class="text-[11px] font-bold">${d.teamSelected}</span>`;
                     if(win) {
@@ -345,6 +361,7 @@
                         else { bg = "bg-red-50"; voteDisplay += ` <i class="fas fa-times-circle text-red-600"></i>`; }
                     }
                 }
+
                 rows += `
                 <div class="flex justify-between items-center p-2 border-b border-gray-100 ${bg}">
                     <div class="flex items-center gap-2">
@@ -365,7 +382,7 @@
             `;
         };
 
-        // --- RANKING ---
+        // --- RANKING (Recalculado como no Android) ---
         async function loadRanking() {
             const list = document.getElementById('rankingListContent');
             const footer = document.getElementById('lastUpdateRanking');
@@ -375,7 +392,7 @@
             const matches = []; mSnap.forEach(d => matches.push({id:d.id, ...d.data()}));
             const finished = matches.filter(m => m.winner);
 
-            // Logic Last Update
+            // Last Update Logic
             if (finished.length > 0) {
                 finished.sort((a,b) => b.deadline.toDate() - a.deadline.toDate());
                 const last = finished[0];
@@ -385,29 +402,55 @@
             } else footer.innerText = "Nenhum confronto finalizado.";
 
             let users = [];
+            const now = new Date();
+
             uSnap.forEach(ud => {
                 const u = ud.data();
                 let p=0, v=0, f=0;
                 const hist = [];
-                gSnap.forEach(gd => {
-                    const g = gd.data();
-                    if(g.userId === ud.id) {
-                        const m = finished.find(x => x.id === g.matchId);
-                        if(m) {
-                            const hit = m.winner === g.teamSelected;
+                const userGuesses = [];
+                
+                gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) });
+
+                // A) Hits & Misses
+                userGuesses.forEach(g => {
+                    const m = finished.find(x => x.id === g.matchId);
+                    if(m) {
+                        const dl = m.deadline.toDate();
+                        const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`;
+                        if(m.winner === g.teamSelected) {
                             const isF = m.round?.toLowerCase() === 'final';
-                            if(hit) { p += isF ? 6 : 3; v++; if(isF) f++; hist.push(`✅ ${m.teamA} x ${m.teamB} (+${isF?6:3})`); } 
-                            else hist.push(`👎 ${m.teamA} x ${m.teamB}`);
+                            p += isF ? 6 : 3; v++; if(isF) f++;
+                            hist.push({ts: dl, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${isF?6:3})`});
+                        } else {
+                            hist.push({ts: dl, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'});
                         }
                     }
                 });
+
+                // B) Absences
+                matches.forEach(m => {
+                    const dl = m.deadline.toDate();
+                    if(now > dl) {
+                        if(!userGuesses.some(g => g.matchId === m.id)) {
+                            const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`;
+                            hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'});
+                        }
+                    }
+                });
+
+                // C) Debts
                 const deb = u.debts || 0; p -= deb;
-                if(deb > 0) hist.push(`🔻 Inadimplência: -${deb}`);
+                if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'});
+                
+                // Sort history
+                hist.sort((a,b) => b.ts - a.ts);
+
                 users.push({name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0});
             });
 
             users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f);
-            currentRankingData = users; // SAVE FOR MODALS
+            currentRankingData = users; // Global for modal access
 
             list.innerHTML = users.map((u, i) => {
                 const pos = i+1;
@@ -451,7 +494,7 @@
 
         window.showModalHistory = (idx) => {
             const u = currentRankingData[idx];
-            const html = u.hist.length ? u.hist.map(l => `<div class="border-b py-2 text-xs ${l.includes('✅')?'':'text-red-500'}">${l}</div>`).join('') : "Sem histórico.";
+            const html = u.hist.length ? u.hist.map(h => `<div class="border-b py-2 text-xs ${h.type==='bad'?'text-red-500':'text-black'}">${h.text}</div>`).join('') : "Sem histórico.";
             const modal = document.getElementById('modalOverlay');
             const cont = document.getElementById('modalContainer');
             modal.classList.remove('hidden');
@@ -460,6 +503,8 @@
                 <div class="bg-white p-4 max-h-[50vh] overflow-y-auto">${html}</div>
                 <div class="bg-gray-50 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div>`;
         }
+
+        window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
 
         // --- REGRAS ---
         function renderRules() {
@@ -479,7 +524,6 @@
         async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'}); }
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
         
-        window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
         document.getElementById('btnRefresh').onclick = () => {
             const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-','');
             showTab(active);
