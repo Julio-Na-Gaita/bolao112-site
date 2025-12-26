@@ -65,8 +65,18 @@
             <div class="card-cut w-full max-w-sm p-8 border-t-4 border-[#006400]">
                 <h2 class="text-xl font-black text-center text-[#006400] mb-8 uppercase tracking-widest">Acesso Membros</h2>
                 <input type="text" id="userInput" placeholder="Usuário" class="w-full p-4 bg-gray-50 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-green-700">
-                <input type="password" id="passInput" placeholder="Senha" class="w-full p-4 bg-gray-50 border rounded-lg mb-8 outline-none focus:ring-2 focus:ring-green-700">
-                <button id="btnLoginAction" class="w-full bg-[#006400] text-white py-4 font-bold rounded-lg btn-press shadow-lg">ACESSAR</button>
+                <input type="password" id="passInput" placeholder="Senha" class="w-full p-4 bg-gray-50 border rounded-lg mb-2 outline-none focus:ring-2 focus:ring-green-700">
+                
+                <div class="flex justify-end mb-6">
+                    <button id="btnForgotPass" class="text-xs text-gray-500 font-bold hover:text-[#006400] transition-colors">Esqueci a senha</button>
+                </div>
+
+                <button id="btnLoginAction" class="w-full bg-[#006400] text-white py-4 font-bold rounded-lg btn-press shadow-lg mb-6">ACESSAR</button>
+                
+                <div class="border-t pt-6 text-center">
+                    <p class="text-xs text-gray-400 mb-2 font-bold">Ainda não tem cadastro?</p>
+                    <button id="btnOpenRegister" class="text-[#006400] font-black text-sm uppercase btn-press border border-[#006400] px-6 py-2 rounded-full hover:bg-green-50">CRIAR CONTA</button>
+                </div>
             </div>
         </section>
 
@@ -172,7 +182,8 @@ Término oficial: 31 de dezembro de 2026
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        // ADICIONADO: createUserWithEmailAndPassword e sendPasswordResetEmail
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
@@ -201,6 +212,83 @@ Término oficial: 31 de dezembro de 2026
             const pass = document.getElementById('passInput').value;
             try { await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); } 
             catch (e) { alert("Dados incorretos."); }
+        };
+
+        // --- NOVA LÓGICA: ESQUECI A SENHA ---
+        document.getElementById('btnForgotPass').onclick = async () => {
+            const user = prompt("Digite seu NOME DE USUÁRIO para recuperar a senha:");
+            if(!user) return;
+            const email = `${user.trim().toLowerCase()}@bolao112.com`;
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert("E-mail de recuperação enviado! Verifique a caixa de entrada (ou spam) do e-mail vinculado a este usuário.");
+            } catch(e) {
+                alert("Erro: Usuário não encontrado ou inválido.");
+            }
+        };
+
+        // --- NOVA LÓGICA: CRIAR CONTA ---
+        document.getElementById('btnOpenRegister').onclick = () => {
+            const modal = document.getElementById('modalOverlay');
+            const cont = document.getElementById('modalContainer');
+            modal.classList.remove('hidden');
+            cont.innerHTML = `
+                <div class="bg-white p-6 relative">
+                    <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400 p-2"><i class="fas fa-times text-xl"></i></button>
+                    <h3 class="text-[#006400] font-black uppercase text-center mb-6 text-lg">Criar Nova Conta</h3>
+                    
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Nome Completo</label>
+                    <input type="text" id="regName" placeholder="Ex: João da Silva" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
+                    
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Usuário (Login)</label>
+                    <input type="text" id="regUser" placeholder="Ex: joaosilva (sem espaços)" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
+                    
+                    <label class="block text-xs font-bold text-gray-500 mb-1">Senha</label>
+                    <input type="password" id="regPass" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]">
+                    
+                    <button id="btnDoRegister" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CADASTRAR</button>
+                </div>
+            `;
+
+            document.getElementById('btnDoRegister').onclick = async () => {
+                const name = document.getElementById('regName').value.trim();
+                const user = document.getElementById('regUser').value.trim().toLowerCase();
+                const pass = document.getElementById('regPass').value;
+
+                if(!name || !user || pass.length < 6) {
+                    alert("Preencha todos os campos corretamente. Senha deve ter no mínimo 6 dígitos.");
+                    return;
+                }
+
+                if(user.includes(" ")) {
+                    alert("O nome de usuário não pode conter espaços.");
+                    return;
+                }
+
+                try {
+                    // 1. Criar no Authentication
+                    const email = `${user}@bolao112.com`;
+                    const res = await createUserWithEmailAndPassword(auth, email, pass);
+                    
+                    // 2. Salvar dados no Firestore
+                    await setDoc(doc(db, "users", res.user.uid), {
+                        name: name,
+                        username: user,
+                        createdAt: new Date(),
+                        isAdmin: false,
+                        debts: 0,
+                        payments: {}
+                    });
+
+                    alert("Conta criada com sucesso! Você já está logado.");
+                    closeModal();
+
+                } catch(e) {
+                    console.error(e);
+                    if(e.code === 'auth/email-already-in-use') alert("Este usuário já existe.");
+                    else alert("Erro ao criar conta: " + e.message);
+                }
+            };
         };
 
         onAuthStateChanged(auth, user => {
