@@ -214,17 +214,9 @@ Término oficial: 31 de dezembro de 2026
             catch (e) { alert("Dados incorretos."); }
         };
 
-        // --- NOVA LÓGICA: ESQUECI A SENHA ---
-        document.getElementById('btnForgotPass').onclick = async () => {
-            const user = prompt("Digite seu NOME DE USUÁRIO para recuperar a senha:");
-            if(!user) return;
-            const email = `${user.trim().toLowerCase()}@bolao112.com`;
-            try {
-                await sendPasswordResetEmail(auth, email);
-                alert("E-mail de recuperação enviado! Verifique a caixa de entrada (ou spam) do e-mail vinculado a este usuário.");
-            } catch(e) {
-                alert("Erro: Usuário não encontrado ou inválido.");
-            }
+        // --- NOVA LÓGICA: ESQUECI A SENHA (SIMPLIFICADO) ---
+        document.getElementById('btnForgotPass').onclick = () => {
+            alert("Utilizamos um sistema de login simplificado.\n\nPor favor, entre em contato com o Admin (Júlio) para resetar sua senha.");
         };
 
         // --- NOVA LÓGICA: CRIAR CONTA ---
