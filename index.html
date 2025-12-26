@@ -24,93 +24,134 @@
             background-color: #f3f4f6;
         }
 
-        /* Replica Exata do CutCornerShape(topStart = 16.dp, bottomEnd = 16.dp) */
         .card-cut {
             background: white;
-            clip-path: polygon(20px 0, 100% 0, 100% 100%, calc(100% - 20px) 100%, 0 100%, 0 20px);
-            /* Nota: CSS Clip-path puro não suporta sombras perfeitas facilmente, 
-               usaremos filter drop-shadow no elemento pai se necessário ou bordas simuladas */
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+            filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07));
             border: 1px solid #e5e7eb;
         }
-        
-        /* Ajuste fino para simular a borda do Android com clip-path */
-        .card-container {
-            filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.15));
-        }
 
-        .bg-app { 
-            background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.png');
-            background-size: cover;
-            background-attachment: fixed;
-            background-position: center;
-        }
+        /* Fundos Dinâmicos */
+        .bg-main { background-size: cover; background-attachment: fixed; background-position: center; transition: background 0.3s ease; }
+        .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.png'); }
+        .tab-ranking { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_ranking.png'); }
+        .tab-rules { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_regras.png'); }
+        .tab-profile { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_perfil.png'); }
 
-        /* Animação de clique do TeamVotingButton */
-        .btn-press { transition: transform 0.1s; }
-        .btn-press:active { transform: scale(0.90); }
-
-        /* Utilitários */
+        .btn-press:active { transform: scale(0.90); transition: 0.1s; }
         .safe-top { padding-top: env(safe-area-inset-top); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col bg-gray-100">
+<body class="min-h-screen flex flex-col">
 
     <nav class="bg-[#006400] text-white pt-[env(safe-area-inset-top)] sticky top-0 z-50 shadow-md">
         <div class="p-4 flex justify-between items-center">
             <h1 class="text-lg font-bold tracking-tighter uppercase">Bolão 112 F.C</h1>
             <div class="flex gap-4">
+                <button id="btnPot" class="btn-press text-[#FFD700]"><i class="fas fa-piggy-bank text-xl drop-shadow-md"></i></button>
                 <button id="btnRefresh" class="btn-press"><i class="fas fa-sync-alt text-xl"></i></button>
                 <button id="btnLogout" class="hidden btn-press"><i class="fas fa-sign-out-alt text-xl"></i></button>
             </div>
         </div>
-        <div id="progressBar" class="hidden h-1 w-full bg-[#006400]">
-            <div class="h-full bg-[#FFD700] animate-pulse w-full"></div>
-        </div>
+        <div id="progressBar" class="hidden h-1 w-full bg-[#006400]"><div class="h-full bg-[#FFD700] animate-pulse w-full"></div></div>
     </nav>
 
-    <main id="appContent" class="flex-1 overflow-y-auto bg-app pb-10">
+    <main id="appContent" class="flex-1 overflow-y-auto bg-main tab-matches pb-32">
         
         <section id="loginScreen" class="flex flex-col items-center justify-center min-h-[70vh] p-6">
-            <div class="card-container w-full max-w-sm">
-                <div class="card-cut p-8 border-t-4 border-[#006400] bg-white/95">
-                    <h2 class="text-xl font-black text-center text-[#006400] mb-8 uppercase tracking-widest">Acesso Membros</h2>
-                    <input type="text" id="userInput" placeholder="Usuário" class="w-full p-4 bg-gray-50 border rounded-none mb-4 outline-none focus:border-[#006400] transition-colors">
-                    <input type="password" id="passInput" placeholder="Senha" class="w-full p-4 bg-gray-50 border rounded-none mb-8 outline-none focus:border-[#006400] transition-colors">
-                    <button id="btnLoginAction" class="w-full bg-[#006400] text-white py-4 font-bold rounded-sm btn-press shadow-lg uppercase">Acessar</button>
-                </div>
+            <div class="card-cut w-full max-w-sm p-8 border-t-4 border-[#006400]">
+                <h2 class="text-xl font-black text-center text-[#006400] mb-8 uppercase tracking-widest">Acesso Membros</h2>
+                <input type="text" id="userInput" placeholder="Usuário" class="w-full p-4 bg-gray-50 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-green-700">
+                <input type="password" id="passInput" placeholder="Senha" class="w-full p-4 bg-gray-50 border rounded-lg mb-8 outline-none focus:ring-2 focus:ring-green-700">
+                <button id="btnLoginAction" class="w-full bg-[#006400] text-white py-4 font-bold rounded-lg btn-press shadow-lg">ACESSAR</button>
             </div>
         </section>
 
-        <div id="matchesScreen" class="hidden p-4 space-y-6">
+        <div id="mainScreens" class="hidden">
+            
+            <div id="matchesScreen" class="hidden p-4 space-y-6"></div>
+
+            <div id="rankingScreen" class="hidden p-4">
+                <div class="card-cut p-4 mb-4 border-t-2 border-[#FFD700]">
+                    <div class="flex justify-between items-center border-b pb-2 mb-2">
+                        <h3 class="font-bold text-lg text-gray-800">Classificação</h3>
+                        <span id="lastUpdateRanking" class="text-[10px] text-gray-400">...</span>
+                    </div>
+                    <div class="grid grid-cols-[30px_1fr_30px_30px_30px_40px] text-[10px] font-bold text-gray-400 uppercase text-center">
+                        <span>Pos</span><span class="text-left pl-2">Nome</span><span class="text-red-500">D</span><span>V</span><span>F</span><span class="text-black">PTS</span>
+                    </div>
+                    <div id="rankingListContent" class="mt-2 space-y-2"></div>
+                </div>
+                <div class="bg-black/80 text-[#FFD700] p-3 text-[10px] text-center rounded-lg shadow-lg">
+                    Legenda: D=Débitos(-1) | V=Vitórias | F=Finais | PTS=Pontos
+                </div>
             </div>
 
+            <div id="rulesScreen" class="hidden p-4 space-y-4">
+                <div class="card-cut p-6 border-2 border-[#006400] text-center bg-yellow-50">
+                    <h2 class="text-xl font-black text-[#006400] mb-2">REGULAMENTO 2026</h2>
+                    <p class="text-xs text-gray-600 leading-relaxed text-left">
+                        🎯 <b>Objetivo:</b> Competição de palpites esportivos entre amigos.<br>
+                        🗓️ <b>Vigência:</b> 01/01/2026 a 31/12/2026.<br>
+                        ✅ A participação implica aceitação total das regras.
+                    </p>
+                </div>
+                <div id="rulesList" class="space-y-3"></div>
+            </div>
+
+            <div id="profileScreen" class="hidden p-4">
+                <div class="card-cut p-6 border-t-4 border-[#006400] text-center relative">
+                    <h2 class="font-bold text-gray-400 text-xs mb-6 tracking-[0.2em]">CARTÃO DE MEMBRO</h2>
+                    <div class="relative w-28 h-28 mx-auto mb-4">
+                        <div id="profileAvatar" class="w-full h-full bg-gray-200 rounded-full border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                            <i class="fas fa-user text-4xl text-gray-400"></i>
+                        </div>
+                        <label class="absolute bottom-0 right-0 bg-[#006400] text-white p-2 rounded-full shadow-md cursor-pointer btn-press">
+                            <i class="fas fa-camera text-xs"></i>
+                            <input type="file" id="uploadPhoto" accept="image/*" class="hidden">
+                        </label>
+                    </div>
+                    <h3 id="profileName" class="text-2xl font-black text-gray-800 uppercase leading-none">...</h3>
+                    <p id="profileUser" class="text-gray-500 text-sm mb-6">@...</p>
+                    <div id="financialCard" class="p-4 rounded-lg border mb-4 cursor-pointer btn-press transition-colors">
+                        <div class="flex justify-between items-center">
+                            <div class="text-left">
+                                <p id="financialStatusText" class="font-black text-sm">VERIFICANDO...</p>
+                                <p class="text-[10px] text-gray-500 font-bold">Toque para detalhes</p>
+                            </div>
+                            <i id="financialIcon" class="fas fa-circle-notch fa-spin text-2xl"></i>
+                        </div>
+                    </div>
+                    <div id="pixArea" class="hidden bg-gray-50 p-4 rounded-lg border border-gray-200 text-left space-y-3">
+                        <div class="text-center mb-2"><i class="fas fa-qrcode text-3xl text-[#006400]"></i><p class="font-bold text-[#006400]">PAGAMENTO PIX</p><p class="text-2xl font-black">R$ 10,00</p></div>
+                        <div><label class="text-[10px] text-gray-500 font-bold">CHAVE PIX</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded"><button id="btnCopyPix" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-copy"></i></button></div></div>
+                        <button id="btnSendProof" class="w-full bg-green-500 text-white py-2 rounded font-bold text-xs shadow btn-press"><i class="fab fa-whatsapp"></i> ENVIAR COMPROVANTE</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </main>
 
     <div id="modalOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="closeModal()">
-        <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
-            <div class="bg-white p-4 border-b border-gray-200 flex justify-between items-center">
-                <div>
-                    <h3 id="modalTitle" class="font-bold text-[#006400] uppercase text-sm">Quem já votou?</h3>
-                    <p id="modalSubtitle" class="text-[10px] text-gray-400">Os palpites são revelados após o prazo.</p>
-                </div>
-                <button onclick="closeModal()" class="text-gray-400 p-2"><i class="fas fa-times"></i></button>
+        <div id="modalContainer" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
             </div>
-            <div id="modalList" class="max-h-[60vh] overflow-y-auto bg-white p-2">
-                <div class="text-center py-4"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>
-            </div>
-            <div class="p-3 bg-gray-50 text-right">
-                <button onclick="closeModal()" class="text-[#006400] font-black text-xs px-4 py-2 uppercase">Fechar</button>
-            </div>
-        </div>
     </div>
+
+    <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t safe-bottom flex justify-around p-2 z-50 shadow-2xl">
+        <button onclick="showTab('matches')" class="nav-btn flex flex-col items-center text-[#006400]" id="nav-matches"><i class="fas fa-soccer-ball text-lg"></i><span class="text-[10px] mt-1">Jogos</span></button>
+        <button onclick="showTab('ranking')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-ranking"><i class="fas fa-trophy text-lg"></i><span class="text-[10px] mt-1">Ranking</span></button>
+        <button onclick="showTab('rules')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-rules"><i class="fas fa-gavel text-lg"></i><span class="text-[10px] mt-1">Regras</span></button>
+        <button onclick="showTab('profile')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-profile"><i class="fas fa-user text-lg"></i><span class="text-[10px] mt-1">Perfil</span></button>
+    </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // SUAS CREDENCIAIS [memory]
         const firebaseConfig = {
             apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k",
             authDomain: "bolao112fc.firebaseapp.com",
@@ -126,6 +167,15 @@
         const db = getFirestore(app);
         let currentUser = null;
 
+        const rulesData = [
+            { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal: R$ 10,00 (Venc. dia 10).\n⚠️ Inadimplência: -1 ponto a cada 5 dias de atraso." },
+            { t: "2️⃣ PREMIAÇÃO FINAL", c: "🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%\nDo pote anual acumulado." },
+            { t: "3️⃣ PONTUAÇÃO", c: "✅ Acerto: 3 pontos.\n🔥 Finais: 6 pontos (Peso 2).\n💥 Oitavas Perfeitas: +3 pontos bônus." },
+            { t: "4️⃣ COMPETIÇÕES", c: "Copa do Mundo, Champions, Libertadores, Copa do Brasil e outras matas-matas." },
+            { t: "5️⃣ DESEMPATE", c: "1. Menor inadimplência.\n2. Vitórias.\n3. Finais.\n4. Sorteio." },
+            { t: "6️⃣ PLATAFORMAS", c: "Palpites apenas pelo App ou Site." }
+        ];
+
         // --- AUTH ---
         document.getElementById('btnLoginAction').onclick = async () => {
             const user = document.getElementById('userInput').value.trim().toLowerCase();
@@ -138,289 +188,311 @@
             if (user) {
                 currentUser = user;
                 document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('matchesScreen').classList.remove('hidden');
+                document.getElementById('mainScreens').classList.remove('hidden');
+                document.getElementById('bottomNav').classList.remove('hidden');
                 document.getElementById('btnLogout').classList.remove('hidden');
-                loadMatches();
+                showTab('matches');
+                calculatePot();
             } else {
                 document.getElementById('loginScreen').classList.remove('hidden');
-                document.getElementById('matchesScreen').classList.add('hidden');
-                document.getElementById('btnLogout').classList.add('hidden');
+                document.getElementById('mainScreens').classList.add('hidden');
+                document.getElementById('bottomNav').classList.add('hidden');
             }
         });
 
-        // --- COMPONENTE: Section Header ---
-        const SectionHeader = (title, colorHex, bgClass = "bg-white/90") => `
+        // --- NAVEGAÇÃO ---
+        window.showTab = (tab) => {
+            document.getElementById('appContent').className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
+            ['matches', 'ranking', 'rules', 'profile'].forEach(t => {
+                document.getElementById(`${t}Screen`).classList.add('hidden');
+                document.getElementById(`nav-${t}`).classList.replace('text-[#006400]', 'text-gray-400');
+            });
+            document.getElementById(`${tab}Screen`).classList.remove('hidden');
+            document.getElementById(`nav-${tab}`).classList.replace('text-gray-400', 'text-[#006400]');
+
+            if(tab === 'matches') loadMatches();
+            if(tab === 'ranking') loadRanking();
+            if(tab === 'rules') renderRules();
+            if(tab === 'profile') loadProfile();
+        };
+
+        // --- JOGOS (MATCHES) ---
+        const SectionHeader = (title, color) => `
             <div class="card-container mb-3">
-                <div class="bg-white/90 border border-[${colorHex}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm">
-                    <h4 class="font-bold text-[${colorHex}] uppercase tracking-wider text-xs" style="color: ${colorHex};">${title}</h4>
+                <div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm">
+                    <h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4>
                 </div>
             </div>`;
 
-        // --- CORE: Carregar Jogos ---
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
-            const progress = document.getElementById('progressBar');
-            
-            progress.classList.remove('hidden'); // Show loading
+            document.getElementById('progressBar').classList.remove('hidden');
             
             try {
-                // 1. Buscas Paralelas (Jogos e Configurações)
-                const [matchesSnap, compsSnap] = await Promise.all([
-                    getDocs(collection(db, "matches")),
-                    getDocs(collection(db, "settings")) // Se precisar de logos, mas usaremos do match por enquanto
-                ]);
-
+                const snap = await getDocs(collection(db, "matches"));
                 const now = new Date();
                 let open = [], waiting = [], finished = [];
 
-                // 2. Processamento e Filtragem
-                for (const docSnapshot of matchesSnap.docs) {
-                    const m = { id: docSnapshot.id, ...docSnapshot.data() };
-                    const deadline = m.deadline.toDate();
-                    
-                    // Replicando a lógica do Android (MatchCard)
-                    m.isExpired = now > deadline;
-                    m.isFinal = (m.round && m.round.toLowerCase() === 'final');
-                    m.hasWinner = !!m.winner;
-
-                    if (m.hasWinner) finished.push(m);
-                    else if (m.isExpired) waiting.push(m);
+                for (const d of snap.docs) {
+                    const m = {id:d.id, ...d.data()};
+                    const dl = m.deadline.toDate();
+                    m.expired = now > dl;
+                    m.final = m.round?.toLowerCase() === 'final';
+                    if (m.winner) finished.push(m);
+                    else if (m.expired) waiting.push(m);
                     else open.push(m);
                 }
 
-                // 3. Ordenação (Igual ao Android)
-                open.sort((a,b) => a.deadline.toDate() - b.deadline.toDate());
-                waiting.sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); // Descending
-                finished.sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); // Descending
+                // Sort
+                open.sort((a,b)=>a.deadline.toDate()-b.deadline.toDate());
+                waiting.sort((a,b)=>b.deadline.toDate()-a.deadline.toDate());
+                finished.sort((a,b)=>b.deadline.toDate()-a.deadline.toDate());
 
-                // 4. Renderização
                 let html = "";
-
-                if (open.length > 0) {
-                    html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400");
-                    for (const m of open) html += await createMatchCardHTML(m);
-                    html += `<div class="h-6"></div>`;
-                }
-
-                if (waiting.length > 0) {
-                    html += SectionHeader("⏳ AGUARDANDO RESULTADO ⏳", "#FBC02D"); // Amarelo/Laranja
-                    for (const m of waiting) html += await createMatchCardHTML(m);
-                    html += `<div class="h-6"></div>`;
-                }
-
-                if (finished.length > 0) {
-                    html += SectionHeader("🚫 CONFRONTOS FINALIZADOS 🚫", "#D32F2F"); // Vermelho
-                    for (const m of finished) html += await createMatchCardHTML(m);
-                    html += `<div class="h-6"></div>`;
-                }
-
-                if (!html) html = `<div class="text-center text-gray-500 mt-10">Nenhum jogo encontrado.</div>`;
+                if(open.length) html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400") + await renderMatchList(open);
+                if(waiting.length) html += SectionHeader("⏳ AGUARDANDO RESULTADO ⏳", "#FBC02D") + await renderMatchList(waiting);
+                if(finished.length) html += SectionHeader("🚫 CONFRONTOS FINALIZADOS 🚫", "#D32F2F") + await renderMatchList(finished);
                 
-                container.innerHTML = html;
-
-            } catch (e) {
-                console.error(e);
-            } finally {
-                progress.classList.add('hidden'); // Hide loading
-            }
+                container.innerHTML = html || `<div class="text-center text-gray-500 mt-10">Nenhum jogo encontrado.</div>`;
+            } catch(e) { console.error(e); }
+            document.getElementById('progressBar').classList.add('hidden');
         }
 
-        // --- COMPONENTE: Match Card HTML ---
-        async function createMatchCardHTML(m) {
-            // Buscar voto do usuário atual para este jogo
-            // Nota: Em produção, buscar todos os votos de uma vez seria mais eficiente, 
-            // mas aqui mantemos a paridade lógica com o Android match-by-match.
-            let userVote = "";
-            try {
-                const vSnap = await getDoc(doc(db, "guesses", `${m.id}_${currentUser.uid}`));
-                if (vSnap.exists()) userVote = vSnap.data().teamSelected;
-            } catch (e) {}
-
-            const deadlineDate = m.deadline.toDate();
-            // Formatação de data
-            const dateStr = deadlineDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
-            const timeStr = deadlineDate.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-            
-            // Estilos condicionais (Igual ao Android)
-            const isFinal = m.isFinal;
-            const bgColor = isFinal ? 'bg-[#FFF9C4]' : 'bg-white'; // Amarelo claro se Final
-            const borderColor = isFinal ? 'border-[#FFD700]' : (m.isExpired ? (m.hasWinner ? 'border-[#D32F2F]' : 'border-[#FBC02D]') : 'border-gray-200');
-            const borderWidth = isFinal ? 'border-4' : 'border';
-            
-            // Texto do Prazo
-            const prazoLabel = m.isExpired ? "Encerrado:" : "Prazo:";
-            const prazoColor = m.isExpired ? "text-red-600" : "text-black";
-
-            return `
-                <div class="card-container mb-4">
-                    <div class="card-cut p-4 relative ${bgColor} ${borderWidth} ${borderColor.startsWith('border-[#') ? '' : 'border-l-4'} " style="${isFinal ? 'border-color: #FFD700;' : (m.isExpired ? '' : 'border-left: 1px solid #e5e7eb;')}">
-                        
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="flex flex-col">
-                                ${isFinal ? '<span class="text-[10px] font-black text-orange-600 mb-1 tracking-widest">★ 🏆 FINAL • VALE O DOBRO 🏆 ★</span>' : ''}
-                                <span class="text-[10px] font-bold text-[#006400] uppercase font-serif">${m.competition}</span>
-                                <span class="text-[12px] text-gray-500 font-serif">${m.round}</span>
-                                <span class="text-[11px] font-bold ${prazoColor} mt-1 font-serif">
-                                    ${prazoLabel} ${dateStr} ${timeStr}
-                                </span>
-                            </div>
-                            
-                            <button onclick="window.openVoters('${m.id}', '${m.teamA}', '${m.teamB}', ${m.isExpired}, '${m.winner||''}', '${m.teamAUrl}', '${m.teamBUrl}')" class="btn-press p-2 text-[#006400]">
-                                <i class="fas ${m.isExpired ? 'fa-eye' : 'fa-users'} text-lg"></i>
-                            </button>
-                        </div>
-
-                        ${m.hasWinner ? `
-                            <div class="mb-3">
-                                <span class="text-[10px] font-bold text-gray-400 uppercase">${isFinal ? 'CAMPEÃO' : 'VENCEDOR'}</span>
-                                <p class="text-xl font-black ${isFinal ? 'text-orange-600' : 'text-green-700'} font-serif leading-none">${m.winner}</p>
-                            </div>
-                        ` : ''}
-                        
-                        <div class="flex items-center justify-between px-1">
-                            ${createTeamButton(m.id, m.teamA, m.teamAUrl, userVote === m.teamA, m.isExpired)}
-                            
-                            <span class="italic font-black text-gray-300 text-xl font-serif">X</span>
-                            
-                            ${createTeamButton(m.id, m.teamB, m.teamBUrl, userVote === m.teamB, m.isExpired)}
-                        </div>
-
-                        ${userVote && !m.isExpired ? `<div class="mt-3 text-center"><span class="text-[11px] font-bold text-[#006400]">Voto: ${userVote}</span></div>` : ''}
-
-                    </div>
-                </div>
-            `;
-        }
-
-        // --- Helper: Botão de Time ---
-        function createTeamButton(matchId, teamName, teamUrl, isSelected, isExpired) {
-            const bgClass = isSelected ? 'bg-[#006400]' : 'bg-[#EEEEEE]';
-            const textClass = isSelected ? 'text-white' : 'text-black';
-            const borderClass = isSelected ? 'border-2 border-[#FFD700]' : ''; // Borda dourada se selecionado
-            
-            return `
-                <button onclick="window.vote('${matchId}', '${teamName}')" 
-                        ${isExpired ? 'disabled' : ''} 
-                        class="btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg shadow-sm transition-all ${bgClass} ${borderClass} ${isExpired ? 'opacity-90 cursor-not-allowed' : ''}">
-                    <img src="${teamUrl}" class="w-10 h-10 object-contain mb-1">
-                    <span class="text-[11px] font-bold text-center leading-tight ${textClass} font-serif line-clamp-2 px-1">
-                        ${teamName}
-                    </span>
-                </button>
-            `;
-        }
-
-        // --- LÓGICA: Votar ---
-        window.vote = async (mId, team) => {
-            if(!currentUser) return;
-            // Otimistic UI update could go here, but for safety we reload
-            try {
-                await setDoc(doc(db, "guesses", `${mId}_${currentUser.uid}`), { 
-                    matchId: mId, 
-                    userId: currentUser.uid, 
-                    teamSelected: team, 
-                    timestamp: new Date() 
-                });
-                loadMatches(); // Recarrega para atualizar o estado visual
-            } catch(e) { console.error(e); alert("Erro ao computar voto"); }
-        };
-
-        // --- LÓGICA: Modal de Votantes ---
-        window.openVoters = async (mId, tA, tB, isExpired, winner, urlA, urlB) => {
-            const modal = document.getElementById('modalOverlay');
-            const listDiv = document.getElementById('modalList');
-            const title = document.getElementById('modalTitle');
-            const subtitle = document.getElementById('modalSubtitle');
-
-            modal.classList.remove('hidden');
-            title.innerText = isExpired ? "PALPITES REGISTRADOS" : "QUEM JÁ VOTOU?";
-            subtitle.innerText = isExpired ? "" : "Os palpites são revelados após o prazo.";
-            listDiv.innerHTML = `<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
-
-            // Buscar palpites
-            const q = query(collection(db, "guesses"), where("matchId", "==", mId));
-            const guessesSnap = await getDocs(q);
-            
-            if (guessesSnap.empty) {
-                listDiv.innerHTML = `<p class="text-center text-gray-500 text-xs py-4">Nenhum voto registrado.</p>`;
-                return;
-            }
-
-            // Buscar usuários (Cache simples poderia ser usado aqui para otimizar)
-            const usersSnap = await getDocs(collection(db, "users"));
-            const usersMap = {};
-            usersSnap.forEach(u => usersMap[u.id] = u.data());
-
+        async function renderMatchList(list) {
             let html = "";
-            let voters = [];
+            for (const m of list) {
+                let userVote = "";
+                try {
+                    const vs = await getDoc(doc(db, "guesses", `${m.id}_${currentUser.uid}`));
+                    if(vs.exists()) userVote = vs.data().teamSelected;
+                } catch(e){}
 
-            guessesSnap.forEach(g => {
-                const data = g.data();
-                const user = usersMap[data.userId] || { name: "Desconhecido", photoBase64: "" };
-                voters.push({ ...data, userName: user.name, userPhoto: user.photoBase64 });
-            });
-
-            // Ordenação (Vencedores > Ordem Alfabética)
-            voters.sort((a,b) => {
-                if (winner) {
-                    const aWin = a.teamSelected === winner;
-                    const bWin = b.teamSelected === winner;
-                    if (aWin && !bWin) return -1;
-                    if (!aWin && bWin) return 1;
-                }
-                return a.userName.localeCompare(b.userName);
-            });
-
-            voters.forEach(v => {
-                let statusIcon = "";
-                let rowBg = "bg-white";
-                let displayVote = "";
-
-                if (isExpired) {
-                    // Mostrar voto real (Imagem ou Texto)
-                    const isTeamA = v.teamSelected.trim().toLowerCase() === tA.trim().toLowerCase();
-                    const isTeamB = v.teamSelected.trim().toLowerCase() === tB.trim().toLowerCase();
-                    
-                    if (isTeamA && urlA) displayVote = `<img src="${urlA}" class="w-6 h-6 object-contain">`;
-                    else if (isTeamB && urlB) displayVote = `<img src="${urlB}" class="w-6 h-6 object-contain">`;
-                    else displayVote = `<span class="text-[10px] font-bold">${v.teamSelected}</span>`;
-
-                    // Status (Acerto/Erro)
-                    if (winner) {
-                        if (v.teamSelected === winner) {
-                            rowBg = "bg-green-50";
-                            statusIcon = `<i class="fas fa-check-circle text-green-700 ml-2"></i>`;
-                        } else {
-                            rowBg = "bg-red-50";
-                            statusIcon = `<i class="fas fa-times-circle text-red-600 ml-2"></i>`;
-                        }
-                    }
-                } else {
-                    // Sigilo
-                    displayVote = `<span class="text-[10px] text-gray-400 italic flex items-center"><i class="fas fa-lock mr-1"></i> Sigilo</span>`;
-                }
+                const dl = m.deadline.toDate();
+                const borderColor = m.final ? 'border-[#FFD700]' : (m.expired ? (m.winner ? 'border-[#D32F2F]' : 'border-[#FBC02D]') : 'border-[#006400]');
+                const bgColor = m.final ? 'bg-[#FFF9C4]' : 'bg-white';
 
                 html += `
-                    <div class="flex items-center justify-between p-2 mb-1 rounded border-b border-gray-100 ${rowBg}">
-                        <div class="flex items-center gap-2 overflow-hidden">
-                            ${v.userPhoto ? `<img src="data:image/jpeg;base64,${v.userPhoto}" class="w-8 h-8 rounded-full object-cover border border-gray-200">` : `<i class="fas fa-user-circle text-gray-300 text-2xl"></i>`}
-                            <span class="text-xs font-bold text-gray-800 truncate max-w-[120px] font-serif">${v.userName}</span>
+                <div class="card-cut p-4 relative border-l-[6px] ${bgColor} mb-6" style="border-left-color: ${borderColor.replace('border-[','').replace(']','')};">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex flex-col">
+                            ${m.final ? '<span class="text-[10px] font-black text-orange-600 mb-1">★ FINAL • VALE DOBRO ★</span>' : ''}
+                            <span class="text-[10px] font-bold text-[#006400] uppercase">${m.competition}</span>
+                            <span class="text-[11px] text-gray-400">${m.round}</span>
+                            <span class="text-[10px] font-bold ${m.expired ? 'text-red-600' : 'text-black'} mt-1">
+                                ${m.expired ? 'Encerrado:' : 'Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}
+                            </span>
                         </div>
-                        <div class="flex items-center">
-                            ${displayVote}
-                            ${statusIcon}
-                        </div>
+                        <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2">
+                            <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i>
+                        </button>
                     </div>
-                `;
+                    <div class="flex items-center justify-between px-1">
+                        ${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}
+                        <span class="font-black text-gray-300 text-xl">X</span>
+                        ${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}
+                    </div>
+                    ${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="text-[#006400] font-black text-lg">${m.winner}</p></div>` : ''}
+                </div>`;
+            }
+            return html;
+        }
+
+        function createTeamBtn(mid, name, url, selected, expired) {
+            const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800';
+            const border = selected ? 'border-2 border-[#FFD700]' : '';
+            return `
+            <button onclick="window.vote('${mid}', '${name}')" ${expired?'disabled':''} class="btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}">
+                <img src="${url}" class="w-10 h-10 object-contain mb-1">
+                <span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span>
+            </button>`;
+        }
+
+        window.vote = async (mid, team) => {
+            if(!currentUser) return;
+            await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { matchId: mid, userId: currentUser.uid, teamSelected: team, timestamp: new Date() });
+            loadMatches();
+        };
+
+        // --- VOTANTES (MODAL) ---
+        window.openVoters = async (mid, ta, tb, exp, win) => {
+            const modal = document.getElementById('modalOverlay');
+            const cont = document.getElementById('modalContainer');
+            modal.classList.remove('hidden');
+            cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
+
+            const gSnap = await getDocs(query(collection(db, "guesses"), where("matchId", "==", mid)));
+            const uSnap = await getDocs(collection(db, "users"));
+            const uMap = {}; uSnap.forEach(u => uMap[u.id] = u.data());
+
+            let rows = "";
+            gSnap.forEach(g => {
+                const d = g.data();
+                const u = uMap[d.userId] || {name: "Desc.", photoBase64: ""};
+                let voteDisplay = `<span class="text-[10px] text-gray-400 italic"><i class="fas fa-lock"></i> Sigilo</span>`;
+                let bg = "bg-white";
+                
+                if (exp) {
+                    voteDisplay = `<span class="text-[11px] font-bold">${d.teamSelected}</span>`;
+                    if(win) {
+                        if(d.teamSelected === win) { bg = "bg-green-50"; voteDisplay += ` <i class="fas fa-check-circle text-green-600"></i>`; }
+                        else { bg = "bg-red-50"; voteDisplay += ` <i class="fas fa-times-circle text-red-600"></i>`; }
+                    }
+                }
+
+                rows += `
+                <div class="flex justify-between items-center p-2 border-b border-gray-100 ${bg}">
+                    <div class="flex items-center gap-2">
+                        ${u.photoBase64 ? `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-6 h-6 rounded-full object-cover">` : `<i class="fas fa-user-circle text-gray-300"></i>`}
+                        <span class="text-xs font-bold truncate w-24">${u.name}</span>
+                    </div>
+                    <div>${voteDisplay}</div>
+                </div>`;
             });
 
-            listDiv.innerHTML = html;
+            cont.innerHTML = `
+                <div class="bg-gray-50 p-3 border-b flex justify-between items-center">
+                    <h3 class="font-bold text-[#006400] uppercase text-xs">${exp ? 'Palpites' : 'Quem já votou?'}</h3>
+                    <button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button>
+                </div>
+                <div class="bg-white max-h-[60vh] overflow-y-auto p-2">${rows || '<p class="text-xs text-center p-4">Sem votos.</p>'}</div>
+                <div class="bg-gray-50 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div>
+            `;
         };
 
         window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
 
-        // Botões Globais
-        document.getElementById('btnRefresh').onclick = () => loadMatches();
+        // --- RANKING ---
+        async function loadRanking() {
+            const list = document.getElementById('rankingListContent');
+            list.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
+            
+            const [uSnap, gSnap, mSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches"))]);
+            const matches = []; mSnap.forEach(d => matches.push({id:d.id, ...d.data()}));
+            const finished = matches.filter(m => m.winner);
+
+            let users = [];
+            uSnap.forEach(ud => {
+                const u = ud.data();
+                let p=0, v=0, f=0;
+                const hist = [];
+                // Calculo simples para demonstração (igual ao anterior)
+                gSnap.forEach(gd => {
+                    const g = gd.data();
+                    if(g.userId === ud.id) {
+                        const m = finished.find(x => x.id === g.matchId);
+                        if(m && m.winner === g.teamSelected) {
+                            const isF = m.round?.toLowerCase() === 'final';
+                            p += isF ? 6 : 3; v++; if(isF) f++;
+                            hist.push(`✅ ${m.teamA} x ${m.teamB}`);
+                        } else if(m) hist.push(`👎 ${m.teamA} x ${m.teamB}`);
+                    }
+                });
+                const deb = u.debts || 0; p -= deb;
+                if(deb > 0) hist.push(`🔻 Débitos: -${deb}`);
+                
+                users.push({name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist});
+            });
+
+            users.sort((a,b) => b.p - a.p || a.d - b.d); // Ordem simples
+
+            list.innerHTML = users.map((u, i) => {
+                const pos = i+1;
+                const bg = pos===1?'bg-yellow-50':(pos<=3?'bg-gray-50':'bg-white');
+                return `
+                <div class="${bg} rounded p-2 flex items-center border border-gray-100 text-xs mb-1">
+                    <div class="w-[30px] font-bold text-center">${pos}º</div>
+                    <div class="flex-1 flex items-center gap-2 overflow-hidden pl-2" onclick="showModalPhoto('${u.photo}', '${u.name}')">
+                        ${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-6 h-6 rounded-full border object-cover">` : `<i class="fas fa-user-circle text-gray-300 text-lg"></i>`}
+                        <span class="font-bold truncate">${u.name}</span>
+                    </div>
+                    <div class="w-[30px] text-center text-red-500 font-bold" onclick="showModalHistory('${u.name}', '${u.hist.join('|')}')">${u.d}</div>
+                    <div class="w-[30px] text-center text-gray-500">${u.v}</div>
+                    <div class="w-[30px] text-center text-gray-500">${u.f}</div>
+                    <div class="w-[40px] text-center font-black text-[#006400]">${u.p}</div>
+                </div>`;
+            }).join('');
+            document.getElementById('lastUpdateRanking').innerText = "Atualizado agora";
+        }
+
+        window.showModalPhoto = (b64, name) => {
+            if(!b64) return;
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('modalContainer').innerHTML = `
+                <div class="bg-white p-4 text-center">
+                    <img src="data:image/jpeg;base64,${b64}" class="w-full rounded mb-4">
+                    <h3 class="font-bold uppercase">${name}</h3>
+                    <button onclick="closeModal()" class="mt-4 text-[#006400] font-black text-xs">FECHAR</button>
+                </div>`;
+        }
+
+        window.showModalHistory = (name, raw) => {
+            const lines = raw ? raw.split('|') : [];
+            const html = lines.length ? lines.map(l => `<div class="border-b py-2 text-xs ${l.includes('✅')?'':'text-red-500'}">${l}</div>`).join('') : "Sem histórico.";
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('modalContainer').innerHTML = `
+                <div class="bg-gray-50 p-3 border-b"><h3 class="font-bold text-[#006400] uppercase text-xs">Extrato: ${name}</h3></div>
+                <div class="bg-white p-4 max-h-[50vh] overflow-y-auto">${html}</div>
+                <div class="bg-gray-50 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div>`;
+        }
+
+        // --- REGRAS ---
+        function renderRules() {
+            document.getElementById('rulesList').innerHTML = rulesData.map(r => `
+                <div class="bg-white rounded p-3 shadow-sm border border-gray-100">
+                    <button class="w-full text-left font-bold text-xs text-[#006400] flex justify-between" onclick="this.nextElementSibling.classList.toggle('hidden')">${r.t} <i class="fas fa-chevron-down"></i></button>
+                    <div class="hidden mt-2 text-xs text-gray-600 border-t pt-2 whitespace-pre-line">${r.c}</div>
+                </div>`).join('');
+        }
+
+        // --- PERFIL ---
+        async function loadProfile() {
+            const snap = await getDoc(doc(db, "users", currentUser.uid));
+            if(!snap.exists()) return;
+            const u = snap.data();
+            document.getElementById('profileName').innerText = u.name;
+            document.getElementById('profileUser').innerText = `@${u.username}`;
+            if(u.photoBase64) document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`;
+            
+            // Finanças
+            const m = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+            const isPaid = u.payments && u.payments[m[new Date().getMonth()]];
+            const div = document.getElementById('financialCard');
+            if(isPaid || new Date().getFullYear() < 2026) {
+                div.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800";
+                document.getElementById('financialStatusText').innerText = "MENSALIDADE EM DIA";
+                document.getElementById('financialIcon').className = "fas fa-check-circle text-2xl";
+            } else {
+                div.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800";
+                document.getElementById('financialStatusText').innerText = "PAGAMENTO PENDENTE";
+                document.getElementById('financialIcon').className = "fas fa-exclamation-circle text-2xl";
+            }
+            
+            // Pix Data
+            const fs = await getDoc(doc(db, "settings", "financial"));
+            if(fs.exists()) {
+                document.getElementById('pixKey').value = fs.data().pixKey || "admin@bolao112.com";
+                document.getElementById('btnSendProof').onclick = () => window.open(`https://wa.me/${fs.data().adminPhone}`, '_blank');
+            }
+        }
+
+        document.getElementById('uploadPhoto').onchange = (e) => {
+            const f = e.target.files[0];
+            if(f) { const r = new FileReader(); r.onloadend = async () => { await updateDoc(doc(db, "users", currentUser.uid), {photoBase64: r.result.split(',')[1]}); loadProfile(); }; r.readAsDataURL(f); }
+        };
+        document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.toggle('hidden');
+        document.getElementById('btnCopyPix').onclick = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Copiado!"); };
+
+        // --- POTE DE OURO ---
+        async function calculatePot() {
+            const snap = await getDocs(collection(db, "users"));
+            let total = 0;
+            snap.forEach(d => { if(d.data().payments) total += Object.values(d.data().payments).filter(x=>x).length * 10; });
+            document.getElementById('potModal').querySelector('p.text-4xl').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'});
+        }
+        document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
+
+        // Botoes Gerais
+        document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
         document.getElementById('btnLogout').onclick = () => signOut(auth);
 
     </script>
