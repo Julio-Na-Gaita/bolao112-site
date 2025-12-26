@@ -7,30 +7,17 @@
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Bolão 112">
     <link rel="apple-touch-icon" href="favicon.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&display=swap');
-        
         :root { --dark-green: #006400; --gold: #FFD700; }
+        body { font-family: 'PT Serif', serif; -webkit-tap-highlight-color: transparent; user-select: none; background-color: #f3f4f6; }
         
-        body { 
-            font-family: 'PT Serif', serif; 
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-            background-color: #f3f4f6;
-        }
-
-        .card-cut {
-            background: white;
-            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
-            filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07));
-        }
-
-        /* Fundos Dinâmicos */
+        .card-cut { background: white; clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)); }
+        
         .bg-main { background-size: cover; background-attachment: fixed; background-position: center; transition: background 0.3s ease; }
         .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.png'); }
         .tab-ranking { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_ranking.png'); }
@@ -57,43 +44,39 @@
     </nav>
 
     <main id="appContent" class="flex-1 overflow-y-auto bg-main tab-matches pb-32">
-        
         <section id="loginScreen" class="flex flex-col items-center justify-center min-h-[70vh] p-6">
             <div class="card-cut w-full max-w-sm p-8 border-t-4 border-[#006400]">
                 <h2 class="text-xl font-black text-center text-[#006400] mb-8 uppercase tracking-widest">Acesso Membros</h2>
-                <input type="text" id="userInput" placeholder="Usuário" class="w-full p-4 bg-gray-50 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-green-700 transition-all">
-                <input type="password" id="passInput" placeholder="Senha" class="w-full p-4 bg-gray-50 border rounded-lg mb-8 outline-none focus:ring-2 focus:ring-green-700 transition-all">
+                <input type="text" id="userInput" placeholder="Usuário" class="w-full p-4 bg-gray-50 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-green-700">
+                <input type="password" id="passInput" placeholder="Senha" class="w-full p-4 bg-gray-50 border rounded-lg mb-8 outline-none focus:ring-2 focus:ring-green-700">
                 <button id="btnLoginAction" class="w-full bg-[#006400] text-white py-4 font-bold rounded-lg btn-press shadow-lg">ACESSAR</button>
             </div>
         </section>
 
         <div id="mainLists" class="hidden p-4 space-y-4">
-            
-            <div id="matchesList" class="space-y-6"></div>
+            <div id="matchesList" class="space-y-8"></div>
             
             <div id="rankingContainer" class="hidden">
                 <div class="card-cut p-4 mb-4 border-t-2 border-[#FFD700]">
                     <div class="flex justify-between items-center border-b pb-2 mb-2">
                         <h3 class="font-bold text-lg text-gray-800">Classificação</h3>
-                        <span id="lastUpdateRanking" class="text-[10px] text-gray-400">Atualizado agora</span>
+                        <span id="lastUpdateRanking" class="text-[10px] text-gray-400">...</span>
                     </div>
-                    <div class="grid grid-cols-[30px_1fr_30px_30px_30px_40px] text-[10px] font-bold text-gray-400 uppercase text-center items-center">
+                    <div class="grid grid-cols-[30px_1fr_30px_30px_30px_40px] text-[10px] font-bold text-gray-400 uppercase text-center">
                         <span>Pos</span><span class="text-left pl-2">Nome</span><span class="text-red-500">D</span><span>V</span><span>F</span><span class="text-black">PTS</span>
                     </div>
                     <div id="rankingListContent" class="mt-2 space-y-2"></div>
                 </div>
-                <div class="bg-black/80 text-[#FFD700] p-3 text-[10px] text-center rounded-lg shadow-lg">
-                    Legenda: D=Débitos(-1) | V=Vitórias | F=Finais | PTS=Pontos
-                </div>
+                <div class="bg-black/80 text-[#FFD700] p-3 text-[10px] text-center rounded-lg shadow-lg">Legenda: D=Débitos(-1) | V=Vitórias | F=Finais | PTS=Pontos</div>
             </div>
 
             <div id="rulesContainer" class="hidden space-y-4">
                 <div class="card-cut p-6 border-2 border-[#006400] text-center bg-yellow-50">
                     <h2 class="text-xl font-black text-[#006400] mb-2">REGULAMENTO 2026</h2>
-                    <p class="text-xs text-gray-600 leading-relaxed">
-                        🎯 <b>Objetivo:</b> Competição de palpites esportivos entre amigos.<br>
+                    <p class="text-xs text-gray-600 leading-relaxed text-left">
+                        🎯 <b>Objetivo:</b> Competição de palpites esportivos...<br>
                         🗓️ <b>Vigência:</b> 01/01/2026 a 31/12/2026.<br>
-                        ✅ A participação implica aceitação total das regras.
+                        ✅ A participação implica aceitação total.
                     </p>
                 </div>
                 <div id="rulesList" class="space-y-3"></div>
@@ -102,7 +85,6 @@
             <div id="profileContainer" class="hidden">
                 <div class="card-cut p-6 border-t-4 border-[#006400] text-center relative">
                     <h2 class="font-bold text-gray-400 text-xs mb-6 tracking-[0.2em]">CARTÃO DE MEMBRO</h2>
-                    
                     <div class="relative w-28 h-28 mx-auto mb-4">
                         <div id="profileAvatar" class="w-full h-full bg-gray-200 rounded-full border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
                             <i class="fas fa-user text-4xl text-gray-400"></i>
@@ -112,54 +94,26 @@
                             <input type="file" id="uploadPhoto" accept="image/*" class="hidden">
                         </label>
                     </div>
-
                     <h3 id="profileName" class="text-2xl font-black text-gray-800 uppercase leading-none">...</h3>
                     <p id="profileUser" class="text-gray-500 text-sm mb-6">@...</p>
-
                     <div id="financialCard" class="p-4 rounded-lg border mb-4 cursor-pointer btn-press transition-colors">
                         <div class="flex justify-between items-center">
-                            <div class="text-left">
-                                <p id="financialStatusText" class="font-black text-sm">VERIFICANDO...</p>
-                                <p id="financialSubtext" class="text-[10px] text-gray-500 font-bold">Toque para detalhes</p>
-                            </div>
+                            <div class="text-left"><p id="financialStatusText" class="font-black text-sm">VERIFICANDO...</p></div>
                             <i id="financialIcon" class="fas fa-circle-notch fa-spin text-2xl"></i>
                         </div>
                     </div>
-                    
                     <div id="pixArea" class="hidden bg-gray-50 p-4 rounded-lg border border-gray-200 text-left space-y-3">
-                        <div class="text-center mb-2">
-                            <i class="fas fa-qrcode text-3xl text-[#006400]"></i>
-                            <p class="font-bold text-[#006400]">PAGAMENTO PIX</p>
-                            <p class="text-2xl font-black">R$ 10,00</p>
-                        </div>
-                        <div>
-                            <label class="text-[10px] text-gray-500 font-bold">CHAVE PIX</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded">
-                                <button id="btnCopyPix" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-copy"></i></button>
-                            </div>
-                        </div>
-                        <button id="btnSendProof" class="w-full bg-green-500 text-white py-2 rounded font-bold text-xs shadow btn-press">
-                            <i class="fab fa-whatsapp"></i> ENVIAR COMPROVANTE
-                        </button>
+                        <div class="text-center mb-2"><i class="fas fa-qrcode text-3xl text-[#006400]"></i><p class="font-bold text-[#006400]">PAGAMENTO PIX</p><p class="text-2xl font-black">R$ 10,00</p></div>
+                        <div><label class="text-[10px] text-gray-500 font-bold">CHAVE PIX</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded"><button id="btnCopyPix" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-copy"></i></button></div></div>
+                        <button id="btnSendProof" class="w-full bg-green-500 text-white py-2 rounded font-bold text-xs shadow btn-press"><i class="fab fa-whatsapp"></i> ENVIAR COMPROVANTE</button>
                     </div>
-
                 </div>
             </div>
-
         </div>
     </main>
 
-    <div id="potModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6">
-        <div class="card-cut w-full max-w-sm p-8 text-center relative border-t-4 border-[#FFD700]">
-            <i class="fas fa-piggy-bank text-5xl text-[#FFD700] mb-4 drop-shadow-sm"></i>
-            <h2 class="text-xl font-bold text-gray-800">POTE DE OURO</h2>
-            <div class="my-6">
-                <p id="potValue" class="text-4xl font-black text-[#006400]">R$ 0,00</p>
-                <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Prêmio Acumulado</p>
-            </div>
-            <button onclick="document.getElementById('potModal').classList.add('hidden')" class="w-full bg-[#006400] text-white py-3 font-bold rounded shadow-lg btn-press">SHOW!</button>
-        </div>
+    <div id="modalOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6" onclick="closeModal(event)">
+        <div id="modalContent" class="w-full max-w-sm" onclick="event.stopPropagation()"></div>
     </div>
 
     <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t safe-bottom flex justify-around p-2 z-50 shadow-2xl">
@@ -189,22 +143,22 @@
         const db = getFirestore(app);
         let currentUser = null;
 
-        // --- DADOS DAS REGRAS (Igual ao Android) ---
+        // Regras Completas
         const rulesData = [
-            { t: "1️⃣ FINANCEIRO", c: "💰 Mensalidade: R$ 10,00 (Venc. dia 10). Inadimplência gera perda de pontos (-1 a cada 5 dias) e perda do direito de voto." },
-            { t: "2️⃣ PREMIAÇÃO", c: "🥇 1º: 60% | 🥈 2º: 30% | 🥉 3º: 10% do pote anual acumulado." },
-            { t: "3️⃣ PONTUAÇÃO", c: "✅ Acerto: 3 pts. 🏆 Finais: 6 pts (Peso 2). 🌟 Oitavas Perfeitas: +3 pts bônus." },
-            { t: "4️⃣ COMPETIÇÕES", c: "Copa do Mundo, Champions, Libertadores, Copa do Brasil, Sul-Americana, etc. Apenas mata-mata conta." },
-            { t: "5️⃣ DESEMPATE", c: "1. Menor inadimplência. 2. Mais Vitórias. 3. Mais Finais. 4. Sorteio." },
-            { t: "6️⃣ SISTEMA", c: "Votos exclusivos pelo App/Site. O sistema trava edições após o prazo automaticamente." }
+            { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal: R$ 10,00 (Venc. dia 10).\n⚠️ Inadimplência: -1 ponto a cada 5 dias de atraso e perda do direito de voto." },
+            { t: "2️⃣ PREMIAÇÃO FINAL", c: "🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%\nDo pote anual acumulado." },
+            { t: "3️⃣ SISTEMA DE PONTUAÇÃO", c: "✅ Acerto: 3 pontos.\n🔥 Finais: 6 pontos (Peso 2).\n💥 Oitavas Perfeitas: +3 pontos bônus." },
+            { t: "4️⃣ COMPETIÇÕES VÁLIDAS", c: "Copa do Mundo, Champions League, Libertadores, Copa do Brasil, Sul-Americana e outras copas mata-mata." },
+            { t: "5️⃣ CRITÉRIOS DE DESEMPATE", c: "1. Menor inadimplência (D)\n2. Maior nº de vitórias (V)\n3. Maior nº de finais (F)\n4. Sorteio." },
+            { t: "6️⃣ PLATAFORMAS OFICIAIS", c: "Palpites exclusivos pelo App Android ou Site/PWA. Votos por WhatsApp não são válidos." },
+            { t: "7️⃣ BLOQUEIO DE EDIÇÃO", c: "O sistema trava automaticamente qualquer palpite após o horário oficial do jogo (deadline)." }
         ];
 
-        // --- AUTH ---
         document.getElementById('btnLoginAction').onclick = async () => {
             const user = document.getElementById('userInput').value.trim().toLowerCase();
             const pass = document.getElementById('passInput').value;
             try { await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); } 
-            catch (e) { alert("Dados incorretos."); }
+            catch (e) { alert("Acesso negado."); }
         };
 
         onAuthStateChanged(auth, user => {
@@ -217,31 +171,23 @@
                 showTab('matches');
                 calculatePot();
             } else {
-                // Reset visual para login
                 document.getElementById('loginScreen').classList.remove('hidden');
                 document.getElementById('mainLists').classList.add('hidden');
                 document.getElementById('bottomNav').classList.add('hidden');
-                document.getElementById('btnLogout').classList.add('hidden');
             }
         });
 
-        // --- NAVEGAÇÃO ---
         window.showTab = (tab) => {
             const content = document.getElementById('appContent');
-            // Remove classes antigas de fundo
             content.classList.remove('tab-matches', 'tab-ranking', 'tab-rules', 'tab-profile');
             content.classList.add(`tab-${tab}`);
-            
             ['matches', 'ranking', 'rules', 'profile'].forEach(t => {
                 document.getElementById(`${t}Container`)?.classList.add('hidden');
-                document.getElementById('matchesList')?.classList.add('hidden'); // match list fica fora do container generico no html
+                document.getElementById('matchesList')?.classList.add('hidden');
                 document.getElementById(`nav-${t}`).classList.replace('text-[#006400]', 'text-gray-400');
             });
-
-            if(tab === 'matches') {
-                document.getElementById('matchesList').classList.remove('hidden');
-                loadMatches();
-            } else {
+            if(tab === 'matches') { document.getElementById('matchesList').classList.remove('hidden'); loadMatches(); }
+            else {
                 document.getElementById(`${tab}Container`).classList.remove('hidden');
                 if(tab === 'ranking') loadRanking();
                 if(tab === 'rules') renderRules();
@@ -250,255 +196,252 @@
             document.getElementById(`nav-${tab}`).classList.replace('text-gray-400', 'text-[#006400]');
         };
 
-        // --- REGRAS ---
-        function renderRules() {
-            const list = document.getElementById('rulesList');
-            if(list.innerHTML !== "") return; // Evita re-render
-            list.innerHTML = rulesData.map(r => `
-                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-                    <button class="w-full text-left font-bold text-sm text-[#006400] flex justify-between items-center" onclick="this.nextElementSibling.classList.toggle('hidden')">
-                        ${r.t} <i class="fas fa-chevron-down text-xs"></i>
-                    </button>
-                    <div class="hidden mt-3 text-xs text-gray-700 leading-relaxed border-t pt-2">${r.c}</div>
-                </div>`).join('');
-        }
+        // --- SECTION HEADERS ---
+        const SectionHeader = (title, color) => `
+            <div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm mb-4">
+                <h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs">${title}</h4>
+            </div>`;
 
-        // --- JOGOS ---
         async function loadMatches() {
             const list = document.getElementById('matchesList');
             list.innerHTML = `<div class="text-center py-20 text-green-800"><i class="fas fa-spinner fa-spin fa-2x"></i></div>`;
             const snap = await getDocs(collection(db, "matches"));
             const now = new Date();
-            list.innerHTML = "";
-
-            // Filtra e ordena
-            let matches = [];
-            snap.forEach(doc => matches.push({id: doc.id, ...doc.data()}));
             
-            // Ordenação: Abertos primeiro, depois fechados sem resultado, depois finalizados
-            matches.sort((a, b) => {
-                const dateA = a.deadline.toDate();
-                const dateB = b.deadline.toDate();
-                // Lógica simplificada: ordena por data
-                return dateA - dateB;
+            let open = [], waiting = [], finished = [];
+            
+            snap.forEach(doc => {
+                const m = {id: doc.id, ...doc.data()};
+                const deadline = m.deadline.toDate();
+                if(m.winner) finished.push(m);
+                else if(now > deadline) waiting.push(m);
+                else open.push(m);
             });
 
-            for (const m of matches) {
-                const deadline = m.deadline.toDate();
-                const expired = now > deadline;
-                
-                // Pega voto
-                const vRef = doc(db, "guesses", `${m.id}_${currentUser.uid}`);
-                const vSnap = await getDoc(vRef);
-                const userVote = vSnap.exists() ? vSnap.data().teamSelected : "";
+            // Ordenação
+            open.sort((a,b) => a.deadline.toDate() - b.deadline.toDate());
+            waiting.sort((a,b) => b.deadline.toDate() - a.deadline.toDate());
+            finished.sort((a,b) => b.deadline.toDate() - a.deadline.toDate());
 
-                const card = `
-                    <div class="card-cut p-5 relative border-l-[6px] ${m.winner ? 'border-gray-400 opacity-90' : (expired ? 'border-yellow-500' : 'border-[#006400]')}">
-                        <div class="flex justify-between text-[11px] font-bold text-gray-400 mb-5 uppercase tracking-wider">
-                            <span>${m.competition} • ${m.round}</span>
-                            <span class="${expired ? 'text-red-600' : 'text-green-700'}">
-                                ${expired ? 'ENCERRADO' : 'FECHA: ' + deadline.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'})}
+            let html = "";
+            if(open.length) html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400") + open.map(m => createMatchCard(m, false)).join('');
+            if(waiting.length) html += SectionHeader("⏳ AGUARDANDO RESULTADO ⏳", "#FBC02D") + waiting.map(m => createMatchCard(m, true)).join('');
+            if(finished.length) html += SectionHeader("🚫 CONFRONTOS FINALIZADOS 🚫", "#D32F2F") + finished.map(m => createMatchCard(m, true)).join('');
+            
+            list.innerHTML = html || `<div class="text-center text-gray-500 mt-10">Nenhum jogo encontrado.</div>`;
+            // Re-hidratar votos (Async)
+            document.querySelectorAll('.match-card').forEach(async el => {
+                const mid = el.dataset.id;
+                const vRef = doc(db, "guesses", `${mid}_${currentUser.uid}`);
+                const vSnap = await getDoc(vRef);
+                if(vSnap.exists()) {
+                    const vote = vSnap.data().teamSelected;
+                    const btn = el.querySelector(`button[data-team="${vote}"] span`);
+                    if(btn) btn.className = "text-[11px] font-black text-center leading-tight text-[#006400] underline decoration-2 underline-offset-4";
+                }
+            });
+        }
+
+        function createMatchCard(m, expired) {
+            const deadline = m.deadline.toDate();
+            return `
+                <div class="match-card card-cut p-5 relative border-l-[6px] ${m.winner ? 'border-red-600 opacity-90' : (expired ? 'border-yellow-500' : 'border-[#006400]')} mb-6" data-id="${m.id}">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-[#006400] uppercase">${m.competition}</span>
+                            <span class="text-[12px] text-gray-400 font-serif">${m.round}</span>
+                            <span class="text-[10px] font-bold ${expired ? 'text-red-600' : 'text-black'} mt-1">
+                                ${expired ? 'Encerrado:' : 'Prazo:'} ${deadline.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}
                             </span>
                         </div>
-                        
-                        <div class="flex items-center justify-between px-2">
-                            <button onclick="vote('${m.id}', '${m.teamA}')" ${expired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-[42%]">
-                                <img src="${m.teamAUrl}" class="w-14 h-14 object-contain mb-3 drop-shadow-sm">
-                                <span class="text-[12px] font-black text-center leading-tight ${userVote === m.teamA ? 'text-[#006400] underline decoration-2 underline-offset-4' : 'text-gray-800'}">${m.teamA}</span>
-                            </button>
-                            
-                            <span class="italic font-black text-gray-200 text-2xl">VS</span>
-                            
-                            <button onclick="vote('${m.id}', '${m.teamB}')" ${expired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-[42%]">
-                                <img src="${m.teamBUrl}" class="w-14 h-14 object-contain mb-3 drop-shadow-sm">
-                                <span class="text-[12px] font-black text-center leading-tight ${userVote === m.teamB ? 'text-[#006400] underline decoration-2 underline-offset-4' : 'text-gray-800'}">${m.teamB}</span>
-                            </button>
-                        </div>
-                        ${userVote && !expired ? `<p class="text-center text-[10px] text-green-700 font-bold mt-4 bg-green-50 py-1 rounded border border-green-100">Voto confirmado: ${userVote}</p>` : ''}
-                        ${m.winner ? `<div class="mt-4 text-center border-t pt-2"><span class="text-[10px] text-gray-400 font-bold">VENCEDOR</span><p class="text-[#006400] font-black text-lg">${m.winner}</p></div>` : ''}
+                        <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', ${expired}, '${m.winner||''}')" class="text-[#006400]">
+                            <i class="fas ${expired ? 'fa-eye' : 'fa-users'} text-lg"></i>
+                        </button>
                     </div>
-                `;
-                list.innerHTML += card;
-            }
-            if(matches.length === 0) list.innerHTML = `<div class="text-center text-gray-500 mt-10">Nenhum jogo encontrado.</div>`;
+                    
+                    <div class="flex items-center justify-between px-2">
+                        <button onclick="vote('${m.id}', '${m.teamA}')" ${expired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-[42%]" data-team="${m.teamA}">
+                            <img src="${m.teamAUrl}" class="w-14 h-14 object-contain mb-3 drop-shadow-sm">
+                            <span class="text-[12px] font-black text-center leading-tight text-gray-800">${m.teamA}</span>
+                        </button>
+                        <span class="italic font-black text-gray-200 text-2xl">VS</span>
+                        <button onclick="vote('${m.id}', '${m.teamB}')" ${expired ? 'disabled' : ''} class="btn-press flex flex-col items-center w-[42%]" data-team="${m.teamB}">
+                            <img src="${m.teamBUrl}" class="w-14 h-14 object-contain mb-3 drop-shadow-sm">
+                            <span class="text-[12px] font-black text-center leading-tight text-gray-800">${m.teamB}</span>
+                        </button>
+                    </div>
+                    ${m.winner ? `<div class="mt-4 text-center border-t pt-2"><span class="text-[10px] text-gray-400 font-bold">VENCEDOR</span><p class="text-[#006400] font-black text-lg">${m.winner}</p></div>` : ''}
+                </div>`;
         }
 
         window.vote = async (mId, team) => {
             if(!currentUser) return;
-            try {
-                await setDoc(doc(db, "guesses", `${mId}_${currentUser.uid}`), { matchId: mId, userId: currentUser.uid, teamSelected: team, timestamp: new Date() });
-                loadMatches();
-            } catch(e) { console.error(e); }
+            await setDoc(doc(db, "guesses", `${mId}_${currentUser.uid}`), { matchId: mId, userId: currentUser.uid, teamSelected: team, timestamp: new Date() });
+            loadMatches(); // Simples reload para atualizar visual
         };
+
+        // --- VOTANTES MODAL ---
+        window.openVoters = async (mId, tA, tB, expired, winner) => {
+            const modal = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
+            modal.classList.remove('hidden');
+            content.innerHTML = `<div class="card-cut p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
+
+            const guessesSnap = await getDocs(query(collection(db, "guesses"), where("matchId", "==", mId))); // Requer índice composto se for complexo, mas aqui é simples
+            // OBS: Onde clause client-side filtering se não tiver indice
+            const allGuesses = [];
+            guessesSnap.forEach(d => allGuesses.push(d.data()));
+            
+            const usersSnap = await getDocs(collection(db, "users"));
+            const usersMap = {};
+            usersSnap.forEach(u => usersMap[u.id] = u.data());
+
+            let listHtml = "";
+            if(allGuesses.length === 0) listHtml = `<p class="text-sm text-gray-500 py-4">Nenhum voto registrado.</p>`;
+            
+            // Ordenação (Vencedores primeiro)
+            allGuesses.sort((a,b) => {
+                const nameA = usersMap[a.userId]?.name || "";
+                const nameB = usersMap[b.userId]?.name || "";
+                if(winner) {
+                    const winA = a.teamSelected === winner;
+                    const winB = b.teamSelected === winner;
+                    if(winA && !winB) return -1;
+                    if(!winA && winB) return 1;
+                }
+                return nameA.localeCompare(nameB);
+            });
+
+            allGuesses.forEach(g => {
+                const u = usersMap[g.userId] || {name: "Desconhecido"};
+                const isWinner = winner && g.teamSelected === winner;
+                const isLoser = winner && g.teamSelected !== winner;
+                const rowBg = isWinner ? 'bg-green-50' : (isLoser ? 'bg-red-50' : 'bg-white');
+                const icon = isWinner ? '<i class="fas fa-check-circle text-green-700"></i>' : (isLoser ? '<i class="fas fa-times-circle text-red-600"></i>' : '');
+
+                listHtml += `
+                    <div class="flex items-center justify-between p-2 rounded mb-1 border-b border-gray-100 ${rowBg}">
+                        <div class="flex items-center gap-2">
+                            ${u.photoBase64 ? `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-6 h-6 rounded-full object-cover">` : `<i class="fas fa-user-circle text-gray-300"></i>`}
+                            <span class="text-xs font-bold truncate max-w-[120px]">${u.name}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${expired ? `<span class="text-[10px] font-black">${g.teamSelected}</span> ${icon}` : `<span class="text-[10px] text-gray-400 italic"><i class="fas fa-lock text-[10px]"></i> Sigilo</span>`}
+                        </div>
+                    </div>`;
+            });
+
+            content.innerHTML = `
+                <div class="card-cut p-0 overflow-hidden">
+                    <div class="bg-gray-50 p-4 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-[#006400] text-sm uppercase">${expired ? 'Palpites Registrados' : 'Quem já votou?'}</h3>
+                        <button onclick="closeModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="max-h-[60vh] overflow-y-auto p-4 space-y-1">
+                        ${listHtml}
+                    </div>
+                    <div class="p-3 bg-gray-50 text-center">
+                        <button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button>
+                    </div>
+                </div>`;
+        };
+
+        window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
 
         // --- RANKING ---
         async function loadRanking() {
+            // ... (Lógica idêntica à anterior, mas com adição de Modal de Detalhes) ...
             const list = document.getElementById('rankingListContent');
             list.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin"></i></div>`;
-            
-            // Busca dados
-            const [usersSnap, guessesSnap, matchesSnap] = await Promise.all([
-                getDocs(collection(db, "users")),
-                getDocs(collection(db, "guesses")),
-                getDocs(collection(db, "matches"))
-            ]);
-
-            const matches = [];
-            matchesSnap.forEach(d => matches.push({id: d.id, ...d.data()}));
-            const finishedMatches = matches.filter(m => m.winner);
+            const [usersSnap, guessesSnap, matchesSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches"))]);
+            const matches = []; matchesSnap.forEach(d => matches.push({id: d.id, ...d.data()}));
+            const finished = matches.filter(m => m.winner);
             
             let users = [];
             usersSnap.forEach(uDoc => {
                 const u = uDoc.data();
-                let points = 0, vics = 0, finals = 0;
-                
-                // Calcula pontos
-                const userGuesses = [];
-                guessesSnap.forEach(g => { if(g.data().userId === uDoc.id) userGuesses.push(g.data()); });
-
-                userGuesses.forEach(g => {
-                    const m = finishedMatches.find(fm => fm.id === g.matchId);
-                    if(m && m.winner === g.teamSelected) {
-                        const isFinal = m.round === "Final";
-                        points += isFinal ? 6 : 3;
-                        vics++;
-                        if(isFinal) finals++;
+                let p=0, v=0, f=0;
+                const hist = [];
+                guessesSnap.forEach(g => { 
+                    if(g.data().userId === uDoc.id) {
+                        const m = finished.find(fm => fm.id === g.data().matchId);
+                        if(m) {
+                            const hit = m.winner === g.data().teamSelected;
+                            const isFin = m.round === "Final";
+                            if(hit) { p += isFin?6:3; v++; if(isFin)f++; hist.push(`✅ Acertou: ${m.teamA} x ${m.teamB} (+${isFin?6:3})`); }
+                            else hist.push(`👎 Errou: ${m.teamA} x ${m.teamB}`);
+                        }
                     }
                 });
-
-                // Penalidade Débitos
-                const debts = u.debts || 0;
-                points -= debts;
-
-                users.push({
-                    name: u.name || "Sem Nome",
-                    points, vics, finals, debts,
-                    photo: u.photoBase64 || ""
-                });
+                const d = u.debts||0; p-=d; if(d>0) hist.push(`🔻 Penalidade (-${d})`);
+                users.push({id: uDoc.id, name: u.name||"Sem Nome", p, v, f, d, photo: u.photoBase64, history: hist});
             });
 
-            // Ordenação (Pontos > Débitos > Vitórias > Finais)
-            users.sort((a,b) => {
-                if(b.points !== a.points) return b.points - a.points;
-                if(a.debts !== b.debts) return a.debts - b.debts;
-                if(b.vics !== a.vics) return b.vics - a.vics;
-                return b.finals - a.finals;
-            });
-
+            users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f);
+            
             list.innerHTML = "";
             users.forEach((u, i) => {
                 const pos = i + 1;
-                const medal = pos === 1 ? '🥇' : (pos === 2 ? '🥈' : (pos === 3 ? '🥉' : `${pos}º`));
-                const bgClass = pos === 1 ? 'bg-yellow-50' : (pos === 2 ? 'bg-gray-50' : (pos === 3 ? 'bg-orange-50' : 'bg-white'));
-                
+                const bg = pos === 1 ? 'bg-yellow-50' : (pos <= 3 ? 'bg-gray-50' : 'bg-white');
                 list.innerHTML += `
-                    <div class="${bgClass} rounded-lg p-3 flex items-center border border-gray-100 shadow-sm">
-                        <div class="w-[30px] font-bold text-center text-gray-700">${medal}</div>
-                        <div class="flex-1 flex items-center pl-2 gap-2 overflow-hidden">
-                            ${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-6 h-6 rounded-full object-cover border border-gray-300">` : `<i class="fas fa-user-circle text-gray-300 text-xl"></i>`}
-                            <span class="text-xs font-bold truncate">${u.name}</span>
+                    <div class="${bg} rounded-lg p-3 flex items-center border border-gray-100 shadow-sm text-xs">
+                        <div class="w-[30px] font-bold text-center">${pos}º</div>
+                        <div class="flex-1 flex items-center pl-2 gap-2 overflow-hidden" onclick="openPhoto('${u.photo}', '${u.name}')">
+                            ${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-6 h-6 rounded-full object-cover border">` : `<i class="fas fa-user-circle text-gray-300 text-lg"></i>`}
+                            <span class="font-bold truncate">${u.name}</span>
                         </div>
-                        <div class="w-[30px] text-center text-red-500 font-bold text-xs">${u.debts}</div>
-                        <div class="w-[30px] text-center text-gray-500 text-xs">${u.vics}</div>
-                        <div class="w-[30px] text-center text-gray-500 text-xs">${u.finals}</div>
-                        <div class="w-[40px] text-center font-black text-sm text-[#006400]">${u.points}</div>
-                    </div>
-                `;
+                        <div class="w-[30px] text-center text-red-500 font-bold clickable" onclick="openHistory('${u.name}', '${u.history.join('|')}')">${u.d}</div>
+                        <div class="w-[30px] text-center text-gray-500 clickable" onclick="openHistory('${u.name}', '${u.history.join('|')}')">${u.v}</div>
+                        <div class="w-[30px] text-center text-gray-500 clickable" onclick="openHistory('${u.name}', '${u.history.join('|')}')">${u.f}</div>
+                        <div class="w-[40px] text-center font-black text-[#006400] text-sm clickable" onclick="openHistory('${u.name}', '${u.history.join('|')}')">${u.p}</div>
+                    </div>`;
             });
             document.getElementById('lastUpdateRanking').innerText = `Atualizado: ${new Date().toLocaleTimeString().slice(0,5)}`;
         }
 
-        // --- PERFIL & FINANCEIRO ---
-        async function loadProfile() {
-            const docRef = doc(db, "users", currentUser.uid);
-            const snap = await getDoc(docRef);
-            if(!snap.exists()) return;
-            const u = snap.data();
+        window.openHistory = (name, rawHist) => {
+            const hist = rawHist.split('|');
+            const html = hist.length ? hist.map(h => `<div class="border-b py-2 text-xs ${h.includes('✅')?'text-black':'text-red-500'}">${h}</div>`).join('') : '<p>Sem histórico.</p>';
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('modalContent').innerHTML = `
+                <div class="card-cut p-0 overflow-hidden">
+                    <div class="bg-gray-50 p-4 border-b"><h3 class="font-bold uppercase text-[#006400]">Extrato: ${name}</h3></div>
+                    <div class="max-h-[50vh] overflow-y-auto p-4">${html}</div>
+                    <div class="p-3 text-center"><button onclick="closeModal()" class="text-xs font-black text-[#006400]">FECHAR</button></div>
+                </div>`;
+        };
 
-            document.getElementById('profileName').innerText = u.name || "MEMBRO";
-            document.getElementById('profileUser').innerText = `@${u.username}`;
-            if(u.photoBase64) {
-                document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`;
-            }
-
-            // Lógica Financeira (Mockup de data atual)
-            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-            const currMonth = months[new Date().getMonth()];
-            const isPaid = u.payments && u.payments[currMonth];
-            
-            const stCard = document.getElementById('financialCard');
-            const stText = document.getElementById('financialStatusText');
-            const stIcon = document.getElementById('financialIcon');
-
-            if(isPaid || new Date().getFullYear() < 2026) {
-                stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800";
-                stText.innerText = "MENSALIDADE EM DIA";
-                stIcon.className = "fas fa-check-circle text-2xl";
-            } else {
-                stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800";
-                stText.innerText = "PAGAMENTO PENDENTE";
-                stIcon.className = "fas fa-exclamation-circle text-2xl";
-            }
-
-            // Carregar dados do PIX Admin
-            const finSnap = await getDoc(doc(db, "settings", "financial"));
-            if(finSnap.exists()) {
-                const fin = finSnap.data();
-                document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com";
-                // Botão Whats
-                document.getElementById('btnSendProof').onclick = () => {
-                    const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112.");
-                    window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank');
-                };
-            }
+        window.openPhoto = (b64, name) => {
+            if(!b64) return;
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('modalContent').innerHTML = `
+                <div class="card-cut p-4 text-center">
+                    <img src="data:image/jpeg;base64,${b64}" class="w-full rounded bg-gray-200 mb-4">
+                    <h3 class="font-bold uppercase">${name}</h3>
+                    <button onclick="closeModal()" class="mt-4 text-[#006400] font-black text-xs">FECHAR</button>
+                </div>`;
         }
 
-        // Upload Foto
-        document.getElementById('uploadPhoto').onchange = (e) => {
-            const file = e.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                    const base64 = reader.result.split(',')[1];
-                    await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 });
-                    loadProfile();
-                };
-                reader.readAsDataURL(file);
-            }
-        };
-
-        // Toggle Pix Area
-        document.getElementById('financialCard').onclick = () => {
-            document.getElementById('pixArea').classList.toggle('hidden');
-        };
-
-        // Copiar Pix
-        document.getElementById('btnCopyPix').onclick = () => {
-            const key = document.getElementById('pixKey');
-            key.select();
-            document.execCommand('copy');
-            alert("Chave Pix Copiada!");
-        };
-
-        // Pote de Ouro
-        async function calculatePot() {
-            const snap = await getDocs(collection(db, "users"));
-            let total = 0;
-            snap.forEach(d => {
-                const p = d.data().payments;
-                if(p) total += Object.values(p).filter(v => v).length * 10;
-            });
-            document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style: 'currency', currency: 'BRL'});
+        // --- OUTRAS FUNÇÕES ---
+        function renderRules() {
+            const list = document.getElementById('rulesList');
+            if(list.innerHTML !== "") return;
+            list.innerHTML = rulesData.map(r => `
+                <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                    <button class="w-full text-left font-bold text-sm text-[#006400] flex justify-between items-center" onclick="this.nextElementSibling.classList.toggle('hidden')">${r.t} <i class="fas fa-chevron-down text-xs"></i></button>
+                    <div class="hidden mt-3 text-xs text-gray-700 leading-relaxed border-t pt-2 whitespace-pre-line">${r.c}</div>
+                </div>`).join('');
         }
 
-        // Actions TopBar
+        // ... (Profile Logic e Pote Logic mantidos da versão anterior) ...
+        async function loadProfile() { /* Mesmo código anterior */ const docRef = doc(db, "users", currentUser.uid); const snap = await getDoc(docRef); if(!snap.exists()) return; const u = snap.data(); document.getElementById('profileName').innerText = u.name || "MEMBRO"; document.getElementById('profileUser').innerText = `@${u.username}`; if(u.photoBase64) document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`; const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const currMonth = months[new Date().getMonth()]; const isPaid = u.payments && u.payments[currMonth]; const stCard = document.getElementById('financialCard'); const stText = document.getElementById('financialStatusText'); const stIcon = document.getElementById('financialIcon'); if(isPaid || new Date().getFullYear() < 2026) { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800"; stText.innerText = "MENSALIDADE EM DIA"; stIcon.className = "fas fa-check-circle text-2xl"; } else { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800"; stText.innerText = "PAGAMENTO PENDENTE"; stIcon.className = "fas fa-exclamation-circle text-2xl"; } const finSnap = await getDoc(doc(db, "settings", "financial")); if(finSnap.exists()) { const fin = finSnap.data(); document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com"; document.getElementById('btnSendProof').onclick = () => { const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112."); window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank'); }; } }
+        document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onloadend = async () => { const base64 = reader.result.split(',')[1]; await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }; reader.readAsDataURL(file); } };
+        document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.toggle('hidden');
+        document.getElementById('btnCopyPix').onclick = () => { const key = document.getElementById('pixKey'); key.select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
+        async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style: 'currency', currency: 'BRL'}); }
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
-        document.getElementById('btnRefresh').onclick = () => {
-            const tab = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-','');
-            showTab(tab);
-        };
+        document.getElementById('btnRefresh').onclick = () => { const tab = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(tab); };
         document.getElementById('btnLogout').onclick = () => signOut(auth);
-
     </script>
 </body>
 </html>
