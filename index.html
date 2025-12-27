@@ -607,9 +607,47 @@ Término oficial: 31 de dezembro de 2026
             if(newPass && newPass.length >= 6) updatePassword(currentUser, newPass).then(() => alert("Senha alterada!")).catch(e => alert("Erro ao alterar senha. Faça login novamente."));
             else if(newPass) alert("Senha muito curta.");
         };
+        // --- FUNÇÃO AJUDA (ATUALIZADA COM GUIA RÁPIDO E v1.3.7) ---
         window.showChangelog = () => {
             document.getElementById('modalOverlay').classList.remove('hidden');
-            document.getElementById('modalContainer').innerHTML = `<div class="bg-white p-6"><h3 class="font-bold text-lg mb-4">Linha do Tempo</h3><p class="text-xs text-gray-600 mb-4"><b>v1.3.7 (Web):</b> Paridade completa com Android. Ranking interativo, upload de foto e extrato de pontos.</p><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-2 rounded">ENTENDI</button></div>`;
+            document.getElementById('modalContainer').innerHTML = `
+                <div class="bg-white p-6 max-h-[85vh] overflow-y-auto">
+                    <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">Linha do Tempo</h3>
+                    
+                    <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
+                        <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">💡 Guia Rápido</h4>
+                        <div class="text-xs text-gray-700 space-y-2 font-medium">
+                            <p>1. <b class="text-[#006400]">JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</p>
+                            <p>2. <b class="text-[#006400]">RANKING:</b> Toque na foto para zoom. Toque nos pontos para ver o extrato.</p>
+                            <p>3. <b class="text-[#006400]">REGRAS:</b> Fique por dentro do regulamento do nosso Bolão.</p>
+                            <p>4. <b class="text-[#006400]">PERFIL:</b> Altere foto e senha aqui. Pague sua mensalidade clicando no card financeiro.</p>
+                            <p>5. <b class="text-[#006400]">POTE:</b> Clique no porquinho para ver o prêmio acumulado.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">📜 Histórico de Versões</h4>
+                        
+                        <div class="mb-4 pb-4 border-b border-gray-100">
+                            <p class="text-xs font-black text-[#006400] mb-1">v1.3.7 (Atual): Organização e Facilidade</p>
+                            <ul class="text-[11px] text-gray-500 space-y-1 list-disc pl-4">
+                                <li><b>Listas Expansíveis:</b> As listas de "Aguardando Resultado" e "Finalizados" agora começam fechadas para limpar o visual. Toque para abrir.</li>
+                                <li><b>Admin:</b> Busca automática de logos para times recorrentes.</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-2">
+                            <p class="text-xs font-bold text-gray-400 mb-1">v1.3.6: Transparência Total</p>
+                            <ul class="text-[11px] text-gray-400 space-y-1 list-disc pl-4">
+                                <li><b>Extrato Raio-X:</b> Detalhes de erros e esquecimentos no ranking.</li>
+                                <li><b>Lista de Votantes:</b> Veja quem votou em quem (após o prazo).</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded-lg font-bold mt-6 shadow-lg btn-press text-sm">ENTENDI</button>
+                </div>
+            `;
         };
         async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'}); }
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
@@ -619,6 +657,7 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
 
 
 
