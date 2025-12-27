@@ -302,17 +302,24 @@ Término oficial: 31 de dezembro de 2026
                 open.sort((a,b)=>a.deadline.toDate()-b.deadline.toDate());
                 waiting.sort((a,b)=>b.deadline.toDate()-a.deadline.toDate());
                 finished.sort((a,b)=>b.deadline.toDate()-a.deadline.toDate());
+                
                 let html = "";
-                
-                // 1. JOGOS ABERTOS (Sempre Visíveis)
-                if(open.length) html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400") + await renderMatchList(open);
-                
+
+                // 1. JOGOS ABERTOS (SEMPRE MOSTRA O HEADER)
+                html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400");
+                if(open.length > 0) {
+                    html += await renderMatchList(open);
+                } else {
+                    html += `<div class="text-center text-gray-400 text-[10px] italic mb-6">Nenhum jogo aberto para votação no momento.</div>`;
+                }
+
                 // 2. AGUARDANDO RESULTADO (Colapsável)
                 if(waiting.length) {
                     html += `
                     <div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press">
-                        <div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm">
-                             <h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs">⏳ AGUARDANDO RESULTADO ⏳</h4>
+                        <div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
+                             <h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4>
+                             <i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i>
                         </div>
                     </div>
                     <div id="waitingContainer" class="hidden">
@@ -325,8 +332,9 @@ Término oficial: 31 de dezembro de 2026
                 if(finished.length) {
                     html += `
                     <div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press">
-                        <div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm">
-                             <h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs">🚫 CONFRONTOS FINALIZADOS 🚫</h4>
+                        <div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
+                             <h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 CONFRONTOS FINALIZADOS 🚫</h4>
+                             <i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i>
                         </div>
                     </div>
                     <div id="finishedContainer" class="hidden">
@@ -335,6 +343,27 @@ Término oficial: 31 de dezembro de 2026
                     `;
                 }
 
+                container.innerHTML = html;
+            } catch(e) { console.error(e); }
+            document.getElementById('progressBar').classList.add('hidden');
+        }
+
+        // Função auxiliar para alternar o ícone da seta
+        window.toggleWaiting = () => {
+            const el = document.getElementById('waitingContainer');
+            const icon = document.getElementById('iconWaiting');
+            el.classList.toggle('hidden');
+            icon.classList.toggle('fa-chevron-down');
+            icon.classList.toggle('fa-chevron-up');
+        };
+
+        window.toggleFinished = () => {
+            const el = document.getElementById('finishedContainer');
+            const icon = document.getElementById('iconFinished');
+            el.classList.toggle('hidden');
+            icon.classList.toggle('fa-chevron-down');
+            icon.classList.toggle('fa-chevron-up');
+        };
                 container.innerHTML = html || `<div class="text-center text-gray-500 mt-10">Nenhum jogo encontrado.</div>`;
             } catch(e) { console.error(e); }
             document.getElementById('progressBar').classList.add('hidden');
@@ -602,3 +631,4 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
