@@ -335,18 +335,22 @@ await setDoc(doc(db, "users", res.user.uid), {
                 }
 
                 // 2. AGUARDANDO RESULTADO (Colapsável)
-                if(waiting.length) {
-                    html += `
-                    <div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press">
-                        <div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
-                             <h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4>
-                             <i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i>
-                        </div>
+                // 2. AGUARDANDO RESULTADO (AGORA SEMPRE VISÍVEL)
+                // Removemos o 'if(waiting.length)' para que o botão apareça sempre
+                html += `
+                <div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press">
+                    <div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
+                         <h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4>
+                         <i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i>
                     </div>
-                    <div id="waitingContainer" class="hidden">
-                        ${await renderMatchList(waiting)}
-                    </div>
-                    `;
+                </div>
+                <div id="waitingContainer" class="hidden">
+                    ${waiting.length > 0 
+                        ? await renderMatchList(waiting) 
+                        : `<div class="text-center text-[#FF6D00] text-[10px] italic mb-6 font-bold">Nenhum jogo aguardando resultado no momento.</div>`
+                    }
+                </div>
+                `;
                 }
                 
                 // 3. JOGOS FINALIZADOS (Colapsável)
@@ -675,6 +679,7 @@ await setDoc(doc(db, "users", res.user.uid), {
     </script>
 </body>
 </html>
+
 
 
 
