@@ -244,7 +244,9 @@ Término oficial: 31 de dezembro de 2026
                 try {
                     const email = `${user}@bolao112.com`;
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
-                    await setDoc(doc(db, "users", res.user.uid), { 
+                    // Procure a parte document.getElementById('btnDoRegister').onclick...
+// Dentro do await setDoc... adicione appVersion:
+await setDoc(doc(db, "users", res.user.uid), { 
     name: name, 
     username: user, 
     createdAt: new Date(), 
@@ -252,6 +254,7 @@ Término oficial: 31 de dezembro de 2026
     debts: 0, 
     payments: {},
     appVersion: "Web v1.3.7" // <--- ADICIONE ISSO
+});
                     alert("Conta criada com sucesso! Você já está logado.");
                     closeModal();
                 } catch(e) { console.error(e); if(e.code === 'auth/email-already-in-use') alert("Este usuário já existe."); else alert("Erro ao criar conta: " + e.message); }
@@ -672,6 +675,7 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
 
 
 
