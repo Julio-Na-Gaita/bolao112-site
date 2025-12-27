@@ -251,9 +251,18 @@ Término oficial: 31 de dezembro de 2026
             };
         };
 
-        onAuthStateChanged(auth, user => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
+                
+                // --- REGISTRA A VERSÃO NO BANCO (NOVA LINHA) ---
+                try {
+                    await updateDoc(doc(db, "users", user.uid), { 
+                        appVersion: "Web v1.3.7" 
+                    });
+                } catch(e) { console.log("Erro ao atualizar versão: ", e); }
+                // -----------------------------------------------
+
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainScreens').classList.remove('hidden');
                 document.getElementById('bottomNav').classList.remove('hidden');
@@ -656,6 +665,7 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
 
 
 
