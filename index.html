@@ -213,12 +213,10 @@ Término oficial: 31 de dezembro de 2026
             catch (e) { alert("Dados incorretos."); }
         };
 
-        // --- NOVA LÓGICA: ESQUECI A SENHA (SIMPLIFICADO) ---
         document.getElementById('btnForgotPass').onclick = () => {
             alert("Utilizamos um sistema de login simplificado.\n\nPor favor, entre em contato com o Admin (Júlio) para resetar sua senha.");
         };
 
-        // --- NOVA LÓGICA: CRIAR CONTA ---
         document.getElementById('btnOpenRegister').onclick = () => {
             const modal = document.getElementById('modalOverlay');
             const cont = document.getElementById('modalContainer');
@@ -227,16 +225,12 @@ Término oficial: 31 de dezembro de 2026
                 <div class="bg-white p-6 relative">
                     <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400 p-2"><i class="fas fa-times text-xl"></i></button>
                     <h3 class="text-[#006400] font-black uppercase text-center mb-6 text-lg">Criar Nova Conta</h3>
-                    
                     <label class="block text-xs font-bold text-gray-500 mb-1">Nome Completo</label>
                     <input type="text" id="regName" placeholder="Ex: João da Silva" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
-                    
                     <label class="block text-xs font-bold text-gray-500 mb-1">Usuário (Login)</label>
                     <input type="text" id="regUser" placeholder="Ex: joaosilva (sem espaços)" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
-                    
                     <label class="block text-xs font-bold text-gray-500 mb-1">Senha</label>
                     <input type="password" id="regPass" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]">
-                    
                     <button id="btnDoRegister" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CADASTRAR</button>
                 </div>
             `;
@@ -245,40 +239,15 @@ Término oficial: 31 de dezembro de 2026
                 const name = document.getElementById('regName').value.trim();
                 const user = document.getElementById('regUser').value.trim().toLowerCase();
                 const pass = document.getElementById('regPass').value;
-
-                if(!name || !user || pass.length < 6) {
-                    alert("Preencha todos os campos corretamente. Senha deve ter no mínimo 6 dígitos.");
-                    return;
-                }
-
-                if(user.includes(" ")) {
-                    alert("O nome de usuário não pode conter espaços.");
-                    return;
-                }
-
+                if(!name || !user || pass.length < 6) { alert("Preencha todos os campos corretamente. Senha deve ter no mínimo 6 dígitos."); return; }
+                if(user.includes(" ")) { alert("O nome de usuário não pode conter espaços."); return; }
                 try {
-                    // 1. Criar no Authentication
                     const email = `${user}@bolao112.com`;
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
-                    
-                    // 2. Salvar dados no Firestore
-                    await setDoc(doc(db, "users", res.user.uid), {
-                        name: name,
-                        username: user,
-                        createdAt: new Date(),
-                        isAdmin: false,
-                        debts: 0,
-                        payments: {}
-                    });
-
+                    await setDoc(doc(db, "users", res.user.uid), { name: name, username: user, createdAt: new Date(), isAdmin: false, debts: 0, payments: {} });
                     alert("Conta criada com sucesso! Você já está logado.");
                     closeModal();
-
-                } catch(e) {
-                    console.error(e);
-                    if(e.code === 'auth/email-already-in-use') alert("Este usuário já existe.");
-                    else alert("Erro ao criar conta: " + e.message);
-                }
+                } catch(e) { console.error(e); if(e.code === 'auth/email-already-in-use') alert("Este usuário já existe."); else alert("Erro ao criar conta: " + e.message); }
             };
         };
 
@@ -313,7 +282,7 @@ Término oficial: 31 de dezembro de 2026
             if(tab === 'profile') loadProfile();
         };
 
-        // --- JOGOS (ATUALIZADO: COLLAPSIBLE PARA FINALIZADOS) ---
+        // --- JOGOS (ATUALIZADO: COLLAPSIBLE PARA FINALIZADOS E AGUARDANDO) ---
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
         
         async function loadMatches() {
@@ -334,16 +303,30 @@ Término oficial: 31 de dezembro de 2026
                 waiting.sort((a,b)=>b.deadline.toDate()-a.deadline.toDate());
                 finished.sort((a,b)=>b.deadline.toDate()-a.deadline.toDate());
                 let html = "";
-                if(open.length) html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400") + await renderMatchList(open);
-                if(waiting.length) html += SectionHeader("⏳ AGUARDANDO RESULTADO ⏳", "#FBC02D") + await renderMatchList(waiting);
                 
-                // MUDANÇA AQUI: JOGOS FINALIZADOS COLAPSÁVEIS
+                // 1. JOGOS ABERTOS (Sempre Visíveis)
+                if(open.length) html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400") + await renderMatchList(open);
+                
+                // 2. AGUARDANDO RESULTADO (Colapsável)
+                if(waiting.length) {
+                    html += `
+                    <div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press">
+                        <div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm">
+                             <h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs">⏳ AGUARDANDO RESULTADO ⏳</h4>
+                        </div>
+                    </div>
+                    <div id="waitingContainer" class="hidden">
+                        ${await renderMatchList(waiting)}
+                    </div>
+                    `;
+                }
+                
+                // 3. JOGOS FINALIZADOS (Colapsável)
                 if(finished.length) {
                     html += `
                     <div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press">
-                        <div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
+                        <div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm">
                              <h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs">🚫 CONFRONTOS FINALIZADOS 🚫</h4>
-                             <i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i>
                         </div>
                     </div>
                     <div id="finishedContainer" class="hidden">
@@ -357,18 +340,14 @@ Término oficial: 31 de dezembro de 2026
             document.getElementById('progressBar').classList.add('hidden');
         }
 
+        window.toggleWaiting = () => {
+            const el = document.getElementById('waitingContainer');
+            el.classList.toggle('hidden');
+        };
+
         window.toggleFinished = () => {
             const el = document.getElementById('finishedContainer');
-            const icon = document.getElementById('iconFinished');
-            if(el.classList.contains('hidden')) {
-                el.classList.remove('hidden');
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-up');
-            } else {
-                el.classList.add('hidden');
-                icon.classList.remove('fa-chevron-up');
-                icon.classList.add('fa-chevron-down');
-            }
+            el.classList.toggle('hidden');
         };
 
         async function renderMatchList(list) {
@@ -613,7 +592,7 @@ Término oficial: 31 de dezembro de 2026
         };
         window.showChangelog = () => {
             document.getElementById('modalOverlay').classList.remove('hidden');
-            document.getElementById('modalContainer').innerHTML = `<div class="bg-white p-6"><h3 class="font-bold text-lg mb-4">Linha do Tempo</h3><p class="text-xs text-gray-600 mb-4"><b>v1.3.6 (Web):</b> Paridade completa com Android. Ranking interativo, upload de foto e extrato de pontos.</p><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-2 rounded">ENTENDI</button></div>`;
+            document.getElementById('modalContainer').innerHTML = `<div class="bg-white p-6"><h3 class="font-bold text-lg mb-4">Linha do Tempo</h3><p class="text-xs text-gray-600 mb-4"><b>v1.3.7 (Web):</b> Paridade completa com Android. Ranking interativo, upload de foto e extrato de pontos.</p><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-2 rounded">ENTENDI</button></div>`;
         };
         async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'}); }
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
