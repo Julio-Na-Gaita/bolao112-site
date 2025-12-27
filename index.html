@@ -182,7 +182,6 @@ Término oficial: 31 de dezembro de 2026
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        // ADICIONADO: createUserWithEmailAndPassword e sendPasswordResetEmail
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -314,8 +313,9 @@ Término oficial: 31 de dezembro de 2026
             if(tab === 'profile') loadProfile();
         };
 
-        // --- JOGOS (PRESERVADO) ---
+        // --- JOGOS (ATUALIZADO: COLLAPSIBLE PARA FINALIZADOS) ---
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
+        
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
@@ -336,11 +336,41 @@ Término oficial: 31 de dezembro de 2026
                 let html = "";
                 if(open.length) html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400") + await renderMatchList(open);
                 if(waiting.length) html += SectionHeader("⏳ AGUARDANDO RESULTADO ⏳", "#FBC02D") + await renderMatchList(waiting);
-                if(finished.length) html += SectionHeader("🚫 CONFRONTOS FINALIZADOS 🚫", "#D32F2F") + await renderMatchList(finished);
+                
+                // MUDANÇA AQUI: JOGOS FINALIZADOS COLAPSÁVEIS
+                if(finished.length) {
+                    html += `
+                    <div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press">
+                        <div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
+                             <h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs">🚫 CONFRONTOS FINALIZADOS 🚫</h4>
+                             <i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i>
+                        </div>
+                    </div>
+                    <div id="finishedContainer" class="hidden">
+                        ${await renderMatchList(finished)}
+                    </div>
+                    `;
+                }
+
                 container.innerHTML = html || `<div class="text-center text-gray-500 mt-10">Nenhum jogo encontrado.</div>`;
             } catch(e) { console.error(e); }
             document.getElementById('progressBar').classList.add('hidden');
         }
+
+        window.toggleFinished = () => {
+            const el = document.getElementById('finishedContainer');
+            const icon = document.getElementById('iconFinished');
+            if(el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                el.classList.add('hidden');
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        };
+
         async function renderMatchList(list) {
             let html = "";
             for (const m of list) {
