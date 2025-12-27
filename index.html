@@ -334,7 +334,6 @@ await setDoc(doc(db, "users", res.user.uid), {
                     html += `<div class="text-center text-gray-400 text-[10px] italic mb-6">Nenhum jogo aberto para votação no momento.</div>`;
                 }
 
-                // 2. AGUARDANDO RESULTADO (Colapsável)
                 // 2. AGUARDANDO RESULTADO (AGORA SEMPRE VISÍVEL)
                 // Removemos o 'if(waiting.length)' para que o botão apareça sempre
                 html += `
@@ -351,8 +350,7 @@ await setDoc(doc(db, "users", res.user.uid), {
                     }
                 </div>
                 `;
-                }
-                
+                                
                 // 3. JOGOS FINALIZADOS (Colapsável)
                 if(finished.length) {
                     html += `
@@ -679,6 +677,7 @@ await setDoc(doc(db, "users", res.user.uid), {
     </script>
 </body>
 </html>
+
 
 
 
