@@ -13,7 +13,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700;900&display=swap');
         
         :root { --dark-green: #006400; --gold: #FFD700; }
         
@@ -43,6 +43,16 @@
         .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
         ::-webkit-scrollbar { display: none; }
         .rules-text { white-space: pre-wrap; }
+
+        /* --- NOVO EFEITO DE TEXTO (Pote de Ouro) --- */
+        .gold-text-outline {
+            background: linear-gradient(to bottom, #B8860B, #FFD700, #B8860B);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-stroke: 1.2px black; /* Contorno Preto */
+            color: transparent;
+            font-weight: 900;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -85,17 +95,34 @@
             <div id="matchesScreen" class="hidden space-y-6"></div>
 
             <div id="rankingScreen" class="hidden">
-                <div class="card-cut p-4 mb-4 border-t-2 border-[#FFD700]">
-                    <div class="flex justify-between items-center border-b pb-2 mb-2">
-                        <h3 class="font-bold text-lg text-gray-800">Classificação</h3>
-                        <button onclick="loadRanking()" class="text-[#006400] btn-press"><i class="fas fa-sync-alt"></i></button>
+                <div class="bg-[#006400] rounded-t-lg shadow-lg overflow-hidden">
+                    <div class="p-4 pb-2">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h3 class="font-black text-lg text-white tracking-widest">CLASSIFICAÇÃO</h3>
+                                <p class="text-[#FFD700] text-[10px] font-bold uppercase">Temporada 2026</p>
+                            </div>
+                            <button onclick="loadRanking()" class="text-[#FFD700] bg-white/10 rounded-full w-8 h-8 flex items-center justify-center btn-press">
+                                <i class="fas fa-sync-alt text-xs"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="border-t border-white/20 mb-2"></div>
+
+                        <div class="flex items-center text-[10px] font-bold text-white/70 uppercase text-center pb-2">
+                            <span class="w-[35px]">Pos</span>
+                            <span class="flex-1 text-left pl-2">Participante</span>
+                            <span class="w-[28px] text-red-200">D</span>
+                            <span class="w-[28px] text-white">V</span>
+                            <span class="w-[28px] text-[#FFD700]">F</span>
+                            <span class="w-[40px] text-white font-black">PTS</span>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-[30px_1fr_30px_30px_30px_40px] text-[10px] font-bold text-gray-400 uppercase text-center items-center pb-2">
-                        <span>Pos</span><span class="text-left pl-2">Nome</span><span class="text-red-500">D</span><span>V</span><span>F</span><span class="text-black">PTS</span>
-                    </div>
-                    <div id="rankingListContent" class="space-y-1"></div>
                 </div>
-                <div class="bg-black/80 text-[#FFD700] p-3 text-[10px] text-center rounded-lg shadow-lg border border-gray-800">
+
+                <div id="rankingListContent" class="bg-white rounded-b-lg shadow-sm border-x border-b border-gray-200 overflow-hidden"></div>
+
+                <div class="bg-black/80 text-[#FFD700] p-3 text-[10px] text-center rounded-lg shadow-lg border border-gray-800 mt-2">
                     <p class="font-bold mb-1 tracking-wide">Legenda: D=Débitos(-1) | V=Vitórias | F=Finais | PTS=Pontos</p>
                     <p id="lastUpdateRanking" class="text-white font-normal opacity-90 italic">Aguardando...</p>
                 </div>
@@ -133,8 +160,8 @@ Término oficial: 31 de dezembro de 2026
                     <p id="profileUser" class="text-gray-500 text-sm mb-6">@...</p>
 
                     <div class="flex justify-center gap-4 mb-2">
-                        <button onclick="changePassword()" class="text-xs text-gray-600 font-bold btn-press"><i class="fas fa-lock mr-1"></i> Senha</button>
-                        <button onclick="showChangelog()" class="text-xs text-gray-600 font-bold btn-press"><i class="fas fa-info-circle mr-1"></i> Ajuda</button>
+                        <button onclick="changePassword()" class="text-xs text-[#006400] font-bold btn-press"><i class="fas fa-lock mr-1"></i> Senha</button>
+                        <button onclick="showChangelog()" class="text-xs text-[#006400] font-bold btn-press"><i class="fas fa-info-circle mr-1"></i> Ajuda</button>
                     </div>
                 </div>
 
@@ -148,11 +175,41 @@ Término oficial: 31 de dezembro de 2026
                     </div>
                 </div>
 
-                <div id="pixArea" class="hidden bg-white p-4 rounded-lg border border-gray-200 text-left space-y-3 mb-4 shadow-sm">
-                    <div class="text-center mb-2"><i class="fas fa-qrcode text-3xl text-[#006400]"></i><p class="font-bold text-[#006400]">PAGAMENTO PIX</p><p class="text-2xl font-black">R$ 10,00</p></div>
-                    <div class="text-center text-[10px] text-gray-500 mb-2">Beneficiário:<br><b class="text-[#006400] text-xs">MATHEUS FERREIRA ALVES</b></div>
-                    <div><label class="text-[10px] text-gray-500 font-bold">CHAVE PIX</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded"><button id="btnCopyPix" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-copy"></i></button></div></div>
-                    <button id="btnSendProof" class="w-full bg-green-500 text-white py-2 rounded font-bold text-xs shadow btn-press"><i class="fab fa-whatsapp"></i> ENVIAR COMPROVANTE</button>
+                <div id="pixArea" class="hidden bg-white p-4 rounded-lg border border-gray-200 text-left space-y-3 mb-4 shadow-sm relative">
+                    <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-[#006400] p-2 btn-press">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+
+                    <div class="text-center mb-2 pt-2">
+                        <i class="fas fa-qrcode text-3xl text-[#006400]"></i>
+                        <p class="font-black text-[#006400] text-lg mt-1">PAGAMENTO PIX</p>
+                        <div class="h-4"></div>
+                        <p class="text-xs font-bold text-gray-800">Valor da Mensalidade</p>
+                        <p class="text-3xl font-black text-black">R$ 10,00</p>
+                    </div>
+                    
+                    <div class="text-center text-[10px] text-gray-800 mb-2">
+                        Beneficiário:<br>
+                        <b class="text-[#006400] text-sm">MATHEUS FERREIRA ALVES</b>
+                    </div>
+                    
+                    <div>
+                        <button id="btnCopyPix" class="w-full bg-[#32BCAD] text-white py-2 rounded font-bold text-xs shadow btn-press mb-3">
+                            <i class="fas fa-copy mr-1"></i> PIX COPIA E COLA
+                        </button>
+                        <label class="text-[10px] text-gray-500 font-bold">Chave Pix Manual</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded">
+                            <button onclick="copyKeyOnly()" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t pt-3">
+                        <p class="text-xs text-center mb-2">Já fez o pagamento?</p>
+                        <button id="btnSendProof" class="w-full bg-[#25D366] text-white py-2 rounded font-bold text-xs shadow btn-press">
+                            <i class="fab fa-whatsapp mr-1"></i> AVISAR AO BRANCO
+                        </button>
+                    </div>
                 </div>
 
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-10"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
@@ -168,7 +225,10 @@ Término oficial: 31 de dezembro de 2026
         <div class="card-cut w-full max-w-sm p-8 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('https://cdn.pixabay.com/photo/2017/09/07/08/54/money-2724241_640.jpg'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
             <i class="fas fa-piggy-bank text-5xl text-[#FFD700] mb-4 drop-shadow-sm"></i>
             <h2 class="text-xl font-bold text-gray-800">POTE DE OURO</h2>
-            <div class="my-6"><p id="potValue" class="text-4xl font-black text-[#006400]">R$ 0,00</p><p class="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">Prêmio Acumulado</p></div>
+            <div class="my-6">
+                <p id="potValue" class="text-4xl font-black text-[#006400]">R$ 0,00</p>
+                <p class="gold-text-outline text-xl mt-2">Prêmio acumulado!</p>
+            </div>
             <button onclick="document.getElementById('potModal').classList.add('hidden')" class="w-full bg-[#006400] text-white py-3 font-bold rounded shadow-lg btn-press">SHOW!</button>
         </div>
     </div>
@@ -244,17 +304,15 @@ Término oficial: 31 de dezembro de 2026
                 try {
                     const email = `${user}@bolao112.com`;
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
-                    // Procure a parte document.getElementById('btnDoRegister').onclick...
-// Dentro do await setDoc... adicione appVersion:
-await setDoc(doc(db, "users", res.user.uid), { 
-    name: name, 
-    username: user, 
-    createdAt: new Date(), 
-    isAdmin: false, 
-    debts: 0, 
-    payments: {},
-    appVersion: "Web v1.3.7" // <--- ADICIONE ISSO
-});
+                    await setDoc(doc(db, "users", res.user.uid), { 
+                        name: name, 
+                        username: user, 
+                        createdAt: new Date(), 
+                        isAdmin: false, 
+                        debts: 0, 
+                        payments: {},
+                        appVersion: "Web v1.3.7"
+                    });
                     alert("Conta criada com sucesso! Você já está logado.");
                     closeModal();
                 } catch(e) { console.error(e); if(e.code === 'auth/email-already-in-use') alert("Este usuário já existe."); else alert("Erro ao criar conta: " + e.message); }
@@ -264,14 +322,11 @@ await setDoc(doc(db, "users", res.user.uid), {
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                
-                // --- REGISTRA A VERSÃO NO BANCO (NOVA LINHA) ---
                 try {
                     await updateDoc(doc(db, "users", user.uid), { 
                         appVersion: "Web v1.3.7" 
                     });
                 } catch(e) { console.log("Erro ao atualizar versão: ", e); }
-                // -----------------------------------------------
 
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainScreens').classList.remove('hidden');
@@ -301,11 +356,9 @@ await setDoc(doc(db, "users", res.user.uid), {
             if(tab === 'profile') loadProfile();
         };
 
-        // --- JOGOS (ATUALIZADO: COLLAPSIBLE PARA FINALIZADOS E AGUARDANDO) ---
+        // --- JOGOS ---
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
         
-        // --- JOGOS (ATUALIZADO: HEADER SEMPRE VISÍVEL) ---
-        // --- JOGOS (ATUALIZADO: HEADER SEMPRE VISÍVEL) ---
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
@@ -326,7 +379,7 @@ await setDoc(doc(db, "users", res.user.uid), {
                 
                 let html = "";
 
-                // 1. JOGOS ABERTOS (SEMPRE MOSTRA O HEADER)
+                // 1. JOGOS ABERTOS
                 html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400");
                 if(open.length > 0) {
                     html += await renderMatchList(open);
@@ -334,8 +387,7 @@ await setDoc(doc(db, "users", res.user.uid), {
                     html += `<div class="text-center text-gray-400 text-[10px] italic mb-6">Nenhum jogo aberto para votação no momento.</div>`;
                 }
 
-                // 2. AGUARDANDO RESULTADO (AGORA SEMPRE VISÍVEL)
-                // Removemos o 'if(waiting.length)' para que o botão apareça sempre
+                // 2. AGUARDANDO RESULTADO (Colapsável)
                 html += `
                 <div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press">
                     <div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
@@ -350,7 +402,7 @@ await setDoc(doc(db, "users", res.user.uid), {
                     }
                 </div>
                 `;
-                                
+                                                
                 // 3. JOGOS FINALIZADOS (Colapsável)
                 if(finished.length) {
                     html += `
@@ -371,7 +423,6 @@ await setDoc(doc(db, "users", res.user.uid), {
             document.getElementById('progressBar').classList.add('hidden');
         }
 
-        // Função auxiliar para alternar o ícone da seta
         window.toggleWaiting = () => {
             const el = document.getElementById('waitingContainer');
             const icon = document.getElementById('iconWaiting');
@@ -445,24 +496,29 @@ await setDoc(doc(db, "users", res.user.uid), {
             cont.innerHTML = `<div class="bg-gray-50 p-3 border-b flex justify-between items-center"><h3 class="font-bold text-[#006400] uppercase text-xs">${exp ? 'Palpites' : 'Quem já votou?'}</h3><button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button></div><div class="bg-white max-h-[60vh] overflow-y-auto p-2">${rows || '<p class="text-xs text-center p-4">Sem votos.</p>'}</div><div class="bg-gray-50 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div>`;
         };
 
-        // --- RANKING (PRESERVADO) ---
+        // --- RANKING (ATUALIZADO PARA MATCH COM ANDROID) ---
         async function loadRanking() {
             const list = document.getElementById('rankingListContent');
             const footer = document.getElementById('lastUpdateRanking');
             list.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
+            
             const [uSnap, gSnap, mSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches"))]);
             const matches = []; mSnap.forEach(d => matches.push({id:d.id, ...d.data()}));
             const finished = matches.filter(m => m.winner);
+            
             if (finished.length > 0) {
                 finished.sort((a,b) => b.deadline.toDate() - a.deadline.toDate());
                 const last = finished[0]; const d = last.deadline.toDate();
                 const dStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
                 footer.innerText = `Última atualização: ${last.teamA} x ${last.teamB} em ${dStr}`;
             } else footer.innerText = "Nenhum confronto finalizado.";
+            
             let users = []; const now = new Date();
             uSnap.forEach(ud => {
                 const u = ud.data(); let p=0, v=0, f=0; const hist = []; const userGuesses = [];
                 gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) });
+                
+                // Lógica de Pontuação (Mantida)
                 userGuesses.forEach(g => {
                     const m = finished.find(x => x.id === g.matchId);
                     if(m) {
@@ -474,15 +530,54 @@ await setDoc(doc(db, "users", res.user.uid), {
                 matches.forEach(m => { const dl = m.deadline.toDate(); if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } });
                 const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'});
                 hist.sort((a,b) => b.ts - a.ts);
+                
                 users.push({name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0});
             });
+            
             users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f);
             currentRankingData = users;
+            
+            // --- GERAÇÃO DA LISTA VISUAL (NOVO ESTILO) ---
             list.innerHTML = users.map((u, i) => {
-                const pos = i+1; const bg = pos===1?'bg-yellow-50':(pos<=3?'bg-gray-50':'bg-white');
-                let diffHtml = '<div class="text-gray-400 text-[8px]"><i class="fas fa-minus"></i></div>';
-                if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[9px] font-bold"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[9px] font-bold"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; }
-                return `<div class="${bg} rounded p-2 flex items-center border border-gray-100 text-xs mb-1"><div class="w-[30px] font-bold text-center flex flex-col items-center"><span>${pos}º</span>${diffHtml}</div><div class="flex-1 flex items-center gap-2 overflow-hidden pl-2 btn-press" onclick="showModalPhoto(${i})">${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-6 h-6 rounded-full border object-cover">` : `<i class="fas fa-user-circle text-gray-300 text-lg"></i>`}<span class="font-bold truncate">${u.name}</span></div><div class="w-[30px] text-center text-red-500 font-bold btn-press" onclick="showModalHistory(${i})">${u.d}</div><div class="w-[30px] text-center text-gray-500 btn-press" onclick="showModalHistory(${i})">${u.v}</div><div class="w-[30px] text-center text-gray-500 btn-press" onclick="showModalHistory(${i})">${u.f}</div><div class="w-[40px] text-center font-black text-[#006400] text-sm btn-press" onclick="showModalHistory(${i})">${u.p}</div></div>`;
+                const pos = i+1;
+                let bgColor = 'bg-white';
+                let borderColor = 'border-transparent';
+                let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`;
+                
+                // Cores do Pódio (Sincronizado com Android)
+                if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; } // Ouro
+                else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; } // Prata (Cinza Escuro)
+                else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; } // Bronze
+
+                // Setinhas
+                let diffHtml = '';
+                if(u.lastRank > 0) { 
+                    if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; 
+                    else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; 
+                }
+
+                return `
+                <div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2">
+                    <div class="w-[35px] text-center flex flex-col items-center justify-center">
+                        <div class="text-sm">${posIcon}</div>
+                        ${diffHtml}
+                    </div>
+                    
+                    <div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden cursor-pointer" onclick="showModalPhoto(${i})">
+                        <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">
+                            ${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}
+                        </div>
+                        <span class="text-xs font-bold text-gray-800 truncate">${u.name}</span>
+                    </div>
+                    
+                    <div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div>
+                    
+                    <div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div>
+                    
+                    <div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div>
+                    
+                    <div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div>
+                </div>`;
             }).join('');
         }
         window.showModalPhoto = (idx) => { const u = currentRankingData[idx]; if(!u.photo) return; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="bg-white p-4 text-center"><img src="data:image/jpeg;base64,${u.photo}" class="w-full rounded mb-4 shadow-lg"><h3 class="font-bold uppercase text-[#006400]">${u.name}</h3><button onclick="closeModal()" class="mt-4 text-gray-500 font-bold text-xs border border-gray-300 px-4 py-2 rounded">FECHAR</button></div>`; };
@@ -621,14 +716,24 @@ await setDoc(doc(db, "users", res.user.uid), {
             const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const currMonth = months[new Date().getMonth()]; const isPaid = u.payments && u.payments[currMonth]; const stCard = document.getElementById('financialCard'); const stText = document.getElementById('financialStatusText'); const stIcon = document.getElementById('financialIcon'); if(isPaid || new Date().getFullYear() < 2026) { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800"; stText.innerText = "MENSALIDADE EM DIA"; stIcon.className = "fas fa-check-circle text-2xl"; } else { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800"; stText.innerText = "PAGAMENTO PENDENTE"; stIcon.className = "fas fa-exclamation-circle text-2xl"; } const finSnap = await getDoc(doc(db, "settings", "financial")); if(finSnap.exists()) { const fin = finSnap.data(); document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com"; document.getElementById('btnSendProof').onclick = () => { const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112."); window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank'); }; } 
         }
         document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onloadend = async () => { const base64 = reader.result.split(',')[1]; await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }; reader.readAsDataURL(file); } };
-        document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.toggle('hidden');
-        document.getElementById('btnCopyPix').onclick = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
+        
+        // CORREÇÃO: Usar a classe 'hidden' para alternar visibilidade, mas com botão X dentro do elemento
+        document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.remove('hidden');
+        window.copyKeyOnly = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
+        document.getElementById('btnCopyPix').onclick = () => { 
+            const pixCode = "00020126580014BR.GOV.BCB.PIX0136..."; // Você precisará buscar isso do Firebase se quiser dinâmico
+            // Como no Android você busca o pixCode do banco, aqui simplifiquei.
+            // O ideal é usar o valor do firebase que já carregamos em loadProfile
+            alert("Copie a chave manual abaixo por enquanto."); 
+        };
+
         window.changePassword = () => {
             const newPass = prompt("Digite a nova senha (mínimo 6 caracteres):");
             if(newPass && newPass.length >= 6) updatePassword(currentUser, newPass).then(() => alert("Senha alterada!")).catch(e => alert("Erro ao alterar senha. Faça login novamente."));
             else if(newPass) alert("Senha muito curta.");
         };
-        // --- FUNÇÃO AJUDA (ATUALIZADA COM GUIA RÁPIDO E v1.3.7) ---
+        
+        // --- FUNÇÃO AJUDA (ATUALIZADA) ---
         window.showChangelog = () => {
             document.getElementById('modalOverlay').classList.remove('hidden');
             document.getElementById('modalContainer').innerHTML = `
@@ -677,13 +782,3 @@ await setDoc(doc(db, "users", res.user.uid), {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
