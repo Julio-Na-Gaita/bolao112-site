@@ -135,7 +135,6 @@ Término oficial: 31 de dezembro de 2026
 ✅ ✍️ A participação no bolão implica aceitação integral e irrestrita deste regulamento.</p>
                 </div>
                 <div id="rulesList" class="space-y-2"></div>
-                
                 <div class="h-10"></div>
             </div>
 
@@ -255,7 +254,7 @@ Término oficial: 31 de dezembro de 2026
         let currentUser = null;
         let currentRankingData = [];
 
-        // --- DADOS DAS REGRAS (RESTAURADO E CORRIGIDO) ---
+        // ... (Regras e Auth mantidos) ...
         const rulesData = [
             { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal\nValor: R$ 10,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" },
             { t: "2️⃣ PREMIAÇÃO FINAL (CLASSIFICAÇÃO GERAL)", c: "O valor total arrecadado ao longo da temporada formará o Pote Anual.\nDistribuição:\n🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%" },
@@ -314,7 +313,7 @@ Término oficial: 31 de dezembro de 2026
                         isAdmin: false, 
                         debts: 0, 
                         payments: {},
-                        appVersion: "Web v1.3.7"
+                        appVersion: "Web v1.3.8"
                     });
                     alert("Conta criada com sucesso! Você já está logado.");
                     closeModal();
@@ -327,7 +326,7 @@ Término oficial: 31 de dezembro de 2026
                 currentUser = user;
                 try {
                     await updateDoc(doc(db, "users", user.uid), { 
-                        appVersion: "Web v1.3.7" 
+                        appVersion: "Web v1.3.8" 
                     });
                 } catch(e) { console.log("Erro ao atualizar versão: ", e); }
 
@@ -359,20 +358,7 @@ Término oficial: 31 de dezembro de 2026
             if(tab === 'profile') loadProfile();
         };
 
-        // --- RENDERIZAÇÃO DAS REGRAS (RECUPERADO) ---
-        function renderRules() { 
-            const list = document.getElementById('rulesList');
-            if(list.innerHTML !== "") return;
-            list.innerHTML = rulesData.map(r => `
-                <div class="bg-white rounded p-3 shadow-sm border border-gray-100">
-                    <button class="w-full text-left font-bold text-xs text-[#006400] flex justify-between" onclick="this.nextElementSibling.classList.toggle('hidden')">
-                        ${r.t} <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="hidden mt-2 text-xs text-gray-600 border-t pt-2 whitespace-pre-line">${r.c}</div>
-                </div>`).join(''); 
-        }
-
-        // --- DEMAIS FUNÇÕES DO APP ---
+        // --- JOGOS (Com try/catch para segurança) ---
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
         
         async function loadMatches() {
@@ -632,7 +618,6 @@ Término oficial: 31 de dezembro de 2026
             </div>`; 
         };
 
-        // --- PAINEL ADMIN E FINANCEIRO ---
         window.openAdminMenu = () => {
             const modal = document.getElementById('modalOverlay');
             const cont = document.getElementById('modalContainer');
@@ -719,6 +704,50 @@ Término oficial: 31 de dezembro de 2026
             });
             html += `</div></div></div>`;
             cont.innerHTML = html;
+        };
+
+        // --- FUNÇÃO AJUDA (CORRIGIDA) ---
+        window.showChangelog = () => {
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('modalContainer').innerHTML = `
+                <div class="bg-white p-6 max-h-[85vh] overflow-y-auto">
+                    <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">Linha do Tempo</h3>
+                    
+                    <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
+                        <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">💡 Guia Rápido</h4>
+                        <div class="text-xs text-gray-700 space-y-2 font-medium">
+                            <p>1. <b class="text-[#006400]">JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</p>
+                            <p>2. <b class="text-[#006400]">RANKING:</b> Toque na foto para zoom. Toque nos pontos para ver o extrato.</p>
+                            <p>3. <b class="text-[#006400]">REGRAS:</b> Fique por dentro do regulamento do nosso Bolão.</p>
+                            <p>4. <b class="text-[#006400]">PERFIL:</b> Altere foto e senha aqui. Pague sua mensalidade clicando no card financeiro.</p>
+                            <p>5. <b class="text-[#006400]">POTE:</b> Clique no porquinho para ver o prêmio acumulado.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">📜 Histórico de Versões</h4>
+                        
+                        <div class="mb-4 pb-4 border-b border-gray-100">
+                            <p class="text-xs font-black text-[#006400] mb-1">v1.3.8 (Atual): Melhorias Visuais</p>
+                            <ul class="text-[11px] text-gray-500 space-y-1 list-disc pl-4">
+                                <li><b>Tabela Profissional:</b> Novo design compacto e moderno para a classificação.</li>
+                                <li><b>Cabeçalho Dark:</b> Estilo oficial de transmissão esportiva.</li>
+                                <li><b>Pódio Colorido:</b> Destaque para Ouro, Prata e Bronze.</li>
+                                <li><b>Pote de Ouro:</b> Textos agora com contorno para melhor leitura.</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-2">
+                            <p class="text-xs font-bold text-gray-400 mb-1">v1.3.7: Organização</p>
+                            <ul class="text-[11px] text-gray-400 space-y-1 list-disc pl-4">
+                                <li><b>Listas Expansíveis:</b> Jogos aguardando e finalizados agora recolhem.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded-lg font-bold mt-6 shadow-lg btn-press text-sm">ENTENDI</button>
+                </div>
+            `;
         };
 
         // --- CARREGAMENTO DO PERFIL (SEGURANÇA REFORÇADA) ---
