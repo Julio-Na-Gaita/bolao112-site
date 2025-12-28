@@ -31,10 +31,8 @@
             border: 1px solid #e5e7eb;
         }
 
-        /* --- FUNDOS DINÂMICOS (CORRIGIDOS CONFORME SEUS ARQUIVOS) --- */
+        /* --- FUNDOS DINÂMICOS --- */
         .bg-main { background-size: cover; background-attachment: fixed; background-position: center; transition: background 0.3s ease; }
-        
-        /* CORREÇÃO: bg_jogos.jpeg em vez de .png */
         .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg'); }
         .tab-ranking { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_ranking.png'); }
         .tab-rules { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_regras.png'); }
@@ -137,6 +135,7 @@ Término oficial: 31 de dezembro de 2026
 ✅ ✍️ A participação no bolão implica aceitação integral e irrestrita deste regulamento.</p>
                 </div>
                 <div id="rulesList" class="space-y-2"></div>
+                
                 <div class="h-10"></div>
             </div>
 
@@ -256,7 +255,7 @@ Término oficial: 31 de dezembro de 2026
         let currentUser = null;
         let currentRankingData = [];
 
-        // ... (Regras e Auth mantidos) ...
+        // --- DADOS DAS REGRAS (RESTAURADO E CORRIGIDO) ---
         const rulesData = [
             { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal\nValor: R$ 10,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" },
             { t: "2️⃣ PREMIAÇÃO FINAL (CLASSIFICAÇÃO GERAL)", c: "O valor total arrecadado ao longo da temporada formará o Pote Anual.\nDistribuição:\n🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%" },
@@ -360,7 +359,20 @@ Término oficial: 31 de dezembro de 2026
             if(tab === 'profile') loadProfile();
         };
 
-        // --- JOGOS (Com try/catch para segurança) ---
+        // --- RENDERIZAÇÃO DAS REGRAS (RECUPERADO) ---
+        function renderRules() { 
+            const list = document.getElementById('rulesList');
+            if(list.innerHTML !== "") return;
+            list.innerHTML = rulesData.map(r => `
+                <div class="bg-white rounded p-3 shadow-sm border border-gray-100">
+                    <button class="w-full text-left font-bold text-xs text-[#006400] flex justify-between" onclick="this.nextElementSibling.classList.toggle('hidden')">
+                        ${r.t} <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="hidden mt-2 text-xs text-gray-600 border-t pt-2 whitespace-pre-line">${r.c}</div>
+                </div>`).join(''); 
+        }
+
+        // --- DEMAIS FUNÇÕES DO APP ---
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
         
         async function loadMatches() {
@@ -497,7 +509,6 @@ Término oficial: 31 de dezembro de 2026
                 if (exp) { voteDisplay = `<span class="text-[11px] font-bold">${d.teamSelected}</span>`; if(win) { if(d.teamSelected === win) { bg = "bg-green-50/90"; voteDisplay += ` <i class="fas fa-check-circle text-green-600"></i>`; } else { bg = "bg-red-50/90"; voteDisplay += ` <i class="fas fa-times-circle text-red-600"></i>`; } } }
                 rows += `<div class="flex justify-between items-center p-2 border-b border-gray-100 ${bg}"><div class="flex items-center gap-2">${u.photoBase64 ? `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-6 h-6 rounded-full object-cover">` : `<i class="fas fa-user-circle text-gray-300"></i>`}<span class="text-xs font-bold truncate w-24">${u.name}</span></div><div>${voteDisplay}</div></div>`;
             });
-            // IMAGEM DINAMICA (CORRIGIDO)
             const bgImg = exp ? 'fundo_dialog_palpites.jpeg' : 'bg_dialog_votantes.jpeg';
             cont.innerHTML = `
             <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
@@ -621,6 +632,7 @@ Término oficial: 31 de dezembro de 2026
             </div>`; 
         };
 
+        // --- PAINEL ADMIN E FINANCEIRO ---
         window.openAdminMenu = () => {
             const modal = document.getElementById('modalOverlay');
             const cont = document.getElementById('modalContainer');
@@ -646,6 +658,24 @@ Término oficial: 31 de dezembro de 2026
                 </div>`;
             loadAdminMatches();
         };
+
+        async function loadAdminMatches() {
+            const snap = await getDocs(collection(db, "matches"));
+            const listDiv = document.getElementById('adminMatchList');
+            if(!listDiv) return;
+            let html = "";
+            snap.forEach(d => {
+                const m = d.data();
+                html += `<div class="flex justify-between items-center p-2 border-b border-gray-100">
+                    <span class="truncate w-2/3 font-bold">${m.teamA} x ${m.teamB}</span>
+                    <div class="flex gap-2">
+                        <button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500" onclick="alert('Exclusão apenas no App')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            });
+            listDiv.innerHTML = html || "Sem jogos.";
+        }
 
         window.openFinancialScreen = async () => {
             const cont = document.getElementById('modalContainer');
@@ -691,7 +721,7 @@ Término oficial: 31 de dezembro de 2026
             cont.innerHTML = html;
         };
 
-        // --- FUNÇÃO CARREGAR PERFIL REESCRITA (CORREÇÃO ERRO) ---
+        // --- CARREGAMENTO DO PERFIL (SEGURANÇA REFORÇADA) ---
         async function loadProfile() {
             if (!currentUser) return;
             try {
@@ -717,11 +747,11 @@ Término oficial: 31 de dezembro de 2026
                     adminBtn.classList.add('hidden');
                 }
 
-                // 4. Status Financeiro (Com proteção contra dados nulos)
+                // 4. Status Financeiro
                 const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
                 const currMonth = months[new Date().getMonth()];
-                // Proteção: usa {} vazio se u.payments for undefined
-                const payments = u.payments || {}; 
+                // Proteção para caso u.payments não exista
+                const payments = u.payments || {};
                 const isPaid = payments[currMonth] === true;
                 
                 const stCard = document.getElementById('financialCard');
@@ -738,7 +768,7 @@ Término oficial: 31 de dezembro de 2026
                     stIcon.className = "fas fa-exclamation-circle text-2xl";
                 }
 
-                // 5. Configurações PIX (Com try/catch separado)
+                // 5. Configurações PIX
                 try {
                     const finSnap = await getDoc(doc(db, "settings", "financial"));
                     if (finSnap.exists()) {
@@ -755,7 +785,6 @@ Término oficial: 31 de dezembro de 2026
 
             } catch (error) {
                 console.error("Erro crítico no loadProfile:", error);
-                // Opcional: alert("Erro ao carregar perfil. Tente recarregar.");
             }
         }
 
