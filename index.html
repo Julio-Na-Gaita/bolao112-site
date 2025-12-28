@@ -31,7 +31,7 @@
             border: 1px solid #e5e7eb;
         }
 
-        /* --- FUNDOS --- */
+        /* --- FUNDOS DINÂMICOS --- */
         .bg-main { background-size: cover; background-attachment: fixed; background-position: center; transition: background 0.3s ease; }
         .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg'); }
         .tab-ranking { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_ranking.png'); }
@@ -69,13 +69,19 @@
     </nav>
 
     <main id="appContent" class="flex-1 overflow-y-auto bg-main tab-matches pb-32">
+        
         <section id="loginScreen" class="flex flex-col items-center justify-center min-h-[70vh] p-6">
             <div class="card-cut w-full max-w-sm p-8 border-t-4 border-[#006400]">
                 <h2 class="text-xl font-black text-center text-[#006400] mb-8 uppercase tracking-widest">Acesso Membros</h2>
                 <input type="text" id="userInput" placeholder="Usuário" class="w-full p-4 bg-gray-50 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-green-700">
                 <input type="password" id="passInput" placeholder="Senha" class="w-full p-4 bg-gray-50 border rounded-lg mb-2 outline-none focus:ring-2 focus:ring-green-700">
-                <div class="flex justify-end mb-6"><button id="btnForgotPass" class="text-xs text-gray-500 font-bold hover:text-[#006400] transition-colors">Esqueci a senha</button></div>
+                
+                <div class="flex justify-end mb-6">
+                    <button id="btnForgotPass" class="text-xs text-gray-500 font-bold hover:text-[#006400] transition-colors">Esqueci a senha</button>
+                </div>
+
                 <button id="btnLoginAction" class="w-full bg-[#006400] text-white py-4 font-bold rounded-lg btn-press shadow-lg mb-6">ACESSAR</button>
+                
                 <div class="border-t pt-6 text-center">
                     <p class="text-xs text-gray-400 mb-2 font-bold">Ainda não tem cadastro?</p>
                     <button id="btnOpenRegister" class="text-[#006400] font-black text-sm uppercase btn-press border border-[#006400] px-6 py-2 rounded-full hover:bg-green-50">CRIAR CONTA</button>
@@ -91,12 +97,22 @@
                 <div class="bg-[#006400] rounded-t-lg shadow-lg overflow-hidden">
                     <div class="p-4 pb-2">
                         <div class="flex justify-between items-center mb-4">
-                            <div><h3 class="font-black text-lg text-white tracking-widest">CLASSIFICAÇÃO</h3><p class="text-[#FFD700] text-[10px] font-bold uppercase">Temporada 2026</p></div>
-                            <button onclick="loadRanking()" class="text-[#FFD700] bg-white/10 rounded-full w-8 h-8 flex items-center justify-center btn-press"><i class="fas fa-sync-alt text-xs"></i></button>
+                            <div>
+                                <h3 class="font-black text-lg text-white tracking-widest">CLASSIFICAÇÃO</h3>
+                                <p class="text-[#FFD700] text-[10px] font-bold uppercase">Temporada 2026</p>
+                            </div>
+                            <button onclick="loadRanking()" class="text-[#FFD700] bg-white/10 rounded-full w-8 h-8 flex items-center justify-center btn-press">
+                                <i class="fas fa-sync-alt text-xs"></i>
+                            </button>
                         </div>
                         <div class="border-t border-white/20 mb-2"></div>
                         <div class="flex items-center text-[10px] font-bold text-white/70 uppercase text-center pb-2">
-                            <span class="w-[35px]">Pos</span><span class="flex-1 text-left pl-2">Participante</span><span class="w-[28px] text-red-200">D</span><span class="w-[28px] text-white">V</span><span class="w-[28px] text-[#FFD700]">F</span><span class="w-[40px] text-white font-black">PTS</span>
+                            <span class="w-[35px]">Pos</span>
+                            <span class="flex-1 text-left pl-2">Participante</span>
+                            <span class="w-[28px] text-red-200">D</span>
+                            <span class="w-[28px] text-white">V</span>
+                            <span class="w-[28px] text-[#FFD700]">F</span>
+                            <span class="w-[40px] text-white font-black">PTS</span>
                         </div>
                     </div>
                 </div>
@@ -114,7 +130,9 @@ Competição de palpites esportivos entre amigos, baseada exclusivamente nos pri
 
 🗓️ <b>VIGÊNCIA DO BOLÃO</b>
 Início oficial: 01 de janeiro de 2026
-Término oficial: 31 de dezembro de 2026</p>
+Término oficial: 31 de dezembro de 2026
+
+✅ ✍️ A participação no bolão implica aceitação integral e irrestrita deste regulamento.</p>
                 </div>
                 <div id="rulesList" class="space-y-2"></div>
                 <div class="h-10"></div>
@@ -124,39 +142,89 @@ Término oficial: 31 de dezembro de 2026</p>
                 <div class="card-cut p-6 border-t-4 border-[#006400] text-center relative mb-4">
                     <h2 class="font-bold text-gray-400 text-xs mb-6 tracking-[0.2em]">CARTÃO DE MEMBRO</h2>
                     <div class="relative w-28 h-28 mx-auto mb-4">
-                        <div id="profileAvatar" class="w-full h-full bg-gray-200 rounded-full border-4 border-white shadow-lg overflow-hidden flex items-center justify-center"><i class="fas fa-user text-4xl text-gray-400"></i></div>
+                        <div id="profileAvatar" class="w-full h-full bg-gray-200 rounded-full border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
+                            <i class="fas fa-user text-4xl text-gray-400"></i>
+                        </div>
                     </div>
-                    <label class="inline-block bg-white border border-[#006400] text-[#006400] px-4 py-1 rounded-full text-xs font-bold shadow-sm mb-4 cursor-pointer btn-press"><i class="fas fa-camera mr-1"></i> Alterar Foto<input type="file" id="uploadPhoto" accept="image/*" class="hidden"></label>
+                    <label class="inline-block bg-white border border-[#006400] text-[#006400] px-4 py-1 rounded-full text-xs font-bold shadow-sm mb-4 cursor-pointer btn-press">
+                        <i class="fas fa-camera mr-1"></i> Alterar Foto
+                        <input type="file" id="uploadPhoto" accept="image/*" class="hidden">
+                    </label>
+
                     <h3 id="profileName" class="text-xl font-black text-gray-800 uppercase leading-tight mb-1">...</h3>
                     <p id="profileUser" class="text-gray-500 text-sm mb-6">@...</p>
+
                     <div class="flex justify-center gap-4 mb-2">
                         <button onclick="changePassword()" class="text-xs text-[#006400] font-bold btn-press"><i class="fas fa-lock mr-1"></i> Senha</button>
                         <button onclick="showChangelog()" class="text-xs text-[#006400] font-bold btn-press"><i class="fas fa-info-circle mr-1"></i> Ajuda</button>
                     </div>
                 </div>
+
                 <div id="financialCard" class="p-4 rounded-lg border mb-4 cursor-pointer btn-press transition-colors bg-white shadow-sm">
-                    <div class="flex justify-between items-center"><div class="text-left"><p id="financialStatusText" class="font-black text-sm">VERIFICANDO...</p><p class="text-[10px] text-gray-500 font-bold">Toque para detalhes</p></div><i id="financialIcon" class="fas fa-circle-notch fa-spin text-2xl"></i></div>
-                </div>
-                <div id="pixArea" class="hidden relative bg-white rounded-lg border border-gray-200 text-left space-y-3 mb-4 shadow-sm overflow-hidden">
-                    <div class="absolute inset-0 z-0"><img src="bg_pix.jpeg" class="w-full h-full object-cover opacity-50"></div>
-                    <div class="relative z-10 p-4 pt-6">
-                        <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-[#006400] p-2 btn-press"><i class="fas fa-times text-xl"></i></button>
-                        <div class="text-center mb-2"><i class="fas fa-qrcode text-3xl text-[#006400]"></i><p class="font-black text-[#006400] text-lg mt-1">PAGAMENTO PIX</p><div class="h-4"></div><p class="text-xs font-bold text-gray-800">Valor da Mensalidade</p><p class="text-3xl font-black text-black">R$ 10,00</p></div>
-                        <div class="text-center text-[10px] text-gray-800 mb-2">Beneficiário:<br><b class="text-[#006400] text-sm">MATHEUS FERREIRA ALVES</b></div>
-                        <div><button id="btnCopyPix" class="w-full bg-[#32BCAD] text-white py-2 rounded font-bold text-xs shadow btn-press mb-3"><i class="fas fa-copy mr-1"></i> PIX COPIA E COLA</button><label class="text-[10px] text-gray-500 font-bold">Chave Pix Manual</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded shadow-sm"><button onclick="copyKeyOnly()" class="bg-[#006400] text-white px-3 rounded shadow-sm"><i class="fas fa-copy"></i></button></div></div>
-                        <div class="border-t border-gray-300 pt-3 mt-3"><p class="text-xs text-center mb-2 font-bold text-gray-700">Já fez o pagamento?</p><button id="btnSendProof" class="w-full bg-[#25D366] text-white py-2 rounded font-bold text-xs shadow btn-press"><i class="fab fa-whatsapp mr-1"></i> AVISAR AO BRANCO</button></div>
+                    <div class="flex justify-between items-center">
+                        <div class="text-left">
+                            <p id="financialStatusText" class="font-black text-sm">VERIFICANDO...</p>
+                            <p class="text-[10px] text-gray-500 font-bold">Toque para detalhes</p>
+                        </div>
+                        <i id="financialIcon" class="fas fa-circle-notch fa-spin text-2xl"></i>
                     </div>
                 </div>
+
+                <div id="pixArea" class="hidden relative bg-white rounded-lg border border-gray-200 text-left space-y-3 mb-4 shadow-sm overflow-hidden">
+                    <div class="absolute inset-0 z-0">
+                        <img src="bg_pix.jpeg" class="w-full h-full object-cover opacity-50">
+                    </div>
+                    <div class="relative z-10 p-4 pt-6">
+                        <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-[#006400] p-2 btn-press">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                        <div class="text-center mb-2">
+                            <i class="fas fa-qrcode text-3xl text-[#006400]"></i>
+                            <p class="font-black text-[#006400] text-lg mt-1">PAGAMENTO PIX</p>
+                            <div class="h-4"></div>
+                            <p class="text-xs font-bold text-gray-800">Valor da Mensalidade</p>
+                            <p class="text-3xl font-black text-black">R$ 10,00</p>
+                        </div>
+                        <div class="text-center text-[10px] text-gray-800 mb-2">
+                            Beneficiário:<br>
+                            <b class="text-[#006400] text-sm">MATHEUS FERREIRA ALVES</b>
+                        </div>
+                        <div>
+                            <button id="btnCopyPix" class="w-full bg-[#32BCAD] text-white py-2 rounded font-bold text-xs shadow btn-press mb-3">
+                                <i class="fas fa-copy mr-1"></i> PIX COPIA E COLA
+                            </button>
+                            <label class="text-[10px] text-gray-500 font-bold">Chave Pix Manual</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded shadow-sm">
+                                <button onclick="copyKeyOnly()" class="bg-[#006400] text-white px-3 rounded shadow-sm"><i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-300 pt-3 mt-3">
+                            <p class="text-xs text-center mb-2 font-bold text-gray-700">Já fez o pagamento?</p>
+                            <button id="btnSendProof" class="w-full bg-[#25D366] text-white py-2 rounded font-bold text-xs shadow btn-press">
+                                <i class="fab fa-whatsapp mr-1"></i> AVISAR AO BRANCO
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-10"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
             </div>
         </div>
     </main>
 
-    <div id="modalOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="closeModal()"><div id="modalContainer" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden" onclick="event.stopPropagation()"></div></div>
+    <div id="modalOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="closeModal()">
+        <div id="modalContainer" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden" onclick="event.stopPropagation()"></div>
+    </div>
+
     <div id="potModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6" onclick="document.getElementById('potModal').classList.add('hidden')">
         <div class="card-cut w-full max-w-sm p-8 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('https://cdn.pixabay.com/photo/2017/09/07/08/54/money-2724241_640.jpg'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
-            <i class="fas fa-piggy-bank text-5xl text-[#FFD700] mb-4 drop-shadow-sm"></i><h2 class="text-xl font-bold text-gray-800">POTE DE OURO</h2>
-            <div class="my-6"><p id="potValue" class="text-4xl font-black text-[#006400]">R$ 0,00</p><p class="gold-text-outline text-xl mt-2">Prêmio acumulado!</p></div>
+            <i class="fas fa-piggy-bank text-5xl text-[#FFD700] mb-4 drop-shadow-sm"></i>
+            <h2 class="text-xl font-bold text-gray-800">POTE DE OURO</h2>
+            <div class="my-6">
+                <p id="potValue" class="text-4xl font-black text-[#006400]">R$ 0,00</p>
+                <p class="gold-text-outline text-xl mt-2">Prêmio acumulado!</p>
+            </div>
             <button onclick="document.getElementById('potModal').classList.add('hidden')" class="w-full bg-[#006400] text-white py-3 font-bold rounded shadow-lg btn-press">SHOW!</button>
         </div>
     </div>
@@ -181,10 +249,10 @@ Término oficial: 31 de dezembro de 2026</p>
         let currentRankingData = [];
         let compMap = {}; 
 
-        // REGRAS
+        // --- REGRAS ---
         const rulesData = [ { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal\nValor: R$ 10,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" }, { t: "2️⃣ PREMIAÇÃO FINAL (CLASSIFICAÇÃO GERAL)", c: "O valor total arrecadado ao longo da temporada formará o Pote Anual.\nDistribuição:\n🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%" }, { t: "3️⃣ SISTEMA DE PONTUAÇÃO", c: "✅ Acerto do vencedor/classificado: 3 pontos\n\n🔥 Finais (Peso 2)\nFinais de qualquer competição válida possuem pontuação dobrada\nCada acerto em final: 6 pontos\n\n💥 Rodada Perfeita – Oitavas de Final\nA rodada perfeita será considerada exclusivamente nas oitavas de final, em todas as competições válidas\nO participante que acertar 100% dos confrontos das oitavas receberá:\n+3 pontos extras, além da pontuação regular\n\n📌 Não existe rodada perfeita em quartas, semifinais ou finais." }, { t: "4️⃣ COMPETIÇÕES E OBRIGATORIEDADE DE FASES", c: "As competições abaixo compõem a base do bolão. A inclusão dos jogos segue a seguinte regra hierárquica:\n\nA) Competições Válidas:\n🌍 Copa do Mundo\n🏆 UEFA Champions League\n🏆 UEFA Europa League\n🇧🇷 Copa do Brasil\n🌎 Copa Libertadores\n🌎 Copa Sul-Americana\n🇧🇷 Supercopa do Brasil\n🇪🇺 Supercopa da UEFA\n🌎 CONMEBOL Recopa\n🌍 FIFA Intercontinental Cup\n\nB) Fases de Mata-Mata Regular (Obrigatórias)\nTodas as fases eliminatórias da chave principal das competições listadas são de inclusão OBRIGATÓRIA e AUTOMÁTICA.\n- Isso inclui fases iniciais extensas, como 64-avos e 32-avos da Copa do Brasil.\n\n📌 FASES PRELIMINARES (PLAY-OFFS) E DEMAIS JOGOS\n\nJogos de fases preliminares (ex: \"Pré-Libertadores\", Play-offs da Sul-Americana, Repescagens), fases de grupos, ligas corridas ou pontos corridos não pontuam." }, { t: "5️⃣ CRITÉRIOS DE DESEMPATE", c: "(Aplicados somente se houver empate no número total de pontos)\n1- Menor número de inadimplências (D)\n2- Maior número total de acertos (V)\n3- Maior número de acertos em finais (F)\n4- Sorteio\n\n📌 Nenhum critério de desempate será aplicado se não houver empate em pontos." }, { t: "6️⃣ PALPITES E PLATAFORMAS OFICIAIS", c: "Os palpites serão realizados exclusivamente nas plataformas oficiais do bolão:\n📱 Aplicativo (Android)\n🌐 Site (compatível com iOS e computador)\n\n📌 Palpites feitos fora dessas plataformas não serão considerados, mesmo que publicados no grupo." }, { t: "7️⃣ CLASSIFICAÇÃO E TRANSPARÊNCIA", c: "A classificação geral oficial será mantida e atualizada exclusivamente:\n📱 No aplicativo Android\n🌐 No site (iOS e PC)\nO link de acesso será disponibilizado no grupo oficial do WhatsApp\nO app/site será a única fonte oficial, contendo:\nPontuação total\nInadimplências (D)\nTotal de acertos (V)\nAcertos em finais (F)\n\n📌 Para garantir a total lisura da competição, o sistema possui travas técnicas de segurança:\n\n🔒 Bloqueio de Edição\nApós o horário limite estipulado para um jogo, o sistema blocks automaticamente a edição da data/hora. É tecnicamente impossível para a organização alterar o prazo de um jogo vencido para reabrir a votação." }, { t: "8️⃣ CONDUTAS, INTERPRETAÇÕES E ALTERAÇÕES", c: "🧭 Interpretação das regras\nEm caso de dúvida ou divergência na interpretação de uma regra já existente, será adotada a decisão da maioria simples dos participantes.\n\n📌 Essa regra vale exclusivamente para interpretação de regras já previstas neste regulamento.\n\n🚫 Criação ou alteração de regras\n\nCriação, exclusão ou alteração de regras exige 100% de concordância dos participantes, conforme já estabelecido.\n\n📌A regra de maioria simples não se aplica nesses casos." }, { t: "9️⃣ SISTEMA DE NOTIFICAÇÕES (BÔNUS)", c: "O serviço de notificações push (exclusivo para Android) informando sobre novos jogos, edições ou lembretes de prazo (1h antes) é uma funcionalidade bônus de cortesia.\n\n⚠️ Importante:\nFalhas no envio ou não recebimento da notificação (por falta de internet, configuração do celular ou erro de sistema) NÃO justificam o esquecimento do voto.\nÉ de inteira e exclusiva responsabilidade do participante acessar regularmente as plataformas e verificar os jogos disponíveis." }, { t: "🔟 VALIDAÇÃO DO VOTO E FALHAS TÉCNICAS", c: "Para garantir a integridade da competição e evitar contestações tardias:\n\n✅ A única comprovação válida de um voto é o seu registro visual no sistema (Botão destacado em VERDE ou mensagem \"Voto confirmado\").\n\n🚫 Não serão aceitas reclamações posteriores ao encerramento da votação sob alegações de falha técnica individual (ex: \"Votei mas o app não salvou\", \"Minha internet caiu\").\n\n📌 Princípio da Integridade Sistêmica:\nConsiderando que a plataforma (App/Site) é única e distribuída uniformemente a todos, presume-se que, se o sistema permitiu a votação para a coletividade, eventuais falhas isoladas de registro são decorrentes de fatores locais do próprio usuário (instabilidade de conexão, falhas no dispositivo ou erro de manuseio), e não de instabilidade da plataforma.\n\n💡 Recomendação de Segurança: Após votar, atualize a página ou feche e abra o app novamente para certificar-se de que seu palpite persiste gravado. Se não estiver verde, o voto não foi computado." }];
 
-        // COMPRESSÃO DE IMAGEM
+        // COMPRESSÃO
         const compressImage = (file) => {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -202,6 +270,7 @@ Término oficial: 31 de dezembro de 2026</p>
             });
         };
 
+        // Handlers
         document.getElementById('btnLoginAction').onclick = async () => { const user = document.getElementById('userInput').value.trim().toLowerCase(); const pass = document.getElementById('passInput').value; try { await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); } catch (e) { alert("Dados incorretos."); } };
         document.getElementById('btnForgotPass').onclick = () => alert("Utilizamos um sistema de login simplificado.\n\nPor favor, entre em contato com o Admin (Júlio) para resetar sua senha.");
         
@@ -243,29 +312,73 @@ Término oficial: 31 de dezembro de 2026</p>
 
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
         
+        // --- LOAD MATCHES COM PROTEÇÃO E CORREÇÃO ---
         async function loadMatches() {
-            const container = document.getElementById('matchesScreen'); document.getElementById('progressBar').classList.remove('hidden');
+            const container = document.getElementById('matchesScreen');
+            document.getElementById('progressBar').classList.remove('hidden');
             try {
-                const setSnap = await getDoc(doc(db, "settings", "competitions"));
-                if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
-                const snap = await getDocs(collection(db, "matches")); const now = new Date(); let open = [], waiting = [], finished = [];
-                snap.forEach(d => { const m = {id:d.id, ...d.data()}; m.deadlineDate = m.deadline.toDate(); m.expired = now > m.deadlineDate; if(m.winner) finished.push(m); else if(m.expired) waiting.push(m); else open.push(m); });
-                open.sort((a,b)=>a.deadlineDate-b.deadlineDate()); waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate()); finished.sort((a,b)=>b.deadlineDate-a.deadlineDate());
-                let html = SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400") + (open.length ? await renderMatchList(open) : `<div class="text-center text-gray-400 text-[10px] italic mb-6">Nenhum jogo aberto.</div>`);
+                // Tenta carregar logos (ignora erro se falhar)
+                try {
+                    const setSnap = await getDoc(doc(db, "settings", "competitions"));
+                    if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
+                } catch(e) { console.log("Logos warning:", e); }
+
+                const snap = await getDocs(collection(db, "matches"));
+                const now = new Date();
+                let open = [], waiting = [], finished = [];
+
+                snap.forEach(d => {
+                    const m = {id:d.id, ...d.data()};
+                    // Verifica se existe deadline
+                    if(m.deadline) {
+                        m.deadlineDate = m.deadline.toDate();
+                        m.expired = now > m.deadlineDate;
+                        m.final = (m.round || "").toLowerCase() === 'final';
+                        
+                        if(m.winner) finished.push(m);
+                        else if(m.expired) waiting.push(m);
+                        else open.push(m);
+                    }
+                });
+
+                open.sort((a,b)=>a.deadlineDate-b.deadlineDate);
+                waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
+                finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
+                
+                let html = "";
+                html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400");
+                
+                if(open.length > 0) { html += await renderMatchList(open); } 
+                else { html += `<div class="text-center text-gray-400 text-[10px] italic mb-6">Nenhum jogo aberto.</div>`; }
+                
                 html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${waiting.length ? await renderMatchList(waiting) : `<div class="text-center text-[#FF6D00] text-[10px] italic mb-6 font-bold">Nenhum jogo aguardando.</div>`}</div>`;
-                if(finished.length) html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 CONFRONTOS FINALIZADOS 🚫</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished)}</div>`;
+                
+                if(finished.length) {
+                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 CONFRONTOS FINALIZADOS 🚫</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished)}</div>`;
+                }
+                
                 container.innerHTML = html;
-            } catch(e){} document.getElementById('progressBar').classList.add('hidden');
+            } catch(e) {
+                console.error("Erro loadMatches:", e);
+                container.innerHTML = `<div class="text-center text-red-500 p-4">Erro ao carregar jogos. Atualize a página.</div>`;
+            }
+            document.getElementById('progressBar').classList.add('hidden');
         }
+
         window.toggleWaiting = () => { document.getElementById('waitingContainer').classList.toggle('hidden'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-down'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-up'); };
         window.toggleFinished = () => { document.getElementById('finishedContainer').classList.toggle('hidden'); document.getElementById('iconFinished').classList.toggle('fa-chevron-down'); document.getElementById('iconFinished').classList.toggle('fa-chevron-up'); };
         
         async function renderMatchList(list) {
             let html = "";
             for (const m of list) {
-                let userVote = ""; try { const vs = await getDoc(doc(db, "guesses", `${m.id}_${currentUser.uid}`)); if(vs.exists()) userVote = vs.data().teamSelected; } catch(e){}
-                const dl = m.deadlineDate; const borderColor = m.final ? 'border-[#FFD700]' : (m.expired ? (m.winner ? 'border-[#D32F2F]' : 'border-[#FBC02D]') : 'border-[#006400]'); const bgColor = m.final ? 'bg-[#FFF9C4]' : 'bg-white';
+                let userVote = ""; 
+                try { const vs = await getDoc(doc(db, "guesses", `${m.id}_${currentUser.uid}`)); if(vs.exists()) userVote = vs.data().teamSelected; } catch(e){}
+                
+                const dl = m.deadlineDate; 
+                const borderColor = m.final ? 'border-[#FFD700]' : (m.expired ? (m.winner ? 'border-[#D32F2F]' : 'border-[#FBC02D]') : 'border-[#006400]'); 
+                const bgColor = m.final ? 'bg-[#FFF9C4]' : 'bg-white';
                 const logo = compMap[m.competition] || "";
+                
                 html += `<div class="card-cut relative border-l-[6px] ${bgColor} mb-6 overflow-hidden" style="border-left-color: ${borderColor.replace('border-[','').replace(']','')};">
                     ${logo ? `<img src="${logo}" class="absolute inset-0 w-full h-full object-contain opacity-[0.15] z-0 pointer-events-none p-4">` : ''}
                     <div class="relative z-10 p-4"><div class="flex justify-between items-start mb-3"><div class="flex flex-col">${m.final ? '<span class="text-[10px] font-black text-orange-600 mb-1">★ FINAL • VALE DOBRO ★</span>' : ''}<span class="text-[10px] font-bold text-[#006400] uppercase">${m.competition}</span><span class="text-[11px] text-gray-400">${m.round}</span><span class="text-[10px] font-bold ${m.expired ? 'text-red-600' : 'text-black'} mt-1">${m.expired ? 'Encerrado:' : 'Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span></div><button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2"><i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i></button></div><div class="flex items-center justify-between px-1">${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}<span class="font-black text-gray-300 text-xl">X</span>${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}</div>${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="text-[#006400] font-black text-lg">${m.winner}</p></div>` : ''}</div></div>`;
@@ -279,7 +392,6 @@ Término oficial: 31 de dezembro de 2026</p>
         window.showModalPhoto = (idx) => { const u = currentRankingData[idx]; if(!u.photo) return; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 p-6 text-center flex flex-col items-center"><h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3><div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center"><img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain"></div><button onclick="closeModal()" class="mt-6 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
 
-        // --- PAINEL ADMIN ---
         window.openAdminMenu = () => {
             const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
             cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 h-full flex flex-col bg-white/30 p-4"><div class="flex justify-between items-center mb-6"><button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3><div class="w-6"></div></div><div class="space-y-3"><button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button><button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-plus-circle"></i> NOVO CONFRONTO</button><button onclick="openCompetitionsManager()" class="w-full bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> COMPETIÇÕES (LOGOS)</button></div><hr class="border-black/20 my-4"><h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4><div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">Carregando lista...</div></div></div>`;
