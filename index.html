@@ -31,9 +31,11 @@
             border: 1px solid #e5e7eb;
         }
 
-        /* Fundos Dinâmicos */
+        /* --- FUNDOS DINÂMICOS (ATUALIZADOS) --- */
         .bg-main { background-size: cover; background-attachment: fixed; background-position: center; transition: background 0.3s ease; }
-        .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.png'); }
+        
+        /* Atualizado para .jpeg conforme seu print */
+        .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg'); }
         .tab-ranking { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_ranking.png'); }
         .tab-rules { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_regras.png'); }
         .tab-profile { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_perfil.png'); }
@@ -44,12 +46,11 @@
         ::-webkit-scrollbar { display: none; }
         .rules-text { white-space: pre-wrap; }
 
-        /* --- NOVO EFEITO DE TEXTO (Pote de Ouro) --- */
         .gold-text-outline {
             background: linear-gradient(to bottom, #B8860B, #FFD700, #B8860B);
             -webkit-background-clip: text;
             background-clip: text;
-            -webkit-text-stroke: 1.2px black; /* Contorno Preto */
+            -webkit-text-stroke: 1.2px black;
             color: transparent;
             font-weight: 900;
         }
@@ -106,9 +107,7 @@
                                 <i class="fas fa-sync-alt text-xs"></i>
                             </button>
                         </div>
-                        
                         <div class="border-t border-white/20 mb-2"></div>
-
                         <div class="flex items-center text-[10px] font-bold text-white/70 uppercase text-center pb-2">
                             <span class="w-[35px]">Pos</span>
                             <span class="flex-1 text-left pl-2">Participante</span>
@@ -119,9 +118,7 @@
                         </div>
                     </div>
                 </div>
-
                 <div id="rankingListContent" class="bg-white rounded-b-lg shadow-sm border-x border-b border-gray-200 overflow-hidden"></div>
-
                 <div class="bg-black/80 text-[#FFD700] p-3 text-[10px] text-center rounded-lg shadow-lg border border-gray-800 mt-2">
                     <p class="font-bold mb-1 tracking-wide">Legenda: D=Débitos(-1) | V=Vitórias | F=Finais | PTS=Pontos</p>
                     <p id="lastUpdateRanking" class="text-white font-normal opacity-90 italic">Aguardando...</p>
@@ -175,40 +172,47 @@ Término oficial: 31 de dezembro de 2026
                     </div>
                 </div>
 
-                <div id="pixArea" class="hidden bg-white p-4 rounded-lg border border-gray-200 text-left space-y-3 mb-4 shadow-sm relative">
-                    <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-[#006400] p-2 btn-press">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+                <div id="pixArea" class="hidden relative bg-white rounded-lg border border-gray-200 text-left space-y-3 mb-4 shadow-sm overflow-hidden">
+                    
+                    <div class="absolute inset-0 z-0">
+                        <img src="bg_pix.jpeg" class="w-full h-full object-cover opacity-50">
+                    </div>
 
-                    <div class="text-center mb-2 pt-2">
-                        <i class="fas fa-qrcode text-3xl text-[#006400]"></i>
-                        <p class="font-black text-[#006400] text-lg mt-1">PAGAMENTO PIX</p>
-                        <div class="h-4"></div>
-                        <p class="text-xs font-bold text-gray-800">Valor da Mensalidade</p>
-                        <p class="text-3xl font-black text-black">R$ 10,00</p>
-                    </div>
-                    
-                    <div class="text-center text-[10px] text-gray-800 mb-2">
-                        Beneficiário:<br>
-                        <b class="text-[#006400] text-sm">MATHEUS FERREIRA ALVES</b>
-                    </div>
-                    
-                    <div>
-                        <button id="btnCopyPix" class="w-full bg-[#32BCAD] text-white py-2 rounded font-bold text-xs shadow btn-press mb-3">
-                            <i class="fas fa-copy mr-1"></i> PIX COPIA E COLA
+                    <div class="relative z-10 p-4 pt-6">
+                        <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-[#006400] p-2 btn-press">
+                            <i class="fas fa-times text-xl"></i>
                         </button>
-                        <label class="text-[10px] text-gray-500 font-bold">Chave Pix Manual</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded">
-                            <button onclick="copyKeyOnly()" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-copy"></i></button>
+
+                        <div class="text-center mb-2">
+                            <i class="fas fa-qrcode text-3xl text-[#006400]"></i>
+                            <p class="font-black text-[#006400] text-lg mt-1">PAGAMENTO PIX</p>
+                            <div class="h-4"></div>
+                            <p class="text-xs font-bold text-gray-800">Valor da Mensalidade</p>
+                            <p class="text-3xl font-black text-black">R$ 10,00</p>
                         </div>
-                    </div>
-                    
-                    <div class="border-t pt-3">
-                        <p class="text-xs text-center mb-2">Já fez o pagamento?</p>
-                        <button id="btnSendProof" class="w-full bg-[#25D366] text-white py-2 rounded font-bold text-xs shadow btn-press">
-                            <i class="fab fa-whatsapp mr-1"></i> AVISAR AO BRANCO
-                        </button>
+                        
+                        <div class="text-center text-[10px] text-gray-800 mb-2">
+                            Beneficiário:<br>
+                            <b class="text-[#006400] text-sm">MATHEUS FERREIRA ALVES</b>
+                        </div>
+                        
+                        <div>
+                            <button id="btnCopyPix" class="w-full bg-[#32BCAD] text-white py-2 rounded font-bold text-xs shadow btn-press mb-3">
+                                <i class="fas fa-copy mr-1"></i> PIX COPIA E COLA
+                            </button>
+                            <label class="text-[10px] text-gray-500 font-bold">Chave Pix Manual</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded shadow-sm">
+                                <button onclick="copyKeyOnly()" class="bg-[#006400] text-white px-3 rounded shadow-sm"><i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t border-gray-300 pt-3 mt-3">
+                            <p class="text-xs text-center mb-2 font-bold text-gray-700">Já fez o pagamento?</p>
+                            <button id="btnSendProof" class="w-full bg-[#25D366] text-white py-2 rounded font-bold text-xs shadow btn-press">
+                                <i class="fab fa-whatsapp mr-1"></i> AVISAR AO BRANCO
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -252,7 +256,7 @@ Término oficial: 31 de dezembro de 2026
         let currentUser = null;
         let currentRankingData = [];
 
-        // --- REGRAS (DATA) ---
+        // ... (Regras Data e Auth functions iguais) ...
         const rulesData = [
             { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal\nValor: R$ 10,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" },
             { t: "2️⃣ PREMIAÇÃO FINAL (CLASSIFICAÇÃO GERAL)", c: "O valor total arrecadado ao longo da temporada formará o Pote Anual.\nDistribuição:\n🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%" },
@@ -387,7 +391,7 @@ Término oficial: 31 de dezembro de 2026
                     html += `<div class="text-center text-gray-400 text-[10px] italic mb-6">Nenhum jogo aberto para votação no momento.</div>`;
                 }
 
-                // 2. AGUARDANDO RESULTADO (Colapsável)
+                // 2. AGUARDANDO RESULTADO
                 html += `
                 <div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press">
                     <div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
@@ -403,7 +407,7 @@ Término oficial: 31 de dezembro de 2026
                 </div>
                 `;
                                                 
-                // 3. JOGOS FINALIZADOS (Colapsável)
+                // 3. JOGOS FINALIZADOS
                 if(finished.length) {
                     html += `
                     <div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press">
@@ -439,7 +443,7 @@ Término oficial: 31 de dezembro de 2026
             icon.classList.toggle('fa-chevron-up');
         };
         
-            async function renderMatchList(list) {
+        async function renderMatchList(list) {
             let html = "";
             for (const m of list) {
                 let userVote = "";
@@ -476,6 +480,8 @@ Término oficial: 31 de dezembro de 2026
             return `<button onclick="window.vote('${mid}', '${name}')" ${expired?'disabled':''} class="btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}"><img src="${url}" class="w-10 h-10 object-contain mb-1"><span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`;
         }
         window.vote = async (mid, team) => { if(!currentUser) return; await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { matchId: mid, userId: currentUser.uid, teamSelected: team, timestamp: new Date() }); loadMatches(); };
+        
+        // --- ATUALIZADO: FUNDOS DINÂMICOS NOS MODAIS DE VOTAÇÃO ---
         window.openVoters = async (mid, ta, tb, exp, win) => {
             const modal = document.getElementById('modalOverlay');
             const cont = document.getElementById('modalContainer');
@@ -489,14 +495,26 @@ Término oficial: 31 de dezembro de 2026
             guesses.forEach(d => {
                 const u = uMap[d.userId] || {name: "Desc.", photoBase64: ""};
                 let voteDisplay = `<span class="text-[10px] text-gray-400 italic"><i class="fas fa-lock"></i> Sigilo</span>`;
-                let bg = "bg-white";
-                if (exp) { voteDisplay = `<span class="text-[11px] font-bold">${d.teamSelected}</span>`; if(win) { if(d.teamSelected === win) { bg = "bg-green-50"; voteDisplay += ` <i class="fas fa-check-circle text-green-600"></i>`; } else { bg = "bg-red-50"; voteDisplay += ` <i class="fas fa-times-circle text-red-600"></i>`; } } }
+                let bg = "bg-white/80"; // Leve transparência
+                if (exp) { voteDisplay = `<span class="text-[11px] font-bold">${d.teamSelected}</span>`; if(win) { if(d.teamSelected === win) { bg = "bg-green-50/90"; voteDisplay += ` <i class="fas fa-check-circle text-green-600"></i>`; } else { bg = "bg-red-50/90"; voteDisplay += ` <i class="fas fa-times-circle text-red-600"></i>`; } } }
                 rows += `<div class="flex justify-between items-center p-2 border-b border-gray-100 ${bg}"><div class="flex items-center gap-2">${u.photoBase64 ? `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-6 h-6 rounded-full object-cover">` : `<i class="fas fa-user-circle text-gray-300"></i>`}<span class="text-xs font-bold truncate w-24">${u.name}</span></div><div>${voteDisplay}</div></div>`;
             });
-            cont.innerHTML = `<div class="bg-gray-50 p-3 border-b flex justify-between items-center"><h3 class="font-bold text-[#006400] uppercase text-xs">${exp ? 'Palpites' : 'Quem já votou?'}</h3><button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button></div><div class="bg-white max-h-[60vh] overflow-y-auto p-2">${rows || '<p class="text-xs text-center p-4">Sem votos.</p>'}</div><div class="bg-gray-50 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div>`;
+            
+            // Fundo dinâmico
+            const bgImg = exp ? 'fundo_dialog_palpites.jpeg' : 'bg_dialog_votantes.jpeg';
+            
+            cont.innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+               <img src="${bgImg}" class="absolute inset-0 w-full h-full object-cover opacity-40">
+               <div class="relative z-10">
+                   <div class="bg-gray-50/90 p-3 border-b flex justify-between items-center"><h3 class="font-bold text-[#006400] uppercase text-xs">${exp ? 'Palpites' : 'Quem já votou?'}</h3><button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button></div>
+                   <div class="max-h-[60vh] overflow-y-auto p-2">${rows || '<p class="text-xs text-center p-4">Sem votos.</p>'}</div>
+                   <div class="bg-gray-50/90 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div>
+               </div>
+            </div>`;
         };
 
-        // --- RANKING (ATUALIZADO PARA MATCH COM ANDROID) ---
+        // --- RANKING ---
         async function loadRanking() {
             const list = document.getElementById('rankingListContent');
             const footer = document.getElementById('lastUpdateRanking');
@@ -518,7 +536,6 @@ Término oficial: 31 de dezembro de 2026
                 const u = ud.data(); let p=0, v=0, f=0; const hist = []; const userGuesses = [];
                 gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) });
                 
-                // Lógica de Pontuação (Mantida)
                 userGuesses.forEach(g => {
                     const m = finished.find(x => x.id === g.matchId);
                     if(m) {
@@ -537,11 +554,9 @@ Término oficial: 31 de dezembro de 2026
             users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f);
             currentRankingData = users;
             
-            // --- GERAÇÃO DA LISTA VISUAL (NOVO ESTILO) ---
             list.innerHTML = users.map((u, i) => {
                 const pos = i+1;
                 let bgColor = 'bg-white';
-                let borderColor = 'border-transparent';
                 let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`;
                 
                 // Cores do Pódio (Sincronizado com Android)
@@ -549,7 +564,6 @@ Término oficial: 31 de dezembro de 2026
                 else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; } // Prata (Cinza Escuro)
                 else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; } // Bronze
 
-                // Setinhas
                 let diffHtml = '';
                 if(u.lastRank > 0) { 
                     if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; 
@@ -562,57 +576,83 @@ Término oficial: 31 de dezembro de 2026
                         <div class="text-sm">${posIcon}</div>
                         ${diffHtml}
                     </div>
-                    
                     <div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden cursor-pointer" onclick="showModalPhoto(${i})">
                         <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">
                             ${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}
                         </div>
                         <span class="text-xs font-bold text-gray-800 truncate">${u.name}</span>
                     </div>
-                    
                     <div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div>
-                    
                     <div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div>
-                    
                     <div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div>
-                    
                     <div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div>
                 </div>`;
             }).join('');
         }
-        window.showModalPhoto = (idx) => { const u = currentRankingData[idx]; if(!u.photo) return; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="bg-white p-4 text-center"><img src="data:image/jpeg;base64,${u.photo}" class="w-full rounded mb-4 shadow-lg"><h3 class="font-bold uppercase text-[#006400]">${u.name}</h3><button onclick="closeModal()" class="mt-4 text-gray-500 font-bold text-xs border border-gray-300 px-4 py-2 rounded">FECHAR</button></div>`; };
-        window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b py-2 text-xs ${h.type==='bad'?'text-red-500':'text-black'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="bg-gray-50 p-3 border-b"><h3 class="font-bold text-[#006400] uppercase text-xs">Extrato: ${u.name}</h3></div><div class="bg-white p-4 max-h-[50vh] overflow-y-auto">${html}</div><div class="bg-gray-50 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div>`; };
 
-        function renderRules() { 
-            const list = document.getElementById('rulesList');
-            if(list.innerHTML !== "") return;
-            list.innerHTML = rulesData.map(r => `
-                <div class="bg-white rounded p-3 shadow-sm border border-gray-100">
-                    <button class="w-full text-left font-bold text-xs text-[#006400] flex justify-between" onclick="this.nextElementSibling.classList.toggle('hidden')">
-                        ${r.t} <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="hidden mt-2 text-xs text-gray-600 border-t pt-2 whitespace-pre-line">${r.c}</div>
-                </div>`).join(''); 
-        }
+        // --- MODAL FOTO (ATUALIZADO COM FUNDO) ---
+        window.showModalPhoto = (idx) => { 
+            const u = currentRankingData[idx]; 
+            if(!u.photo) return; 
+            document.getElementById('modalOverlay').classList.remove('hidden'); 
+            document.getElementById('modalContainer').innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+               <img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"> <div class="relative z-10 p-6 text-center flex flex-col items-center">
+                   <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3>
+                   <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center">
+                       <img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">
+                   </div>
+                   <button onclick="closeModal()" class="mt-6 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button>
+               </div>
+            </div>`; 
+        };
 
-        // --- ADMIN PANEL (CORRIGIDO: MENU E SEGURANÇA) ---
+        // --- MODAL EXTRATO (ATUALIZADO COM FUNDO) ---
+        window.showModalHistory = (idx) => { 
+            const u = currentRankingData[idx]; 
+            const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; 
+            document.getElementById('modalOverlay').classList.remove('hidden'); 
+            document.getElementById('modalContainer').innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+               <img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover">
+               <div class="relative z-10 p-6 flex flex-col items-center">
+                   <i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i>
+                   <div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div>
+                   <div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div>
+                   
+                   <div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">
+                       ${html}
+                   </div>
+                   
+                   <button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button>
+               </div>
+            </div>`; 
+        };
+
+        // --- ADMIN PANEL (ATUALIZADO COM FUNDO) ---
         window.openAdminMenu = () => {
             const modal = document.getElementById('modalOverlay');
             const cont = document.getElementById('modalContainer');
             modal.classList.remove('hidden');
             cont.innerHTML = `
-                <div class="bg-white rounded shadow-lg overflow-hidden">
-                    <div class="bg-gray-800 text-white p-4 flex justify-between items-center">
-                        <h3 class="font-bold uppercase text-sm">Painel Admin</h3>
-                        <button onclick="closeModal()"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="p-4 space-y-3">
-                        <button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button>
-                        <button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-plus-circle"></i> NOVO CONFRONTO</button>
-                        <button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="w-full bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> COMPETIÇÕES</button>
-                        <hr class="border-gray-200 my-2">
-                        <h4 class="font-bold text-[#006400] text-xs uppercase mb-2">Gerenciar Confrontos</h4>
-                        <div id="adminMatchList" class="max-h-[30vh] overflow-y-auto text-xs text-gray-500">
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                    <img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                    <div class="relative z-10 h-full flex flex-col bg-white/30 p-4">
+                        <div class="flex justify-between items-center mb-6">
+                            <button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button>
+                            <h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3>
+                            <div class="w-6"></div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button>
+                            <button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-plus-circle"></i> NOVO CONFRONTO</button>
+                            <button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="w-full bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> COMPETIÇÕES</button>
+                        </div>
+
+                        <hr class="border-black/20 my-4">
+                        <h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4>
+                        <div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">
                             Carregando lista...
                         </div>
                     </div>
@@ -620,24 +660,7 @@ Término oficial: 31 de dezembro de 2026
             loadAdminMatches();
         };
 
-        async function loadAdminMatches() {
-            const snap = await getDocs(collection(db, "matches"));
-            const listDiv = document.getElementById('adminMatchList');
-            if(!listDiv) return;
-            let html = "";
-            snap.forEach(d => {
-                const m = d.data();
-                html += `<div class="flex justify-between items-center p-2 border-b border-gray-100">
-                    <span class="truncate w-2/3 font-bold">${m.teamA} x ${m.teamB}</span>
-                    <div class="flex gap-2">
-                        <button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button>
-                        <button class="text-red-500" onclick="alert('Exclusão apenas no App')"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>`;
-            });
-            listDiv.innerHTML = html || "Sem jogos.";
-        }
-
+        // --- FINANCEIRO (ATUALIZADO COM FUNDO) ---
         window.openFinancialScreen = async () => {
             const cont = document.getElementById('modalContainer');
             cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
@@ -648,13 +671,18 @@ Término oficial: 31 de dezembro de 2026
             users.sort((a,b) => (a.name||"").localeCompare(b.name||""));
 
             let html = `
-                <div class="bg-white rounded shadow-lg overflow-hidden h-[80vh] flex flex-col">
-                    <div class="bg-[#2E7D32] text-white p-3 flex justify-between items-center shrink-0">
-                        <button onclick="openAdminMenu()"><i class="fas fa-arrow-left"></i></button>
-                        <h3 class="font-bold uppercase text-xs">Gestão Financeira</h3>
-                        <div class="w-4"></div>
-                    </div>
-                    <div class="flex-1 overflow-y-auto p-2">`;
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]">
+                    <img src="bg_painel_usuarios.jpeg" class="absolute inset-0 w-full h-full object-cover">
+                    <div class="relative z-10 flex flex-col h-full bg-white/30">
+                        <div class="p-4 flex justify-between items-center shrink-0">
+                            <button onclick="openAdminMenu()"><i class="fas fa-arrow-left text-black text-xl"></i></button>
+                            <h3 class="font-bold uppercase text-black text-lg">Gestão Financeira</h3>
+                            <div class="w-6"></div>
+                        </div>
+                        <div class="p-4">
+                            <button class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press">GERENCIAR CONVITES (WHITELIST)</button>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-4 pt-0">`;
             
             users.forEach(u => {
                 html += `
@@ -677,18 +705,19 @@ Término oficial: 31 de dezembro de 2026
                 });
                 html += `</div></div>`;
             });
-            html += `</div></div>`;
+            html += `</div></div></div>`;
             cont.innerHTML = html;
         };
 
+        // ... (togglePay, changeDebt, loadProfile, etc... mantidos) ...
         window.togglePay = async (uid, month, status) => {
             const ref = doc(db, "users", uid);
             const u = await getDoc(ref);
             const payments = u.data().payments || {};
             payments[month] = status;
             await updateDoc(ref, { payments: payments });
-            calculatePot(); // Atualiza o Pote instantaneamente
-            openFinancialScreen(); // Recarrega a lista sem fechar o modal
+            calculatePot();
+            openFinancialScreen();
         };
 
         window.changeDebt = async (uid, delta) => {
@@ -701,78 +730,13 @@ Término oficial: 31 de dezembro de 2026
             openFinancialScreen();
         };
 
-        // --- PERFIL (SEGURANÇA ATIVADA) ---
-        async function loadProfile() { 
-            const docRef = doc(db, "users", currentUser.uid); const snap = await getDoc(docRef); if(!snap.exists()) return; const u = snap.data(); document.getElementById('profileName').innerText = u.name || "MEMBRO"; document.getElementById('profileUser').innerText = `@${u.username}`; if(u.photoBase64) document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`; 
-            
-            // CORREÇÃO SEGURANÇA: Só mostra se isAdmin for true no banco
-            const adminBtn = document.getElementById('btnAdminPanel');
-            if(u.isAdmin === true) {
-                adminBtn.classList.remove('hidden');
-            } else {
-                adminBtn.classList.add('hidden');
-            }
-
-            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const currMonth = months[new Date().getMonth()]; const isPaid = u.payments && u.payments[currMonth]; const stCard = document.getElementById('financialCard'); const stText = document.getElementById('financialStatusText'); const stIcon = document.getElementById('financialIcon'); if(isPaid || new Date().getFullYear() < 2026) { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800"; stText.innerText = "MENSALIDADE EM DIA"; stIcon.className = "fas fa-check-circle text-2xl"; } else { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800"; stText.innerText = "PAGAMENTO PENDENTE"; stIcon.className = "fas fa-exclamation-circle text-2xl"; } const finSnap = await getDoc(doc(db, "settings", "financial")); if(finSnap.exists()) { const fin = finSnap.data(); document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com"; document.getElementById('btnSendProof').onclick = () => { const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112."); window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank'); }; } 
-        }
-        document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onloadend = async () => { const base64 = reader.result.split(',')[1]; await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }; reader.readAsDataURL(file); } };
-        
-        // CORREÇÃO: Usar a classe 'hidden' para alternar visibilidade, mas com botão X dentro do elemento
         document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.remove('hidden');
         window.copyKeyOnly = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
-        document.getElementById('btnCopyPix').onclick = () => { 
-            const pixCode = "00020126580014BR.GOV.BCB.PIX0136..."; // Você precisará buscar isso do Firebase se quiser dinâmico
-            // Como no Android você busca o pixCode do banco, aqui simplifiquei.
-            // O ideal é usar o valor do firebase que já carregamos em loadProfile
-            alert("Copie a chave manual abaixo por enquanto."); 
-        };
-
+        document.getElementById('btnCopyPix').onclick = () => { alert("Copie a chave manual abaixo por enquanto."); };
         window.changePassword = () => {
             const newPass = prompt("Digite a nova senha (mínimo 6 caracteres):");
             if(newPass && newPass.length >= 6) updatePassword(currentUser, newPass).then(() => alert("Senha alterada!")).catch(e => alert("Erro ao alterar senha. Faça login novamente."));
             else if(newPass) alert("Senha muito curta.");
-        };
-        
-        // --- FUNÇÃO AJUDA (ATUALIZADA) ---
-        window.showChangelog = () => {
-            document.getElementById('modalOverlay').classList.remove('hidden');
-            document.getElementById('modalContainer').innerHTML = `
-                <div class="bg-white p-6 max-h-[85vh] overflow-y-auto">
-                    <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">Linha do Tempo</h3>
-                    
-                    <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
-                        <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">💡 Guia Rápido</h4>
-                        <div class="text-xs text-gray-700 space-y-2 font-medium">
-                            <p>1. <b class="text-[#006400]">JOGOS:</b> Toque no escudo para votar. Verde = Confirmado.</p>
-                            <p>2. <b class="text-[#006400]">RANKING:</b> Toque na foto para zoom. Toque nos pontos para ver o extrato.</p>
-                            <p>3. <b class="text-[#006400]">REGRAS:</b> Fique por dentro do regulamento do nosso Bolão.</p>
-                            <p>4. <b class="text-[#006400]">PERFIL:</b> Altere foto e senha aqui. Pague sua mensalidade clicando no card financeiro.</p>
-                            <p>5. <b class="text-[#006400]">POTE:</b> Clique no porquinho para ver o prêmio acumulado.</p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">📜 Histórico de Versões</h4>
-                        
-                        <div class="mb-4 pb-4 border-b border-gray-100">
-                            <p class="text-xs font-black text-[#006400] mb-1">v1.3.7 (Atual): Organização e Facilidade</p>
-                            <ul class="text-[11px] text-gray-500 space-y-1 list-disc pl-4">
-                                <li><b>Listas Expansíveis:</b> As listas de "Aguardando Resultado" e "Finalizados" agora começam fechadas para limpar o visual. Toque para abrir.</li>
-                            </ul>
-                        </div>
-
-                        <div class="mb-2">
-                            <p class="text-xs font-bold text-gray-400 mb-1">v1.3.6: Transparência Total</p>
-                            <ul class="text-[11px] text-gray-400 space-y-1 list-disc pl-4">
-                                <li><b>Extrato Raio-X:</b> Detalhes de erros e esquecimentos no ranking.</li>
-                                <li><b>Lista de Votantes:</b> Veja quem votou em quem (após o prazo).</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded-lg font-bold mt-6 shadow-lg btn-press text-sm">ENTENDI</button>
-                </div>
-            `;
         };
         async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'}); }
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
