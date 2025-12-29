@@ -349,9 +349,9 @@ Término oficial: 31 de dezembro de 2026
                 html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400");
                 
                 if(open.length > 0) { html += await renderMatchList(open); } 
-                else { html += `<div class="text-center text-gray-400 text-[10px] italic mb-6">Nenhum jogo aberto.</div>`; }
+                else { html += `<div class="text-center text-gray-400 text-[16px] italic mb-6">Nenhum jogo aberto.</div>`; }
                 
-                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${waiting.length ? await renderMatchList(waiting) : `<div class="text-center text-[#FF6D00] text-[10px] italic mb-6 font-bold">Nenhum jogo aguardando.</div>`}</div>`;
+                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${waiting.length ? await renderMatchList(waiting) : `<div class="text-center text-[#FF6D00] text-[16px] italic mb-6 font-bold">Nenhum jogo aguardando.</div>`}</div>`;
                 
                 if(finished.length) {
                     html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 CONFRONTOS FINALIZADOS 🚫</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished)}</div>`;
@@ -562,3 +562,4 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
