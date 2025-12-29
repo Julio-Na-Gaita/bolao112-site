@@ -380,8 +380,28 @@ Término oficial: 31 de dezembro de 2026
                 
                 html += `<div class="card-cut relative border-l-[6px] ${bgColor} mb-6 overflow-hidden" style="border-left-color: ${borderColor.replace('border-[','').replace(']','')};">
                     ${logo ? `<img src="${logo}" class="absolute inset-0 w-full h-full object-contain opacity-[0.15] z-0 pointer-events-none p-4">` : ''}
-                    <div class="relative z-10 p-4"><div class="flex justify-between items-start mb-3"><div class="flex flex-col">${m.final ? '<span class="text-[10px] font-black text-orange-600 mb-1">★ FINAL • VALE DOBRO ★</span>' : ''}<span class="text-[10px] font-bold text-[#006400] uppercase">${m.competition}</span><span class="text-[11px] text-gray-400">${m.round}</span><span class="text-[10px] font-bold ${m.expired ? 'text-red-600' : 'text-black'} mt-1">${m.expired ? 'Encerrado:' : 'Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span></div><button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2"><i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i></button></div><div class="flex items-center justify-between px-1">${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}<span class="font-black text-gray-300 text-xl">X</span>${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}</div>${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="text-[#006400] font-black text-lg">${m.winner}</p></div>` : ''}</div></div>`;
+                    <div class="relative z-10 p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex flex-col">
+                                ${m.final ? '<span class="text-[10px] font-black text-orange-600 mb-1">★ FINAL • VALE DOBRO ★</span>' : ''}
+                                <span class="text-[10px] font-bold text-[#006400] uppercase">${m.competition}</span>
+                                <span class="text-[11px] text-gray-400">${m.round}</span>
+                                <span class="text-[10px] font-bold ${m.expired ? 'text-red-600' : 'text-black'} mt-1">${m.expired ? 'Encerrado:' : 'Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2">
+                                <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between px-1">
+                            ${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}
+                            <span class="font-black text-gray-300 text-xl">X</span>
+                            ${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}
+                        </div>
+                        ${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="text-[#006400] font-black text-lg">${m.winner}</p></div>` : ''}
+                    </div>
+                </div>`;
             } return html;
+        }
         }
         function createTeamBtn(mid, name, url, selected, expired) { const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800'; const border = selected ? 'border-2 border-[#FFD700]' : ''; return `<button onclick="window.vote('${mid}', '${name}')" ${expired?'disabled':''} class="btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}"><img src="${url}" class="w-10 h-10 object-contain mb-1"><span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`; }
         window.vote = async (mid, team) => { if(!currentUser) return; await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { matchId: mid, userId: currentUser.uid, teamSelected: team, timestamp: new Date() }); loadMatches(); };
@@ -520,4 +540,5 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
 
