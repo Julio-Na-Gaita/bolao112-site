@@ -152,7 +152,7 @@ Término oficial: 31 de dezembro de 2026
                     </label>
 
                     <h3 id="profileName" class="text-xl font-black text-gray-800 uppercase leading-tight mb-1">...</h3>
-                    <p id="profileUser" class="text-gray-500 text-sm mb-6">@...</p>
+                    <p id="profileUser" class="text-gray-800 font-bold text-sm mb-6">@...</p>
 
                     <div class="flex justify-center gap-4 mb-2">
                         <button onclick="changePassword()" class="text-xs text-[#006400] font-bold btn-press"><i class="fas fa-lock mr-1"></i> Senha</button>
@@ -239,7 +239,7 @@ Término oficial: 31 de dezembro de 2026
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
         const app = initializeApp(firebaseConfig);
@@ -305,15 +305,13 @@ Término oficial: 31 de dezembro de 2026
 
         function renderRules() {
             const list = document.getElementById('rulesList');
-            // Correção: Sempre limpa e refaz, ou verifica se tem conteúdo válido
             if(list.children.length > 0) return;
             list.innerHTML = rulesData.map(r => `<div class="bg-white rounded p-3 shadow-sm border border-gray-100"><button class="w-full text-left font-bold text-xs text-[#006400] flex justify-between" onclick="this.nextElementSibling.classList.toggle('hidden')">${r.t} <i class="fas fa-chevron-down"></i></button><div class="hidden mt-2 text-xs text-gray-600 border-t pt-2 whitespace-pre-line">${r.c}</div></div>`).join('');
         }
 
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
         
-        // --- LOAD MATCHES COM PROTEÇÃO E CORREÇÃO ---
-       async function loadMatches() {
+        async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
             try {
@@ -345,14 +343,13 @@ Término oficial: 31 de dezembro de 2026
                 let html = "";
                 html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400");
                 
-                // MUDANÇA AQUI: Cor text-black e texto "confronto"
+                // CORREÇÃO: COR PRETA E "CONFRONTO"
                 if(open.length > 0) { html += await renderMatchList(open); } 
                 else { html += `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto para votação no momento.</div>`; }
                 
                 html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">
                     ${waiting.length 
                         ? await renderMatchList(waiting) 
-                        // MUDANÇA AQUI: Cor text-black e texto "confronto"
                         : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando resultado no momento.</div>`
                     }</div>`;
                 
@@ -394,12 +391,8 @@ Término oficial: 31 de dezembro de 2026
         window.showModalPhoto = (idx) => { const u = currentRankingData[idx]; if(!u.photo) return; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 p-6 text-center flex flex-col items-center"><h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3><div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center"><img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain"></div><button onclick="closeModal()" class="mt-6 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
 
-        // --- PAINEL ADMIN COM LIXEIRA ---
         window.openAdminMenu = () => {
-            const modal = document.getElementById('modalOverlay');
-            const cont = document.getElementById('modalContainer');
-            modal.classList.remove('hidden');
-            
+            const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
             cont.innerHTML = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
                     <img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
@@ -412,10 +405,7 @@ Término oficial: 31 de dezembro de 2026
                         <div class="space-y-3">
                             <button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button>
                             <button onclick="openTrashBin()" class="w-full bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trash-restore"></i> LIXEIRA (RESTAURAR)</button>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-plus-circle"></i> NOVO JOGO</button>
-                                <button onclick="openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-trophy"></i> COMPETIÇÕES</button>
-                            </div>
+                            <div class="grid grid-cols-2 gap-2"><button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-plus-circle"></i> NOVO JOGO</button><button onclick="openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-trophy"></i> COMPETIÇÕES</button></div>
                         </div>
                         <hr class="border-black/20 my-4">
                         <h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4>
@@ -425,112 +415,16 @@ Término oficial: 31 de dezembro de 2026
             loadAdminMatches();
         };
 
-        // Carrega a lista normal (botão excluir agora move para lixeira)
+        // --- FUNÇÕES DE LIXEIRA E RESTAURAÇÃO ---
         async function loadAdminMatches() { 
-            const snap = await getDocs(collection(db, "matches")); 
-            const listDiv = document.getElementById('adminMatchList'); 
-            if(!listDiv) return; 
-            let html = ""; 
-            snap.forEach(d => { 
-                const m = d.data(); 
-                // Alterado onclick do botão delete para moveToTrash
-                html += `<div class="flex justify-between items-center p-2 border-b border-gray-100"><span class="truncate w-2/3 font-bold text-black">${m.teamA} x ${m.teamB}</span><div class="flex gap-2"><button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button><button class="text-red-500" onclick="moveToTrash('${d.id}')"><i class="fas fa-trash"></i></button></div></div>`; 
-            }); 
-            listDiv.innerHTML = html || "Sem jogos ativos."; 
+            const snap = await getDocs(collection(db, "matches")); const listDiv = document.getElementById('adminMatchList'); if(!listDiv) return; 
+            let html = ""; snap.forEach(d => { const m = d.data(); html += `<div class="flex justify-between items-center p-2 border-b border-gray-100"><span class="truncate w-2/3 font-bold text-black">${m.teamA} x ${m.teamB}</span><div class="flex gap-2"><button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button><button class="text-red-500" onclick="moveToTrash('${d.id}')"><i class="fas fa-trash"></i></button></div></div>`; }); 
+            listDiv.innerHTML = html || "Sem jogos."; 
         }
 
-        // --- FUNÇÕES DA LIXEIRA (SOFT DELETE) ---
-        
-        // 1. Mover para Lixeira
-        window.moveToTrash = async (matchId) => {
-            if(!confirm("Tem certeza? O jogo irá para a LIXEIRA e sairá da lista principal.")) return;
-            try {
-                // Copia para a coleção 'bin_matches'
-                const matchSnap = await getDoc(doc(db, "matches", matchId));
-                if (matchSnap.exists()) {
-                    const data = matchSnap.data();
-                    data.deletedAt = new Date(); // Marca quando foi deletado
-                    
-                    await setDoc(doc(db, "bin_matches", matchId), data); // Salva na lixeira
-                    await deleteDoc(doc(db, "matches", matchId)); // Remove da principal
-                    
-                    alert("Jogo movido para a Lixeira.");
-                    loadAdminMatches(); // Recarrega a lista
-                    loadMatches(); // Atualiza a home
-                }
-            } catch (e) {
-                alert("Erro ao mover para lixeira: " + e.message);
-            }
-        };
-
-        // 2. Abrir Tela da Lixeira
-        window.openTrashBin = async () => {
-            const cont = document.getElementById('modalContainer');
-            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-gray-600"></i></div>`;
-            
-            const snap = await getDocs(collection(db, "bin_matches"));
-            let html = `
-                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]">
-                    <div class="bg-gray-800 text-white p-4 flex justify-between items-center">
-                        <button onclick="openAdminMenu()"><i class="fas fa-arrow-left"></i></button>
-                        <h3 class="font-bold uppercase text-sm">Lixeira (Restaurar)</h3>
-                        <div class="w-6"></div>
-                    </div>
-                    <div class="p-4 bg-gray-100 flex-1 overflow-y-auto">
-                        <p class="text-[10px] text-gray-500 mb-2 text-center">Jogos excluídos aparecem aqui. Restaurar trará os palpites de volta.</p>
-            `;
-            
-            if (snap.empty) {
-                html += `<p class="text-center text-gray-400 mt-10 font-bold">Lixeira Vazia.</p>`;
-            } else {
-                snap.forEach(d => {
-                    const m = d.data();
-                    html += `
-                    <div class="bg-white p-3 rounded shadow-sm mb-2 border-l-4 border-red-500 flex justify-between items-center">
-                        <div>
-                            <p class="font-bold text-xs text-black">${m.teamA} x ${m.teamB}</p>
-                            <p class="text-[10px] text-gray-400">${m.competition}</p>
-                        </div>
-                        <div class="flex gap-3">
-                            <button onclick="restoreMatch('${d.id}')" class="text-green-600 font-bold text-xs flex flex-col items-center"><i class="fas fa-trash-restore text-lg"></i>Restaurar</button>
-                            <button onclick="permanentDelete('${d.id}')" class="text-red-600 font-bold text-xs flex flex-col items-center"><i class="fas fa-times text-lg"></i>Apagar</button>
-                        </div>
-                    </div>`;
-                });
-            }
-            html += `</div></div>`;
-            cont.innerHTML = html;
-        };
-
-        // 3. Restaurar Jogo
-        window.restoreMatch = async (matchId) => {
-            if(!confirm("Restaurar este jogo? Os palpites antigos reaparecerão.")) return;
-            try {
-                const matchSnap = await getDoc(doc(db, "bin_matches", matchId));
-                if (matchSnap.exists()) {
-                    const data = matchSnap.data();
-                    delete data.deletedAt; // Remove o carimbo de data da lixeira
-                    
-                    await setDoc(doc(db, "matches", matchId), data); // Volta para principal
-                    await deleteDoc(doc(db, "bin_matches", matchId)); // Sai da lixeira
-                    
-                    alert("Jogo restaurado com sucesso!");
-                    openTrashBin(); // Recarrega a lixeira
-                    loadMatches(); // Atualiza a home
-                }
-            } catch (e) {
-                alert("Erro ao restaurar: " + e.message);
-            }
-        };
-        
-        // 4. Excluir Permanentemente (Opcional, para limpar a lixeira)
-        window.permanentDelete = async (matchId) => {
-            if(!confirm("ATENÇÃO: Isso apagará o jogo PARA SEMPRE. Dados perdidos. Continuar?")) return;
-            try {
-                await deleteDoc(doc(db, "bin_matches", matchId));
-                openTrashBin();
-            } catch(e) { alert(e.message); }
-        };
+        window.moveToTrash = async (matchId) => { if(!confirm("Mover para Lixeira?")) return; try { const snap = await getDoc(doc(db, "matches", matchId)); if(snap.exists()) { await setDoc(doc(db, "bin_matches", matchId), {...snap.data(), deletedAt: new Date()}); await deleteDoc(doc(db, "matches", matchId)); loadAdminMatches(); loadMatches(); } } catch(e){alert(e.message);} };
+        window.openTrashBin = async () => { const cont = document.getElementById('modalContainer'); const snap = await getDocs(collection(db, "bin_matches")); let html = `<div class="w-full bg-white h-[85vh] p-4 overflow-y-auto"><div class="flex justify-between mb-4"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left"></i></button><h3 class="font-bold">Lixeira</h3><div></div></div>`; if(snap.empty) html += "<p>Vazia.</p>"; else snap.forEach(d => { const m = d.data(); html += `<div class="border p-2 mb-2 rounded flex justify-between"><span>${m.teamA} x ${m.teamB}</span><button onclick="restoreMatch('${d.id}')" class="text-green-600 font-bold">Restaurar</button></div>`; }); html += "</div>"; cont.innerHTML = html; };
+        window.restoreMatch = async (matchId) => { try { const snap = await getDoc(doc(db, "bin_matches", matchId)); if(snap.exists()) { const d = snap.data(); delete d.deletedAt; await setDoc(doc(db, "matches", matchId), d); await deleteDoc(doc(db, "bin_matches", matchId)); openTrashBin(); loadMatches(); } } catch(e){alert(e.message);} };
 
         window.openCompetitionsManager = async () => {
             const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
@@ -546,7 +440,69 @@ Término oficial: 31 de dezembro de 2026
             render();
         };
 
-        window.openFinancialScreen = async () => { const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const usersSnap = await getDocs(collection(db, "users")); const users = []; usersSnap.forEach(d => users.push({id: d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]"><img src="bg_painel_usuarios.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 flex flex-col h-full bg-white/30"><div class="p-4 flex justify-between items-center shrink-0"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-black text-lg">Gestão Financeira</h3><div class="w-6"></div></div><div class="p-4"><button class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press">GERENCIAR CONVITES (WHITELIST)</button></div><div class="flex-1 overflow-y-auto p-4 pt-0">`; users.forEach(u => { html += `<div class="bg-white border rounded p-2 mb-2 shadow-sm"><div class="flex justify-between items-center mb-2"><span class="font-bold text-xs text-gray-800">${u.name}</span><div class="flex items-center gap-2"><button onclick="changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus-circle"></i></button><span class="text-red-600 font-black text-xs min-w-[30px] text-center">${u.debts||0}</span><button onclick="changeDebt('${u.id}', 1)" class="text-red-500 bg-red-50 p-1 rounded"><i class="fas fa-plus-circle"></i></button></div></div><div class="grid grid-cols-6 gap-1">`; const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; months.forEach(m => { const isPaid = u.payments && u.payments[m]; const bg = isPaid ? "bg-green-600 text-white border-green-600 shadow-md" : "bg-gray-100 text-gray-400 border-gray-200"; html += `<div onclick="togglePay('${u.id}', '${m}', ${!isPaid})" class="${bg} border text-[8px] font-bold py-1 rounded text-center cursor-pointer transition-colors">${m}</div>`; }); html += `</div></div>`; }); html += `</div></div></div>`; cont.innerHTML = html; };
+        // --- FINANCEIRO COM AUDITORIA (NOVO) ---
+        window.openFinancialScreen = async () => { 
+            const cont = document.getElementById('modalContainer'); 
+            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; 
+            const usersSnap = await getDocs(collection(db, "users")); 
+            const users = []; usersSnap.forEach(d => users.push({id: d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); 
+            
+            let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]"><img src="bg_painel_usuarios.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 flex flex-col h-full bg-white/30"><div class="p-4 flex justify-between items-center shrink-0"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-black text-lg">Gestão Financeira</h3><div class="w-6"></div></div>
+            <div class="px-4 pb-2 space-y-2">
+                <button class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press">GERENCIAR CONVITES</button>
+                <button onclick="checkDelays()" class="w-full bg-red-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-calendar-times"></i> VERIFICAR ATRASOS (MÊS ATUAL)</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 pt-0">`; 
+            
+            users.forEach(u => { html += `<div class="bg-white border rounded p-2 mb-2 shadow-sm"><div class="flex justify-between items-center mb-2"><span class="font-bold text-xs text-gray-800">${u.name}</span><div class="flex items-center gap-2"><button onclick="changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus-circle"></i></button><span class="text-red-600 font-black text-xs min-w-[30px] text-center">${u.debts||0}</span><button onclick="changeDebt('${u.id}', 1)" class="text-red-500 bg-red-50 p-1 rounded"><i class="fas fa-plus-circle"></i></button></div></div><div class="grid grid-cols-6 gap-1">`; const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; months.forEach(m => { const isPaid = u.payments && u.payments[m]; const bg = isPaid ? "bg-green-600 text-white border-green-600 shadow-md" : "bg-gray-100 text-gray-400 border-gray-200"; html += `<div onclick="togglePay('${u.id}', '${m}', ${!isPaid})" class="${bg} border text-[8px] font-bold py-1 rounded text-center cursor-pointer transition-colors">${m}</div>`; }); html += `</div></div>`; }); 
+            html += `</div></div></div>`; cont.innerHTML = html; 
+        };
+
+        window.checkDelays = async () => {
+            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            const now = new Date();
+            const currMonth = months[now.getMonth()];
+            const day = now.getDate();
+
+            if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; }
+
+            const cont = document.getElementById('modalContainer');
+            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
+
+            const snap = await getDocs(collection(db, "users"));
+            let late = [];
+            snap.forEach(d => {
+                const u = d.data();
+                if (!u.payments || !u.payments[currMonth]) {
+                    late.push({id: d.id, name: u.name, debts: u.debts || 0});
+                }
+            });
+
+            let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`;
+            
+            if (late.length === 0) {
+                html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`;
+            } else {
+                html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`;
+                late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; });
+                html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`;
+            }
+            html += `</div>`;
+            cont.innerHTML = html;
+            
+            window.applyBatchPenalty = async () => {
+                if(!confirm("Confirmar aplicação de multa em massa?")) return;
+                const batch = writeBatch(db);
+                late.forEach(l => {
+                    const ref = doc(db, "users", l.id);
+                    batch.update(ref, { debts: l.debts + 1 });
+                });
+                await batch.commit();
+                alert("Penalidades aplicadas!");
+                openFinancialScreen();
+            };
+        };
+
         async function loadProfile() { if (!currentUser) return; try { const docRef = doc(db, "users", currentUser.uid); const snap = await getDoc(docRef); if (!snap.exists()) return; const u = snap.data(); document.getElementById('profileName').innerText = u.name || "MEMBRO"; document.getElementById('profileUser').innerText = `@${u.username || 'user'}`; if (u.photoBase64) { document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`; } const adminBtn = document.getElementById('btnAdminPanel'); if (u.isAdmin === true) { adminBtn.classList.remove('hidden'); } else { adminBtn.classList.add('hidden'); } const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const currMonth = months[new Date().getMonth()]; const payments = u.payments || {}; const isPaid = payments[currMonth] === true; const stCard = document.getElementById('financialCard'); const stText = document.getElementById('financialStatusText'); const stIcon = document.getElementById('financialIcon'); if (isPaid || new Date().getFullYear() < 2026) { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800 shadow-sm"; stText.innerText = "MENSALIDADE EM DIA"; stIcon.className = "fas fa-check-circle text-2xl"; } else { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800 shadow-sm"; stText.innerText = "PAGAMENTO PENDENTE"; stIcon.className = "fas fa-exclamation-circle text-2xl"; } try { const finSnap = await getDoc(doc(db, "settings", "financial")); if (finSnap.exists()) { const fin = finSnap.data(); document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com"; document.getElementById('btnSendProof').onclick = () => { const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112."); window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank'); }; } } catch (e) { console.log("Erro ao carregar dados financeiros:", e); } } catch (error) { console.error("Erro crítico no loadProfile:", error); } }
         document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { compressImage(file).then(async (base64) => { await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }).catch(err => { alert("Erro ao processar imagem."); console.error(err); }); } };
         window.togglePay = async (uid, month, status) => { const ref = doc(db, "users", uid); const u = await getDoc(ref); const payments = u.data().payments || {}; payments[month] = status; await updateDoc(ref, { payments: payments }); calculatePot(); openFinancialScreen(); };
@@ -554,7 +510,7 @@ Término oficial: 31 de dezembro de 2026
         document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.remove('hidden');
         window.copyKeyOnly = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
         document.getElementById('btnCopyPix').onclick = () => { alert("Copie a chave manual abaixo por enquanto."); };
-        window.changePassword = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_login.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 p-6"><h3 class="font-black text-[#006400] text-center mb-6 text-lg uppercase">Nova Senha</h3><input type="password" id="newPassInput" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnConfirmPass" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CONFIRMAR</button><button onclick="closeModal()" class="w-full text-gray-500 font-bold text-xs mt-4">CANCELAR</button></div></div>`; document.getElementById('btnConfirmPass').onclick = () => { const newPass = document.getElementById('newPassInput').value; if(newPass && newPass.length >= 6) { updatePassword(currentUser, newPass).then(() => { alert("Senha alterada com sucesso!"); closeModal(); }).catch(e => alert("Erro: Faça logout e login novamente para trocar a senha.")); } else { alert("A senha deve ter no mínimo 6 caracteres."); } }; };
+        window.changePassword = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_login.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 p-6"><h3 class="font-black text-[#006400] text-center mb-6 text-lg uppercase">Nova Senha</h3><input type="password" id="newPassInput" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnConfirmPass" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CONFIRMAR</button><button onclick="closeModal()" class="w-full text-black font-black text-xs mt-4">CANCELAR</button></div></div>`; document.getElementById('btnConfirmPass').onclick = () => { const newPass = document.getElementById('newPassInput').value; if(newPass && newPass.length >= 6) { updatePassword(currentUser, newPass).then(() => { alert("Senha alterada com sucesso!"); closeModal(); }).catch(e => alert("Erro: Faça logout e login novamente para trocar a senha.")); } else { alert("A senha deve ter no mínimo 6 caracteres."); } }; };
         window.showChangelog = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto"><h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">Linha do Tempo</h3><div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm"><h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">💡 Guia Rápido</h4><div class="text-xs text-gray-700 space-y-2 font-medium"><p>1. <b class="text-[#006400]">JOGOS:</b> Toque no escudo para votar.</p><p>2. <b class="text-[#006400]">RANKING:</b> Toque na foto para zoom.</p><p>3. <b class="text-[#006400]">REGRAS:</b> Leia o regulamento.</p><p>4. <b class="text-[#006400]">PERFIL:</b> Altere foto/senha e pague.</p></div></div><div><h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">📜 Histórico</h4><div class="mb-4 pb-4 border-b border-gray-100"><p class="text-xs font-black text-[#006400] mb-1">v1.3.8 (Atual): Web Ultimate</p><ul class="text-[11px] text-gray-500 space-y-1 list-disc pl-4"><li><b>Visual Nativo:</b> Identidade visual idêntica ao Android.</li><li><b>Correção iOS:</b> Upload de fotos funcionando no iPhone.</li></ul></div></div><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded-lg font-bold mt-6 shadow-lg btn-press text-sm">ENTENDI</button></div></div>`; };
         async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'}); }
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
@@ -564,5 +520,3 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
-
-
