@@ -313,11 +313,10 @@ Término oficial: 31 de dezembro de 2026
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
         
         // --- LOAD MATCHES COM PROTEÇÃO E CORREÇÃO ---
-        async function loadMatches() {
+       async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
             try {
-                // Tenta carregar logos (ignora erro se falhar)
                 try {
                     const setSnap = await getDoc(doc(db, "settings", "competitions"));
                     if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
@@ -329,12 +328,10 @@ Término oficial: 31 de dezembro de 2026
 
                 snap.forEach(d => {
                     const m = {id:d.id, ...d.data()};
-                    // Verifica se existe deadline
                     if(m.deadline) {
                         m.deadlineDate = m.deadline.toDate();
                         m.expired = now > m.deadlineDate;
                         m.final = (m.round || "").toLowerCase() === 'final';
-                        
                         if(m.winner) finished.push(m);
                         else if(m.expired) waiting.push(m);
                         else open.push(m);
@@ -348,10 +345,16 @@ Término oficial: 31 de dezembro de 2026
                 let html = "";
                 html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400");
                 
+                // MUDANÇA AQUI: Cor text-black e texto "confronto"
                 if(open.length > 0) { html += await renderMatchList(open); } 
-                else { html += `<div class="text-center text-gray-400 text-[16px] italic mb-6">Nenhum jogo aberto.</div>`; }
+                else { html += `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto para votação no momento.</div>`; }
                 
-                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${waiting.length ? await renderMatchList(waiting) : `<div class="text-center text-[#FF6D00] text-[16px] italic mb-6 font-bold">Nenhum jogo aguardando.</div>`}</div>`;
+                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">
+                    ${waiting.length 
+                        ? await renderMatchList(waiting) 
+                        // MUDANÇA AQUI: Cor text-black e texto "confronto"
+                        : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando resultado no momento.</div>`
+                    }</div>`;
                 
                 if(finished.length) {
                     html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 CONFRONTOS FINALIZADOS 🚫</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished)}</div>`;
@@ -360,7 +363,6 @@ Término oficial: 31 de dezembro de 2026
                 container.innerHTML = html;
             } catch(e) {
                 console.error("Erro loadMatches:", e);
-                container.innerHTML = `<div class="text-center text-red-500 p-4">Erro ao carregar jogos. Atualize a página.</div>`;
             }
             document.getElementById('progressBar').classList.add('hidden');
         }
@@ -562,4 +564,5 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
 
