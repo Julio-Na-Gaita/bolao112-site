@@ -404,8 +404,89 @@ Término oficial: 31 de dezembro de 2026
         }
         function createTeamBtn(mid, name, url, selected, expired) { const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800'; const border = selected ? 'border-2 border-[#FFD700]' : ''; return `<button onclick="window.vote('${mid}', '${name}')" ${expired?'disabled':''} class="btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}"><img src="${url}" class="w-10 h-10 object-contain mb-1"><span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`; }
         window.vote = async (mid, team) => { if(!currentUser) return; await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { matchId: mid, userId: currentUser.uid, teamSelected: team, timestamp: new Date() }); loadMatches(); };
-        window.openVoters = async (mid, ta, tb, exp, win) => { const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden'); cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`; const gSnap = await getDocs(query(collection(db, "guesses"), where("matchId", "==", mid))); const uSnap = await getDocs(collection(db, "users")); const uMap = {}; uSnap.forEach(u => uMap[u.id] = u.data()); let rows = ""; const guesses = []; gSnap.forEach(g => guesses.push(g.data())); guesses.sort((a,b) => { const uA = uMap[a.userId]?.name || ""; const uB = uMap[b.userId]?.name || ""; if(win) { const wa = a.teamSelected===win, wb = b.teamSelected===win; if(wa && !wb) return -1; if(!wa && wb) return 1; } return uA.localeCompare(uB); }); guesses.forEach(d => { const u = uMap[d.userId] || {name: "Desc.", photoBase64: ""}; let voteDisplay = `<span class="text-[10px] text-gray-400 italic"><i class="fas fa-lock"></i> Sigilo</span>`; let bg = "bg-white/80"; if (exp) { voteDisplay = `<span class="text-[11px] font-bold">${d.teamSelected}</span>`; if(win) { if(d.teamSelected === win) { bg = "bg-green-50/90"; voteDisplay += ` <i class="fas fa-check-circle text-green-600"></i>`; } else { bg = "bg-red-50/90"; voteDisplay += ` <i class="fas fa-times-circle text-red-600"></i>`; } } } rows += `<div class="flex justify-between items-center p-2 border-b border-gray-100 ${bg}"><div class="flex items-center gap-2">${u.photoBase64 ? `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-6 h-6 rounded-full object-cover">` : `<i class="fas fa-user-circle text-gray-300"></i>`}<span class="text-xs font-bold truncate w-24">${u.name}</span></div><div>${voteDisplay}</div></div>`; }); const bgImg = exp ? 'fundo_dialog_palpites.jpeg' : 'bg_dialog_votantes.jpeg'; cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="${bgImg}" class="absolute inset-0 w-full h-full object-cover opacity-40"><div class="relative z-10"><div class="bg-gray-50/90 p-3 border-b flex justify-between items-center"><h3 class="font-bold text-[#006400] uppercase text-xs">${exp ? 'Palpites' : 'Quem já votou?'}</h3><button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button></div><div class="max-h-[60vh] overflow-y-auto p-2">${rows || '<p class="text-xs text-center p-4">Sem votos.</p>'}</div><div class="bg-gray-50/90 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div></div></div>`; };
+// ATENÇÃO: Adicionei taUrl e tbUrl nos parâmetros
+        window.openVoters = async (mid, ta, tb, taUrl, tbUrl, exp, win) => { 
+            const modal = document.getElementById('modalOverlay'); 
+            const cont = document.getElementById('modalContainer'); 
+            modal.classList.remove('hidden'); 
+            cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`; 
+            
+            const gSnap = await getDocs(query(collection(db, "guesses"), where("matchId", "==", mid))); 
+            const uSnap = await getDocs(collection(db, "users")); 
+            const uMap = {}; 
+            uSnap.forEach(u => uMap[u.id] = u.data()); 
+            
+            let rows = ""; 
+            const guesses = []; 
+            gSnap.forEach(g => guesses.push(g.data())); 
+            
+            guesses.sort((a,b) => { 
+                const uA = uMap[a.userId]?.name || ""; 
+                const uB = uMap[b.userId]?.name || ""; 
+                if(win) { 
+                    const wa = a.teamSelected===win, wb = b.teamSelected===win; 
+                    if(wa && !wb) return -1; 
+                    if(!wa && wb) return 1; 
+                } 
+                return uA.localeCompare(uB); 
+            }); 
+            
+            guesses.forEach(d => { 
+                const u = uMap[d.userId] || {name: "Desc.", photoBase64: ""}; 
+                let voteDisplay = `<span class="text-[10px] text-gray-400 italic"><i class="fas fa-lock"></i> Sigilo</span>`; 
+                let bg = "bg-white/80"; 
+                
+                if (exp) { 
+                    // LÓGICA DO ESCUDO AQUI
+                    let teamImg = "";
+                    if (d.teamSelected === ta) teamImg = taUrl;
+                    else if (d.teamSelected === tb) teamImg = tbUrl;
+                    
+                    if (teamImg) {
+                        voteDisplay = `<img src="${teamImg}" class="w-8 h-8 object-contain">`;
+                    } else {
+                        voteDisplay = `<span class="text-[11px] font-bold">${d.teamSelected}</span>`; 
+                    }
 
+                    if(win) { 
+                        if(d.teamSelected === win) { 
+                            bg = "bg-green-50/90"; 
+                            // Adiciona ícone de check ao lado da imagem
+                            voteDisplay += ` <i class="fas fa-check-circle text-green-600 ml-2"></i>`; 
+                        } else { 
+                            bg = "bg-red-50/90"; 
+                            // Adiciona ícone de erro ao lado da imagem
+                            voteDisplay += ` <i class="fas fa-times-circle text-red-600 ml-2"></i>`; 
+                        } 
+                    } 
+                    // Envolve em um container flex para alinhar imagem e ícone
+                    voteDisplay = `<div class="flex items-center justify-end">${voteDisplay}</div>`;
+                } 
+                
+                rows += `<div class="flex justify-between items-center p-2 border-b border-gray-100 ${bg}">
+                    <div class="flex items-center gap-2">
+                        ${u.photoBase64 ? `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-6 h-6 rounded-full object-cover">` : `<i class="fas fa-user-circle text-gray-300"></i>`}
+                        <span class="text-xs font-bold truncate w-24">${u.name}</span>
+                    </div>
+                    <div>${voteDisplay}</div>
+                </div>`; 
+            }); 
+            
+            const bgImg = exp ? 'fundo_dialog_palpites.jpeg' : 'bg_dialog_votantes.jpeg'; 
+            cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                <img src="${bgImg}" class="absolute inset-0 w-full h-full object-cover opacity-40">
+                <div class="relative z-10">
+                    <div class="bg-gray-50/90 p-3 border-b flex justify-between items-center">
+                        <h3 class="font-bold text-[#006400] uppercase text-xs">${exp ? 'Palpites' : 'Quem já votou?'}</h3>
+                        <button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button>
+                    </div>
+                    <div class="max-h-[60vh] overflow-y-auto p-2">${rows || '<p class="text-xs text-center p-4">Sem votos.</p>'}</div>
+                    <div class="bg-gray-50/90 p-3 text-center">
+                        <button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button>
+                    </div>
+                </div>
+            </div>`; 
+        };
         async function loadRanking() { const list = document.getElementById('rankingListContent'); const footer = document.getElementById('lastUpdateRanking'); list.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`; const [uSnap, gSnap, mSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches"))]); const matches = []; mSnap.forEach(d => matches.push({id:d.id, ...d.data()})); const finished = matches.filter(m => m.winner); if (finished.length > 0) { finished.sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); const last = finished[0]; const d = last.deadline.toDate(); footer.innerText = `Última atualização: ${last.teamA} x ${last.teamB} em ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; } else footer.innerText = "Nenhum confronto finalizado."; let users = []; const now = new Date(); uSnap.forEach(ud => { const u = ud.data(); let p=0, v=0, f=0; const hist = []; const userGuesses = []; gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) }); userGuesses.forEach(g => { const m = finished.find(x => x.id === g.matchId); if(m) { const dl = m.deadline.toDate(); const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; if(m.winner === g.teamSelected) { const isF = m.round?.toLowerCase() === 'final'; p += isF ? 6 : 3; v++; if(isF) f++; hist.push({ts: dl, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${isF?6:3})`}); } else { hist.push({ts: dl, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'}); } } }); matches.forEach(m => { const dl = m.deadline.toDate(); if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); hist.sort((a,b) => b.ts - a.ts); users.push({name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0}); }); users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); currentRankingData = users; list.innerHTML = users.map((u, i) => { const pos = i+1; let bgColor = 'bg-white'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; } let diffHtml = ''; if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2"><div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div><div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})"><div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}</div><span class="text-xs font-bold text-gray-800 truncate pl-2">${u.name}</span></div><div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div><div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div><div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div><div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div></div>`; }).join(''); }
         window.showModalPhoto = (idx) => { const u = currentRankingData[idx]; if(!u.photo) return; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 p-6 text-center flex flex-col items-center"><h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3><div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center"><img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain"></div><button onclick="closeModal()" class="mt-6 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
@@ -539,6 +620,7 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
 
 
 
