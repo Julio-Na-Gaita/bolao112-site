@@ -529,7 +529,6 @@ Término oficial: 31 de dezembro de 2026
                 openTrashBin();
             } catch(e) { alert(e.message); }
         };
-        async function loadAdminMatches() { const snap = await getDocs(collection(db, "matches")); const listDiv = document.getElementById('adminMatchList'); if(!listDiv) return; let html = ""; snap.forEach(d => { const m = d.data(); html += `<div class="flex justify-between items-center p-2 border-b border-gray-100"><span class="truncate w-2/3 font-bold text-black">${m.teamA} x ${m.teamB}</span><div class="flex gap-2"><button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button><button class="text-red-500" onclick="alert('Exclusão apenas no App')"><i class="fas fa-trash"></i></button></div></div>`; }); listDiv.innerHTML = html || "Sem jogos."; }
 
         window.openCompetitionsManager = async () => {
             const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
@@ -563,4 +562,3 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
-
