@@ -392,10 +392,142 @@ Término oficial: 31 de dezembro de 2026
         window.showModalPhoto = (idx) => { const u = currentRankingData[idx]; if(!u.photo) return; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 p-6 text-center flex flex-col items-center"><h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3><div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center"><img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain"></div><button onclick="closeModal()" class="mt-6 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
 
+        // --- PAINEL ADMIN COM LIXEIRA ---
         window.openAdminMenu = () => {
-            const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
-            cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 h-full flex flex-col bg-white/30 p-4"><div class="flex justify-between items-center mb-6"><button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3><div class="w-6"></div></div><div class="space-y-3"><button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button><button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-plus-circle"></i> NOVO CONFRONTO</button><button onclick="openCompetitionsManager()" class="w-full bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> COMPETIÇÕES (LOGOS)</button></div><hr class="border-black/20 my-4"><h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4><div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">Carregando lista...</div></div></div>`;
+            const modal = document.getElementById('modalOverlay');
+            const cont = document.getElementById('modalContainer');
+            modal.classList.remove('hidden');
+            
+            cont.innerHTML = `
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                    <img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                    <div class="relative z-10 h-full flex flex-col bg-white/30 p-4">
+                        <div class="flex justify-between items-center mb-6">
+                            <button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button>
+                            <h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3>
+                            <div class="w-6"></div>
+                        </div>
+                        <div class="space-y-3">
+                            <button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button>
+                            <button onclick="openTrashBin()" class="w-full bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trash-restore"></i> LIXEIRA (RESTAURAR)</button>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-plus-circle"></i> NOVO JOGO</button>
+                                <button onclick="openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-trophy"></i> COMPETIÇÕES</button>
+                            </div>
+                        </div>
+                        <hr class="border-black/20 my-4">
+                        <h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4>
+                        <div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">Carregando lista...</div>
+                    </div>
+                </div>`;
             loadAdminMatches();
+        };
+
+        // Carrega a lista normal (botão excluir agora move para lixeira)
+        async function loadAdminMatches() { 
+            const snap = await getDocs(collection(db, "matches")); 
+            const listDiv = document.getElementById('adminMatchList'); 
+            if(!listDiv) return; 
+            let html = ""; 
+            snap.forEach(d => { 
+                const m = d.data(); 
+                // Alterado onclick do botão delete para moveToTrash
+                html += `<div class="flex justify-between items-center p-2 border-b border-gray-100"><span class="truncate w-2/3 font-bold text-black">${m.teamA} x ${m.teamB}</span><div class="flex gap-2"><button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button><button class="text-red-500" onclick="moveToTrash('${d.id}')"><i class="fas fa-trash"></i></button></div></div>`; 
+            }); 
+            listDiv.innerHTML = html || "Sem jogos ativos."; 
+        }
+
+        // --- FUNÇÕES DA LIXEIRA (SOFT DELETE) ---
+        
+        // 1. Mover para Lixeira
+        window.moveToTrash = async (matchId) => {
+            if(!confirm("Tem certeza? O jogo irá para a LIXEIRA e sairá da lista principal.")) return;
+            try {
+                // Copia para a coleção 'bin_matches'
+                const matchSnap = await getDoc(doc(db, "matches", matchId));
+                if (matchSnap.exists()) {
+                    const data = matchSnap.data();
+                    data.deletedAt = new Date(); // Marca quando foi deletado
+                    
+                    await setDoc(doc(db, "bin_matches", matchId), data); // Salva na lixeira
+                    await deleteDoc(doc(db, "matches", matchId)); // Remove da principal
+                    
+                    alert("Jogo movido para a Lixeira.");
+                    loadAdminMatches(); // Recarrega a lista
+                    loadMatches(); // Atualiza a home
+                }
+            } catch (e) {
+                alert("Erro ao mover para lixeira: " + e.message);
+            }
+        };
+
+        // 2. Abrir Tela da Lixeira
+        window.openTrashBin = async () => {
+            const cont = document.getElementById('modalContainer');
+            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-gray-600"></i></div>`;
+            
+            const snap = await getDocs(collection(db, "bin_matches"));
+            let html = `
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]">
+                    <div class="bg-gray-800 text-white p-4 flex justify-between items-center">
+                        <button onclick="openAdminMenu()"><i class="fas fa-arrow-left"></i></button>
+                        <h3 class="font-bold uppercase text-sm">Lixeira (Restaurar)</h3>
+                        <div class="w-6"></div>
+                    </div>
+                    <div class="p-4 bg-gray-100 flex-1 overflow-y-auto">
+                        <p class="text-[10px] text-gray-500 mb-2 text-center">Jogos excluídos aparecem aqui. Restaurar trará os palpites de volta.</p>
+            `;
+            
+            if (snap.empty) {
+                html += `<p class="text-center text-gray-400 mt-10 font-bold">Lixeira Vazia.</p>`;
+            } else {
+                snap.forEach(d => {
+                    const m = d.data();
+                    html += `
+                    <div class="bg-white p-3 rounded shadow-sm mb-2 border-l-4 border-red-500 flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-xs text-black">${m.teamA} x ${m.teamB}</p>
+                            <p class="text-[10px] text-gray-400">${m.competition}</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="restoreMatch('${d.id}')" class="text-green-600 font-bold text-xs flex flex-col items-center"><i class="fas fa-trash-restore text-lg"></i>Restaurar</button>
+                            <button onclick="permanentDelete('${d.id}')" class="text-red-600 font-bold text-xs flex flex-col items-center"><i class="fas fa-times text-lg"></i>Apagar</button>
+                        </div>
+                    </div>`;
+                });
+            }
+            html += `</div></div>`;
+            cont.innerHTML = html;
+        };
+
+        // 3. Restaurar Jogo
+        window.restoreMatch = async (matchId) => {
+            if(!confirm("Restaurar este jogo? Os palpites antigos reaparecerão.")) return;
+            try {
+                const matchSnap = await getDoc(doc(db, "bin_matches", matchId));
+                if (matchSnap.exists()) {
+                    const data = matchSnap.data();
+                    delete data.deletedAt; // Remove o carimbo de data da lixeira
+                    
+                    await setDoc(doc(db, "matches", matchId), data); // Volta para principal
+                    await deleteDoc(doc(db, "bin_matches", matchId)); // Sai da lixeira
+                    
+                    alert("Jogo restaurado com sucesso!");
+                    openTrashBin(); // Recarrega a lixeira
+                    loadMatches(); // Atualiza a home
+                }
+            } catch (e) {
+                alert("Erro ao restaurar: " + e.message);
+            }
+        };
+        
+        // 4. Excluir Permanentemente (Opcional, para limpar a lixeira)
+        window.permanentDelete = async (matchId) => {
+            if(!confirm("ATENÇÃO: Isso apagará o jogo PARA SEMPRE. Dados perdidos. Continuar?")) return;
+            try {
+                await deleteDoc(doc(db, "bin_matches", matchId));
+                openTrashBin();
+            } catch(e) { alert(e.message); }
         };
         async function loadAdminMatches() { const snap = await getDocs(collection(db, "matches")); const listDiv = document.getElementById('adminMatchList'); if(!listDiv) return; let html = ""; snap.forEach(d => { const m = d.data(); html += `<div class="flex justify-between items-center p-2 border-b border-gray-100"><span class="truncate w-2/3 font-bold text-black">${m.teamA} x ${m.teamB}</span><div class="flex gap-2"><button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button><button class="text-red-500" onclick="alert('Exclusão apenas no App')"><i class="fas fa-trash"></i></button></div></div>`; }); listDiv.innerHTML = html || "Sem jogos."; }
 
@@ -431,3 +563,4 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
