@@ -372,7 +372,7 @@ Término oficial: 31 de dezembro de 2026
         window.toggleWaiting = () => { document.getElementById('waitingContainer').classList.toggle('hidden'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-down'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-up'); };
         window.toggleFinished = () => { document.getElementById('finishedContainer').classList.toggle('hidden'); document.getElementById('iconFinished').classList.toggle('fa-chevron-down'); document.getElementById('iconFinished').classList.toggle('fa-chevron-up'); };
         
-        async function renderMatchList(list) {
+       async function renderMatchList(list) {
             let html = "";
             for (const m of list) {
                 let userVote = ""; 
@@ -382,6 +382,10 @@ Término oficial: 31 de dezembro de 2026
                 const borderColor = m.final ? 'border-[#FFD700]' : (m.expired ? (m.winner ? 'border-[#D32F2F]' : 'border-[#FBC02D]') : 'border-[#006400]'); 
                 const bgColor = m.final ? 'bg-[#FFF9C4]' : 'bg-white';
                 const logo = compMap[m.competition] || "";
+                
+                // Contar comentários (Simples)
+                // Nota: Em produção real, fazer query dentro do loop pode ser pesado, mas para MVP funciona.
+                // Para otimizar, carregaríamos todos os counts antes.
                 
                 html += `<div class="card-cut relative border-l-[6px] ${bgColor} mb-6 overflow-hidden" style="border-left-color: ${borderColor.replace('border-[','').replace(']','')};">
                     ${logo ? `<img src="${logo}" class="absolute inset-0 w-full h-full object-contain opacity-[0.15] z-0 pointer-events-none p-4">` : ''}
@@ -393,9 +397,16 @@ Término oficial: 31 de dezembro de 2026
                                 <span class="text-[11px] text-gray-400">${m.round}</span>
                                 <span class="text-[10px] font-bold ${m.expired ? 'text-red-600' : 'text-black'} mt-1">${m.expired ? 'Encerrado:' : 'Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
                             </div>
-                            <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2">
-                                <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i>
-                            </button>
+                            
+                            <div class="flex gap-2">
+                                <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}')" class="text-gray-500 p-2 relative">
+                                    <i class="fas fa-comment-dots text-lg"></i>
+                                </button>
+
+                                <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2">
+                                    <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="flex items-center justify-between px-1">
                             ${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}
@@ -794,9 +805,85 @@ window.showModalPhoto = (idx) => {
         window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
         document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
         document.getElementById('btnLogout').onclick = () => signOut(auth);
+        // --- RESENHA (COMENTÁRIOS) ---
+        window.openMatchComments = async (mid, ta, tb) => {
+            const modal = document.getElementById('modalOverlay'); 
+            const cont = document.getElementById('modalContainer'); 
+            modal.classList.remove('hidden'); 
+            cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
+            
+            // Renderiza estrutura básica
+            const renderChat = (msgs) => {
+                let html = `
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[80vh] flex flex-col">
+                    <div class="bg-gray-100 p-3 border-b flex justify-between items-center shrink-0">
+                        <div>
+                            <h3 class="font-black text-[#006400] text-xs uppercase">RESENHA</h3>
+                            <p class="text-[10px] text-gray-600 font-bold">${ta} x ${tb}</p>
+                        </div>
+                        <button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button>
+                    </div>
+                    
+                    <div id="chatBody" class="flex-1 overflow-y-auto p-3 bg-[#E5DDD5] space-y-3">
+                        ${msgs.length ? msgs.map(m => {
+                            const isMe = m.userId === currentUser.uid;
+                            const time = m.timestamp ? new Date(m.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+                            return `
+                            <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                                <div class="max-w-[80%] bg-${isMe ? '[#DCF8C6]' : 'white'} p-2 rounded-lg shadow text-xs">
+                                    ${!isMe ? `<p class="text-[9px] font-bold text-[#006400] mb-1">${m.userName}</p>` : ''}
+                                    <p class="text-gray-800 text-sm leading-snug">${m.text}</p>
+                                    <p class="text-[8px] text-gray-400 text-right mt-1">${time}</p>
+                                </div>
+                            </div>`;
+                        }).join('') : '<p class="text-center text-gray-400 text-xs mt-4">Seja o primeiro a comentar!</p>'}
+                    </div>
+
+                    <div class="p-2 bg-white border-t flex items-center gap-2 shrink-0">
+                        <input type="text" id="commentInput" placeholder="Digite sua resenha..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none border focus:border-[#006400]">
+                        <button onclick="sendComment('${mid}')" class="bg-[#006400] text-white w-10 h-10 rounded-full shadow flex items-center justify-center btn-press"><i class="fas fa-paper-plane text-xs"></i></button>
+                    </div>
+                </div>`;
+                cont.innerHTML = html;
+                // Rola para baixo
+                const body = document.getElementById('chatBody');
+                if(body) body.scrollTop = body.scrollHeight;
+            };
+
+            // Escuta em tempo real
+            const q = query(collection(db, "match_comments"), where("matchId", "==", mid)); // Ordenação feita no cliente
+            const unsub = onSnapshot(q, (snap) => {
+                const msgs = [];
+                snap.forEach(d => msgs.push(d.data()));
+                msgs.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+                renderChat(msgs);
+            });
+            
+            // Hook para enviar
+            window.sendComment = async (matchId) => {
+                const txt = document.getElementById('commentInput').value.trim();
+                if(!txt) return;
+                
+                // Pega dados do user atual
+                const uDoc = await getDoc(doc(db, "users", currentUser.uid));
+                const uData = uDoc.data();
+                
+                await addDoc(collection(db, "match_comments"), {
+                    matchId: matchId,
+                    userId: currentUser.uid,
+                    userName: uData.name || "Anônimo",
+                    userPhoto: uData.photoBase64 || "",
+                    text: txt,
+                    timestamp: new Date()
+                });
+                document.getElementById('commentInput').value = "";
+                document.getElementById('commentInput').focus();
+            };
+        };
     </script>
 </body>
 </html>
+
 
 
 
