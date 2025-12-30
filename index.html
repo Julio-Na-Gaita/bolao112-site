@@ -487,7 +487,137 @@ Término oficial: 31 de dezembro de 2026
                 </div>
             </div>`; 
         };
-        async function loadRanking() { const list = document.getElementById('rankingListContent'); const footer = document.getElementById('lastUpdateRanking'); list.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`; const [uSnap, gSnap, mSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches"))]); const matches = []; mSnap.forEach(d => matches.push({id:d.id, ...d.data()})); const finished = matches.filter(m => m.winner); if (finished.length > 0) { finished.sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); const last = finished[0]; const d = last.deadline.toDate(); footer.innerText = `Última atualização: ${last.teamA} x ${last.teamB} em ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; } else footer.innerText = "Nenhum confronto finalizado."; let users = []; const now = new Date(); uSnap.forEach(ud => { const u = ud.data(); let p=0, v=0, f=0; const hist = []; const userGuesses = []; gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) }); userGuesses.forEach(g => { const m = finished.find(x => x.id === g.matchId); if(m) { const dl = m.deadline.toDate(); const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; if(m.winner === g.teamSelected) { const isF = m.round?.toLowerCase() === 'final'; p += isF ? 6 : 3; v++; if(isF) f++; hist.push({ts: dl, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${isF?6:3})`}); } else { hist.push({ts: dl, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'}); } } }); matches.forEach(m => { const dl = m.deadline.toDate(); if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); hist.sort((a,b) => b.ts - a.ts); users.push({name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0}); }); users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); currentRankingData = users; list.innerHTML = users.map((u, i) => { const pos = i+1; let bgColor = 'bg-white'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; } let diffHtml = ''; if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2"><div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div><div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})"><div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}</div><span class="text-xs font-bold text-gray-800 truncate pl-2">${u.name}</span></div><div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div><div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div><div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div><div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div></div>`; }).join(''); }
+async function loadRanking() { 
+            const list = document.getElementById('rankingListContent'); 
+            const footer = document.getElementById('lastUpdateRanking'); 
+            list.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`; 
+            
+            const [uSnap, gSnap, mSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches"))]); 
+            
+            const matches = []; 
+            mSnap.forEach(d => matches.push({id:d.id, ...d.data()})); 
+            
+            // Ordenar jogos finalizados do mais recente para o mais antigo para calcular o "On Fire"
+            const finished = matches.filter(m => m.winner);
+            finished.sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); 
+            
+            if (finished.length > 0) { 
+                const last = finished[0]; 
+                const d = last.deadline.toDate(); 
+                footer.innerText = `Última atualização: ${last.teamA} x ${last.teamB} em ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; 
+            } else footer.innerText = "Nenhum confronto finalizado."; 
+            
+            let users = []; 
+            const now = new Date(); 
+            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            const currentMonthIdx = now.getMonth();
+            const currentYear = now.getFullYear();
+
+            uSnap.forEach(ud => { 
+                const u = ud.data(); 
+                let p=0, v=0, f=0; 
+                const hist = []; 
+                const userGuesses = []; 
+                gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) }); 
+                
+                // Lógica de Pontos
+                finished.forEach(m => {
+                    const g = userGuesses.find(x => x.matchId === m.id);
+                    if(g) {
+                        const mWinner = m.winner;
+                        const dl = m.deadline.toDate(); 
+                        const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; 
+                        if(mWinner === g.teamSelected) { 
+                            const isF = m.round?.toLowerCase() === 'final'; 
+                            p += isF ? 6 : 3; 
+                            v++; 
+                            if(isF) f++; 
+                            hist.push({ts: dl, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${isF?6:3})`}); 
+                        } else { 
+                            hist.push({ts: dl, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'}); 
+                        }
+                    }
+                });
+
+                // --- CÁLCULO DE MEDALHAS ---
+                let medals = "";
+                
+                // 1. On Fire / Mão de Alface
+                if (finished.length >= 3) {
+                    const last3 = finished.slice(0, 3); // Pega os 3 últimos jogos
+                    let hits = 0;
+                    let misses = 0;
+                    last3.forEach(m => {
+                        const g = userGuesses.find(x => x.matchId === m.id);
+                        if (g && g.teamSelected === m.winner) hits++;
+                        else if (g) misses++; // Só conta erro se votou
+                    });
+                    if (hits === 3) medals += "🔥 ";
+                    if (misses === 3) medals += "🐢 ";
+                }
+
+                // 2. Mãe Dinah (Acertou final)
+                if (f > 0) medals += "🔮 ";
+
+                // 3. Patrão (Pagamentos em dia)
+                let allPaid = true;
+                if (currentYear >= 2026) {
+                    const userPayments = u.payments || {};
+                    for(let i=0; i<=currentMonthIdx; i++) {
+                        if (!userPayments[months[i]]) { allPaid = false; break; }
+                    }
+                    if (allPaid) medals += "💰 ";
+                } else {
+                    if ((u.debts || 0) === 0) medals += "💰 ";
+                }
+                // ---------------------------
+
+                matches.forEach(m => { 
+                    const dl = m.deadline.toDate(); 
+                    if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { 
+                        const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; 
+                        hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); 
+                    } 
+                }); 
+                const deb = u.debts || 0; 
+                p -= deb; 
+                if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
+                hist.sort((a,b) => b.ts - a.ts); 
+                
+                users.push({name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: medals}); 
+            }); 
+            
+            users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); 
+            currentRankingData = users; 
+            
+            list.innerHTML = users.map((u, i) => { 
+                const pos = i+1; 
+                let bgColor = 'bg-white'; 
+                let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; 
+                if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; } 
+                else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; } 
+                else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; } 
+                let diffHtml = ''; 
+                if(u.lastRank > 0) { 
+                    if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; 
+                    else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; 
+                } 
+                return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2">
+                    <div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div>
+                    <div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})">
+                        <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}</div>
+                        <div class="flex flex-col overflow-hidden">
+                            <span class="text-xs font-bold text-gray-800 truncate pl-2">${u.name}</span>
+                            ${u.medals ? `<span class="text-[10px] pl-2">${u.medals}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div>
+                    <div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div>
+                    <div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div>
+                    <div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div>
+                </div>`; 
+            }).join(''); 
+        }
         window.showModalPhoto = (idx) => { const u = currentRankingData[idx]; if(!u.photo) return; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 p-6 text-center flex flex-col items-center"><h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3><div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center"><img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain"></div><button onclick="closeModal()" class="mt-6 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
 
@@ -620,6 +750,7 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
 
 
 
