@@ -101,9 +101,14 @@
                                 <h3 class="font-black text-lg text-white tracking-widest">CLASSIFICAÇÃO</h3>
                                 <p class="text-[#FFD700] text-[10px] font-bold uppercase">Temporada 2026</p>
                             </div>
-                            <button onclick="loadRanking()" class="text-[#FFD700] bg-white/10 rounded-full w-8 h-8 flex items-center justify-center btn-press">
-                                <i class="fas fa-sync-alt text-xs"></i>
-                            </button>
+                            <div class="flex gap-2">
+                                <button onclick="showMedalLegend()" class="bg-white/10 rounded-full w-8 h-8 flex items-center justify-center btn-press">
+                                    <span class="text-red-500 font-black text-lg">?</span>
+                                </button>
+                                <button onclick="loadRanking()" class="text-[#FFD700] bg-white/10 rounded-full w-8 h-8 flex items-center justify-center btn-press">
+                                    <i class="fas fa-sync-alt text-xs"></i>
+                                </button>
+                            </div>
                         </div>
                         <div class="border-t border-white/20 mb-2"></div>
                         <div class="flex items-center text-[10px] font-bold text-white/70 uppercase text-center pb-2">
@@ -504,8 +509,9 @@ async function loadRanking() {
             if (finished.length > 0) { 
                 const last = finished[0]; 
                 const d = last.deadline.toDate(); 
-                footer.innerHTML = `Última atualização: ${last.teamA} x ${last.teamB} em ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}<br><br><button onclick="showMedalLegend()" class="bg-white/20 hover:bg-white/30 text-white border border-white/50 px-3 py-1 rounded text-[10px] font-bold">❓ LEGENDA MEDALHAS</button>`; 
-            } else footer.innerText = "Nenhum confronto finalizado."; 
+                // VOLTOU AO NORMAL (SEM BOTÃO AQUI)
+                footer.innerText = `Última atualização: ${last.teamA} x ${last.teamB} em ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; 
+            } else footer.innerText = "Nenhum confronto finalizado.";
             
             let users = []; 
             const now = new Date(); 
@@ -642,8 +648,25 @@ async function loadRanking() {
                 </div>
             `;
         };
-        window.showModalPhoto = (idx) => { const u = currentRankingData[idx]; if(!u.photo) return; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 p-6 text-center flex flex-col items-center"><h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3><div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center"><img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain"></div><button onclick="closeModal()" class="mt-6 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
-        window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
+window.showModalPhoto = (idx) => { 
+            const u = currentRankingData[idx]; 
+            if(!u.photo) return; 
+            document.getElementById('modalOverlay').classList.remove('hidden'); 
+            document.getElementById('modalContainer').innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                <img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                <div class="relative z-10 p-6 text-center flex flex-col items-center">
+                    <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3>
+                    <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center">
+                        <img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">
+                    </div>
+                    
+                    <div class="mt-4 text-4xl tracking-widest">${u.medals || ""}</div>
+                    
+                    <button onclick="closeModal()" class="mt-6 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button>
+                </div>
+            </div>`; 
+        };        window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
 
         window.openAdminMenu = () => {
             const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
