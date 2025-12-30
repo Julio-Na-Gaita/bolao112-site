@@ -642,54 +642,6 @@ async function loadRanking() {
                 </div>
             `;
         };
-                // ---------------------------
-
-                matches.forEach(m => { 
-                    const dl = m.deadline.toDate(); 
-                    if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { 
-                        const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; 
-                        hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); 
-                    } 
-                }); 
-                const deb = u.debts || 0; 
-                p -= deb; 
-                if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
-                hist.sort((a,b) => b.ts - a.ts); 
-                
-                users.push({name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: medals}); 
-            }); 
-            
-            users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); 
-            currentRankingData = users; 
-            
-            list.innerHTML = users.map((u, i) => { 
-                const pos = i+1; 
-                let bgColor = 'bg-white'; 
-                let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; 
-                if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; } 
-                else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; } 
-                else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; } 
-                let diffHtml = ''; 
-                if(u.lastRank > 0) { 
-                    if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; 
-                    else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; 
-                } 
-                return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2">
-                    <div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div>
-                    <div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})">
-                        <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}</div>
-                        <div class="flex flex-col overflow-hidden">
-                            <span class="text-xs font-bold text-gray-800 truncate pl-2">${u.name}</span>
-                            ${u.medals ? `<span class="text-[10px] pl-2">${u.medals}</span>` : ''}
-                        </div>
-                    </div>
-                    <div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div>
-                    <div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div>
-                    <div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div>
-                    <div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div>
-                </div>`; 
-            }).join(''); 
-        }
 
         // --- FUNÇÃO PARA MOSTRAR LEGENDA (WEB) ---
         window.showMedalLegend = () => {
@@ -922,6 +874,7 @@ async function loadRanking() {
     </script>
 </body>
 </html>
+
 
 
 
