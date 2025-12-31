@@ -506,6 +506,102 @@ Término oficial: 31 de dezembro de 2026
             const bgImg = exp ? 'fundo_dialog_palpites.jpeg' : 'bg_dialog_votantes.jpeg'; 
             cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="${bgImg}" class="absolute inset-0 w-full h-full object-cover opacity-40"><div class="relative z-10"><div class="bg-gray-50/90 p-3 border-b flex justify-between items-center"><h3 class="font-bold text-[#006400] uppercase text-xs">${exp ? 'Palpites' : 'Quem já votou?'}</h3><button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button></div><div class="max-h-[60vh] overflow-y-auto p-2">${rows || '<p class="text-xs text-center p-4">Sem votos.</p>'}</div><div class="bg-gray-50/90 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div></div></div>`; 
         };
+        window.showScout = async (uid, name, photo) => {
+            const cont = document.getElementById('modalContainer');
+            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
+            
+            const [mSnap, gSnap] = await Promise.all([
+                getDocs(collection(db, "matches")),
+                getDocs(query(collection(db, "guesses"), where("userId", "==", uid)))
+            ]);
+
+            const finished = [];
+            mSnap.forEach(d => {
+                const m = d.data();
+                if(m.winner) finished.push({id: d.id, ...m});
+            });
+
+            const userGuesses = [];
+            gSnap.forEach(d => userGuesses.push(d.data()));
+
+            let hits = 0;
+            const compStats = {};
+
+            finished.forEach(m => {
+                const g = userGuesses.find(x => x.matchId === m.id);
+                const isHit = g && g.teamSelected === m.winner;
+                if(isHit) hits++;
+
+                if(!compStats[m.competition]) compStats[m.competition] = {played:0, hits:0};
+                compStats[m.competition].played++;
+                if(isHit) compStats[m.competition].hits++;
+            });
+
+            const total = finished.length;
+            const acc = total > 0 ? ((hits/total)*100).toFixed(1) : 0;
+
+            // Melhor e Pior
+            let best = {name: "-", pct: -1};
+            let worst = {name: "-", pct: 101};
+
+            for(const [comp, data] of Object.entries(compStats)) {
+                if(data.played >= 3) { // Mínimo 3 jogos
+                    const pct = (data.hits / data.played) * 100;
+                    if(pct > best.pct) best = {name: comp, pct: pct};
+                    if(pct < worst.pct) worst = {name: comp, pct: pct};
+                }
+            }
+            if(best.pct === -1) best = {name: "Dados insuficientes", pct: 0};
+            if(worst.pct === 101) worst = {name: "Dados insuficientes", pct: 0};
+
+            const html = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                <img src="bg_ranking.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
+                <div class="relative z-10 p-6 flex flex-col items-center">
+                    <h3 class="font-black text-[#006400] text-xs tracking-[0.2em] mb-4">SCOUT DO APOSTADOR</h3>
+                    
+                    <div class="w-20 h-20 rounded-full border-2 border-[#FFD700] bg-gray-200 overflow-hidden mb-2">
+                        <img src="data:image/jpeg;base64,${photo}" class="w-full h-full object-cover">
+                    </div>
+                    <h2 class="font-black text-xl text-black uppercase mb-6">${name}</h2>
+
+                    <div class="flex justify-between w-full mb-6">
+                        <div class="text-center">
+                            <p class="text-2xl font-black text-black">${total}</p>
+                            <p class="text-[10px] font-bold text-gray-500">JOGOS</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-black text-[#2E7D32]">${hits}</p>
+                            <p class="text-[10px] font-bold text-gray-500">ACERTOS</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-2xl font-black text-[#FFD700] drop-shadow-sm">${acc}%</p>
+                            <p class="text-[10px] font-bold text-gray-500">PRECISÃO</p>
+                        </div>
+                    </div>
+
+                    <div class="w-full space-y-2 mb-6">
+                        <div class="flex items-center bg-gray-50 p-3 rounded border border-gray-100">
+                            <i class="fas fa-trophy text-[#2E7D32] text-xl w-8"></i>
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400">ESPECIALIDADE</p>
+                                <p class="font-bold text-sm text-gray-800">${best.name} (${Math.round(best.pct)}%)</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center bg-gray-50 p-3 rounded border border-gray-100">
+                            <i class="fas fa-exclamation-triangle text-[#C62828] text-xl w-8"></i>
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400">PONTO FRACO</p>
+                                <p class="font-bold text-sm text-gray-800">${worst.name} (${Math.round(worst.pct)}%)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 font-bold rounded shadow-lg btn-press">FECHAR</button>
+                </div>
+            </div>`;
+            cont.innerHTML = html;
+        };
 
         // --- TIRA-TEIMA (WEB) COM ESCUDOS, DATA E SOMA 100% ---
         window.compareGuesses = async (targetUid, targetName) => {
@@ -590,7 +686,7 @@ Término oficial: 31 de dezembro de 2026
             </div>`;
             
             cont.innerHTML = html;
-        };
+        };    
 
         // --- RANKING COM NOVAS MEDALHAS (MITO E DIAMANTE) ---
         async function loadRanking() { 
@@ -663,11 +759,29 @@ Término oficial: 31 de dezembro de 2026
             list.innerHTML = users.map((u, i) => { const pos = i+1; let bgColor = 'bg-white'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; } let diffHtml = ''; if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2"><div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div><div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})"><div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}</div><div class="flex flex-col overflow-hidden"><span class="text-xs font-bold text-gray-800 truncate pl-2">${u.name}</span>${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}</div></div><div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div><div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div><div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div><div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div></div>`; }).join(''); 
         }
 
-        window.showModalPhoto = (idx) => { 
+       window.showModalPhoto = (idx) => { 
             const u = currentRankingData[idx]; 
             if(!u.photo) return; 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
-            document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 p-6 text-center flex flex-col items-center"><h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3><div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center"><img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain"></div><div class="mt-4 text-4xl tracking-widest">${u.medals || ""}</div><button onclick="compareGuesses('${u.uid}', '${u.name}')" class="mt-6 w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg">COMPARAR PALPITES 🆚</button><button onclick="closeModal()" class="mt-2 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; 
+            // Adicionei o botão SCOUT abaixo da div das medalhas
+            document.getElementById('modalContainer').innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                <img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                <div class="relative z-10 p-6 text-center flex flex-col items-center">
+                    <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3>
+                    <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center">
+                        <img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">
+                    </div>
+                    <div class="mt-4 text-4xl tracking-widest">${u.medals || ""}</div>
+                    
+                    <button onclick="showScout('${u.uid}', '${u.name}', '${u.photo}')" class="mt-6 w-full bg-black text-[#FFD700] font-bold py-3 rounded shadow-lg border border-[#FFD700] btn-press">
+                        <i class="fas fa-chart-pie mr-2"></i> VER SCOUT DO APOSTADOR
+                    </button>
+
+                    <button onclick="compareGuesses('${u.uid}', '${u.name}')" class="mt-2 w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press">COMPARAR PALPITES 🆚</button>
+                    <button onclick="closeModal()" class="mt-2 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press">FECHAR</button>
+                </div>
+            </div>`; 
         };
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
         
@@ -792,5 +906,6 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
 
 
