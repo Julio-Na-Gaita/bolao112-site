@@ -176,13 +176,9 @@ Término oficial: 31 de dezembro de 2026
                 </div>
 
                 <div id="pixArea" class="hidden relative bg-white rounded-lg border border-gray-200 text-left space-y-3 mb-4 shadow-sm overflow-hidden">
-                    <div class="absolute inset-0 z-0">
-                        <img src="bg_pix.jpeg" class="w-full h-full object-cover opacity-50">
-                    </div>
+                    <div class="absolute inset-0 z-0"><img src="bg_pix.jpeg" class="w-full h-full object-cover opacity-50"></div>
                     <div class="relative z-10 p-4 pt-6">
-                        <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-[#006400] p-2 btn-press">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
+                        <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-[#006400] p-2 btn-press"><i class="fas fa-times text-xl"></i></button>
                         <div class="text-center mb-2">
                             <i class="fas fa-qrcode text-3xl text-[#006400]"></i>
                             <p class="font-black text-[#006400] text-lg mt-1">PAGAMENTO PIX</p>
@@ -190,26 +186,9 @@ Término oficial: 31 de dezembro de 2026
                             <p class="text-xs font-bold text-gray-800">Valor da Mensalidade</p>
                             <p class="text-3xl font-black text-black">R$ 10,00</p>
                         </div>
-                        <div class="text-center text-[10px] text-gray-800 mb-2">
-                            Beneficiário:<br>
-                            <b class="text-[#006400] text-sm">MATHEUS FERREIRA ALVES</b>
-                        </div>
-                        <div>
-                            <button id="btnCopyPix" class="w-full bg-[#32BCAD] text-white py-2 rounded font-bold text-xs shadow btn-press mb-3">
-                                <i class="fas fa-copy mr-1"></i> PIX COPIA E COLA
-                            </button>
-                            <label class="text-[10px] text-gray-500 font-bold">Chave Pix Manual</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded shadow-sm">
-                                <button onclick="copyKeyOnly()" class="bg-[#006400] text-white px-3 rounded shadow-sm"><i class="fas fa-copy"></i></button>
-                            </div>
-                        </div>
-                        <div class="border-t border-gray-300 pt-3 mt-3">
-                            <p class="text-xs text-center mb-2 font-bold text-gray-700">Já fez o pagamento?</p>
-                            <button id="btnSendProof" class="w-full bg-[#25D366] text-white py-2 rounded font-bold text-xs shadow btn-press">
-                                <i class="fab fa-whatsapp mr-1"></i> AVISAR AO BRANCO
-                            </button>
-                        </div>
+                        <div class="text-center text-[10px] text-gray-800 mb-2">Beneficiário:<br><b class="text-[#006400] text-sm">MATHEUS FERREIRA ALVES</b></div>
+                        <div><button id="btnCopyPix" class="w-full bg-[#32BCAD] text-white py-2 rounded font-bold text-xs shadow btn-press mb-3"><i class="fas fa-copy mr-1"></i> PIX COPIA E COLA</button><label class="text-[10px] text-gray-500 font-bold">Chave Pix Manual</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded shadow-sm"><button onclick="copyKeyOnly()" class="bg-[#006400] text-white px-3 rounded shadow-sm"><i class="fas fa-copy"></i></button></div></div>
+                        <div class="border-t border-gray-300 pt-3 mt-3"><p class="text-xs text-center mb-2 font-bold text-gray-700">Já fez o pagamento?</p><button id="btnSendProof" class="w-full bg-[#25D366] text-white py-2 rounded font-bold text-xs shadow btn-press"><i class="fab fa-whatsapp mr-1"></i> AVISAR AO BRANCO</button></div>
                     </div>
                 </div>
 
@@ -218,10 +197,7 @@ Término oficial: 31 de dezembro de 2026
         </div>
     </main>
 
-    <div id="modalOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="closeModal()">
-        <div id="modalContainer" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden" onclick="event.stopPropagation()"></div>
-    </div>
-
+    <div id="modalOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="closeModal()"><div id="modalContainer" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden" onclick="event.stopPropagation()"></div></div>
     <div id="potModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6" onclick="document.getElementById('potModal').classList.add('hidden')">
         <div class="card-cut w-full max-w-sm p-8 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('https://cdn.pixabay.com/photo/2017/09/07/08/54/money-2724241_640.jpg'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
             <i class="fas fa-piggy-bank text-5xl text-[#FFD700] mb-4 drop-shadow-sm"></i>
@@ -244,7 +220,7 @@ Término oficial: 31 de dezembro de 2026
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
         const app = initializeApp(firebaseConfig);
@@ -350,12 +326,12 @@ Término oficial: 31 de dezembro de 2026
                 
                 // CORREÇÃO: COR PRETA E "CONFRONTO"
                 if(open.length > 0) { html += await renderMatchList(open); } 
-                else { html += `<div class="text-center text-black text-[14px] italic mb-6 font-bold">Nenhum confronto aberto para votação no momento.</div>`; }
+                else { html += `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto para votação no momento.</div>`; }
                 
                 html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">
                     ${waiting.length 
                         ? await renderMatchList(waiting) 
-                        : `<div class="text-center text-black text-[14px] italic mb-6 font-bold">Nenhum confronto aguardando resultado no momento.</div>`
+                        : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando resultado no momento.</div>`
                     }</div>`;
                 
                 if(finished.length) {
@@ -372,7 +348,8 @@ Término oficial: 31 de dezembro de 2026
         window.toggleWaiting = () => { document.getElementById('waitingContainer').classList.toggle('hidden'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-down'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-up'); };
         window.toggleFinished = () => { document.getElementById('finishedContainer').classList.toggle('hidden'); document.getElementById('iconFinished').classList.toggle('fa-chevron-down'); document.getElementById('iconFinished').classList.toggle('fa-chevron-up'); };
         
-       async function renderMatchList(list) {
+        // --- FUNÇÃO DE RENDERIZAR LISTA (COM BOTÃO DE CHAT E PALPITES) ---
+        async function renderMatchList(list) {
             let html = "";
             for (const m of list) {
                 let userVote = ""; 
@@ -382,10 +359,6 @@ Término oficial: 31 de dezembro de 2026
                 const borderColor = m.final ? 'border-[#FFD700]' : (m.expired ? (m.winner ? 'border-[#D32F2F]' : 'border-[#FBC02D]') : 'border-[#006400]'); 
                 const bgColor = m.final ? 'bg-[#FFF9C4]' : 'bg-white';
                 const logo = compMap[m.competition] || "";
-                
-                // Contar comentários (Simples)
-                // Nota: Em produção real, fazer query dentro do loop pode ser pesado, mas para MVP funciona.
-                // Para otimizar, carregaríamos todos os counts antes.
                 
                 html += `<div class="card-cut relative border-l-[6px] ${bgColor} mb-6 overflow-hidden" style="border-left-color: ${borderColor.replace('border-[','').replace(']','')};">
                     ${logo ? `<img src="${logo}" class="absolute inset-0 w-full h-full object-contain opacity-[0.15] z-0 pointer-events-none p-4">` : ''}
@@ -400,8 +373,8 @@ Término oficial: 31 de dezembro de 2026
                             
                             <div class="flex gap-2">
                                 <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="text-gray-500 p-2 relative">
-    <i class="fas fa-comment-dots text-lg"></i>
-</button>
+                                    <i class="fas fa-comment-dots text-lg"></i>
+                                </button>
 
                                 <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2">
                                     <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i>
@@ -418,9 +391,11 @@ Término oficial: 31 de dezembro de 2026
                 </div>`;
             } return html;
         }
+
         function createTeamBtn(mid, name, url, selected, expired) { const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800'; const border = selected ? 'border-2 border-[#FFD700]' : ''; return `<button onclick="window.vote('${mid}', '${name}')" ${expired?'disabled':''} class="btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}"><img src="${url}" class="w-10 h-10 object-contain mb-1"><span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`; }
         window.vote = async (mid, team) => { if(!currentUser) return; await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { matchId: mid, userId: currentUser.uid, teamSelected: team, timestamp: new Date() }); loadMatches(); };
-// ATENÇÃO: Adicionei taUrl e tbUrl nos parâmetros
+        
+        // --- FUNÇÃO ATUALIZADA DE VOTANTES (COM IMAGEM DOS TIMES) ---
         window.openVoters = async (mid, ta, tb, taUrl, tbUrl, exp, win) => { 
             const modal = document.getElementById('modalOverlay'); 
             const cont = document.getElementById('modalContainer'); 
@@ -503,213 +478,20 @@ Término oficial: 31 de dezembro de 2026
                 </div>
             </div>`; 
         };
-async function loadRanking() { 
-            const list = document.getElementById('rankingListContent'); 
-            const footer = document.getElementById('lastUpdateRanking'); 
-            list.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`; 
-            
-            const [uSnap, gSnap, mSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches"))]); 
-            
-            const matches = []; 
-            mSnap.forEach(d => matches.push({id:d.id, ...d.data()})); 
-            
-            // Ordenar jogos finalizados do mais recente para o mais antigo para calcular as sequências
-            const finished = matches.filter(m => m.winner);
-            finished.sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); 
-            
-            if (finished.length > 0) { 
-                const last = finished[0]; 
-                const d = last.deadline.toDate(); 
-                // VOLTOU AO NORMAL (SEM BOTÃO AQUI)
-                footer.innerText = `Última atualização: ${last.teamA} x ${last.teamB} em ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; 
-            } else footer.innerText = "Nenhum confronto finalizado.";
-            
-            let users = []; 
-            const now = new Date(); 
-            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-            const currentMonthIdx = now.getMonth();
-            const currentYear = now.getFullYear();
 
-            uSnap.forEach(ud => { 
-                const u = ud.data(); 
-                let p=0, v=0, f=0; 
-                const hist = []; 
-                const userGuesses = []; 
-                gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) }); 
-                
-                // Lógica de Pontos
-                finished.forEach(m => {
-                    const g = userGuesses.find(x => x.matchId === m.id);
-                    if(g) {
-                        const mWinner = m.winner;
-                        const dl = m.deadline.toDate(); 
-                        const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; 
-                        if(mWinner === g.teamSelected) { 
-                            const isF = m.round?.toLowerCase() === 'final'; 
-                            p += isF ? 6 : 3; 
-                            v++; 
-                            if(isF) f++; 
-                            hist.push({ts: dl, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${isF?6:3})`}); 
-                        } else { 
-                            hist.push({ts: dl, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'}); 
-                        }
-                    }
-                });
-
-                // --- CÁLCULO DE MEDALHAS (COM FURÃO) ---
-                let medals = "";
-                
-                if (finished.length >= 3) {
-                    const last3 = finished.slice(0, 3); // Pega os 3 últimos jogos
-                    let hits = 0;
-                    let misses = 0;
-                    let noShows = 0; // Contador de Furão
-
-                    last3.forEach(m => {
-                        const g = userGuesses.find(x => x.matchId === m.id);
-                        if (!g) noShows++; // Não votou
-                        else if (g.teamSelected === m.winner) hits++;
-                        else misses++; // Votou e errou
-                    });
-
-                    if (hits === 3) medals += "🔥 ";
-                    if (misses === 3) medals += "🐢 ";
-                    if (noShows === 3) medals += "👻 "; // Furão
-                }
-
-                // 2. Mãe Dinah (Acertou final)
-                if (f > 0) medals += "🔮 ";
-
-                // 3. Patrão (Pagamentos em dia)
-                let allPaid = true;
-                if (currentYear >= 2026) {
-                    const userPayments = u.payments || {};
-                    for(let i=0; i<=currentMonthIdx; i++) {
-                        if (!userPayments[months[i]]) { allPaid = false; break; }
-                    }
-                    if (allPaid) medals += "💰 ";
-                } else {
-                    if ((u.debts || 0) === 0) medals += "💰 ";
-                }
-                // ---------------------------
-
-                matches.forEach(m => { 
-                    const dl = m.deadline.toDate(); 
-                    if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { 
-                        const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; 
-                        hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); 
-                    } 
-                }); 
-                const deb = u.debts || 0; 
-                p -= deb; 
-                if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
-                hist.sort((a,b) => b.ts - a.ts); 
-                
-                users.push({name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: medals}); 
-            }); 
-            
-            users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); 
-            currentRankingData = users; 
-            
-            list.innerHTML = users.map((u, i) => { 
-                const pos = i+1; 
-                let bgColor = 'bg-white'; 
-                let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; 
-                if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; } 
-                else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; } 
-                else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; } 
-                let diffHtml = ''; 
-                if(u.lastRank > 0) { 
-                    if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; 
-                    else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; 
-                } 
-                return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2">
-                    <div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div>
-                    <div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})">
-                        <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}</div>
-                        <div class="flex flex-col overflow-hidden">
-                            <span class="text-xs font-bold text-gray-800 truncate pl-2">${u.name}</span>
-                            ${u.medals ? `<span class="text-[10px] pl-2">${u.medals}</span>` : ''}
-                        </div>
-                    </div>
-                    <div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div>
-                    <div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div>
-                    <div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div>
-                    <div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div>
-                </div>`; 
-            }).join(''); 
-        }
-
-        // --- FUNÇÃO PARA MOSTRAR LEGENDA (WEB) ---
-        window.showMedalLegend = () => {
-            const modal = document.getElementById('modalOverlay'); 
-            const cont = document.getElementById('modalContainer'); 
-            modal.classList.remove('hidden'); 
-            cont.innerHTML = `
-                <div class="bg-white rounded p-6 max-w-sm">
-                    <h3 class="font-bold text-[#006400] text-lg mb-4 text-center">Galeria de Conquistas</h3>
-                    <div class="space-y-4 text-xs text-gray-800">
-                        <div class="flex items-center"><span class="text-2xl mr-3">🔥</span><div><p class="font-bold">ON FIRE</p><p>Acertou 3 jogos seguidos.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">🔮</span><div><p class="font-bold">MÃE DINAH</p><p>Acertou um campeão de final.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">💰</span><div><p class="font-bold">PATRÃO</p><p>Mensalidade rigorosamente em dia.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">🐢</span><div><p class="font-bold">MÃO DE ALFACE</p><p>Errou 3 palpites seguidos.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">👻</span><div><p class="font-bold">FURÃO</p><p>Deixou de votar em 3 jogos seguidos.</p></div></div>
-                    </div>
-                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded mt-6 font-bold shadow">ENTENDI</button>
-                </div>
-            `;
-        };
-window.showModalPhoto = (idx) => { 
-            const u = currentRankingData[idx]; 
-            if(!u.photo) return; 
-            document.getElementById('modalOverlay').classList.remove('hidden'); 
-            document.getElementById('modalContainer').innerHTML = `
-            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
-                <img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
-                <div class="relative z-10 p-6 text-center flex flex-col items-center">
-                    <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3>
-                    <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center">
-                        <img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">
-                    </div>
-                    
-                    <div class="mt-4 text-4xl tracking-widest">${u.medals || ""}</div>
-                    
-                    <button onclick="closeModal()" class="mt-6 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button>
-                </div>
-            </div>`; 
-        };        window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
+        async function loadRanking() { const list = document.getElementById('rankingListContent'); const footer = document.getElementById('lastUpdateRanking'); list.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`; const [uSnap, gSnap, mSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches"))]); const matches = []; mSnap.forEach(d => matches.push({id:d.id, ...d.data()})); const finished = matches.filter(m => m.winner); if (finished.length > 0) { finished.sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); const last = finished[0]; const d = last.deadline.toDate(); footer.innerHTML = `Última atualização: ${last.teamA} x ${last.teamB} em ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}<br><br><button onclick="showMedalLegend()" class="bg-white/20 hover:bg-white/30 text-white border border-white/50 px-3 py-1 rounded text-[10px] font-bold">❓ LEGENDA MEDALHAS</button>`; } else footer.innerText = "Nenhum confronto finalizado."; let users = []; const now = new Date(); uSnap.forEach(ud => { const u = ud.data(); let p=0, v=0, f=0; const hist = []; const userGuesses = []; gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) }); userGuesses.forEach(g => { const m = finished.find(x => x.id === g.matchId); if(m) { const dl = m.deadline.toDate(); const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; if(m.winner === g.teamSelected) { const isF = m.round?.toLowerCase() === 'final'; p += isF ? 6 : 3; v++; if(isF) f++; hist.push({ts: dl, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${isF?6:3})`}); } else { hist.push({ts: dl, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'}); } } }); matches.forEach(m => { const dl = m.deadline.toDate(); if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); hist.sort((a,b) => b.ts - a.ts); users.push({name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0}); }); users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); currentRankingData = users; list.innerHTML = users.map((u, i) => { const pos = i+1; let bgColor = 'bg-white'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; } let diffHtml = ''; if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2"><div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div><div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})"><div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}</div><span class="text-xs font-bold text-gray-800 truncate pl-2">${u.name}</span></div><div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div><div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div><div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div><div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div></div>`; }).join(''); }
+        window.showModalPhoto = (idx) => { const u = currentRankingData[idx]; if(!u.photo) return; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 p-6 text-center flex flex-col items-center"><h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3><div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center"><img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain"></div><button onclick="closeModal()" class="mt-6 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
+        window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
+        window.showMedalLegend = () => { const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden'); cont.innerHTML = `<div class="bg-white rounded p-6 max-w-sm"><h3 class="font-bold text-[#006400] text-lg mb-4 text-center">Galeria de Conquistas</h3><div class="space-y-4 text-xs text-gray-800"><div class="flex items-center"><span class="text-2xl mr-3">🔥</span><div><p class="font-bold">ON FIRE</p><p>Acertou 3 jogos seguidos.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">🔮</span><div><p class="font-bold">MÃE DINAH</p><p>Acertou um campeão de final.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">💰</span><div><p class="font-bold">PATRÃO</p><p>Mensalidade rigorosamente em dia.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">🐢</span><div><p class="font-bold">MÃO DE ALFACE</p><p>Errou 3 palpites seguidos.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">👻</span><div><p class="font-bold">FURÃO</p><p>Deixou de votar em 3 jogos seguidos.</p></div></div></div><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded mt-6 font-bold shadow">ENTENDI</button></div>`; };
 
         window.openAdminMenu = () => {
             const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
-            cont.innerHTML = `
-                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
-                    <img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
-                    <div class="relative z-10 h-full flex flex-col bg-white/30 p-4">
-                        <div class="flex justify-between items-center mb-6">
-                            <button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button>
-                            <h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3>
-                            <div class="w-6"></div>
-                        </div>
-                        <div class="space-y-3">
-                            <button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button>
-                            <button onclick="openTrashBin()" class="w-full bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trash-restore"></i> LIXEIRA (RESTAURAR)</button>
-                            <div class="grid grid-cols-2 gap-2"><button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-plus-circle"></i> NOVO JOGO</button><button onclick="openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-trophy"></i> COMPETIÇÕES</button></div>
-                        </div>
-                        <hr class="border-black/20 my-4">
-                        <h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4>
-                        <div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">Carregando lista...</div>
-                    </div>
-                </div>`;
+            cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 h-full flex flex-col bg-white/30 p-4"><div class="flex justify-between items-center mb-6"><button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3><div class="w-6"></div></div><div class="space-y-3"><button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button><button onclick="openTrashBin()" class="w-full bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trash-restore"></i> LIXEIRA (RESTAURAR)</button><div class="grid grid-cols-2 gap-2"><button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-plus-circle"></i> NOVO JOGO</button><button onclick="openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-trophy"></i> COMPETIÇÕES</button></div></div><hr class="border-black/20 my-4"><h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4><div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">Carregando lista...</div></div></div>`;
             loadAdminMatches();
         };
+        async function loadAdminMatches() { const snap = await getDocs(collection(db, "matches")); const listDiv = document.getElementById('adminMatchList'); if(!listDiv) return; let html = ""; snap.forEach(d => { const m = d.data(); html += `<div class="flex justify-between items-center p-2 border-b border-gray-100"><span class="truncate w-2/3 font-bold text-black">${m.teamA} x ${m.teamB}</span><div class="flex gap-2"><button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button><button class="text-red-500" onclick="moveToTrash('${d.id}')"><i class="fas fa-trash"></i></button></div></div>`; }); listDiv.innerHTML = html || "Sem jogos."; }
 
-        // --- FUNÇÕES DE LIXEIRA E RESTAURAÇÃO ---
-        async function loadAdminMatches() { 
-            const snap = await getDocs(collection(db, "matches")); const listDiv = document.getElementById('adminMatchList'); if(!listDiv) return; 
-            let html = ""; snap.forEach(d => { const m = d.data(); html += `<div class="flex justify-between items-center p-2 border-b border-gray-100"><span class="truncate w-2/3 font-bold text-black">${m.teamA} x ${m.teamB}</span><div class="flex gap-2"><button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button><button class="text-red-500" onclick="moveToTrash('${d.id}')"><i class="fas fa-trash"></i></button></div></div>`; }); 
-            listDiv.innerHTML = html || "Sem jogos."; 
-        }
-
+        // --- LIXEIRA WEB ---
         window.moveToTrash = async (matchId) => { if(!confirm("Mover para Lixeira?")) return; try { const snap = await getDoc(doc(db, "matches", matchId)); if(snap.exists()) { await setDoc(doc(db, "bin_matches", matchId), {...snap.data(), deletedAt: new Date()}); await deleteDoc(doc(db, "matches", matchId)); loadAdminMatches(); loadMatches(); } } catch(e){alert(e.message);} };
         window.openTrashBin = async () => { const cont = document.getElementById('modalContainer'); const snap = await getDocs(collection(db, "bin_matches")); let html = `<div class="w-full bg-white h-[85vh] p-4 overflow-y-auto"><div class="flex justify-between mb-4"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left"></i></button><h3 class="font-bold">Lixeira</h3><div></div></div>`; if(snap.empty) html += "<p>Vazia.</p>"; else snap.forEach(d => { const m = d.data(); html += `<div class="border p-2 mb-2 rounded flex justify-between"><span>${m.teamA} x ${m.teamB}</span><button onclick="restoreMatch('${d.id}')" class="text-green-600 font-bold">Restaurar</button></div>`; }); html += "</div>"; cont.innerHTML = html; };
         window.restoreMatch = async (matchId) => { try { const snap = await getDoc(doc(db, "bin_matches", matchId)); if(snap.exists()) { const d = snap.data(); delete d.deletedAt; await setDoc(doc(db, "matches", matchId), d); await deleteDoc(doc(db, "bin_matches", matchId)); openTrashBin(); loadMatches(); } } catch(e){alert(e.message);} };
@@ -728,69 +510,8 @@ window.showModalPhoto = (idx) => {
             render();
         };
 
-        // --- FINANCEIRO COM AUDITORIA (NOVO) ---
-        window.openFinancialScreen = async () => { 
-            const cont = document.getElementById('modalContainer'); 
-            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; 
-            const usersSnap = await getDocs(collection(db, "users")); 
-            const users = []; usersSnap.forEach(d => users.push({id: d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); 
-            
-            let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]"><img src="bg_painel_usuarios.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 flex flex-col h-full bg-white/30"><div class="p-4 flex justify-between items-center shrink-0"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-black text-lg">Gestão Financeira</h3><div class="w-6"></div></div>
-            <div class="px-4 pb-2 space-y-2">
-                <button class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press">GERENCIAR CONVITES</button>
-                <button onclick="checkDelays()" class="w-full bg-red-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-calendar-times"></i> VERIFICAR ATRASOS (MÊS ATUAL)</button>
-            </div>
-            <div class="flex-1 overflow-y-auto p-4 pt-0">`; 
-            
-            users.forEach(u => { html += `<div class="bg-white border rounded p-2 mb-2 shadow-sm"><div class="flex justify-between items-center mb-2"><span class="font-bold text-xs text-gray-800">${u.name}</span><div class="flex items-center gap-2"><button onclick="changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus-circle"></i></button><span class="text-red-600 font-black text-xs min-w-[30px] text-center">${u.debts||0}</span><button onclick="changeDebt('${u.id}', 1)" class="text-red-500 bg-red-50 p-1 rounded"><i class="fas fa-plus-circle"></i></button></div></div><div class="grid grid-cols-6 gap-1">`; const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; months.forEach(m => { const isPaid = u.payments && u.payments[m]; const bg = isPaid ? "bg-green-600 text-white border-green-600 shadow-md" : "bg-gray-100 text-gray-400 border-gray-200"; html += `<div onclick="togglePay('${u.id}', '${m}', ${!isPaid})" class="${bg} border text-[8px] font-bold py-1 rounded text-center cursor-pointer transition-colors">${m}</div>`; }); html += `</div></div>`; }); 
-            html += `</div></div></div>`; cont.innerHTML = html; 
-        };
-
-        window.checkDelays = async () => {
-            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-            const now = new Date();
-            const currMonth = months[now.getMonth()];
-            const day = now.getDate();
-
-            if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; }
-
-            const cont = document.getElementById('modalContainer');
-            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
-
-            const snap = await getDocs(collection(db, "users"));
-            let late = [];
-            snap.forEach(d => {
-                const u = d.data();
-                if (!u.payments || !u.payments[currMonth]) {
-                    late.push({id: d.id, name: u.name, debts: u.debts || 0});
-                }
-            });
-
-            let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`;
-            
-            if (late.length === 0) {
-                html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`;
-            } else {
-                html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`;
-                late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; });
-                html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`;
-            }
-            html += `</div>`;
-            cont.innerHTML = html;
-            
-            window.applyBatchPenalty = async () => {
-                if(!confirm("Confirmar aplicação de multa em massa?")) return;
-                const batch = writeBatch(db);
-                late.forEach(l => {
-                    const ref = doc(db, "users", l.id);
-                    batch.update(ref, { debts: l.debts + 1 });
-                });
-                await batch.commit();
-                alert("Penalidades aplicadas!");
-                openFinancialScreen();
-            };
-        };
-
+        window.openFinancialScreen = async () => { const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const usersSnap = await getDocs(collection(db, "users")); const users = []; usersSnap.forEach(d => users.push({id: d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]"><img src="bg_painel_usuarios.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 flex flex-col h-full bg-white/30"><div class="p-4 flex justify-between items-center shrink-0"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-black text-lg">Gestão Financeira</h3><div class="w-6"></div></div><div class="px-4 pb-2 space-y-2"><button class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press">GERENCIAR CONVITES</button><button onclick="checkDelays()" class="w-full bg-red-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-calendar-times"></i> VERIFICAR ATRASOS (MÊS ATUAL)</button></div><div class="flex-1 overflow-y-auto p-4 pt-0">`; users.forEach(u => { html += `<div class="bg-white border rounded p-2 mb-2 shadow-sm"><div class="flex justify-between items-center mb-2"><span class="font-bold text-xs text-gray-800">${u.name}</span><div class="flex items-center gap-2"><button onclick="changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus-circle"></i></button><span class="text-red-600 font-black text-xs min-w-[30px] text-center">${u.debts||0}</span><button onclick="changeDebt('${u.id}', 1)" class="text-red-500 bg-red-50 p-1 rounded"><i class="fas fa-plus-circle"></i></button></div></div><div class="grid grid-cols-6 gap-1">`; const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; months.forEach(m => { const isPaid = u.payments && u.payments[m]; const bg = isPaid ? "bg-green-600 text-white border-green-600 shadow-md" : "bg-gray-100 text-gray-400 border-gray-200"; html += `<div onclick="togglePay('${u.id}', '${m}', ${!isPaid})" class="${bg} border text-[8px] font-bold py-1 rounded text-center cursor-pointer transition-colors">${m}</div>`; }); html += `</div></div>`; }); html += `</div></div></div>`; cont.innerHTML = html; };
+        window.checkDelays = async () => { const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const now = new Date(); const currMonth = months[now.getMonth()]; const day = now.getDate(); if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; } const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const snap = await getDocs(collection(db, "users")); let late = []; snap.forEach(d => { const u = d.data(); if (!u.payments || !u.payments[currMonth]) { late.push({id: d.id, name: u.name, debts: u.debts || 0}); } }); let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`; if (late.length === 0) { html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`; } else { html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`; late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; }); html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`; } html += `</div>`; cont.innerHTML = html; window.applyBatchPenalty = async () => { if(!confirm("Confirmar aplicação de multa em massa?")) return; const batch = writeBatch(db); late.forEach(l => { const ref = doc(db, "users", l.id); batch.update(ref, { debts: l.debts + 1 }); }); await batch.commit(); alert("Penalidades aplicadas!"); openFinancialScreen(); }; };
         async function loadProfile() { if (!currentUser) return; try { const docRef = doc(db, "users", currentUser.uid); const snap = await getDoc(docRef); if (!snap.exists()) return; const u = snap.data(); document.getElementById('profileName').innerText = u.name || "MEMBRO"; document.getElementById('profileUser').innerText = `@${u.username || 'user'}`; if (u.photoBase64) { document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`; } const adminBtn = document.getElementById('btnAdminPanel'); if (u.isAdmin === true) { adminBtn.classList.remove('hidden'); } else { adminBtn.classList.add('hidden'); } const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const currMonth = months[new Date().getMonth()]; const payments = u.payments || {}; const isPaid = payments[currMonth] === true; const stCard = document.getElementById('financialCard'); const stText = document.getElementById('financialStatusText'); const stIcon = document.getElementById('financialIcon'); if (isPaid || new Date().getFullYear() < 2026) { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800 shadow-sm"; stText.innerText = "MENSALIDADE EM DIA"; stIcon.className = "fas fa-check-circle text-2xl"; } else { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800 shadow-sm"; stText.innerText = "PAGAMENTO PENDENTE"; stIcon.className = "fas fa-exclamation-circle text-2xl"; } try { const finSnap = await getDoc(doc(db, "settings", "financial")); if (finSnap.exists()) { const fin = finSnap.data(); document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com"; document.getElementById('btnSendProof').onclick = () => { const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112."); window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank'); }; } } catch (e) { console.log("Erro ao carregar dados financeiros:", e); } } catch (error) { console.error("Erro crítico no loadProfile:", error); } }
         document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { compressImage(file).then(async (base64) => { await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }).catch(err => { alert("Erro ao processar imagem."); console.error(err); }); } };
         window.togglePay = async (uid, month, status) => { const ref = doc(db, "users", uid); const u = await getDoc(ref); const payments = u.data().payments || {}; payments[month] = status; await updateDoc(ref, { payments: payments }); calculatePot(); openFinancialScreen(); };
@@ -805,21 +526,16 @@ window.showModalPhoto = (idx) => {
         window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
         document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
         document.getElementById('btnLogout').onclick = () => signOut(auth);
-        // --- RESENHA (COMENTÁRIOS) ---
-        // --- RESENHA (COMENTÁRIOS) ---
-        // ATENÇÃO: Adicionei o parâmetro 'winner'
-        // --- RESENHA (COMENTÁRIOS) ---
-        // CORREÇÃO: Adicionei 'winner' nos argumentos e tratei undefined
+
+        // --- RESENHA (COMENTÁRIOS) COM BLOQUEIO ---
         window.openMatchComments = async (mid, ta, tb, winner) => {
             const modal = document.getElementById('modalOverlay'); 
             const cont = document.getElementById('modalContainer'); 
             modal.classList.remove('hidden'); 
-            
-            // Spinner inicial
             cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
             
-            // CORREÇÃO: Verifica se winner existe e não é vazio ou string "undefined"
-            const isFinished = winner && winner !== "" && winner !== "undefined" && winner !== "null";
+            // Verifica se está finalizado
+            const isFinished = winner && winner !== "";
 
             const renderChat = (msgs) => {
                 let html = `
@@ -835,12 +551,7 @@ window.showModalPhoto = (idx) => {
                     <div id="chatBody" class="flex-1 overflow-y-auto p-3 bg-[#E5DDD5] space-y-3">
                         ${msgs.length ? msgs.map(m => {
                             const isMe = m.userId === currentUser.uid;
-                            // Tratamento de erro para timestamp caso venha nulo
-                            let time = "";
-                            if (m.timestamp && m.timestamp.seconds) {
-                                time = new Date(m.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                            }
-                            
+                            const time = m.timestamp ? new Date(m.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
                             return `
                             <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
                                 <div class="max-w-[80%] bg-${isMe ? '[#DCF8C6]' : 'white'} p-2 rounded-lg shadow text-xs">
@@ -862,63 +573,29 @@ window.showModalPhoto = (idx) => {
                            </div>`
                     }
                 </div>`;
-                
                 cont.innerHTML = html;
-                
-                // Rola para baixo
                 const body = document.getElementById('chatBody');
                 if(body) body.scrollTop = body.scrollHeight;
             };
 
-            // Escuta em tempo real
-            // CORREÇÃO: Removi a ordenação da query para evitar erro de índice composto no Firestore se não houver
-            // Ordenamos no cliente (javascript) que é mais seguro para esse volume de dados
             const q = query(collection(db, "match_comments"), where("matchId", "==", mid)); 
-            
             const unsub = onSnapshot(q, (snap) => {
                 const msgs = [];
                 snap.forEach(d => msgs.push(d.data()));
-                // Ordenação no cliente
                 msgs.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
                 renderChat(msgs);
-            }, (error) => {
-                console.error("Erro ao carregar chat:", error);
-                cont.innerHTML = `<div class="p-4 text-center text-red-500">Erro ao carregar chat.<br><small>${error.message}</small></div>`;
             });
             
             window.sendComment = async (matchId) => {
-                const input = document.getElementById('commentInput');
-                if(!input) return; // Segurança caso o chat esteja bloqueado
-                
-                const txt = input.value.trim();
+                const txt = document.getElementById('commentInput').value.trim();
                 if(!txt) return;
-                
-                try {
-                    const uDoc = await getDoc(doc(db, "users", currentUser.uid));
-                    const uData = uDoc.data();
-                    
-                    await addDoc(collection(db, "match_comments"), {
-                        matchId: matchId,
-                        userId: currentUser.uid,
-                        userName: uData.name || "Anônimo",
-                        userPhoto: uData.photoBase64 || "",
-                        text: txt,
-                        timestamp: new Date()
-                    });
-                    
-                    input.value = "";
-                    input.focus();
-                } catch(e) {
-                    alert("Erro ao enviar: " + e.message);
-                }
+                const uDoc = await getDoc(doc(db, "users", currentUser.uid));
+                const uData = uDoc.data();
+                await addDoc(collection(db, "match_comments"), { matchId: matchId, userId: currentUser.uid, userName: uData.name || "Anônimo", userPhoto: uData.photoBase64 || "", text: txt, timestamp: new Date() });
+                document.getElementById('commentInput').value = "";
+                document.getElementById('commentInput').focus();
             };
         };
     </script>
 </body>
 </html>
-
-
-
-
-
-
