@@ -292,7 +292,7 @@ Término oficial: 31 de dezembro de 2026
             document.getElementById('appContent').className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
             ['matches', 'ranking', 'rules', 'profile'].forEach(t => { document.getElementById(`${t}Screen`).classList.add('hidden'); document.getElementById(`nav-${t}`).classList.replace('text-[#006400]', 'text-gray-400'); });
             document.getElementById(`${tab}Screen`).classList.remove('hidden'); document.getElementById(`nav-${tab}`).classList.replace('text-gray-400', 'text-[#006400]');
-            if(tab === 'matches') loadMatches(); if(tab === 'ranking') loadRanking(); if(tab === 'rules') renderRules(); if(tab === 'profile') loadProfile();
+            if(tab === 'matches') (); if(tab === 'ranking') loadRanking(); if(tab === 'rules') renderRules(); if(tab === 'profile') loadProfile();
         };
 
         function renderRules() {
@@ -312,16 +312,36 @@ Término oficial: 31 de dezembro de 2026
                     if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
                 } catch(e) { console.log("Logos warning:", e); }
 
-                const snap = await getDocs(collection(db, "matches"));
+                // --- NOVO: BUSCA TODOS OS VOTOS PARA O TERMÔMETRO ---
+                const [matchesSnap, guessesSnap] = await Promise.all([
+                    getDocs(collection(db, "matches")),
+                    getDocs(collection(db, "guesses"))
+                ]);
+
+                // Cria mapa de estatísticas: matchId -> { teamA: 0, teamB: 0 }
+                const statsMap = {};
+                guessesSnap.forEach(d => {
+                    const g = d.data();
+                    if (!statsMap[g.matchId]) statsMap[g.matchId] = { teamA: 0, teamB: 0, total: 0 };
+                    // Como não sabemos o nome do time A e B aqui sem cruzar, vamos guardar os nomes votados num objeto contador
+                    if (!statsMap[g.matchId][g.teamSelected]) statsMap[g.matchId][g.teamSelected] = 0;
+                    statsMap[g.matchId][g.teamSelected]++;
+                    statsMap[g.matchId].total++;
+                });
+                // ----------------------------------------------------
+
                 const now = new Date();
                 let open = [], waiting = [], finished = [];
 
-                snap.forEach(d => {
+                matchesSnap.forEach(d => {
                     const m = {id:d.id, ...d.data()};
                     if(m.deadline) {
                         m.deadlineDate = m.deadline.toDate();
                         m.expired = now > m.deadlineDate;
                         m.final = (m.round || "").toLowerCase() === 'final';
+                        // Anexa estatísticas ao objeto do jogo
+                        m.stats = statsMap[m.id] || {};
+                        
                         if(m.winner) finished.push(m);
                         else if(m.expired) waiting.push(m);
                         else open.push(m);
@@ -369,6 +389,37 @@ Término oficial: 31 de dezembro de 2026
                 const bgColor = m.final ? 'bg-[#FFF9C4]' : 'bg-white';
                 const logo = compMap[m.competition] || "";
                 
+                // CÁLCULO DO TERMÔMETRO WEB (CORRIGIDO)
+                let thermoHtml = "";
+                if (m.expired && m.stats) {
+                    const votesA = m.stats[m.teamA] || 0;
+                    const votesB = m.stats[m.teamB] || 0;
+                    const total = votesA + votesB;
+                    
+                    if (total > 0) {
+                        // Math.round garante inteiro mais próximo
+                        const pctA = Math.round((votesA / total) * 100);
+                        const pctB = 100 - pctA; // Força a soma a ser 100
+                        
+                        thermoHtml = `
+                        <div class="mt-3 pt-2 border-t border-gray-100">
+                            <div class="flex justify-between text-[9px] font-bold mb-1">
+                                <span class="text-green-700">${pctA}%</span>
+                                <span class="text-gray-400">TERMÔMETRO</span>
+                                <span class="text-red-700">${pctB}%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-gray-200 rounded-full flex overflow-hidden">
+                                <div style="width: ${pctA}%" class="bg-green-700 h-full"></div>
+                                <div style="width: ${pctB}%" class="bg-red-700 h-full"></div>
+                            </div>
+                            <div class="flex justify-between text-[8px] text-gray-400 mt-1">
+                                <span>${votesA} votos</span>
+                                <span>${votesB} votos</span>
+                            </div>
+                        </div>`;
+                    }
+                }
+
                 html += `<div class="card-cut relative border-l-[6px] ${bgColor} mb-6 overflow-hidden" style="border-left-color: ${borderColor.replace('border-[','').replace(']','')};">
                     ${logo ? `<img src="${logo}" class="absolute inset-0 w-full h-full object-contain opacity-[0.15] z-0 pointer-events-none p-4">` : ''}
                     <div class="relative z-10 p-4">
@@ -379,9 +430,14 @@ Término oficial: 31 de dezembro de 2026
                                 <span class="text-[11px] text-gray-400">${m.round}</span>
                                 <span class="text-[10px] font-bold ${m.expired ? 'text-red-600' : 'text-black'} mt-1">${m.expired ? 'Encerrado:' : 'Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
                             </div>
+                            
                             <div class="flex gap-2">
-                                <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="text-gray-500 p-2 relative"><i class="fas fa-comment-dots text-lg"></i></button>
-                                <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2"><i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i></button>
+                                <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="text-gray-500 p-2 relative">
+                                    <i class="fas fa-comment-dots text-lg"></i>
+                                </button>
+                                <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2">
+                                    <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i>
+                                </button>
                             </div>
                         </div>
                         <div class="flex items-center justify-between px-1">
@@ -390,6 +446,8 @@ Término oficial: 31 de dezembro de 2026
                             ${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}
                         </div>
                         ${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="text-[#006400] font-black text-lg">${m.winner}</p></div>` : ''}
+                        
+                        ${thermoHtml}
                     </div>
                 </div>`;
             } return html;
@@ -745,6 +803,7 @@ window.showMedalLegend = () => {
     </script>
 </body>
 </html>
+
 
 
 
