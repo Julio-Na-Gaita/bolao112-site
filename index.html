@@ -663,11 +663,35 @@ Término oficial: 31 de dezembro de 2026
             list.innerHTML = users.map((u, i) => { const pos = i+1; let bgColor = 'bg-white'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; } let diffHtml = ''; if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2"><div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div><div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})"><div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}</div><div class="flex flex-col overflow-hidden"><span class="text-xs font-bold text-gray-800 truncate pl-2">${u.name}</span>${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}</div></div><div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div><div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div><div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div><div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div></div>`; }).join(''); 
         }
 
-        window.showModalPhoto = (idx) => { 
+       window.showModalPhoto = (idx) => { 
             const u = currentRankingData[idx]; 
             if(!u.photo) return; 
+            
             document.getElementById('modalOverlay').classList.remove('hidden'); 
-            document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_foto.png" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 p-6 text-center flex flex-col items-center"><h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3><div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center"><img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain"></div><div class="mt-4 text-4xl tracking-widest">${u.medals || ""}</div><button onclick="compareGuesses('${u.uid}', '${u.name}')" class="mt-6 w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg">COMPARAR PALPITES 🆚</button><button onclick="closeModal()" class="mt-2 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; 
+            
+            // 1. Criamos o HTML, mas note que REMOVEMOS o onclick="..." do botão azul e adicionamos id="btnCompareAction"
+            document.getElementById('modalContainer').innerHTML = `
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                    <img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                    <div class="relative z-10 p-6 text-center flex flex-col items-center">
+                        <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3>
+                        <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center">
+                            <img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">
+                        </div>
+                        <div class="mt-4 text-4xl tracking-widest">${u.medals || ""}</div>
+                        
+                        <button id="btnCompareAction" class="mt-6 w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg">COMPARAR PALPITES 🆚</button>
+                        
+                        <button onclick="closeModal()" class="mt-2 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button>
+                    </div>
+                </div>`; 
+            
+            // 2. Agora dizemos ao Javascript o que fazer quando clicar nesse ID
+            // Isso "pula" o bloqueio de segurança do navegador
+            const btn = document.getElementById('btnCompareAction');
+            if (btn) {
+                btn.onclick = () => window.compareGuesses(u.uid, u.name);
+            }
         };
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
         
@@ -792,5 +816,6 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
 
 
