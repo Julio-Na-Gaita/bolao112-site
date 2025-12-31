@@ -442,8 +442,45 @@ Término oficial: 31 de dezembro de 2026
             } return html;
         }
 
-        function createTeamBtn(mid, name, url, selected, expired) { const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800'; const border = selected ? 'border-2 border-[#FFD700]' : ''; return `<button onclick="window.vote('${mid}', '${name}')" ${expired?'disabled':''} class="btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}"><img src="${url}" class="w-10 h-10 object-contain mb-1"><span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`; }
-        window.vote = async (mid, team) => { if(!currentUser) return; await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { matchId: mid, userId: currentUser.uid, teamSelected: team, timestamp: new Date() }); loadMatches(); };
+        // --- FUNÇÕES DE VOTO OTIMIZADAS (SEM LAG) ---
+        
+        function createTeamBtn(mid, name, url, selected, expired) { 
+            // Cria um ID único para o botão para podermos achá-lo via código
+            const safeName = name.replace(/[^a-zA-Z0-9]/g, '');
+            const btnId = `btn-${mid}-${safeName}`;
+            
+            const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800'; 
+            const border = selected ? 'border-2 border-[#FFD700]' : ''; 
+            
+            // Adicionamos a classe 'match-btn-${mid}' para agrupar botões do mesmo jogo
+            return `<button id="${btnId}" onclick="window.vote('${mid}', '${name}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}"><img src="${url}" class="w-10 h-10 object-contain mb-1"><span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`; 
+        }
+
+        window.vote = async (mid, team, btnId) => { 
+            if(!currentUser) return; 
+            
+            // 1. ATUALIZAÇÃO VISUAL IMEDIATA (Otimista)
+            // Remove o estilo de "selecionado" de todos os botões desse jogo
+            const buttons = document.getElementsByClassName(`match-btn-${mid}`);
+            for (let btn of buttons) {
+                btn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#EEEEEE] text-gray-800`;
+            }
+
+            // Aplica o estilo "selecionado" no botão clicado
+            const clickedBtn = document.getElementById(btnId);
+            if(clickedBtn) {
+                clickedBtn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#006400] text-white border-2 border-[#FFD700]`;
+            }
+
+            // 2. SALVA NO BANCO EM SEGUNDO PLANO
+            // Não chamamos loadMatches() aqui para evitar recarregar a tela toda
+            await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { 
+                matchId: mid, 
+                userId: currentUser.uid, 
+                teamSelected: team, 
+                timestamp: new Date() 
+            }); 
+        };
         
         window.openVoters = async (mid, ta, tb, taUrl, tbUrl, exp, win) => { 
             const modal = document.getElementById('modalOverlay'); 
@@ -755,4 +792,5 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
 
