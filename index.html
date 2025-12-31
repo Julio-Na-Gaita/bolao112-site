@@ -682,7 +682,7 @@ Término oficial: 31 de dezembro de 2026
                         <div class="mt-4 text-4xl tracking-widest">${u.medals || ""}</div>
                         
                         <button id="btnStatsAction" class="mt-6 w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
-                            <i class="fas fa-chart-pie"></i> VER ESTATÍSTICAS
+                            <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
                         </button>
 
                         <button id="btnCompareAction" class="mt-2 w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press">
@@ -695,15 +695,15 @@ Término oficial: 31 de dezembro de 2026
                     </div>
                 </div>`; 
             
-            // --- CORREÇÃO TÉCNICA PARA A WEB ---
+            // --- LIGAÇÕES DOS BOTÕES (CORREÇÃO WEB) ---
             
-            // Ativa o botão de Estatísticas
+            // 1. Liga o Scout (Passamos ID, Nome e Foto)
             const btnStats = document.getElementById('btnStatsAction');
             if (btnStats) {
-                btnStats.onclick = () => window.showModalHistory(idx);
+                btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
             }
 
-            // Ativa o botão de Comparar
+            // 2. Liga a Comparação
             const btnCompare = document.getElementById('btnCompareAction');
             if (btnCompare) {
                 btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
@@ -829,9 +829,155 @@ Término oficial: 31 de dezembro de 2026
                 document.getElementById('commentInput').focus();
             };
         };
+        // --- NOVO: SCOUT DO PALPITEIRO (ESTILO FIFA) ---
+        window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
+            const cont = document.getElementById('modalContainer');
+            // Mostra carregando
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i><p class="text-xs mt-2 font-bold text-gray-500">Gerando Scout...</p></div>`;
+
+            try {
+                // 1. Buscamos todos os jogos finalizados e os palpites desse usuário
+                const [mSnap, gSnap] = await Promise.all([
+                    getDocs(collection(db, "matches")),
+                    getDocs(query(collection(db, "guesses"), where("userId", "==", targetUid)))
+                ]);
+
+                // Organiza palpites num mapa: { matchId: "Time Apostado" }
+                const userGuesses = {};
+                gSnap.forEach(d => userGuesses[d.data().matchId] = d.data().teamSelected);
+
+                // Filtra e ordena jogos finalizados (do mais recente para o antigo)
+                const matches = [];
+                mSnap.forEach(d => {
+                    const m = d.data();
+                    if (m.winner) matches.push({ id: d.id, ...m, deadlineDate: m.deadline.toDate() });
+                });
+                matches.sort((a, b) => b.deadlineDate - a.deadlineDate); // Decrescente
+
+                // 2. Cálculos Estatísticos
+                let totalGuesses = 0;
+                let totalHits = 0;
+                let currentStreak = 0;
+                let streakBroken = false;
+                const compStats = {}; // { 'Champions': {hits:0, total:0} }
+
+                for (let m of matches) {
+                    const vote = userGuesses[m.id];
+                    if (!vote) continue; // Pula se não votou
+
+                    totalGuesses++;
+                    const isHit = vote === m.winner;
+                    if (isHit) totalHits++;
+
+                    // Estatísticas por competições
+                    if (!compStats[m.competition]) compStats[m.competition] = { hits: 0, total: 0 };
+                    compStats[m.competition].total++;
+                    if (isHit) compStats[m.competition].hits++;
+
+                    // Sequência Atual (Streak)
+                    if (!streakBroken) {
+                        if (currentStreak === 0) {
+                            currentStreak = isHit ? 1 : -1; // Começa a contagem
+                        } else if (currentStreak > 0 && isHit) {
+                            currentStreak++; // Aumenta sequência de vitórias
+                        } else if (currentStreak < 0 && !isHit) {
+                            currentStreak--; // Aumenta sequência de derrotas
+                        } else {
+                            streakBroken = true; // Quebrou a sequência
+                        }
+                    }
+                }
+
+                // 3. Define Especialidade e Ponto Fraco (Mínimo 3 jogos)
+                let bestComp = "---"; let bestPct = -1;
+                let worstComp = "---"; let worstPct = 101;
+
+                for (const [comp, stat] of Object.entries(compStats)) {
+                    const pct = (stat.hits / stat.total) * 100;
+                    if (stat.total >= 3) {
+                        if (pct > bestPct) { bestPct = pct; bestComp = comp; }
+                        if (pct < worstPct) { worstPct = pct; worstComp = comp; }
+                    }
+                }
+
+                const acc = totalGuesses > 0 ? Math.round((totalHits / totalGuesses) * 100) : 0;
+                
+                // Formata a sequência para exibição
+                let streakDisplay = "";
+                if(currentStreak > 0) streakDisplay = `<div class="text-green-600"><i class="fas fa-fire"></i> +${currentStreak}</div><div class="text-[8px] text-gray-400">VITÓRIAS SEGUIDAS</div>`;
+                else if(currentStreak < 0) streakDisplay = `<div class="text-red-600"><i class="fas fa-snowflake"></i> ${currentStreak}</div><div class="text-[8px] text-gray-400">ERROS SEGUIDOS</div>`;
+                else streakDisplay = `<div class="text-gray-400">-</div><div class="text-[8px] text-gray-400">NEUTRO</div>`;
+
+                // 4. Monta o Card (HTML)
+                const html = `
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                    <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-[#006400] to-black opacity-90"></div>
+                    <img src="bg_ranking.png" class="absolute inset-0 w-full h-full object-cover opacity-10 mix-blend-overlay">
+                    
+                    <div class="relative z-10 p-5 text-white">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-black italic text-[#FFD700] text-lg tracking-widest">SCOUT 2026</h3>
+                            <button onclick="closeModal()" class="text-white/50 hover:text-white"><i class="fas fa-times"></i></button>
+                        </div>
+
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-20 h-20 rounded-full border-4 border-[#FFD700] overflow-hidden bg-black shadow-lg shrink-0">
+                                ${targetPhoto ? `<img src="data:image/jpeg;base64,${targetPhoto}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gray-700 flex items-center justify-center"><i class="fas fa-user text-2xl"></i></div>`}
+                            </div>
+                            <div>
+                                <h2 class="font-black text-2xl uppercase leading-none mb-1">${targetName}</h2>
+                                <div class="inline-block bg-[#FFD700] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase">Atleta Oficial</div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div class="bg-white/10 rounded-lg p-3 text-center border border-white/10 backdrop-blur-sm">
+                                <div class="text-3xl font-black text-[#FFD700]">${acc}<span class="text-sm">%</span></div>
+                                <div class="text-[8px] uppercase font-bold text-gray-300 tracking-wider">Aproveitamento</div>
+                            </div>
+                            <div class="bg-white/10 rounded-lg p-3 text-center border border-white/10 backdrop-blur-sm flex flex-col justify-center items-center font-black text-xl">
+                                ${streakDisplay}
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="bg-gradient-to-r from-green-900/50 to-transparent p-2 rounded border-l-4 border-green-500 flex justify-between items-center">
+                                <div class="text-xs">
+                                    <p class="text-gray-400 text-[9px] uppercase font-bold">Especialidade</p>
+                                    <p class="font-bold text-white text-sm">${bestComp}</p>
+                                </div>
+                                <i class="fas fa-star text-green-400 text-xl opacity-50"></i>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-red-900/50 to-transparent p-2 rounded border-l-4 border-red-500 flex justify-between items-center">
+                                <div class="text-xs">
+                                    <p class="text-gray-400 text-[9px] uppercase font-bold">Ponto Fraco</p>
+                                    <p class="font-bold text-white text-sm">${worstComp}</p>
+                                </div>
+                                <i class="fas fa-skull text-red-400 text-xl opacity-50"></i>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 pt-4 border-t border-white/10 text-center">
+                             <p class="text-[9px] text-gray-400">Total de Palpites: <b class="text-white">${totalGuesses}</b></p>
+                        </div>
+                        
+                        <button onclick="closeModal()" class="mt-4 w-full bg-[#FFD700] text-black font-black py-3 rounded shadow-lg btn-press text-xs">FECHAR CARD</button>
+                    </div>
+                </div>
+                `;
+                cont.innerHTML = html;
+
+            } catch (e) {
+                console.error(e);
+                cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro ao carregar scout.</div>`;
+            }
+        };
     </script>
 </body>
 </html>
+
 
 
 
