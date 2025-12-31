@@ -220,7 +220,7 @@ Término oficial: 31 de dezembro de 2026
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
         const app = initializeApp(firebaseConfig);
@@ -581,7 +581,7 @@ Término oficial: 31 de dezembro de 2026
             const cont = document.getElementById('modalContainer'); 
             cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
             
-            // Busca dados
+            // IMPORTANTE: Aqui usamos 'orderBy' que deve estar importado lá em cima
             const [mSnap, mySnap, rivalSnap] = await Promise.all([
                 getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))),
                 getDocs(query(collection(db, "guesses"), where("userId", "==", currentUser.uid))),
@@ -612,7 +612,6 @@ Término oficial: 31 de dezembro de 2026
                 const myV = myVotes[m.id];
                 const rivalV = rivalVotes[m.id];
 
-                // Só mostra se alguém votou ou jogo expirou
                 if (myV || rivalV || isExpired) {
                     count++;
                     const isDiff = isExpired && myV && rivalV && myV !== rivalV;
@@ -654,7 +653,19 @@ Término oficial: 31 de dezembro de 2026
             
             cont.innerHTML = html;
         };
+
+            if(count === 0) html += `<p class="text-center text-gray-500 mt-10">Sem dados para comparar.</p>`;
+            
+            html += `</div>
+                <div class="p-2 border-t bg-white">
+                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 font-bold rounded">FECHAR</button>
+                </div>
+            </div>`;
+            
+            cont.innerHTML = html;
+        };
     </script>
 </body>
 </html>
+
 
