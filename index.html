@@ -161,7 +161,7 @@ Término oficial: 31 de dezembro de 2026
 
                     <div class="flex justify-center gap-4 mb-2">
                         <button onclick="changePassword()" class="text-xs text-[#006400] font-bold btn-press"><i class="fas fa-lock mr-1"></i> Senha</button>
-                        <button onclick="showChangelog()" class="text-xs text-[#006400] font-bold btn-press"><i class="fas fa-info-circle mr-1"></i> Ajuda</button>
+                        <button onclick="showAppGuide()" class="text-xs text-[#006400] font-bold btn-press"><i class="fas fa-info-circle mr-1"></i> Guia do App</button>
                     </div>
                 </div>
 
@@ -230,20 +230,9 @@ Término oficial: 31 de dezembro de 2026
         let currentRankingData = [];
         let compMap = {}; 
 
-        // --- REGRAS ---
-// --- REGRAS ATUALIZADAS (COM CLÁUSULA 24H) ---
-        const rulesData = [
-            { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal\nValor: R$ 10,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" },
-            { t: "2️⃣ PREMIAÇÃO FINAL (CLASSIFICAÇÃO GERAL)", c: "O valor total arrecadado ao longo da temporada formará o Pote Anual.\nDistribuição:\n🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%" },
-            { t: "3️⃣ SISTEMA DE PONTUAÇÃO", c: "✅ Acerto do vencedor/classificado: 3 pontos\n\n🔥 Finais (Peso 2)\nFinais de qualquer competição válida possuem pontuação dobrada\nCada acerto em final: 6 pontos\n\n💥 Rodada Perfeita – Oitavas de Final\nA rodada perfeita será considerada exclusivamente nas oitavas de final, em todas as competições válidas\nO participante que acertar 100% dos confrontos das oitavas receberá:\n+3 pontos extras, além da pontuação regular\n\n📌 Não existe rodada perfeita em quartas, semifinais ou finais." },
-            { t: "4️⃣ COMPETIÇÕES E REQUISITOS DE JOGOS", c: "As competições abaixo compõem a base do bolão. A inclusão dos jogos segue a seguinte regra hierárquica:\n\nA) Competições Válidas:\n🌍 Copa do Mundo\n🏆 UEFA Champions League\n🏆 UEFA Europa League\n🇧🇷 Copa do Brasil\n🌎 Copa Libertadores\n🌎 Copa Sul-Americana\n🇧🇷 Supercopa do Brasil\n🇪🇺 Supercopa da UEFA\n🌎 CONMEBOL Recopa\n🌍 FIFA Intercontinental Cup\n\nB) Fases de Mata-Mata Regular (Obrigatórias)\nTodas as fases eliminatórias da chave principal das competições listadas são de inclusão OBRIGATÓRIA e AUTOMÁTICA.\n\n⏳ C) PRAZO MÍNIMO DE DISPONIBILIDADE (REGRA DAS 24H)\nPara que um confronto seja considerado válido e apto para pontuação no bolão, ele deve ser cadastrado no sistema com uma antecedência mínima de 24 horas em relação ao seu horário de início.\n- Jogos inseridos com menos de 24h de prazo para votação não serão contabilizados, salvo acordo unânime dos participantes.\n- Essa medida visa garantir que todos tenham tempo hábil para analisar e registrar seus palpites." },
-            { t: "5️⃣ CRITÉRIOS DE DESEMPATE", c: "(Aplicados somente se houver empate no número total de pontos)\n1- Menor número de inadimplências (D)\n2- Maior número total de acertos (V)\n3- Maior número de acertos em finais (F)\n4- Sorteio\n\n📌 Nenhum critério de desempate será aplicado se não houver empate em pontos." },
-            { t: "6️⃣ PALPITES E PLATAFORMAS OFICIAIS", c: "Os palpites serão realizados exclusivamente nas plataformas oficiais do bolão:\n📱 Aplicativo (Android)\n🌐 Site (compatível com iOS e computador)\n\n📌 Palpites feitos fora dessas plataformas não serão considerados, mesmo que publicados no grupo." },
-            { t: "7️⃣ CLASSIFICAÇÃO E TRANSPARÊNCIA", c: "A classificação geral oficial será mantida e atualizada exclusivamente:\n📱 No aplicativo Android\n🌐 No site (iOS e PC)\nO link de acesso será disponibilizado no grupo oficial do WhatsApp\nO app/site será a única fonte oficial.\n\n📌 Para garantir a total lisura da competição, o sistema possui travas técnicas de segurança:\n\n🔒 Bloqueio de Edição\nApós o horário limite estipulado para um jogo, o sistema bloqueia automaticamente a edição da data/hora." },
-            { t: "8️⃣ CONDUTAS, INTERPRETAÇÕES E ALTERAÇÕES", c: "🧭 Interpretação das regras\nEm caso de dúvida ou divergência na interpretação de uma regra já existente, será adotada a decisão da maioria simples dos participantes.\n\n🚫 Criação ou alteração de regras\nCriação, exclusão ou alteração de regras exige 100% de concordância dos participantes." },
-            { t: "9️⃣ SISTEMA DE NOTIFICAÇÕES (BÔNUS)", c: "O serviço de notificações push (exclusivo para Android) é uma funcionalidade bônus de cortesia.\n\n⚠️ Importante:\nFalhas no envio ou não recebimento da notificação NÃO justificam o esquecimento do voto.\nÉ de inteira e exclusiva responsabilidade do participante acessar regularmente as plataformas." },
-            { t: "🔟 VALIDAÇÃO DO VOTO E FALHAS TÉCNICAS", c: "✅ A única comprovação válida de um voto é o seu registro visual no sistema (Botão destacado em VERDE).\n\n🚫 Não serão aceitas reclamações posteriores ao encerramento da votação sob alegações de falha técnica individual.\n\n💡 Recomendação de Segurança: Após votar, atualize a página para certificar-se de que seu palpite persiste gravado." }
-        ];
+        // --- REGRAS ATUALIZADAS (COM CLÁUSULA 24H) ---
+        const rulesData = [ { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal\nValor: R$ 10,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" }, { t: "2️⃣ PREMIAÇÃO FINAL (CLASSIFICAÇÃO GERAL)", c: "O valor total arrecadado ao longo da temporada formará o Pote Anual.\nDistribuição:\n🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%" }, { t: "3️⃣ SISTEMA DE PONTUAÇÃO", c: "✅ Acerto do vencedor/classificado: 3 pontos\n\n🔥 Finais (Peso 2)\nFinais de qualquer competição válida possuem pontuação dobrada\nCada acerto em final: 6 pontos\n\n💥 Rodada Perfeita – Oitavas de Final\nA rodada perfeita será considerada exclusivamente nas oitavas de final, em todas as competições válidas\nO participante que acertar 100% dos confrontos das oitavas receberá:\n+3 pontos extras, além da pontuação regular\n\n📌 Não existe rodada perfeita em quartas, semifinais ou finais." }, { t: "4️⃣ COMPETIÇÕES E REQUISITOS DE JOGOS", c: "As competições abaixo compõem a base do bolão. A inclusão dos jogos segue a seguinte regra hierárquica:\n\nA) Competições Válidas:\n🌍 Copa do Mundo\n🏆 UEFA Champions League\n🏆 UEFA Europa League\n🇧🇷 Copa do Brasil\n🌎 Copa Libertadores\n🌎 Copa Sul-Americana\n🇧🇷 Supercopa do Brasil\n🇪🇺 Supercopa da UEFA\n🌎 CONMEBOL Recopa\n🌍 FIFA Intercontinental Cup\n\nB) Fases de Mata-Mata Regular (Obrigatórias)\nTodas as fases eliminatórias da chave principal das competições listadas são de inclusão OBRIGATÓRIA e AUTOMÁTICA.\n\n⏳ C) PRAZO MÍNIMO DE DISPONIBILIDADE (REGRA DAS 24H)\nPara que um confronto seja considerado válido e apto para pontuação no bolão, ele deve ser cadastrado no sistema com uma antecedência mínima de 24 horas em relação ao seu horário de início.\n- Jogos inseridos com menos de 24h de prazo para votação não serão contabilizados, salvo acordo unânime dos participantes.\n- Essa medida visa garantir que todos tenham tempo hábil para analisar e registrar seus palpites." }, { t: "5️⃣ CRITÉRIOS DE DESEMPATE", c: "(Aplicados somente se houver empate no número total de pontos)\n1- Menor número de inadimplências (D)\n2- Maior número total de acertos (V)\n3- Maior número de acertos em finais (F)\n4- Sorteio\n\n📌 Nenhum critério de desempate será aplicado se não houver empate em pontos." }, { t: "6️⃣ PALPITES E PLATAFORMAS OFICIAIS", c: "Os palpites serão realizados exclusivamente nas plataformas oficiais do bolão:\n📱 Aplicativo (Android)\n🌐 Site (compatível com iOS e computador)\n\n📌 Palpites feitos fora dessas plataformas não serão considerados, mesmo que publicados no grupo." }, { t: "7️⃣ CLASSIFICAÇÃO E TRANSPARÊNCIA", c: "A classificação geral oficial será mantida e atualizada exclusivamente:\n📱 No aplicativo Android\n🌐 No site (iOS e PC)\nO link de acesso será disponibilizado no grupo oficial do WhatsApp\nO app/site será a única fonte oficial.\n\n📌 Para garantir a total lisura da competição, o sistema possui travas técnicas de segurança:\n\n🔒 Bloqueio de Edição\nApós o horário limite estipulado para um jogo, o sistema bloqueia automaticamente a edição da data/hora." }, { t: "8️⃣ CONDUTAS, INTERPRETAÇÕES E ALTERAÇÕES", c: "🧭 Interpretação das regras\nEm caso de dúvida ou divergência na interpretação de uma regra já existente, será adotada a decisão da maioria simples dos participantes.\n\n🚫 Criação ou alteração de regras\nCriação, exclusão ou alteração de regras exige 100% de concordância dos participantes." }, { t: "9️⃣ SISTEMA DE NOTIFICAÇÕES (BÔNUS)", c: "O serviço de notificações push (exclusivo para Android) é uma funcionalidade bônus de cortesia.\n\n⚠️ Importante:\nFalhas no envio ou não recebimento da notificação NÃO justificam o esquecimento do voto.\nÉ de inteira e exclusiva responsabilidade do participante acessar regularmente as plataformas." }, { t: "🔟 VALIDAÇÃO DO VOTO E FALHAS TÉCNICAS", c: "✅ A única comprovação válida de um voto é o seu registro visual no sistema (Botão destacado em VERDE).\n\n🚫 Não serão aceitas reclamações posteriores ao encerramento da votação sob alegações de falha técnica individual.\n\n💡 Recomendação de Segurança: Após votar, atualize a página para certificar-se de que seu palpite persiste gravado." }];
+
         // COMPRESSÃO
         const compressImage = (file) => {
             return new Promise((resolve) => {
@@ -292,7 +281,7 @@ Término oficial: 31 de dezembro de 2026
             document.getElementById('appContent').className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
             ['matches', 'ranking', 'rules', 'profile'].forEach(t => { document.getElementById(`${t}Screen`).classList.add('hidden'); document.getElementById(`nav-${t}`).classList.replace('text-[#006400]', 'text-gray-400'); });
             document.getElementById(`${tab}Screen`).classList.remove('hidden'); document.getElementById(`nav-${tab}`).classList.replace('text-gray-400', 'text-[#006400]');
-            if(tab === 'matches') (); if(tab === 'ranking') loadRanking(); if(tab === 'rules') renderRules(); if(tab === 'profile') loadProfile();
+            if(tab === 'matches') loadMatches(); if(tab === 'ranking') loadRanking(); if(tab === 'rules') renderRules(); if(tab === 'profile') loadProfile();
         };
 
         function renderRules() {
@@ -303,6 +292,7 @@ Término oficial: 31 de dezembro de 2026
 
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
         
+        // --- FUNÇÃO LOADMATCHES COM TERMÔMETRO ---
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
@@ -312,7 +302,7 @@ Término oficial: 31 de dezembro de 2026
                     if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
                 } catch(e) { console.log("Logos warning:", e); }
 
-                // --- NOVO: BUSCA TODOS OS VOTOS PARA O TERMÔMETRO ---
+                // --- BUSCA TODOS OS VOTOS PARA O TERMÔMETRO ---
                 const [matchesSnap, guessesSnap] = await Promise.all([
                     getDocs(collection(db, "matches")),
                     getDocs(collection(db, "guesses"))
@@ -389,7 +379,7 @@ Término oficial: 31 de dezembro de 2026
                 const bgColor = m.final ? 'bg-[#FFF9C4]' : 'bg-white';
                 const logo = compMap[m.competition] || "";
                 
-                // CÁLCULO DO TERMÔMETRO WEB (CORRIGIDO)
+                // CÁLCULO DO TERMÔMETRO WEB (CORRIGIDO E ARREDONDADO)
                 let thermoHtml = "";
                 if (m.expired && m.stats) {
                     const votesA = m.stats[m.teamA] || 0;
@@ -397,9 +387,9 @@ Término oficial: 31 de dezembro de 2026
                     const total = votesA + votesB;
                     
                     if (total > 0) {
-                        // Math.round garante inteiro mais próximo
+                        // Math.round garante inteiro mais próximo e lógica 100-pctA
                         const pctA = Math.round((votesA / total) * 100);
-                        const pctB = 100 - pctA; // Força a soma a ser 100
+                        const pctB = 100 - pctA; 
                         
                         thermoHtml = `
                         <div class="mt-3 pt-2 border-t border-gray-100">
@@ -432,12 +422,8 @@ Término oficial: 31 de dezembro de 2026
                             </div>
                             
                             <div class="flex gap-2">
-                                <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="text-gray-500 p-2 relative">
-                                    <i class="fas fa-comment-dots text-lg"></i>
-                                </button>
-                                <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2">
-                                    <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i>
-                                </button>
+                                <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="text-gray-500 p-2 relative"><i class="fas fa-comment-dots text-lg"></i></button>
+                                <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2"><i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i></button>
                             </div>
                         </div>
                         <div class="flex items-center justify-between px-1">
@@ -481,6 +467,92 @@ Término oficial: 31 de dezembro de 2026
             cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="${bgImg}" class="absolute inset-0 w-full h-full object-cover opacity-40"><div class="relative z-10"><div class="bg-gray-50/90 p-3 border-b flex justify-between items-center"><h3 class="font-bold text-[#006400] uppercase text-xs">${exp ? 'Palpites' : 'Quem já votou?'}</h3><button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button></div><div class="max-h-[60vh] overflow-y-auto p-2">${rows || '<p class="text-xs text-center p-4">Sem votos.</p>'}</div><div class="bg-gray-50/90 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div></div></div>`; 
         };
 
+        // --- TIRA-TEIMA (WEB) COM ESCUDOS, DATA E SOMA 100% ---
+        window.compareGuesses = async (targetUid, targetName) => {
+            const modal = document.getElementById('modalOverlay'); 
+            const cont = document.getElementById('modalContainer'); 
+            cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
+            
+            const [mSnap, mySnap, rivalSnap] = await Promise.all([
+                getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))),
+                getDocs(query(collection(db, "guesses"), where("userId", "==", currentUser.uid))),
+                getDocs(query(collection(db, "guesses"), where("userId", "==", targetUid)))
+            ]);
+
+            const myVotes = {}; mySnap.forEach(d => myVotes[d.data().matchId] = d.data().teamSelected);
+            const rivalVotes = {}; rivalSnap.forEach(d => rivalVotes[d.data().matchId] = d.data().teamSelected);
+            
+            let html = `
+            <div class="w-full max-w-sm bg-white h-[85vh] flex flex-col relative rounded-none shadow-2xl">
+                <div class="bg-[#006400] p-4 flex justify-between items-center text-white shrink-0">
+                    <div>
+                        <h3 class="font-black text-xs uppercase text-[#FFD700]">TIRA-TEIMA</h3>
+                        <p class="font-bold text-sm">Eu x ${targetName}</p>
+                    </div>
+                    <button onclick="closeModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 bg-gray-50 space-y-2">`;
+
+            const now = new Date();
+            let count = 0;
+
+            mSnap.forEach(d => {
+                const m = {id:d.id, ...d.data()};
+                const dl = m.deadline.toDate();
+                const isExpired = now > dl;
+                const myV = myVotes[m.id];
+                const rivalV = rivalVotes[m.id];
+
+                if (myV || rivalV || isExpired) {
+                    count++;
+                    const isDiff = isExpired && myV && rivalV && myV !== rivalV;
+                    const bgClass = isDiff ? "bg-red-50 border-red-200" : "bg-white border-gray-200";
+                    
+                    const dateStr = dl.toLocaleTimeString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'});
+
+                    let rivalDisplay = "-";
+                    if (!isExpired) {
+                        rivalDisplay = `<span class="text-gray-400 italic"><i class="fas fa-lock"></i> Sigilo</span>`;
+                    } else {
+                        rivalDisplay = rivalV || "❌";
+                        if(rivalV === m.winner) rivalDisplay = `<span class="text-green-600 font-bold">${rivalV}</span>`;
+                    }
+
+                    let myDisplay = myV || "❌";
+                    if(myV === m.winner) myDisplay = `<span class="text-green-600 font-bold">${myV}</span>`;
+
+                    html += `
+                    <div class="border rounded p-2 ${bgClass}">
+                        <div class="text-center mb-1">
+                            <p class="text-[9px] text-gray-500 mb-1">${dateStr}</p>
+                            <div class="flex items-center justify-center gap-2">
+                                ${m.teamAUrl ? `<img src="${m.teamAUrl}" class="w-5 h-5 object-contain">` : ''}
+                                <span class="text-[10px] font-bold text-gray-700">${m.teamA} x ${m.teamB}</span>
+                                ${m.teamBUrl ? `<img src="${m.teamBUrl}" class="w-5 h-5 object-contain">` : ''}
+                            </div>
+                            ${m.winner ? `<span class="text-[9px] text-green-700 font-black">Vencedor: ${m.winner}</span>` : ''}
+                        </div>
+                        <div class="flex items-center text-xs border-t pt-1">
+                            <div class="flex-1 text-center font-bold border-r">${myDisplay}</div>
+                            <div class="px-2 text-gray-400">vs</div>
+                            <div class="flex-1 text-center font-bold">${rivalDisplay}</div>
+                        </div>
+                    </div>`;
+                }
+            });
+
+            if(count === 0) html += `<p class="text-center text-gray-500 mt-10">Sem dados para comparar.</p>`;
+            
+            html += `</div>
+                <div class="p-2 border-t bg-white">
+                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 font-bold rounded">FECHAR</button>
+                </div>
+            </div>`;
+            
+            cont.innerHTML = html;
+        };
+
+        // --- RANKING COM NOVAS MEDALHAS (MITO E DIAMANTE) ---
         async function loadRanking() { 
             const list = document.getElementById('rankingListContent'); 
             const footer = document.getElementById('lastUpdateRanking'); 
@@ -494,21 +566,16 @@ Término oficial: 31 de dezembro de 2026
             uSnap.forEach(ud => { 
                 const u = ud.data(); let p=0, v=0, f=0; const hist = []; const userGuesses = []; gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) }); 
                 finished.forEach(m => { const g = userGuesses.find(x => x.matchId === m.id); if(g) { const mWinner = m.winner; const dl = m.deadline.toDate(); const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; if(mWinner === g.teamSelected) { const isF = m.round?.toLowerCase() === 'final'; p += isF ? 6 : 3; v++; if(isF) f++; hist.push({ts: dl, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${isF?6:3})`}); } else { hist.push({ts: dl, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'}); } } }); 
-// --- CÁLCULO DE MEDALHAS (ATUALIZADO) ---
+                
+                // --- CÁLCULO DE MEDALHAS (BLOCO ÚNICO) ---
                 let medals = "";
                 
-                // 1. Sequências (On Fire, Mito, Mão de Alface, Furão)
-                // Analisa até os últimos 5 jogos para o "Mito"
+                // 1. Sequências
                 if (finished.length >= 3) {
-                    const last5 = finished.slice(0, 5); // Pega até 5 jogos
+                    const last5 = finished.slice(0, 5);
                     const last3 = finished.slice(0, 3);
-                    
-                    let hits5 = 0;
-                    let hits3 = 0;
-                    let misses = 0;
-                    let noShows = 0;
+                    let hits5 = 0, hits3 = 0, misses = 0, noShows = 0;
 
-                    // Verifica sequência de 5 (Mito)
                     if (finished.length >= 5) {
                         last5.forEach(m => {
                             const g = userGuesses.find(x => x.matchId === m.id);
@@ -516,7 +583,6 @@ Término oficial: 31 de dezembro de 2026
                         });
                     }
 
-                    // Verifica sequência de 3 (Padrão)
                     last3.forEach(m => {
                         const g = userGuesses.find(x => x.matchId === m.id);
                         if (!g) noShows++;
@@ -524,22 +590,20 @@ Término oficial: 31 de dezembro de 2026
                         else misses++;
                     });
 
-                    if (hits5 === 5) medals += "👑 "; // Mito (Substitui ou soma ao On Fire? Vamos deixar somar por ostentação, ou substituir. Vou deixar somar)
-                    else if (hits3 === 3) medals += "🔥 "; // On Fire (Só ganha se não for Mito, ou ganha os dois? Logica do else if prioriza o Mito se eu mudasse a ordem, aqui aparecem os dois se tiver 5)
+                    if (hits5 === 5) medals += "👑 "; 
+                    else if (hits3 === 3) medals += "🔥 "; 
                     
                     if (misses === 3) medals += "🐢 ";
                     if (noShows === 3) medals += "👻 ";
                 }
 
-                // 2. Bônus Oitavas (Diamante)
-                // Precisamos ver se ele ganhou algum bônus de oitavas no histórico
-                const hasDiamond = hist.some(h => h.text.includes("Bônus Oitavas"));
-                if (hasDiamond) medals += "💎 ";
+                // 2. Diamante
+                if (hist.some(h => h.text.includes("Bônus Oitavas"))) medals += "💎 ";
 
-                // 3. Mãe Dinah (Acertou final)
+                // 3. Mãe Dinah
                 if (f > 0) medals += "🔮 ";
 
-                // 4. Patrão (Pagamentos em dia)
+                // 4. Patrão
                 let allPaid = true;
                 if (currentYear >= 2026) {
                     const userPayments = u.payments || {};
@@ -550,6 +614,7 @@ Término oficial: 31 de dezembro de 2026
                 } else {
                     if ((u.debts || 0) === 0) medals += "💰 ";
                 }
+
                 matches.forEach(m => { const dl = m.deadline.toDate(); if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
                 const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); hist.sort((a,b) => b.ts - a.ts); 
                 users.push({uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: medals}); 
@@ -560,48 +625,15 @@ Término oficial: 31 de dezembro de 2026
 
         window.showModalPhoto = (idx) => { 
             const u = currentRankingData[idx]; 
-            // Precisamos do ID do usuário alvo. 
-            // No loadRanking, certifique-se de que estamos salvando o ID no objeto 'users'.
-            // Vou atualizar o loadRanking abaixo para garantir.
-            
             if(!u.photo) return; 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
-            document.getElementById('modalContainer').innerHTML = `
-            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
-                <img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
-                <div class="relative z-10 p-6 text-center flex flex-col items-center">
-                    <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3>
-                    <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center">
-                        <img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">
-                    </div>
-                    <div class="mt-4 text-4xl tracking-widest">${u.medals || ""}</div>
-                    
-                    <button onclick="compareGuesses('${u.uid}', '${u.name}')" class="mt-6 w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg">COMPARAR PALPITES 🆚</button>
-                    
-                    <button onclick="closeModal()" class="mt-2 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button>
-                </div>
-            </div>`; 
+            document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 p-6 text-center flex flex-col items-center"><h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3><div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center"><img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain"></div><div class="mt-4 text-4xl tracking-widest">${u.medals || ""}</div><button onclick="compareGuesses('${u.uid}', '${u.name}')" class="mt-6 w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg">COMPARAR PALPITES 🆚</button><button onclick="closeModal()" class="mt-2 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; 
         };
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
-window.showMedalLegend = () => { 
-            const modal = document.getElementById('modalOverlay'); 
-            const cont = document.getElementById('modalContainer'); 
-            modal.classList.remove('hidden'); 
-            cont.innerHTML = `
-            <div class="bg-white rounded p-6 max-w-sm">
-                <h3 class="font-bold text-[#006400] text-lg mb-4 text-center">Galeria de Conquistas</h3>
-                <div class="space-y-4 text-xs text-gray-800">
-                    <div class="flex items-center"><span class="text-2xl mr-3">👑</span><div><p class="font-bold">MITO</p><p>Incríveis 5 acertos seguidos.</p></div></div>
-                    <div class="flex items-center"><span class="text-2xl mr-3">💎</span><div><p class="font-bold">DIAMANTE</p><p>Gabaritou as Oitavas (8/8).</p></div></div>
-                    <div class="flex items-center"><span class="text-2xl mr-3">🔥</span><div><p class="font-bold">ON FIRE</p><p>Acertou 3 jogos seguidos.</p></div></div>
-                    <div class="flex items-center"><span class="text-2xl mr-3">🔮</span><div><p class="font-bold">MÃE DINAH</p><p>Acertou um campeão de final.</p></div></div>
-                    <div class="flex items-center"><span class="text-2xl mr-3">💰</span><div><p class="font-bold">PATRÃO</p><p>Mensalidade rigorosamente em dia.</p></div></div>
-                    <div class="flex items-center"><span class="text-2xl mr-3">🐢</span><div><p class="font-bold">MÃO DE ALFACE</p><p>Errou 3 palpites seguidos.</p></div></div>
-                    <div class="flex items-center"><span class="text-2xl mr-3">👻</span><div><p class="font-bold">FURÃO</p><p>Deixou de votar em 3 jogos seguidos.</p></div></div>
-                </div>
-                <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded mt-6 font-bold shadow">ENTENDI</button>
-            </div>`; 
-        };
+        
+        // --- LEGENDA MEDALHAS ATUALIZADA (MITO, DIAMANTE...) ---
+        window.showMedalLegend = () => { const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden'); cont.innerHTML = `<div class="bg-white rounded p-6 max-w-sm"><h3 class="font-bold text-[#006400] text-lg mb-4 text-center">Galeria de Conquistas</h3><div class="space-y-4 text-xs text-gray-800"><div class="flex items-center"><span class="text-2xl mr-3">👑</span><div><p class="font-bold">MITO</p><p>Incríveis 5 acertos seguidos.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">💎</span><div><p class="font-bold">DIAMANTE</p><p>Gabaritou as Oitavas (8/8).</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">🔥</span><div><p class="font-bold">ON FIRE</p><p>Acertou 3 jogos seguidos.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">🔮</span><div><p class="font-bold">MÃE DINAH</p><p>Acertou um campeão de final.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">💰</span><div><p class="font-bold">PATRÃO</p><p>Mensalidade rigorosamente em dia.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">🐢</span><div><p class="font-bold">MÃO DE ALFACE</p><p>Errou 3 palpites seguidos.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">👻</span><div><p class="font-bold">FURÃO</p><p>Deixou de votar em 3 jogos seguidos.</p></div></div></div><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded mt-6 font-bold shadow">ENTENDI</button></div>`; };
+
         window.openAdminMenu = () => {
             const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
             cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 h-full flex flex-col bg-white/30 p-4"><div class="flex justify-between items-center mb-6"><button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3><div class="w-6"></div></div><div class="space-y-3"><button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button><button onclick="openTrashBin()" class="w-full bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trash-restore"></i> LIXEIRA (RESTAURAR)</button><div class="grid grid-cols-2 gap-2"><button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-plus-circle"></i> NOVO JOGO</button><button onclick="openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-trophy"></i> COMPETIÇÕES</button></div></div><hr class="border-black/20 my-4"><h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4><div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">Carregando lista...</div></div></div>`;
@@ -638,7 +670,10 @@ window.showMedalLegend = () => {
         window.copyKeyOnly = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
         document.getElementById('btnCopyPix').onclick = () => { alert("Copie a chave manual abaixo por enquanto."); };
         window.changePassword = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_login.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 p-6"><h3 class="font-black text-[#006400] text-center mb-6 text-lg uppercase">Nova Senha</h3><input type="password" id="newPassInput" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnConfirmPass" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CONFIRMAR</button><button onclick="closeModal()" class="w-full text-black font-black text-xs mt-4">CANCELAR</button></div></div>`; document.getElementById('btnConfirmPass').onclick = () => { const newPass = document.getElementById('newPassInput').value; if(newPass && newPass.length >= 6) { updatePassword(currentUser, newPass).then(() => { alert("Senha alterada com sucesso!"); closeModal(); }).catch(e => alert("Erro: Faça logout e login novamente para trocar a senha.")); } else { alert("A senha deve ter no mínimo 6 caracteres."); } }; };
-        window.showChangelog = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto"><h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">Linha do Tempo</h3><div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm"><h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">💡 Guia Rápido</h4><div class="text-xs text-gray-700 space-y-2 font-medium"><p>1. <b class="text-[#006400]">JOGOS:</b> Toque no escudo para votar.</p><p>2. <b class="text-[#006400]">RANKING:</b> Toque na foto para zoom.</p><p>3. <b class="text-[#006400]">REGRAS:</b> Leia o regulamento.</p><p>4. <b class="text-[#006400]">PERFIL:</b> Altere foto/senha e pague.</p></div></div><div><h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">📜 Histórico</h4><div class="mb-4 pb-4 border-b border-gray-100"><p class="text-xs font-black text-[#006400] mb-1">v1.3.8 (Atual): Web Ultimate</p><ul class="text-[11px] text-gray-500 space-y-1 list-disc pl-4"><li><b>Visual Nativo:</b> Identidade visual idêntica ao Android.</li><li><b>Correção iOS:</b> Upload de fotos funcionando no iPhone.</li></ul></div></div><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded-lg font-bold mt-6 shadow-lg btn-press text-sm">ENTENDI</button></div></div>`; };
+        
+        // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
+        window.showAppGuide = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto"><h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3><div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm"><h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4><div class="text-xs text-gray-700 space-y-2 font-medium"><p>👉 <b>Como votar:</b> Toque no escudo do time. O voto fica verde quando salvo.</p><p class="text-green-800 font-bold">👉 (NOVO) Termômetro: <span class="font-normal text-gray-700">Após o jogo acabar, uma barra colorida mostra a % de votos da galera.</span></p><p class="text-green-800 font-bold">👉 (NOVO) Resenha: <span class="font-normal text-gray-700">Toque no ícone 💬 no card do jogo para abrir o chat. O papo é bloqueado quando o juiz apita o fim!</span></p></div></div><div><h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">🏆 RANKING & DISPUTA</h4><div class="text-xs text-gray-700 space-y-2 font-medium"><p>👉 <b>Detalhes:</b> Toque na foto de qualquer participante para dar zoom.</p><p class="text-green-800 font-bold">👉 (NOVO) Medalhas: <span class="font-normal text-gray-700">Veja as conquistas (Mito, On Fire, Diamante) em tamanho gigante no zoom.</span></p><p class="text-green-800 font-bold">👉 (NOVO) Tira-Teima: <span class="font-normal text-gray-700">Ao abrir a foto de um rival, clique no botão azul <b>COMPARAR</b> para ver os palpites lado a lado.</span></p></div></div><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded-lg font-bold mt-6 shadow-lg btn-press text-sm">ENTENDI</button></div></div>`; };
+        
         async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'}); }
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
         window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
@@ -714,100 +749,6 @@ window.showMedalLegend = () => {
                 document.getElementById('commentInput').focus();
             };
         };
-        window.compareGuesses = async (targetUid, targetName) => {
-            const modal = document.getElementById('modalOverlay'); 
-            const cont = document.getElementById('modalContainer'); 
-            cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
-            
-            const [mSnap, mySnap, rivalSnap] = await Promise.all([
-                getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))),
-                getDocs(query(collection(db, "guesses"), where("userId", "==", currentUser.uid))),
-                getDocs(query(collection(db, "guesses"), where("userId", "==", targetUid)))
-            ]);
-
-            const myVotes = {}; mySnap.forEach(d => myVotes[d.data().matchId] = d.data().teamSelected);
-            const rivalVotes = {}; rivalSnap.forEach(d => rivalVotes[d.data().matchId] = d.data().teamSelected);
-            
-            let html = `
-            <div class="w-full max-w-sm bg-white h-[85vh] flex flex-col relative rounded-none shadow-2xl">
-                <div class="bg-[#006400] p-4 flex justify-between items-center text-white shrink-0">
-                    <div>
-                        <h3 class="font-black text-xs uppercase text-[#FFD700]">TIRA-TEIMA</h3>
-                        <p class="font-bold text-sm">Eu x ${targetName}</p>
-                    </div>
-                    <button onclick="closeModal()"><i class="fas fa-times"></i></button>
-                </div>
-                <div class="flex-1 overflow-y-auto p-2 bg-gray-50 space-y-2">`;
-
-            const now = new Date();
-            let count = 0;
-
-            mSnap.forEach(d => {
-                const m = {id:d.id, ...d.data()};
-                const dl = m.deadline.toDate();
-                const isExpired = now > dl;
-                const myV = myVotes[m.id];
-                const rivalV = rivalVotes[m.id];
-
-                if (myV || rivalV || isExpired) {
-                    count++;
-                    const isDiff = isExpired && myV && rivalV && myV !== rivalV;
-                    const bgClass = isDiff ? "bg-red-50 border-red-200" : "bg-white border-gray-200";
-                    
-                    // Formata Data
-                    const dateStr = dl.toLocaleTimeString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'});
-
-                    let rivalDisplay = "-";
-                    if (!isExpired) {
-                        rivalDisplay = `<span class="text-gray-400 italic"><i class="fas fa-lock"></i> Sigilo</span>`;
-                    } else {
-                        rivalDisplay = rivalV || "❌";
-                        if(rivalV === m.winner) rivalDisplay = `<span class="text-green-600 font-bold">${rivalV}</span>`;
-                    }
-
-                    let myDisplay = myV || "❌";
-                    if(myV === m.winner) myDisplay = `<span class="text-green-600 font-bold">${myV}</span>`;
-
-                    html += `
-                    <div class="border rounded p-2 ${bgClass}">
-                        <div class="text-center mb-1">
-                            <p class="text-[9px] text-gray-500 mb-1">${dateStr}</p>
-                            
-                            <div class="flex items-center justify-center gap-2">
-                                ${m.teamAUrl ? `<img src="${m.teamAUrl}" class="w-5 h-5 object-contain">` : ''}
-                                <span class="text-[10px] font-bold text-gray-700">${m.teamA} x ${m.teamB}</span>
-                                ${m.teamBUrl ? `<img src="${m.teamBUrl}" class="w-5 h-5 object-contain">` : ''}
-                            </div>
-                            
-                            ${m.winner ? `<span class="text-[9px] text-green-700 font-black">Vencedor: ${m.winner}</span>` : ''}
-                        </div>
-                        <div class="flex items-center text-xs border-t pt-1">
-                            <div class="flex-1 text-center font-bold border-r">${myDisplay}</div>
-                            <div class="px-2 text-gray-400">vs</div>
-                            <div class="flex-1 text-center font-bold">${rivalDisplay}</div>
-                        </div>
-                    </div>`;
-                }
-            });
-
-            if(count === 0) html += `<p class="text-center text-gray-500 mt-10">Sem dados para comparar.</p>`;
-            
-            html += `</div>
-                <div class="p-2 border-t bg-white">
-                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 font-bold rounded">FECHAR</button>
-                </div>
-            </div>`;
-            
-            cont.innerHTML = html;
-        };
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
