@@ -581,7 +581,6 @@ Término oficial: 31 de dezembro de 2026
             const cont = document.getElementById('modalContainer'); 
             cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
             
-            // IMPORTANTE: Aqui usamos 'orderBy' que deve estar importado lá em cima
             const [mSnap, mySnap, rivalSnap] = await Promise.all([
                 getDocs(query(collection(db, "matches"), orderBy("deadline", "desc"))),
                 getDocs(query(collection(db, "guesses"), where("userId", "==", currentUser.uid))),
@@ -617,6 +616,9 @@ Término oficial: 31 de dezembro de 2026
                     const isDiff = isExpired && myV && rivalV && myV !== rivalV;
                     const bgClass = isDiff ? "bg-red-50 border-red-200" : "bg-white border-gray-200";
                     
+                    // Formata Data
+                    const dateStr = dl.toLocaleTimeString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'});
+
                     let rivalDisplay = "-";
                     if (!isExpired) {
                         rivalDisplay = `<span class="text-gray-400 italic"><i class="fas fa-lock"></i> Sigilo</span>`;
@@ -631,10 +633,17 @@ Término oficial: 31 de dezembro de 2026
                     html += `
                     <div class="border rounded p-2 ${bgClass}">
                         <div class="text-center mb-1">
-                            <span class="text-[10px] font-bold text-gray-700">${m.teamA} x ${m.teamB}</span>
-                            ${m.winner ? `<br><span class="text-[9px] text-green-700 font-black">Vencedor: ${m.winner}</span>` : ''}
+                            <p class="text-[9px] text-gray-500 mb-1">${dateStr}</p>
+                            
+                            <div class="flex items-center justify-center gap-2">
+                                ${m.teamAUrl ? `<img src="${m.teamAUrl}" class="w-5 h-5 object-contain">` : ''}
+                                <span class="text-[10px] font-bold text-gray-700">${m.teamA} x ${m.teamB}</span>
+                                ${m.teamBUrl ? `<img src="${m.teamBUrl}" class="w-5 h-5 object-contain">` : ''}
+                            </div>
+                            
+                            ${m.winner ? `<span class="text-[9px] text-green-700 font-black">Vencedor: ${m.winner}</span>` : ''}
                         </div>
-                        <div class="flex items-center text-xs">
+                        <div class="flex items-center text-xs border-t pt-1">
                             <div class="flex-1 text-center font-bold border-r">${myDisplay}</div>
                             <div class="px-2 text-gray-400">vs</div>
                             <div class="flex-1 text-center font-bold">${rivalDisplay}</div>
@@ -653,21 +662,10 @@ Término oficial: 31 de dezembro de 2026
             
             cont.innerHTML = html;
         };
-
-            if(count === 0) html += `<p class="text-center text-gray-500 mt-10">Sem dados para comparar.</p>`;
-            
-            html += `</div>
-                <div class="p-2 border-t bg-white">
-                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 font-bold rounded">FECHAR</button>
-                </div>
-            </div>`;
-            
-            cont.innerHTML = html;
-        };
-        };
     </script>
 </body>
 </html>
+
 
 
 
