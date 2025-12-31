@@ -808,14 +808,18 @@ window.showModalPhoto = (idx) => {
         // --- RESENHA (COMENTÁRIOS) ---
         // --- RESENHA (COMENTÁRIOS) ---
         // ATENÇÃO: Adicionei o parâmetro 'winner'
+        // --- RESENHA (COMENTÁRIOS) ---
+        // CORREÇÃO: Adicionei 'winner' nos argumentos e tratei undefined
         window.openMatchComments = async (mid, ta, tb, winner) => {
             const modal = document.getElementById('modalOverlay'); 
             const cont = document.getElementById('modalContainer'); 
             modal.classList.remove('hidden'); 
+            
+            // Spinner inicial
             cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
             
-            // Verifica se está finalizado
-            const isFinished = winner && winner !== "";
+            // CORREÇÃO: Verifica se winner existe e não é vazio ou string "undefined"
+            const isFinished = winner && winner !== "" && winner !== "undefined" && winner !== "null";
 
             const renderChat = (msgs) => {
                 let html = `
@@ -831,7 +835,12 @@ window.showModalPhoto = (idx) => {
                     <div id="chatBody" class="flex-1 overflow-y-auto p-3 bg-[#E5DDD5] space-y-3">
                         ${msgs.length ? msgs.map(m => {
                             const isMe = m.userId === currentUser.uid;
-                            const time = m.timestamp ? new Date(m.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+                            // Tratamento de erro para timestamp caso venha nulo
+                            let time = "";
+                            if (m.timestamp && m.timestamp.seconds) {
+                                time = new Date(m.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                            }
+                            
                             return `
                             <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
                                 <div class="max-w-[80%] bg-${isMe ? '[#DCF8C6]' : 'white'} p-2 rounded-lg shadow text-xs">
@@ -853,32 +862,61 @@ window.showModalPhoto = (idx) => {
                            </div>`
                     }
                 </div>`;
+                
                 cont.innerHTML = html;
+                
+                // Rola para baixo
                 const body = document.getElementById('chatBody');
                 if(body) body.scrollTop = body.scrollHeight;
             };
 
+            // Escuta em tempo real
+            // CORREÇÃO: Removi a ordenação da query para evitar erro de índice composto no Firestore se não houver
+            // Ordenamos no cliente (javascript) que é mais seguro para esse volume de dados
             const q = query(collection(db, "match_comments"), where("matchId", "==", mid)); 
+            
             const unsub = onSnapshot(q, (snap) => {
                 const msgs = [];
                 snap.forEach(d => msgs.push(d.data()));
+                // Ordenação no cliente
                 msgs.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
                 renderChat(msgs);
+            }, (error) => {
+                console.error("Erro ao carregar chat:", error);
+                cont.innerHTML = `<div class="p-4 text-center text-red-500">Erro ao carregar chat.<br><small>${error.message}</small></div>`;
             });
             
             window.sendComment = async (matchId) => {
-                const txt = document.getElementById('commentInput').value.trim();
+                const input = document.getElementById('commentInput');
+                if(!input) return; // Segurança caso o chat esteja bloqueado
+                
+                const txt = input.value.trim();
                 if(!txt) return;
-                const uDoc = await getDoc(doc(db, "users", currentUser.uid));
-                const uData = uDoc.data();
-                await addDoc(collection(db, "match_comments"), { matchId: matchId, userId: currentUser.uid, userName: uData.name || "Anônimo", userPhoto: uData.photoBase64 || "", text: txt, timestamp: new Date() });
-                document.getElementById('commentInput').value = "";
-                document.getElementById('commentInput').focus();
+                
+                try {
+                    const uDoc = await getDoc(doc(db, "users", currentUser.uid));
+                    const uData = uDoc.data();
+                    
+                    await addDoc(collection(db, "match_comments"), {
+                        matchId: matchId,
+                        userId: currentUser.uid,
+                        userName: uData.name || "Anônimo",
+                        userPhoto: uData.photoBase64 || "",
+                        text: txt,
+                        timestamp: new Date()
+                    });
+                    
+                    input.value = "";
+                    input.focus();
+                } catch(e) {
+                    alert("Erro ao enviar: " + e.message);
+                }
             };
         };
     </script>
 </body>
 </html>
+
 
 
 
