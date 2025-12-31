@@ -399,9 +399,9 @@ Término oficial: 31 de dezembro de 2026
                             </div>
                             
                             <div class="flex gap-2">
-                                <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}')" class="text-gray-500 p-2 relative">
-                                    <i class="fas fa-comment-dots text-lg"></i>
-                                </button>
+                                <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="text-gray-500 p-2 relative">
+    <i class="fas fa-comment-dots text-lg"></i>
+</button>
 
                                 <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] p-2">
                                     <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-lg"></i>
@@ -806,13 +806,17 @@ window.showModalPhoto = (idx) => {
         document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
         document.getElementById('btnLogout').onclick = () => signOut(auth);
         // --- RESENHA (COMENTÁRIOS) ---
-        window.openMatchComments = async (mid, ta, tb) => {
+        // --- RESENHA (COMENTÁRIOS) ---
+        // ATENÇÃO: Adicionei o parâmetro 'winner'
+        window.openMatchComments = async (mid, ta, tb, winner) => {
             const modal = document.getElementById('modalOverlay'); 
             const cont = document.getElementById('modalContainer'); 
             modal.classList.remove('hidden'); 
             cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
             
-            // Renderiza estrutura básica
+            // Verifica se está finalizado
+            const isFinished = winner && winner !== "";
+
             const renderChat = (msgs) => {
                 let html = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[80vh] flex flex-col">
@@ -839,19 +843,22 @@ window.showModalPhoto = (idx) => {
                         }).join('') : '<p class="text-center text-gray-400 text-xs mt-4">Seja o primeiro a comentar!</p>'}
                     </div>
 
-                    <div class="p-2 bg-white border-t flex items-center gap-2 shrink-0">
-                        <input type="text" id="commentInput" placeholder="Digite sua resenha..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none border focus:border-[#006400]">
-                        <button onclick="sendComment('${mid}')" class="bg-[#006400] text-white w-10 h-10 rounded-full shadow flex items-center justify-center btn-press"><i class="fas fa-paper-plane text-xs"></i></button>
-                    </div>
+                    ${isFinished 
+                        ? `<div class="p-4 bg-gray-200 text-center border-t shrink-0">
+                             <p class="text-xs font-bold text-gray-500">⛔ Chat encerrado (Jogo Finalizado)</p>
+                           </div>`
+                        : `<div class="p-2 bg-white border-t flex items-center gap-2 shrink-0">
+                             <input type="text" id="commentInput" placeholder="Digite sua resenha..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none border focus:border-[#006400]">
+                             <button onclick="sendComment('${mid}')" class="bg-[#006400] text-white w-10 h-10 rounded-full shadow flex items-center justify-center btn-press"><i class="fas fa-paper-plane text-xs"></i></button>
+                           </div>`
+                    }
                 </div>`;
                 cont.innerHTML = html;
-                // Rola para baixo
                 const body = document.getElementById('chatBody');
                 if(body) body.scrollTop = body.scrollHeight;
             };
 
-            // Escuta em tempo real
-            const q = query(collection(db, "match_comments"), where("matchId", "==", mid)); // Ordenação feita no cliente
+            const q = query(collection(db, "match_comments"), where("matchId", "==", mid)); 
             const unsub = onSnapshot(q, (snap) => {
                 const msgs = [];
                 snap.forEach(d => msgs.push(d.data()));
@@ -859,23 +866,12 @@ window.showModalPhoto = (idx) => {
                 renderChat(msgs);
             });
             
-            // Hook para enviar
             window.sendComment = async (matchId) => {
                 const txt = document.getElementById('commentInput').value.trim();
                 if(!txt) return;
-                
-                // Pega dados do user atual
                 const uDoc = await getDoc(doc(db, "users", currentUser.uid));
                 const uData = uDoc.data();
-                
-                await addDoc(collection(db, "match_comments"), {
-                    matchId: matchId,
-                    userId: currentUser.uid,
-                    userName: uData.name || "Anônimo",
-                    userPhoto: uData.photoBase64 || "",
-                    text: txt,
-                    timestamp: new Date()
-                });
+                await addDoc(collection(db, "match_comments"), { matchId: matchId, userId: currentUser.uid, userName: uData.name || "Anônimo", userPhoto: uData.photoBase64 || "", text: txt, timestamp: new Date() });
                 document.getElementById('commentInput').value = "";
                 document.getElementById('commentInput').focus();
             };
@@ -883,6 +879,7 @@ window.showModalPhoto = (idx) => {
     </script>
 </body>
 </html>
+
 
 
 
