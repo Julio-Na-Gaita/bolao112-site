@@ -525,8 +525,25 @@ Término oficial: 31 de dezembro de 2026
             </div>`; 
         };
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
-        window.showMedalLegend = () => { const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden'); cont.innerHTML = `<div class="bg-white rounded p-6 max-w-sm"><h3 class="font-bold text-[#006400] text-lg mb-4 text-center">Galeria de Conquistas</h3><div class="space-y-4 text-xs text-gray-800"><div class="flex items-center"><span class="text-2xl mr-3">🔥</span><div><p class="font-bold">ON FIRE</p><p>Acertou 3 jogos seguidos.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">🔮</span><div><p class="font-bold">MÃE DINAH</p><p>Acertou um campeão de final.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">💰</span><div><p class="font-bold">PATRÃO</p><p>Mensalidade rigorosamente em dia.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">🐢</span><div><p class="font-bold">MÃO DE ALFACE</p><p>Errou 3 palpites seguidos.</p></div></div><div class="flex items-center"><span class="text-2xl mr-3">👻</span><div><p class="font-bold">FURÃO</p><p>Deixou de votar em 3 jogos seguidos.</p></div></div></div><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded mt-6 font-bold shadow">ENTENDI</button></div>`; };
-
+window.showMedalLegend = () => { 
+            const modal = document.getElementById('modalOverlay'); 
+            const cont = document.getElementById('modalContainer'); 
+            modal.classList.remove('hidden'); 
+            cont.innerHTML = `
+            <div class="bg-white rounded p-6 max-w-sm">
+                <h3 class="font-bold text-[#006400] text-lg mb-4 text-center">Galeria de Conquistas</h3>
+                <div class="space-y-4 text-xs text-gray-800">
+                    <div class="flex items-center"><span class="text-2xl mr-3">👑</span><div><p class="font-bold">MITO</p><p>Incríveis 5 acertos seguidos.</p></div></div>
+                    <div class="flex items-center"><span class="text-2xl mr-3">💎</span><div><p class="font-bold">DIAMANTE</p><p>Gabaritou as Oitavas (8/8).</p></div></div>
+                    <div class="flex items-center"><span class="text-2xl mr-3">🔥</span><div><p class="font-bold">ON FIRE</p><p>Acertou 3 jogos seguidos.</p></div></div>
+                    <div class="flex items-center"><span class="text-2xl mr-3">🔮</span><div><p class="font-bold">MÃE DINAH</p><p>Acertou um campeão de final.</p></div></div>
+                    <div class="flex items-center"><span class="text-2xl mr-3">💰</span><div><p class="font-bold">PATRÃO</p><p>Mensalidade rigorosamente em dia.</p></div></div>
+                    <div class="flex items-center"><span class="text-2xl mr-3">🐢</span><div><p class="font-bold">MÃO DE ALFACE</p><p>Errou 3 palpites seguidos.</p></div></div>
+                    <div class="flex items-center"><span class="text-2xl mr-3">👻</span><div><p class="font-bold">FURÃO</p><p>Deixou de votar em 3 jogos seguidos.</p></div></div>
+                </div>
+                <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded mt-6 font-bold shadow">ENTENDI</button>
+            </div>`; 
+        };
         window.openAdminMenu = () => {
             const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
             cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 h-full flex flex-col bg-white/30 p-4"><div class="flex justify-between items-center mb-6"><button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3><div class="w-6"></div></div><div class="space-y-3"><button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button><button onclick="openTrashBin()" class="w-full bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trash-restore"></i> LIXEIRA (RESTAURAR)</button><div class="grid grid-cols-2 gap-2"><button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-plus-circle"></i> NOVO JOGO</button><button onclick="openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-trophy"></i> COMPETIÇÕES</button></div></div><hr class="border-black/20 my-4"><h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4><div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">Carregando lista...</div></div></div>`;
@@ -728,6 +745,7 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
 
 
 
