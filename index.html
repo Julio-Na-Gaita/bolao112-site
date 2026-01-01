@@ -701,9 +701,9 @@ Término oficial: 31 de dezembro de 2026
                             vetCount++;
                             if(!simStreakBroken) {
                                 simStreak++;
-                                if(simStreak === 3) trophyRoom.push({icon:"🔥", name:"ON FIRE", desc:"Atingiu 3 acertos seguidos.", date: dateStr});
-                                if(simStreak === 5) trophyRoom.push({icon:"🎯", name:"MITO", desc:"Atingiu 5 acertos seguidos.", date: dateStr});
-                                if(simStreak === 10) trophyRoom.push({icon:"👽", name:"ALIEN", desc:"Atingiu 10 acertos seguidos!", date: dateStr});
+                                if(simStreak === 3) trophyRoom.push({icon:"🔥", name:"ON FIRE", desc:"Palpitou 3 acertos seguidos.", date: dateStr});
+                                if(simStreak === 5) trophyRoom.push({icon:"🎯", name:"MITO", desc:"Palpitou 5 acertos seguidos.", date: dateStr});
+                                if(simStreak === 10) trophyRoom.push({icon:"👽", name:"ALIEN", desc:"Palpitou 10 acertos seguidos!", date: dateStr});
                             }
                             if(vetCount > 0 && vetCount % 50 === 0) {
                                 const lvl = vetCount / 50;
@@ -921,7 +921,7 @@ window.showKingModal = () => {
                             <div class="text-4xl tracking-widest flex justify-center flex-wrap relative max-h-[80px] overflow-y-auto py-2">
                                 ${medalsHtml}
                             </div>
-                            <p class="text-[9px] text-gray-500 mt-1 font-bold">(Toque para detalhes)</p>
+                            <p class="text-[9px] text-black-500 mt-1 font-bold">(Toque para detalhes)</p>
                         </div>
 
                         <div id="medalToast" class="medal-toast"></div>
@@ -1282,6 +1282,7 @@ window.showKingModal = () => {
     </script>
 </body>
 </html>
+
 
 
 
