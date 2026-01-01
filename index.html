@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="icon" type="image/png" href="logo.png">
+    
+    <title>Bolão 112 F.C</title>
+    </head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Bolão 112 F.C</title>
@@ -251,8 +259,8 @@ Término oficial: 31 de dezembro de 2026
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // ATUALIZANDO VERSÃO PARA 1.4.0
-                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.4.0" }); } catch(e) {}
+                // ATUALIZANDO VERSÃO PARA 1.4.1
+                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.4.1" }); } catch(e) {}
                 document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('mainScreens').classList.remove('hidden'); document.getElementById('bottomNav').classList.remove('hidden'); document.getElementById('btnLogout').classList.remove('hidden');
                 showTab('matches'); calculatePot();
             } else {
@@ -264,7 +272,7 @@ Término oficial: 31 de dezembro de 2026
             document.getElementById('appContent').className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
             ['matches', 'ranking', 'rules', 'profile'].forEach(t => { document.getElementById(`${t}Screen`).classList.add('hidden'); document.getElementById(`nav-${t}`).classList.replace('text-[#006400]', 'text-gray-400'); });
             document.getElementById(`${tab}Screen`).classList.remove('hidden'); document.getElementById(`nav-${tab}`).classList.replace('text-gray-400', 'text-[#006400]');
-            if(tab === 'matches') loadMatches(); if(tab === 'ranking') loadRanking(); if(tab === 'rules') renderRules(); if(tab === 'profile') loadProfile();
+            if(tab === 'matches') loadMatches(); if(tab === 'ranking') (); if(tab === 'rules') renderRules(); if(tab === 'profile') loadProfile();
         };
 
         function renderRules() {
@@ -594,22 +602,33 @@ Término oficial: 31 de dezembro de 2026
             const listContainer = document.getElementById('rankingListContent'); 
             const footer = document.getElementById('lastUpdateRanking'); 
             
-            // Loading inicial
             listContainer.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400] text-2xl"></i></div>`; 
             
             try {
                 const [uSnap, gSnap, mSnap] = await Promise.all([
                     getDocs(collection(db, "users")), 
                     getDocs(collection(db, "guesses")), 
-                    getDocs(collection(db, "matches"))
+                    getDocs(collection(db, "matches")),
+                    getDoc(doc(db, "weekly_duels", "current")) // Para checar Gladiador
                 ]); 
                 
+                // Mapeia todos os jogos válidos
                 const matches = []; 
-                mSnap.forEach(d => matches.push({id:d.id, ...d.data()})); 
-                // Ordena jogos: mais recentes primeiro
+                const validMatchIds = new Set(); // Para filtrar palpites órfãos
+                mSnap.forEach(d => {
+                    matches.push({id:d.id, ...d.data()});
+                    validMatchIds.add(d.id);
+                });
+
                 const finished = matches.filter(m => m.winner).sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); 
 
-                // --- DADOS PARA O REI DO MÊS ---
+                // Lógica de Duelo (Gladiador)
+                let duelWinners = new Set();
+                let duelLosers = new Set();
+                // ... (Lógica simplificada de duelo se necessário, ou mantemos vazio se não estiver usando)
+                // Se quiser manter a lógica visual do Z-2 apenas, ok.
+
+                // Lógica Rei do Mês
                 const now = new Date();
                 const currentMonthIdx = now.getMonth();
                 const currentYear = now.getFullYear();
@@ -627,7 +646,6 @@ Término oficial: 31 de dezembro de 2026
                     }
                 });
 
-                // Atualiza Rodapé (Apenas Texto Simples agora)
                 if (finished.length > 0) { 
                     const last = finished[0]; 
                     const d = last.deadline.toDate(); 
@@ -638,16 +656,20 @@ Término oficial: 31 de dezembro de 2026
                 }
 
                 let users = []; 
-                const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
+                const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
 
                 uSnap.forEach(ud => { 
                     const u = ud.data(); 
                     let p=0, v=0, f=0; 
                     let monthlyP = 0; 
                     const hist = []; 
-                    const userGuesses = []; 
                     
-                    gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) }); 
+                    // 1. Pega palpites brutos
+                    const rawUserGuesses = []; 
+                    gSnap.forEach(gd => { if(gd.data().userId === ud.id) rawUserGuesses.push(gd.data()) }); 
+                    
+                    // 2. CORREÇÃO VETERANO: Filtra apenas palpites de jogos válidos
+                    const userGuesses = rawUserGuesses.filter(g => validMatchIds.has(g.matchId));
                     
                     let zebraHunterCount = 0;
 
@@ -677,8 +699,10 @@ Término oficial: 31 de dezembro de 2026
 
                     monthlyData.push({ name: u.name || "Sem Nome", points: monthlyP, uid: ud.id });
                     
-                    // --- MEDALHAS ---
-                    let medals = "";
+                    // --- MEDALHAS (Agora salvando objeto com nome) ---
+                    let medalString = ""; // Apenas os ícones para a lista
+                    let medalDetails = []; // Objetos completos para o perfil
+
                     if (finished.length > 0) {
                         let currentStreak = 0; let streakBroken = false;
                         const limit = finished.length > 15 ? 15 : finished.length;
@@ -688,9 +712,9 @@ Término oficial: 31 de dezembro de 2026
                             if (g && g.teamSelected === m.winner) { if (!streakBroken) currentStreak++; } else { streakBroken = true; }
                         }
 
-                        if (currentStreak >= 10) medals += "👽 ";
-                        else if (currentStreak >= 5) medals += "🎯 "; 
-                        else if (currentStreak >= 3) medals += "🔥 ";
+                        if (currentStreak >= 10) { medalString += "👽 "; medalDetails.push({icon:"👽", name:"ALIEN", desc:"10 acertos seguidos"}); }
+                        else if (currentStreak >= 5) { medalString += "🎯 "; medalDetails.push({icon:"🎯", name:"MITO", desc:"5 acertos seguidos"}); }
+                        else if (currentStreak >= 3) { medalString += "🔥 "; medalDetails.push({icon:"🔥", name:"ON FIRE", desc:"3 acertos seguidos"}); }
                         
                         const last3 = finished.slice(0,3);
                         let misses = 0; let noShows = 0;
@@ -699,91 +723,78 @@ Término oficial: 31 de dezembro de 2026
                                 const g = userGuesses.find(x => x.matchId === m.id);
                                 if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++;
                             });
-                            if (misses === 3) medals += "🐢 ";
-                            if (noShows === 3) medals += "👻 ";
+                            if (misses === 3) { medalString += "🐢 "; medalDetails.push({icon:"🐢", name:"MÃO DE ALFACE", desc:"3 erros seguidos"}); }
+                            if (noShows === 3) { medalString += "👻 "; medalDetails.push({icon:"👻", name:"FANTASMA", desc:"3 jogos sem votar"}); }
                         }
                     }
 
+                    // Veterano (Agora usando userGuesses filtrado)
                     const veteranLevel = Math.floor(userGuesses.length / 50);
-                    for(let i=0; i<veteranLevel; i++) medals += "🎓 ";
+                    for(let i=0; i<veteranLevel; i++) { 
+                        medalString += "🎓 "; 
+                        medalDetails.push({icon:"🎓", name:`VETERANO Nvl ${i+1}`, desc:"Fidelidade ao bolão"});
+                    }
 
-                    if(zebraHunterCount > 0) medals += "🦓 ";
-                    if (hist.some(h => h.text.includes("Bônus Oitavas"))) medals += "💎 ";
-                    if (f > 0) medals += "🔮 ";
+                    if(zebraHunterCount > 0) { medalString += "🦓 "; medalDetails.push({icon:"🦓", name:"ZEBRA", desc:"Caçador de Zebras"}); }
+                    if (hist.some(h => h.text.includes("Bônus Oitavas"))) { medalString += "💎 "; medalDetails.push({icon:"💎", name:"DIAMANTE", desc:"Gabaritou Oitavas"}); }
+                    if (f > 0) { medalString += "🔮 "; medalDetails.push({icon:"🔮", name:"MÃE DINAH", desc:"Acertou campeão"}); }
 
                     let allPaid = true;
                     if (currentYear >= 2026) {
                         const userPayments = u.payments || {};
-                        for(let i=0; i<=currentMonthIdx; i++) { if (!userPayments[months[i]]) { allPaid = false; break; } }
-                        if (allPaid) medals += "💰 ";
-                    } else { if ((u.debts || 0) === 0) medals += "💰 "; }
+                        for(let i=0; i<=currentMonthIdx; i++) { if (!userPayments[monthsNames[i]]) { allPaid = false; break; } }
+                        if (allPaid) { medalString += "💰 "; medalDetails.push({icon:"💰", name:"PATRÃO", desc:"Pagamento em dia"}); }
+                    } else { if ((u.debts || 0) === 0) { medalString += "💰 "; medalDetails.push({icon:"💰", name:"PATRÃO", desc:"Pagamento em dia"}); } }
 
                     matches.forEach(m => { const dl = m.deadline.toDate(); if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
                     const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
                     
-                    users.push({uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: medals}); 
+                    users.push({
+                        uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, 
+                        medals: medalString, 
+                        medalDetails: medalDetails // Novo campo com detalhes
+                    }); 
                 }); 
                 
                 users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); 
                 monthlyData.sort((a,b) => b.points - a.points); 
 
-                // Rei do Mês Medalha
                 if (monthlyData.length > 0 && monthlyData[0].points > 0) {
                     const kingId = monthlyData[0].uid;
                     const kingUser = users.find(u => u.uid === kingId);
-                    if(kingUser) kingUser.medals = "👑 " + kingUser.medals;
+                    if(kingUser) {
+                        kingUser.medals = "👑 " + kingUser.medals;
+                        kingUser.medalDetails.unshift({icon:"👑", name:"REI DO MÊS", desc:"Líder Mensal"});
+                    }
                 }
 
                 window.currentMonthlyRanking = monthlyData; 
                 currentRankingData = users; 
                 
-                // --- CONSTRUÇÃO DO HTML (CABEÇALHO + LISTA) ---
-                
-                // 1. Cabeçalho Verde com os Botões
+                // RENDERIZAÇÃO
                 let html = `
                 <div class="bg-[#006400] rounded-t-xl p-3 flex justify-between items-center shadow-md">
-                    <div>
-                        <h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3>
-                        <p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p>
-                    </div>
+                    <div><h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3><p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p></div>
                     <div class="flex gap-2">
                         <button onclick="window.showKingModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg shadow border border-white/20">🏆</button>
                         <button onclick="showMedalLegend()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white font-bold shadow border border-white/20">?</button>
                         <button onclick="loadRanking()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-[#FFD700] shadow border border-white/20"><i class="fas fa-sync-alt text-xs"></i></button>
                     </div>
                 </div>
-                
                 <div class="bg-[#005000] flex text-white/70 text-[9px] font-bold py-1 px-2 uppercase border-b border-white/10">
-                    <div class="w-[35px] text-center">Pos</div>
-                    <div class="flex-1 pl-2">Participante</div>
-                    <div class="w-[28px] text-center">D</div>
-                    <div class="w-[28px] text-center">V</div>
-                    <div class="w-[28px] text-center text-[#FFD700]">F</div>
-                    <div class="w-[40px] text-center text-white">Pts</div>
+                    <div class="w-[35px] text-center">Pos</div><div class="flex-1 pl-2">Participante</div><div class="w-[28px] text-center">D</div><div class="w-[28px] text-center">V</div><div class="w-[28px] text-center text-[#FFD700]">F</div><div class="w-[40px] text-center text-white">Pts</div>
                 </div>
-                
                 <div class="bg-white rounded-b-xl overflow-hidden shadow-sm">`;
 
                 html += users.map((u, i) => { 
                     const pos = i+1; 
-                    
-                    // Z-2 Logic (Vermelho Sangue e Fundo Avermelhado)
                     const isRelegation = (i >= users.length - 2) && (users.length > 2);
-                    
-                    let bgColor = 'bg-white'; 
-                    let borderColor = 'border-transparent';
-                    let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; 
-                    let nameColorClass = "text-gray-800";
-                    let anchorIcon = "";
+                    let bgColor = 'bg-white'; let borderColor = 'border-transparent'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; let nameColorClass = "text-gray-800"; let anchorIcon = "";
 
                     if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; } 
                     else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; } 
                     else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; }
-                    else if (isRelegation) {
-                        bgColor = 'bg-[#FFEBEE]'; // Fundo levemente vermelho
-                        nameColorClass = "text-[#8B0000]"; // Texto vermelho sangue
-                        anchorIcon = `<i class="fas fa-anchor text-[#8B0000] ml-1 text-[10px]"></i>`; // Ícone âncora
-                    }
+                    else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; anchorIcon = `<i class="fas fa-anchor text-[#8B0000] ml-1 text-[10px]" title="Zona de Rebaixamento"></i>`; }
 
                     let diffHtml = ''; 
                     if(u.lastRank > 0) { 
@@ -793,19 +804,13 @@ Término oficial: 31 de dezembro de 2026
 
                     return `
                     <div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2 ${i<3 ? 'border-l-4' : ''}" style="${i<3 ? `border-left-color: ${borderColor.replace('border-[','').replace(']','')}` : ''}">
-                        <div class="w-[35px] text-center flex flex-col items-center justify-center">
-                            <div class="text-sm">${posIcon}</div>
-                            ${diffHtml}
-                        </div>
+                        <div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div>
                         <div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})">
                             <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">
                                 ${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}
                             </div>
                             <div class="flex flex-col overflow-hidden">
-                                <div class="flex items-center">
-                                    <span class="text-xs font-bold ${nameColorClass} truncate pl-2">${u.name}</span>
-                                    ${anchorIcon}
-                                </div>
+                                <div class="flex items-center"><span class="text-xs font-bold ${nameColorClass} truncate pl-2">${u.name}</span>${anchorIcon}</div>
                                 ${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}
                             </div>
                         </div>
@@ -815,14 +820,10 @@ Término oficial: 31 de dezembro de 2026
                         <div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div>
                     </div>`; 
                 }).join(''); 
-                
-                html += `</div>`; // Fecha container branco
+                html += `</div>`; 
                 listContainer.innerHTML = html;
 
-            } catch (e) {
-                console.error(e);
-                listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro ao carregar ranking.</div>`;
-            }
+            } catch (e) { console.error(e); listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro.</div>`; }
         }
 window.showKingModal = () => {
             const modal = document.getElementById('modalOverlay');
@@ -885,59 +886,50 @@ window.showKingModal = () => {
 
        window.showModalPhoto = (idx) => { 
             const u = currentRankingData[idx]; 
-            
-            // REMOVI A LINHA QUE BLOQUEAVA: if(!u.photo) return; 
-            
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             
-            // Lógica para decidir se mostra a Foto ou o Ícone Genérico
-            let imageContent = "";
-            if (u.photo) {
-                imageContent = `<img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">`;
-            } else {
-                // Avatar Padrão se não tiver foto
-                imageContent = `<div class="w-full h-full bg-gray-200 flex items-center justify-center"><i class="fas fa-user text-6xl text-gray-400"></i></div>`;
+            let imageContent = u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">` : `<div class="w-full h-full bg-gray-200 flex items-center justify-center"><i class="fas fa-user text-6xl text-gray-400"></i></div>`;
+
+            // Gera HTML das Medalhas com Tooltip
+            let medalsHtml = "";
+            if (u.medalDetails && u.medalDetails.length > 0) {
+                medalsHtml = u.medalDetails.map(m => 
+                    `<span class="cursor-help mx-1 relative group" title="${m.name}: ${m.desc}">
+                        ${m.icon}
+                        </span>`
+                ).join('');
             }
 
             document.getElementById('modalContainer').innerHTML = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
-                    <img src="bg_dialog_foto.png" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                    <img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
                     <div class="relative z-10 p-6 text-center flex flex-col items-center">
                         <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3>
-                        
                         <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center">
                             ${imageContent}
                         </div>
                         
-                        <div class="mt-4 text-4xl tracking-widest">${u.medals || ""}</div>
-                        
-                        <button id="btnStatsAction" class="mt-6 w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
+                        <div class="mt-4 text-4xl tracking-widest flex justify-center flex-wrap">
+                            ${medalsHtml}
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-1 mb-4">(Toque nas medalhas para ver o nome)</p>
+
+                        <button id="btnStatsAction" class="w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
                             <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
                         </button>
-
                         <button id="btnCompareAction" class="mt-2 w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press">
                             COMPARAR PALPITES 🆚
                         </button>
-                        
                         <button onclick="closeModal()" class="mt-2 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press">
                             FECHAR
                         </button>
                     </div>
                 </div>`; 
             
-            // --- LIGAÇÕES DOS BOTÕES ---
-            
-            // 1. Liga o Scout
             const btnStats = document.getElementById('btnStatsAction');
-            if (btnStats) {
-                btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
-            }
-
-            // 2. Liga a Comparação
+            if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
             const btnCompare = document.getElementById('btnCompareAction');
-            if (btnCompare) {
-                btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
-            }
+            if (btnCompare) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
         };
         
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
@@ -1241,6 +1233,7 @@ window.showMedalLegend = () => {
     </script>
 </body>
 </html>
+
 
 
 
