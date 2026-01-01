@@ -616,28 +616,24 @@ Término oficial: 31 de dezembro de 2026
         async function loadRanking() { 
             const listContainer = document.getElementById('rankingListContent'); 
             const footer = document.getElementById('lastUpdateRanking'); 
-            
             listContainer.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400] text-2xl"></i></div>`; 
             
             try {
-                const [uSnap, gSnap, mSnap] = await Promise.all([
-                    getDocs(collection(db, "users")), 
-                    getDocs(collection(db, "guesses")), 
-                    getDocs(collection(db, "matches"))
-                ]); 
+                const [uSnap, gSnap, mSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches"))]); 
                 
-                const matches = []; 
-                const validMatchIds = new Set(); 
-                mSnap.forEach(d => { matches.push({id:d.id, ...d.data()}); validMatchIds.add(d.id); });
-                const finished = matches.filter(m => m.winner).sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); 
+                const matches = []; const validMatchIds = new Set(); 
+                mSnap.forEach(d => { matches.push({id:d.id, ...d.data(), deadlineDate: d.data().deadline.toDate()}); validMatchIds.add(d.id); });
 
-                const now = new Date();
-                const currentMonthIdx = now.getMonth();
-                const currentYear = now.getFullYear();
-                let monthlyData = [];
+                // 1. ORDENAÇÃO DETERMINÍSTICA (Data Crescente -> ID) para cálculo
+                const chronoMatches = matches
+                    .filter(m => m.winner)
+                    .sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
+
+                const finishedDisplay = [...chronoMatches].reverse(); // Para exibir (Novo -> Antigo)
+
+                // ... (zebra e rodapé igual) ...
                 const zebraMatchIds = [];
-
-                finished.forEach(m => {
+                finishedDisplay.forEach(m => {
                     let matchGuesses = [];
                     gSnap.forEach(g => { if(g.data().matchId === m.id) matchGuesses.push(g.data()); });
                     if(matchGuesses.length >= 5) {
@@ -646,15 +642,17 @@ Término oficial: 31 de dezembro de 2026
                     }
                 });
 
-                if (finished.length > 0) { 
-                    const last = finished[0]; 
-                    const d = last.deadline.toDate(); 
+                if (finishedDisplay.length > 0) { 
+                    const last = finishedDisplay[0]; 
+                    const d = last.deadlineDate; 
                     const dt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
                     footer.innerHTML = `<div class="text-center text-[10px] text-white opacity-80 mt-2">Última atualização: ${last.teamA} x ${last.teamB} em ${dt}</div>`; 
                 } else footer.innerText = "Aguardando resultados..."; 
 
                 let users = []; 
+                const now = new Date(); const currentMonthIdx = now.getMonth(); const currentYear = now.getFullYear();
                 const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
+                let monthlyData = [];
 
                 uSnap.forEach(ud => { 
                     const u = ud.data(); 
@@ -666,108 +664,107 @@ Término oficial: 31 de dezembro de 2026
                     
                     let zebraHunterCount = 0;
 
-                    finished.forEach(m => { 
+                    // Cálculo de Pontos (usando lista de exibição para ordem reversa no histórico)
+                    finishedDisplay.forEach(m => { 
                         const g = userGuesses.find(x => x.matchId === m.id); 
-                        const mDate = m.deadline.toDate();
-                        const isThisMonth = mDate.getMonth() === currentMonthIdx && mDate.getFullYear() === currentYear;
-
+                        const isThisMonth = m.deadlineDate.getMonth() === currentMonthIdx && m.deadlineDate.getFullYear() === currentYear;
                         if(g) { 
-                            const dl = m.deadline.toDate(); 
-                            const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; 
+                            const dStr = `📅 ${String(m.deadlineDate.getDate()).padStart(2,'0')}/${String(m.deadlineDate.getMonth()+1).padStart(2,'0')}`; 
                             if(m.winner === g.teamSelected) { 
-                                const isF = m.round?.toLowerCase() === 'final'; 
-                                const pts = isF ? 6 : 3;
-                                p += pts; 
-                                if(isThisMonth) monthlyP += pts;
-                                v++; if(isF) f++; 
-                                hist.push({ts: dl, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`}); 
-                                if(zebraMatchIds.includes(m.id)) zebraHunterCount++;
+                                const isF = m.round?.toLowerCase() === 'final'; const pts = isF ? 6 : 3;
+                                p += pts; if(isThisMonth) monthlyP += pts; v++; if(isF) f++; 
+                                hist.push({ts: m.deadlineDate, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`}); 
                             } else { 
-                                hist.push({ts: dl, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'}); 
+                                hist.push({ts: m.deadlineDate, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'}); 
                             } 
                         } 
                     }); 
 
                     monthlyData.push({ name: u.name || "Sem Nome", points: monthlyP, uid: ud.id });
                     
-                    let medalString = ""; 
-                    let medalDetails = []; 
+                    // --- SALA DE TROFÉUS (ACUMULATIVA) ---
+                    let trophyRoom = [];
+                    let simStreak = 0;
+                    let simStreakBroken = false;
 
-                    if (finished.length > 0) {
-                        let currentStreak = 0; let streakBroken = false;
-                        const limit = finished.length > 15 ? 15 : finished.length;
-                        for(let i=0; i<limit; i++) {
-                            const m = finished[i];
-                            const g = userGuesses.find(x => x.matchId === m.id);
-                            if (g && g.teamSelected === m.winner) { if (!streakBroken) currentStreak++; } else { streakBroken = true; }
-                        }
-
-                        if (currentStreak >= 10) { medalString += "👽 "; medalDetails.push({icon:"👽", name:"ALIEN", desc:"10 acertos seguidos"}); }
-                        else if (currentStreak >= 5) { medalString += "🎯 "; medalDetails.push({icon:"🎯", name:"MITO", desc:"5 acertos seguidos"}); }
-                        else if (currentStreak >= 3) { medalString += "🔥 "; medalDetails.push({icon:"🔥", name:"ON FIRE", desc:"3 acertos seguidos"}); }
+                    // Simulação Cronológica
+                    chronoMatches.forEach(m => {
+                        const g = userGuesses.find(x => x.matchId === m.id);
+                        const isHit = g && g.teamSelected === m.winner;
                         
-                        const last3 = finished.slice(0,3);
-                        let misses = 0; let noShows = 0;
-                        if(finished.length >= 3) {
-                            last3.forEach(m => {
-                                const g = userGuesses.find(x => x.matchId === m.id);
-                                if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++;
-                            });
-                            if (misses === 3) { medalString += "🐢 "; medalDetails.push({icon:"🐢", name:"MÃO DE ALFACE", desc:"3 erros seguidos"}); }
-                            if (noShows === 3) { medalString += "👻 "; medalDetails.push({icon:"👻", name:"FANTASMA", desc:"3 jogos sem votar"}); }
+                        // Zebra
+                        if(isHit && zebraMatchIds.includes(m.id)) trophyRoom.push({icon:"🦓", name:"ZEBRA", desc:`Acertou a zebra em ${m.teamA} x ${m.teamB}`});
+
+                        // Streak
+                        if(isHit) {
+                            if(!simStreakBroken) {
+                                simStreak++;
+                                if(simStreak === 3) trophyRoom.push({icon:"🔥", name:"ON FIRE", desc:"Atingiu 3 acertos seguidos."});
+                                if(simStreak === 5) trophyRoom.push({icon:"🎯", name:"MITO", desc:"Atingiu 5 acertos seguidos."});
+                                if(simStreak === 10) trophyRoom.push({icon:"👽", name:"ALIEN", desc:"Atingiu 10 acertos seguidos!"});
+                            }
+                        } else {
+                            simStreak = 0;
+                            // Aqui definimos se um erro quebra a possibilidade de ganhar medalhas futuras.
+                            // Para "sala de troféus" histórica, você pode ganhar On Fire em Jan e em Março.
+                            // Então o erro reseta o streak, mas não bloqueia conquistas futuras.
+                            simStreakBroken = false; 
                         }
+                    });
+
+                    // --- MEDALHAS ATUAIS (LISTA) ---
+                    let activeMedals = "";
+                    let currentStreak = 0; let streakBroken = false;
+                    const limit = finishedDisplay.length > 15 ? 15 : finishedDisplay.length;
+                    for(let i=0; i<limit; i++) {
+                        const m = finishedDisplay[i]; const g = userGuesses.find(x => x.matchId === m.id);
+                        if (g && g.teamSelected === m.winner) { if (!streakBroken) currentStreak++; } else { streakBroken = true; }
+                    }
+                    if (currentStreak >= 10) activeMedals += "👽 "; else if (currentStreak >= 5) activeMedals += "🎯 "; else if (currentStreak >= 3) activeMedals += "🔥 ";
+
+                    const last3 = finishedDisplay.slice(0,3); let misses=0; let noShows=0;
+                    if(finishedDisplay.length >= 3) {
+                        last3.forEach(m => { const g = userGuesses.find(x => x.matchId === m.id); if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++; });
+                        if (misses === 3) { activeMedals += "🐢 "; trophyRoom.push({icon:"🐢", name:"MÃO DE ALFACE", desc:"Atual: 3 erros seguidos."}); }
+                        if (noShows === 3) { activeMedals += "👻 "; trophyRoom.push({icon:"👻", name:"FANTASMA", desc:"Atual: 3 jogos sem votar."}); }
                     }
 
-                    // Alterado para basear em ACERTOS (vitórias 'v'), não em palpites totais
-const veteranLevel = Math.floor(v / 50);
-                    for(let i=0; i<veteranLevel; i++) { medalString += "🎓 "; medalDetails.push({icon:"🎓", name:`VETERANO Nvl ${i+1}`, desc:`Mais de ${(i+1)*50} palpites.`}); }
+                    const veteranLevel = Math.floor(v / 50);
+                    for(let i=0; i<veteranLevel; i++) { activeMedals += "🎓 "; trophyRoom.push({icon:"🎓", name:`VETERANO Nvl ${i+1}`, desc:`Conquistou ${(i+1)*50} acertos.`}); }
 
-                    if(zebraHunterCount > 0) { medalString += "🦓 "; medalDetails.push({icon:"🎓", name:`VETERANO Nvl ${i+1}`, desc:`Grande desempenho! Acumulou ${(i+1)*50} acertos.`}); }
-                    if (hist.some(h => h.text.includes("Bônus Oitavas"))) { medalString += "💎 "; medalDetails.push({icon:"💎", name:"DIAMANTE", desc:"Gabaritou Oitavas"}); }
-                    if (f > 0) { medalString += "🔮 "; medalDetails.push({icon:"🔮", name:"MÃE DINAH", desc:"Acertou campeão"}); }
+                    if(hist.some(h => h.text.includes("Bônus Oitavas"))) { activeMedals += "💎 "; trophyRoom.push({icon:"💎", name:"DIAMANTE", desc:"Gabaritou Oitavas."}); }
+                    if (f > 0) { activeMedals += "🔮 "; trophyRoom.push({icon:"🔮", name:"MÃE DINAH", desc:`Acertou ${f} campeões.`}); }
 
                     let allPaid = true;
-                    if (currentYear >= 2026) {
-                        const userPayments = u.payments || {};
-                        for(let i=0; i<=currentMonthIdx; i++) { if (!userPayments[monthsNames[i]]) { allPaid = false; break; } }
-                        if (allPaid) { medalString += "💰 "; medalDetails.push({icon:"💰", name:"PATRÃO", desc:"Pagamento em dia"}); }
-                    } else { if ((u.debts || 0) === 0) { medalString += "💰 "; medalDetails.push({icon:"💰", name:"PATRÃO", desc:"Pagamento em dia"}); } }
+                    if (currentYear >= 2026) { for(let i=0; i<=currentMonthIdx; i++) { if (!u.payments?.[monthsNames[i]]) { allPaid = false; break; } } } else { if ((u.debts||0) > 0) allPaid = false; }
+                    if (allPaid) { activeMedals += "💰 "; trophyRoom.unshift({icon:"💰", name:"PATRÃO", desc:"Mensalidades em dia."}); }
 
-                    matches.forEach(m => { const dl = m.deadline.toDate(); if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
+                    matches.forEach(m => { const dl = m.deadlineDate; if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
                     const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
                     
-                    users.push({ uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: medalString, medalDetails: medalDetails }); 
+                    users.push({ uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: activeMedals, trophyRoom: trophyRoom }); 
                 }); 
                 
                 users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); 
                 monthlyData.sort((a,b) => b.points - a.points); 
 
-                // Rei do Mês (mantém a lógica de medalha)
                 if (monthlyData.length > 0 && monthlyData[0].points > 0) {
                     const kingId = monthlyData[0].uid;
                     const kingUser = users.find(u => u.uid === kingId);
                     if(kingUser) {
                         kingUser.medals = "👑 " + kingUser.medals;
-                        kingUser.medalDetails.unshift({icon:"👑", name:"REI DO MÊS", desc:"Líder Mensal"});
+                        kingUser.trophyRoom.unshift({icon:"👑", name:"REI DO MÊS", desc:"Líder Atual"});
                     }
                 }
 
-                // Z-2 CORREÇÃO
                 if (users.length > 2) {
                     const lastUsers = [users[users.length-1], users[users.length-2]];
-                    lastUsers.forEach(u => {
-                        if (u) {
-                            // REMOVIDA A DUPLICAÇÃO: Não adicionamos âncora em u.medals
-                            // Apenas no medalDetails para o popup
-                            u.medalDetails.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Entre os 2 últimos colocados."});
-                        }
-                    });
+                    lastUsers.forEach(u => { if(u) u.trophyRoom.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Atual: Z-2"}); });
                 }
 
                 window.currentMonthlyRanking = monthlyData; 
                 currentRankingData = users; 
                 
-                // HTML - SEM O BOTÃO DE INTERROGAÇÃO
                 let html = `
                 <div class="bg-[#006400] rounded-t-xl p-3 flex justify-between items-center shadow-md">
                     <div><h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3><p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p></div>
@@ -882,32 +879,35 @@ window.showKingModal = () => {
             
             let imageContent = u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">` : `<div class="w-full h-full bg-gray-200 flex items-center justify-center"><i class="fas fa-user text-6xl text-gray-400"></i></div>`;
 
-            // HTML das Medalhas
+            // HTML das Medalhas (Sala de Troféus)
             let medalsHtml = "";
-            if (u.medalDetails && u.medalDetails.length > 0) {
-                medalsHtml = u.medalDetails.map(m => 
-                    // onclick chama showToast com o nome e desc
+            if (u.trophyRoom && u.trophyRoom.length > 0) {
+                medalsHtml = u.trophyRoom.map(m => 
                     `<span class="cursor-pointer mx-1 hover:scale-110 transition-transform select-none" 
                            onclick="showToast('${m.name}', '${m.desc}')">
                         ${m.icon}
                     </span>`
                 ).join('');
             } else {
-                medalsHtml = `<span class="text-xs text-gray-400">Nenhuma medalha ainda</span>`;
+                medalsHtml = `<span class="text-xs text-gray-400">Sala de Troféus vazia.</span>`;
             }
 
             document.getElementById('modalContainer').innerHTML = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
-                    <img src="bg_dialog_foto.png" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                    <img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
                     <div class="relative z-10 p-6 text-center flex flex-col items-center">
                         <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3>
                         <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center">
                             ${imageContent}
                         </div>
                         
-                        <div class="mt-4 text-4xl tracking-widest flex justify-center flex-wrap relative">
-                            ${medalsHtml}
+                        <div class="mt-4 w-full">
+                            <p class="text-[10px] text-[#006400] font-black uppercase tracking-widest mb-1 text-left border-b border-gray-200">Sala de Troféus</p>
+                            <div class="text-4xl tracking-widest flex justify-center flex-wrap relative max-h-[80px] overflow-y-auto">
+                                ${medalsHtml}
+                            </div>
                         </div>
+                        
                         <p class="text-[10px] text-gray-500 mt-1 mb-4">(Toque nas medalhas para ver)</p>
 
                         <div id="medalToast" class="medal-toast"></div>
@@ -1259,6 +1259,7 @@ window.showKingModal = () => {
     </script>
 </body>
 </html>
+
 
 
 
