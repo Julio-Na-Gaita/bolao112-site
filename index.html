@@ -30,7 +30,12 @@
             filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07));
             border: 1px solid #e5e7eb;
         }
-
+/* Adicione ou garanta que isso exista no seu style */
+.bg-ranking { background-image: url('bg_ranking.png'); background-size: cover; background-position: center; }
+/* Cor de fundo para o Z-2 */
+.bg-z2 { background-color: #FFEBEE !important; } 
+/* Texto vermelho sangue para o Z-2 */
+.text-blood { color: #8B0000 !important; }
         /* --- FUNDOS DINÂMICOS --- */
         .bg-main { background-size: cover; background-attachment: fixed; background-position: center; transition: background 0.3s ease; }
         .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg'); }
@@ -614,71 +619,269 @@ Término oficial: 31 de dezembro de 2026
             const list = document.getElementById('rankingListContent'); 
             const footer = document.getElementById('lastUpdateRanking'); 
             list.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`; 
+            
             const [uSnap, gSnap, mSnap] = await Promise.all([getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches"))]); 
-            const matches = []; mSnap.forEach(d => matches.push({id:d.id, ...d.data()})); 
-            const finished = matches.filter(m => m.winner); 
-            finished.sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); 
-            if (finished.length > 0) { const last = finished[0]; const d = last.deadline.toDate(); footer.innerHTML = `Última atualização: ${last.teamA} x ${last.teamB} em ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}<br><br><button onclick="showMedalLegend()" class="bg-white/20 hover:bg-white/30 text-white border border-white/50 px-3 py-1 rounded text-[10px] font-bold">❓ LEGENDA MEDALHAS</button>`; } else footer.innerText = "Nenhum confronto finalizado."; 
-            let users = []; const now = new Date(); const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const currentMonthIdx = now.getMonth(); const currentYear = now.getFullYear();
+            
+            const matches = []; 
+            mSnap.forEach(d => matches.push({id:d.id, ...d.data()})); 
+            const finished = matches.filter(m => m.winner).sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); 
+
+            // --- DADOS PARA O REI DO MÊS ---
+            const now = new Date();
+            const currentMonthIdx = now.getMonth();
+            const currentYear = now.getFullYear();
+            let monthlyData = []; // Vamos preencher isso no loop dos usuários
+
+            // Zebra Logic
+            const zebraMatchIds = [];
+            finished.forEach(m => {
+                let matchGuesses = [];
+                gSnap.forEach(g => { if(g.data().matchId === m.id) matchGuesses.push(g.data()); });
+                const totalVotes = matchGuesses.length;
+                if(totalVotes >= 5) {
+                    const winnerVotes = matchGuesses.filter(g => g.teamSelected === m.winner).length;
+                    if((winnerVotes / totalVotes) < 0.20) zebraMatchIds.push(m.id);
+                }
+            });
+
+            // Atualiza Rodapé e Botões do Cabeçalho
+            if (finished.length > 0) { 
+                const last = finished[0]; 
+                const d = last.deadline.toDate(); 
+                // Header com Botão do Rei do Mês (Caixa) + Legenda
+                footer.innerHTML = `
+                <div class="flex justify-between items-center mb-2 px-2">
+                    <div class="text-left">
+                        <p class="text-[10px] text-white">Última atualização:</p>
+                        <p class="text-[10px] font-bold text-[#FFD700]">${last.teamA} x ${last.teamB}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="window.showKingModal()" class="bg-white/20 hover:bg-white/30 text-[#FFD700] border border-[#FFD700] w-[36px] h-[36px] rounded-full flex items-center justify-center text-lg shadow-lg">📦</button>
+                        <button onclick="showMedalLegend()" class="bg-white/20 hover:bg-white/30 text-white border border-white/50 w-[36px] h-[36px] rounded-full flex items-center justify-center font-bold shadow-lg">?</button>
+                        <button onclick="loadRanking()" class="bg-white/20 hover:bg-white/30 text-[#FFD700] border border-white/50 w-[36px] h-[36px] rounded-full flex items-center justify-center shadow-lg"><i class="fas fa-sync-alt"></i></button>
+                    </div>
+                </div>`; 
+            } else footer.innerText = "Aguardando resultados..."; 
+
+            let users = []; 
+            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
+
             uSnap.forEach(ud => { 
-                const u = ud.data(); let p=0, v=0, f=0; const hist = []; const userGuesses = []; gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) }); 
-                finished.forEach(m => { const g = userGuesses.find(x => x.matchId === m.id); if(g) { const mWinner = m.winner; const dl = m.deadline.toDate(); const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; if(mWinner === g.teamSelected) { const isF = m.round?.toLowerCase() === 'final'; p += isF ? 6 : 3; v++; if(isF) f++; hist.push({ts: dl, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${isF?6:3})`}); } else { hist.push({ts: dl, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'}); } } }); 
+                const u = ud.data(); 
+                let p=0, v=0, f=0; 
+                let monthlyP = 0; // Pontos do Mês
+                const hist = []; 
                 
-                // --- CÁLCULO DE MEDALHAS (BLOCO ÚNICO) ---
+                const userGuesses = []; 
+                gSnap.forEach(gd => { if(gd.data().userId === ud.id) userGuesses.push(gd.data()) }); 
+                
+                let zebraHunterCount = 0;
+
+                finished.forEach(m => { 
+                    const g = userGuesses.find(x => x.matchId === m.id); 
+                    const mDate = m.deadline.toDate();
+                    
+                    // Verifica se é do mês atual
+                    const isThisMonth = mDate.getMonth() === currentMonthIdx && mDate.getFullYear() === currentYear;
+
+                    if(g) { 
+                        const dl = m.deadline.toDate(); 
+                        const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; 
+                        if(m.winner === g.teamSelected) { 
+                            const isF = m.round?.toLowerCase() === 'final'; 
+                            const pts = isF ? 6 : 3;
+                            p += pts; 
+                            if(isThisMonth) monthlyP += pts;
+
+                            v++; 
+                            if(isF) f++; 
+                            hist.push({ts: dl, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`}); 
+                            if(zebraMatchIds.includes(m.id)) zebraHunterCount++;
+                        } else { 
+                            hist.push({ts: dl, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'}); 
+                        } 
+                    } 
+                }); 
+
+                // Prepara objeto para ranking mensal
+                monthlyData.push({ name: u.name || "Sem Nome", points: monthlyP, uid: ud.id });
+                
+                // --- MEDALHAS ---
                 let medals = "";
                 
-                // 1. Sequências
-                if (finished.length >= 3) {
-                    const last5 = finished.slice(0, 5);
-                    const last3 = finished.slice(0, 3);
-                    let hits5 = 0, hits3 = 0, misses = 0, noShows = 0;
-
-                    if (finished.length >= 5) {
-                        last5.forEach(m => {
-                            const g = userGuesses.find(x => x.matchId === m.id);
-                            if (g && g.teamSelected === m.winner) hits5++;
-                        });
+                if (finished.length > 0) {
+                    let currentStreak = 0; let streakBroken = false;
+                    const limit = finished.length > 15 ? 15 : finished.length;
+                    for(let i=0; i<limit; i++) {
+                        const m = finished[i];
+                        const g = userGuesses.find(x => x.matchId === m.id);
+                        if (g && g.teamSelected === m.winner) { if (!streakBroken) currentStreak++; } else { streakBroken = true; }
                     }
 
-                    last3.forEach(m => {
-                        const g = userGuesses.find(x => x.matchId === m.id);
-                        if (!g) noShows++;
-                        else if (g.teamSelected === m.winner) hits3++;
-                        else misses++;
-                    });
-
-                    if (hits5 === 5) medals += "👑 "; 
-                    else if (hits3 === 3) medals += "🔥 "; 
+                    if (currentStreak >= 10) medals += "👽 ";
+                    else if (currentStreak >= 5) medals += "🎯 "; // Mudou de Coroa para Alvo
+                    else if (currentStreak >= 3) medals += "🔥 ";
                     
-                    if (misses === 3) medals += "🐢 ";
-                    if (noShows === 3) medals += "👻 ";
+                    // Tartaruga
+                    const last3 = finished.slice(0,3);
+                    let misses = 0; let noShows = 0;
+                    if(finished.length >= 3) {
+                        last3.forEach(m => {
+                            const g = userGuesses.find(x => x.matchId === m.id);
+                            if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++;
+                        });
+                        if (misses === 3) medals += "🐢 ";
+                        if (noShows === 3) medals += "👻 ";
+                    }
                 }
 
-                // 2. Diamante
-                if (hist.some(h => h.text.includes("Bônus Oitavas"))) medals += "💎 ";
+                // Veterano
+                const veteranLevel = Math.floor(userGuesses.length / 50);
+                for(let i=0; i<veteranLevel; i++) medals += "🎓 ";
 
-                // 3. Mãe Dinah
+                if(zebraHunterCount > 0) medals += "🦓 ";
+                if (hist.some(h => h.text.includes("Bônus Oitavas"))) medals += "💎 ";
                 if (f > 0) medals += "🔮 ";
 
-                // 4. Patrão
+                // Patrão
                 let allPaid = true;
                 if (currentYear >= 2026) {
                     const userPayments = u.payments || {};
-                    for(let i=0; i<=currentMonthIdx; i++) {
-                        if (!userPayments[months[i]]) { allPaid = false; break; }
-                    }
+                    for(let i=0; i<=currentMonthIdx; i++) { if (!userPayments[months[i]]) { allPaid = false; break; } }
                     if (allPaid) medals += "💰 ";
-                } else {
-                    if ((u.debts || 0) === 0) medals += "💰 ";
-                }
+                } else { if ((u.debts || 0) === 0) medals += "💰 "; }
 
                 matches.forEach(m => { const dl = m.deadline.toDate(); if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
-                const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); hist.sort((a,b) => b.ts - a.ts); 
+                const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
+                
                 users.push({uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: medals}); 
             }); 
-            users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); currentRankingData = users; 
-            list.innerHTML = users.map((u, i) => { const pos = i+1; let bgColor = 'bg-white'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; } let diffHtml = ''; if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2"><div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div><div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})"><div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}</div><div class="flex flex-col overflow-hidden"><span class="text-xs font-bold text-gray-800 truncate pl-2">${u.name}</span>${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}</div></div><div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div><div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div><div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div><div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div></div>`; }).join(''); 
+            
+            // Ordena Ranking Geral e Mensal
+            users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); 
+            monthlyData.sort((a,b) => b.points - a.points); // Ordena mensal
+
+            // Adiciona a medalha de Rei do Mês para o Líder Mensal (se tiver pontos)
+            if (monthlyData.length > 0 && monthlyData[0].points > 0) {
+                const kingId = monthlyData[0].uid;
+                const kingUser = users.find(u => u.uid === kingId);
+                if(kingUser) {
+                    // Adiciona a coroa no início das medalhas
+                    kingUser.medals = "👑 " + kingUser.medals;
+                }
+            }
+
+            // Salva globalmente para o modal
+            window.currentMonthlyRanking = monthlyData; 
+            currentRankingData = users; 
+            
+            // RENDERIZAÇÃO DA LISTA COM Z-2
+            list.innerHTML = users.map((u, i) => { 
+                const pos = i+1; 
+                
+                // LÓGICA DO Z-2 (Zona de Rebaixamento)
+                // É Z-2 se: estiver nas últimas 2 posições E a lista tiver mais de 2 pessoas
+                const isRelegation = (i >= users.length - 2) && (users.length > 2);
+                
+                let bgColor = 'bg-white'; 
+                let borderColor = 'border-transparent';
+                let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; 
+                let nameColorClass = "text-gray-800";
+                let anchorIcon = "";
+
+                if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; } 
+                else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; } 
+                else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; }
+                else if (isRelegation) {
+                    bgColor = 'bg-[#FFEBEE]'; // Fundo Vermelho Claro
+                    nameColorClass = "text-[#8B0000]"; // Texto Vermelho Sangue
+                    anchorIcon = `<span class="ml-1 text-sm">⚓</span>`;
+                }
+
+                // Cálculo da setinha de subida/descida
+                let diffHtml = ''; 
+                if(u.lastRank > 0) { 
+                    if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; 
+                    else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; 
+                } 
+
+                return `
+                <div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2 ${i<3 ? 'border-l-4' : ''}" style="${i<3 ? `border-left-color: ${borderColor.replace('border-[','').replace(']','')}` : ''}">
+                    <div class="w-[35px] text-center flex flex-col items-center justify-center">
+                        <div class="text-sm">${posIcon}</div>
+                        ${diffHtml}
+                    </div>
+                    <div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})">
+                        <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">
+                            ${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}
+                        </div>
+                        <div class="flex flex-col overflow-hidden">
+                            <div class="flex items-center">
+                                <span class="text-xs font-bold ${nameColorClass} truncate pl-2">${u.name}</span>
+                                ${anchorIcon}
+                            </div>
+                            ${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div>
+                    <div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div>
+                    <div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div>
+                    <div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div>
+                </div>`; 
+            }).join(''); 
         }
+window.showKingModal = () => {
+            const modal = document.getElementById('modalOverlay');
+            const cont = document.getElementById('modalContainer');
+            modal.classList.remove('hidden');
+            
+            const months = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
+            const currentMonthName = months[new Date().getMonth()];
+            
+            const ranking = window.currentMonthlyRanking || [];
+            
+            let listHtml = "";
+            if(ranking.length === 0 || ranking[0].points === 0) {
+                listHtml = `<div class="text-center p-4 text-xs text-gray-500 italic">Nenhum ponto marcado neste mês ainda.</div>`;
+            } else {
+                listHtml = ranking.map((u, i) => {
+                    const isKing = i === 0;
+                    const bg = isKing ? 'bg-[#FFF9C4]' : 'bg-white';
+                    const icon = isKing ? '👑 ' : '';
+                    const bold = isKing ? 'font-black' : 'font-normal';
+                    const color = isKing ? 'text-[#006400]' : 'text-black';
+                    
+                    return `
+                    <div class="flex items-center justify-between p-2 border-b border-gray-100 ${bg}">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-gray-400 w-6">${i+1}º</span>
+                            <span class="text-xs ${bold} truncate max-w-[150px]">${icon}${u.name}</span>
+                        </div>
+                        <span class="text-sm ${bold} ${color}">${u.points}</span>
+                    </div>`;
+                }).join('');
+            }
+
+            cont.innerHTML = `
+            <div class="bg-white rounded p-0 max-w-sm relative overflow-hidden w-full m-4">
+                <div class="bg-[#006400] p-4 text-center">
+                    <h3 class="font-black text-[#FFD700] text-lg tracking-widest uppercase">REI DE ${currentMonthName}</h3>
+                    <p class="text-[10px] text-white font-bold opacity-80">CLASSIFICAÇÃO MENSAL</p>
+                </div>
+                
+                <div class="max-h-[300px] overflow-y-auto">
+                    <div class="flex justify-between bg-gray-100 p-2 text-[10px] font-bold text-gray-500 uppercase">
+                        <span class="pl-8">Participante</span>
+                        <span>Pts</span>
+                    </div>
+                    ${listHtml}
+                </div>
+
+                <div class="p-4 bg-gray-50">
+                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-bold shadow btn-press">FECHAR</button>
+                </div>
+            </div>`;
+        };        
 
        window.showModalPhoto = (idx) => { 
             const u = currentRankingData[idx]; 
@@ -746,26 +949,30 @@ window.showMedalLegend = () => {
             modal.classList.remove('hidden'); 
             
             cont.innerHTML = `
-            <div class="bg-white rounded p-6 max-w-sm relative overflow-hidden">
+            <div class="bg-white rounded p-6 max-w-sm relative overflow-hidden m-4 w-full">
                 <img src="bg_ranking.png" class="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none">
                 
                 <div class="relative z-10">
                     <h3 class="font-bold text-[#006400] text-lg mb-4 text-center border-b pb-2">Galeria de Conquistas</h3>
-                    <div class="space-y-4 text-xs text-gray-800 max-h-[60vh] overflow-y-auto">
+                    <div class="space-y-3 text-xs text-gray-800 max-h-[60vh] overflow-y-auto pr-2">
                         
-                        <div class="flex items-center"><span class="text-2xl mr-3">👽</span><div><p class="font-bold">ALIEN</p><p>De outro mundo! 10 acertos seguidos.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">🎓</span><div><p class="font-bold">VETERANO</p><p>Fidelidade! Ganha 1 medalha a cada 50 palpites.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">🦓</span><div><p class="font-bold">CAÇADOR DE ZEBRAS</p><p>Acertou um jogo onde +80% da galera errou.</p></div></div>
-                        
+                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">👑</span><div><p class="font-bold">REI DO MÊS</p><p>Líder da pontuação no mês atual.</p></div></div>
+                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">🔮</span><div><p class="font-bold">MÃE DINAH</p><p>Acertou o campeão do torneio.</p></div></div>
                         <hr class="border-gray-200">
 
-                        <div class="flex items-center"><span class="text-2xl mr-3">👑</span><div><p class="font-bold">MITO</p><p>Incríveis 5 acertos seguidos.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">💎</span><div><p class="font-bold">DIAMANTE</p><p>Gabaritou as Oitavas (8/8).</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">🔥</span><div><p class="font-bold">ON FIRE</p><p>Acertou 3 jogos seguidos.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">🔮</span><div><p class="font-bold">MÃE DINAH</p><p>Acertou um campeão de final.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">💰</span><div><p class="font-bold">PATRÃO</p><p>Mensalidade rigorosamente em dia.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">🐢</span><div><p class="font-bold">MÃO DE ALFACE</p><p>Errou 3 palpites seguidos.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3">👻</span><div><p class="font-bold">FURÃO</p><p>Deixou de votar em 3 jogos seguidos.</p></div></div>
+                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">👽</span><div><p class="font-bold">ALIEN</p><p>De outro mundo! 10 acertos seguidos.</p></div></div>
+                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">🎯</span><div><p class="font-bold">MITO</p><p>Incríveis 5 acertos seguidos.</p></div></div>
+                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">🔥</span><div><p class="font-bold">ON FIRE</p><p>Acertou 3 jogos seguidos.</p></div></div>
+                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">💎</span><div><p class="font-bold">DIAMANTE</p><p>Gabaritou as Oitavas (8/8).</p></div></div>
+                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">🦓</span><div><p class="font-bold">CAÇADOR DE ZEBRAS</p><p>Acertou jogo que +80% errou.</p></div></div>
+                        <hr class="border-gray-200">
+
+                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">🎓</span><div><p class="font-bold">VETERANO</p><p>Fidelidade! 1 medalha a cada 50 palpites.</p></div></div>
+                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">💰</span><div><p class="font-bold">PATRÃO</p><p>Mensalidade rigorosamente em dia.</p></div></div>
+                        
+                        <hr class="border-gray-200">
+                        <div class="flex items-center text-[#8B0000]"><span class="text-2xl mr-3 w-8 text-center">⚓</span><div><p class="font-bold">ZONA DE REBAIXAMENTO</p><p>Os 2 últimos colocados.</p></div></div>
+
                     </div>
                     <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded mt-6 font-bold shadow btn-press">ENTENDI</button>
                 </div>
@@ -1034,6 +1241,7 @@ window.showMedalLegend = () => {
     </script>
 </body>
 </html>
+
 
 
 
