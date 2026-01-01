@@ -631,7 +631,6 @@ Término oficial: 31 de dezembro de 2026
                 mSnap.forEach(d => { matches.push({id:d.id, ...d.data()}); validMatchIds.add(d.id); });
                 const finished = matches.filter(m => m.winner).sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); 
 
-                // Zebra Logic & Monthly Logic setup
                 const now = new Date();
                 const currentMonthIdx = now.getMonth();
                 const currentYear = now.getFullYear();
@@ -647,7 +646,6 @@ Término oficial: 31 de dezembro de 2026
                     }
                 });
 
-                // Rodapé
                 if (finished.length > 0) { 
                     const last = finished[0]; 
                     const d = last.deadline.toDate(); 
@@ -664,7 +662,7 @@ Término oficial: 31 de dezembro de 2026
                     const hist = []; 
                     const rawUserGuesses = []; 
                     gSnap.forEach(gd => { if(gd.data().userId === ud.id) rawUserGuesses.push(gd.data()) }); 
-                    const userGuesses = rawUserGuesses.filter(g => validMatchIds.has(g.matchId)); // Correção Veterano
+                    const userGuesses = rawUserGuesses.filter(g => validMatchIds.has(g.matchId)); 
                     
                     let zebraHunterCount = 0;
 
@@ -716,8 +714,6 @@ Término oficial: 31 de dezembro de 2026
                                 if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++;
                             });
                             if (misses === 3) { medalString += "🐢 "; medalDetails.push({icon:"🐢", name:"MÃO DE ALFACE", desc:"3 erros seguidos"}); }
-                            
-                            // --- CORREÇÃO FANTASMA ---
                             if (noShows === 3) { medalString += "👻 "; medalDetails.push({icon:"👻", name:"FANTASMA", desc:"3 jogos sem votar"}); }
                         }
                     }
@@ -742,11 +738,10 @@ Término oficial: 31 de dezembro de 2026
                     users.push({ uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: medalString, medalDetails: medalDetails }); 
                 }); 
                 
-                // ORDENAÇÃO
                 users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); 
                 monthlyData.sort((a,b) => b.points - a.points); 
 
-                // REI DO MÊS
+                // Rei do Mês (mantém a lógica de medalha)
                 if (monthlyData.length > 0 && monthlyData[0].points > 0) {
                     const kingId = monthlyData[0].uid;
                     const kingUser = users.find(u => u.uid === kingId);
@@ -756,15 +751,13 @@ Término oficial: 31 de dezembro de 2026
                     }
                 }
 
-                // --- CORREÇÃO: ADICIONAR ÂNCORA AOS 2 ÚLTIMOS ---
+                // Z-2 CORREÇÃO
                 if (users.length > 2) {
-                    // Penúltimo e Último
                     const lastUsers = [users[users.length-1], users[users.length-2]];
                     lastUsers.forEach(u => {
                         if (u) {
-                            // Adiciona visualmente na string
-                            u.medals += "⚓ ";
-                            // Adiciona no objeto para clicar no perfil
+                            // REMOVIDA A DUPLICAÇÃO: Não adicionamos âncora em u.medals
+                            // Apenas no medalDetails para o popup
                             u.medalDetails.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Entre os 2 últimos colocados."});
                         }
                     });
@@ -773,12 +766,12 @@ Término oficial: 31 de dezembro de 2026
                 window.currentMonthlyRanking = monthlyData; 
                 currentRankingData = users; 
                 
+                // HTML - SEM O BOTÃO DE INTERROGAÇÃO
                 let html = `
                 <div class="bg-[#006400] rounded-t-xl p-3 flex justify-between items-center shadow-md">
                     <div><h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3><p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p></div>
                     <div class="flex gap-2">
                         <button onclick="window.showKingModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg shadow border border-white/20">🏆</button>
-                        <button onclick="showMedalLegend()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white font-bold shadow border border-white/20">?</button>
                         <button onclick="loadRanking()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-[#FFD700] shadow border border-white/20"><i class="fas fa-sync-alt text-xs"></i></button>
                     </div>
                 </div>
@@ -955,41 +948,7 @@ window.showKingModal = () => {
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
         
         // --- LEGENDA MEDALHAS ATUALIZADA (MITO, DIAMANTE...) ---
-window.showMedalLegend = () => { 
-            const modal = document.getElementById('modalOverlay'); 
-            const cont = document.getElementById('modalContainer'); 
-            modal.classList.remove('hidden'); 
-            
-            cont.innerHTML = `
-            <div class="bg-white rounded p-6 max-w-sm relative overflow-hidden m-4 w-full">
-                <img src="bg_ranking.png" class="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none">
-                
-                <div class="relative z-10">
-                    <h3 class="font-bold text-[#006400] text-lg mb-4 text-center border-b pb-2">Galeria de Conquistas</h3>
-                    <div class="space-y-3 text-xs text-gray-800 max-h-[60vh] overflow-y-auto pr-2">
-                        
-                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">👑</span><div><p class="font-bold">REI DO MÊS</p><p>Líder da pontuação no mês atual.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">🔮</span><div><p class="font-bold">MÃE DINAH</p><p>Acertou o campeão do torneio.</p></div></div>
-                        <hr class="border-gray-200">
 
-                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">👽</span><div><p class="font-bold">ALIEN</p><p>De outro mundo! 10 acertos seguidos.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">🎯</span><div><p class="font-bold">MITO</p><p>Incríveis 5 acertos seguidos.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">🔥</span><div><p class="font-bold">ON FIRE</p><p>Acertou 3 jogos seguidos.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">💎</span><div><p class="font-bold">DIAMANTE</p><p>Gabaritou as Oitavas (8/8).</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">🦓</span><div><p class="font-bold">CAÇADOR DE ZEBRAS</p><p>Acertou jogo que +80% errou.</p></div></div>
-                        <hr class="border-gray-200">
-
-                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">🎓</span><div><p class="font-bold">VETERANO</p><p>Fidelidade! 1 medalha a cada 50 palpites.</p></div></div>
-                        <div class="flex items-center"><span class="text-2xl mr-3 w-8 text-center">💰</span><div><p class="font-bold">PATRÃO</p><p>Mensalidade rigorosamente em dia.</p></div></div>
-                        
-                        <hr class="border-gray-200">
-                        <div class="flex items-center text-[#8B0000]"><span class="text-2xl mr-3 w-8 text-center">⚓</span><div><p class="font-bold">ZONA DE REBAIXAMENTO</p><p>Os 2 últimos colocados.</p></div></div>
-
-                    </div>
-                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded mt-6 font-bold shadow btn-press">ENTENDI</button>
-                </div>
-            </div>`; 
-        };
         window.openAdminMenu = () => {
             const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
             cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 h-full flex flex-col bg-white/30 p-4"><div class="flex justify-between items-center mb-6"><button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3><div class="w-6"></div></div><div class="space-y-3"><button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button><button onclick="openTrashBin()" class="w-full bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trash-restore"></i> LIXEIRA (RESTAURAR)</button><div class="grid grid-cols-2 gap-2"><button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-plus-circle"></i> NOVO JOGO</button><button onclick="openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-trophy"></i> COMPETIÇÕES</button></div></div><hr class="border-black/20 my-4"><h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4><div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">Carregando lista...</div></div></div>`;
@@ -1253,6 +1212,7 @@ window.showMedalLegend = () => {
     </script>
 </body>
 </html>
+
 
 
 
