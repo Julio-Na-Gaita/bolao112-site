@@ -686,28 +686,31 @@ Término oficial: 31 de dezembro de 2026
                     let trophyRoom = [];
                     let simStreak = 0;
                     let simStreakBroken = false;
+                    let vetCount = 0;
 
                     // Simulação Cronológica
                     chronoMatches.forEach(m => {
                         const g = userGuesses.find(x => x.matchId === m.id);
                         const isHit = g && g.teamSelected === m.winner;
-                        
-                        // Zebra
-                        if(isHit && zebraMatchIds.includes(m.id)) trophyRoom.push({icon:"🦓", name:"ZEBRA", desc:`Acertou a zebra em ${m.teamA} x ${m.teamB}`});
+                        const dateStr = m.deadlineDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit'}); // Formata data
 
-                        // Streak
+                        if(isHit && zebraMatchIds.includes(m.id)) 
+                            trophyRoom.push({icon:"🦓", name:"ZEBRA", desc:`Acertou a zebra em ${m.teamA} x ${m.teamB}`, date: dateStr});
+
                         if(isHit) {
+                            vetCount++;
                             if(!simStreakBroken) {
                                 simStreak++;
-                                if(simStreak === 3) trophyRoom.push({icon:"🔥", name:"ON FIRE", desc:"Atingiu 3 acertos seguidos."});
-                                if(simStreak === 5) trophyRoom.push({icon:"🎯", name:"MITO", desc:"Atingiu 5 acertos seguidos."});
-                                if(simStreak === 10) trophyRoom.push({icon:"👽", name:"ALIEN", desc:"Atingiu 10 acertos seguidos!"});
+                                if(simStreak === 3) trophyRoom.push({icon:"🔥", name:"ON FIRE", desc:"Atingiu 3 acertos seguidos.", date: dateStr});
+                                if(simStreak === 5) trophyRoom.push({icon:"🎯", name:"MITO", desc:"Atingiu 5 acertos seguidos.", date: dateStr});
+                                if(simStreak === 10) trophyRoom.push({icon:"👽", name:"ALIEN", desc:"Atingiu 10 acertos seguidos!", date: dateStr});
+                            }
+                            if(vetCount > 0 && vetCount % 50 === 0) {
+                                const lvl = vetCount / 50;
+                                trophyRoom.push({icon:"🎓", name:`VETERANO Nvl ${lvl}`, desc:`Conquistou ${vetCount} acertos.`, date: dateStr});
                             }
                         } else {
                             simStreak = 0;
-                            // Aqui definimos se um erro quebra a possibilidade de ganhar medalhas futuras.
-                            // Para "sala de troféus" histórica, você pode ganhar On Fire em Jan e em Março.
-                            // Então o erro reseta o streak, mas não bloqueia conquistas futuras.
                             simStreakBroken = false; 
                         }
                     });
@@ -883,13 +886,14 @@ window.showKingModal = () => {
             let medalsHtml = "";
             if (u.trophyRoom && u.trophyRoom.length > 0) {
                 medalsHtml = u.trophyRoom.map(m => 
+                    // Passa m.date para o showToast
                     `<span class="cursor-pointer mx-1 hover:scale-110 transition-transform select-none" 
-                           onclick="showToast('${m.name}', '${m.desc}')">
+                           onclick="showToast('${m.name}', '${m.desc}', '${m.date || ''}')">
                         ${m.icon}
                     </span>`
                 ).join('');
             } else {
-                medalsHtml = `<span class="text-xs text-gray-400">Sala de Troféus vazia.</span>`;
+                medalsHtml = `<span class="text-xs text-gray-400">Vazia.</span>`;
             }
 
             document.getElementById('modalContainer').innerHTML = `
@@ -901,8 +905,11 @@ window.showKingModal = () => {
                             ${imageContent}
                         </div>
                         
-                        <div class="mt-4 w-full">
-                            <p class="text-[10px] text-[#006400] font-black uppercase tracking-widest mb-1 text-left border-b border-gray-200">Sala de Troféus</p>
+                        <div class="mt-6 w-full">
+                            <div class="bg-gray-100 border border-gray-200 rounded p-2 mb-2 shadow-sm">
+                                <p class="text-[10px] text-[#006400] font-black uppercase tracking-widest text-center">Sala de Troféus</p>
+                            </div>
+                            
                             <div class="text-4xl tracking-widest flex justify-center flex-wrap relative max-h-[80px] overflow-y-auto">
                                 ${medalsHtml}
                             </div>
@@ -915,14 +922,8 @@ window.showKingModal = () => {
                         <button id="btnStatsAction" class="w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
                             <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
                         </button>
-                        <button id="btnCompareAction" class="mt-2 w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press">
-                            COMPARAR PALPITES 🆚
-                        </button>
-                        <button onclick="closeModal()" class="mt-2 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press">
-                            FECHAR
-                        </button>
-                    </div>
-                </div>`; 
+                        </div>
+                </div>`;
             
             const btnStats = document.getElementById('btnStatsAction');
             if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
@@ -931,16 +932,19 @@ window.showKingModal = () => {
         };
 
         // Função auxiliar para mostrar o Toast
-        window.showToast = (title, desc) => {
+        window.showToast = (title, desc, date) => {
             const toast = document.getElementById('medalToast');
             if (!toast) return;
-            toast.innerHTML = `<span class="text-[#FFD700]">${title}</span><br><span class="font-normal">${desc}</span>`;
+            
+            let html = `<span class="text-[#FFD700]">${title}</span><br><span class="font-normal">${desc}</span>`;
+            if(date) {
+                html += `<br><span class="text-[9px] text-gray-400 font-bold mt-1 block">Conquistado em: ${date}</span>`;
+            }
+            
+            toast.innerHTML = html;
             toast.classList.add('show');
             
-            // Limpa timeout anterior se houver
             if (window.toastTimeout) clearTimeout(window.toastTimeout);
-            
-            // Some após 2.5 segundos
             window.toastTimeout = setTimeout(() => {
                 toast.classList.remove('show');
             }, 2500);
@@ -1259,6 +1263,7 @@ window.showKingModal = () => {
     </script>
 </body>
 </html>
+
 
 
 
