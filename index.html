@@ -98,37 +98,15 @@
             
             <div id="matchesScreen" class="hidden space-y-6"></div>
 
-            <div id="rankingScreen" class="hidden">
-                <div class="bg-[#006400] rounded-t-lg shadow-lg overflow-hidden">
-                    <div class="p-4 pb-2">
-                        <div class="flex justify-between items-center mb-4">
-                            <div>
-                                <h3 class="font-black text-lg text-white tracking-widest">CLASSIFICAÇÃO</h3>
-                                <p class="text-[#FFD700] text-[10px] font-bold uppercase">Temporada 2026</p>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="showMedalLegend()" class="bg-white/10 rounded-full w-8 h-8 flex items-center justify-center btn-press">
-                                    <span class="text-red-500 font-black text-lg">?</span>
-                                </button>
-                                <button onclick="loadRanking()" class="text-[#FFD700] bg-white/10 rounded-full w-8 h-8 flex items-center justify-center btn-press">
-                                    <i class="fas fa-sync-alt text-xs"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="border-t border-white/20 mb-2"></div>
-                        <div class="flex items-center text-[10px] font-bold text-white/70 uppercase text-center pb-2">
-                            <span class="w-[35px]">Pos</span>
-                            <span class="flex-1 text-left pl-2">Participante</span>
-                            <span class="w-[28px] text-red-200">D</span>
-                            <span class="w-[28px] text-white">V</span>
-                            <span class="w-[28px] text-[#FFD700]">F</span>
-                            <span class="w-[40px] text-white font-black">PTS</span>
-                        </div>
-                    </div>
+            <div id="rankingScreen" class="hidden h-full flex flex-col px-4 pt-4">
+            
+            <div id="rankingListContent" class="flex-1 overflow-y-auto pb-4">
                 </div>
-                <div id="rankingListContent"></div>
-<div id="lastUpdateRanking"></div>
-            </div>
+
+            <div id="lastUpdateRanking" class="pb-24">
+                </div>
+            
+        </div>
 
             <div id="rulesScreen" class="hidden space-y-4">
                 <div class="card-cut p-6 border-l-4 border-yellow-400 bg-[#FFF9C4] text-left shadow-sm">
@@ -1263,6 +1241,7 @@ window.showMedalLegend = () => {
     </script>
 </body>
 </html>
+
 
 
 
