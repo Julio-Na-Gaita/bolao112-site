@@ -15,6 +15,28 @@
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700;900&display=swap');
+
+        /* Balão de fala temporário */
+.medal-toast {
+    position: absolute;
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none; /* Para não atrapalhar cliques */
+    text-align: center;
+    min-width: 200px;
+}
+.medal-toast.show { opacity: 1; }
         
         :root { --dark-green: #006400; --gold: #FFD700; }
         
@@ -598,39 +620,30 @@ Término oficial: 31 de dezembro de 2026
             listContainer.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400] text-2xl"></i></div>`; 
             
             try {
-                // Removemos o fetch de "weekly_duels" pois você abandonou essa ideia
                 const [uSnap, gSnap, mSnap] = await Promise.all([
                     getDocs(collection(db, "users")), 
                     getDocs(collection(db, "guesses")), 
                     getDocs(collection(db, "matches"))
                 ]); 
                 
-                // Mapeia todos os jogos VÁLIDOS e cria um Set de IDs para filtragem rápida
                 const matches = []; 
                 const validMatchIds = new Set(); 
-                
-                mSnap.forEach(d => {
-                    matches.push({id:d.id, ...d.data()});
-                    validMatchIds.add(d.id);
-                });
-
+                mSnap.forEach(d => { matches.push({id:d.id, ...d.data()}); validMatchIds.add(d.id); });
                 const finished = matches.filter(m => m.winner).sort((a,b) => b.deadline.toDate() - a.deadline.toDate()); 
 
-                // Lógica Rei do Mês
+                // Zebra Logic & Monthly Logic setup
                 const now = new Date();
                 const currentMonthIdx = now.getMonth();
                 const currentYear = now.getFullYear();
                 let monthlyData = [];
-
-                // Lógica Zebra
                 const zebraMatchIds = [];
+
                 finished.forEach(m => {
                     let matchGuesses = [];
                     gSnap.forEach(g => { if(g.data().matchId === m.id) matchGuesses.push(g.data()); });
-                    const totalVotes = matchGuesses.length;
-                    if(totalVotes >= 5) {
+                    if(matchGuesses.length >= 5) {
                         const winnerVotes = matchGuesses.filter(g => g.teamSelected === m.winner).length;
-                        if((winnerVotes / totalVotes) < 0.20) zebraMatchIds.push(m.id);
+                        if((winnerVotes / matchGuesses.length) < 0.20) zebraMatchIds.push(m.id);
                     }
                 });
 
@@ -638,27 +651,20 @@ Término oficial: 31 de dezembro de 2026
                 if (finished.length > 0) { 
                     const last = finished[0]; 
                     const d = last.deadline.toDate(); 
-                    const dataFormatada = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                    footer.innerHTML = `<div class="text-center text-[10px] text-white opacity-80 mt-2">Última atualização: ${last.teamA} x ${last.teamB} em ${dataFormatada}</div>`; 
-                } else {
-                    footer.innerText = "Aguardando resultados..."; 
-                }
+                    const dt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    footer.innerHTML = `<div class="text-center text-[10px] text-white opacity-80 mt-2">Última atualização: ${last.teamA} x ${last.teamB} em ${dt}</div>`; 
+                } else footer.innerText = "Aguardando resultados..."; 
 
                 let users = []; 
                 const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
 
                 uSnap.forEach(ud => { 
                     const u = ud.data(); 
-                    let p=0, v=0, f=0; 
-                    let monthlyP = 0; 
+                    let p=0, v=0, f=0, monthlyP=0; 
                     const hist = []; 
-                    
-                    // 1. Pega palpites brutos
                     const rawUserGuesses = []; 
                     gSnap.forEach(gd => { if(gd.data().userId === ud.id) rawUserGuesses.push(gd.data()) }); 
-                    
-                    // 2. CORREÇÃO VETERANO: Filtra apenas palpites de jogos que existem no Set validMatchIds
-                    const userGuesses = rawUserGuesses.filter(g => validMatchIds.has(g.matchId));
+                    const userGuesses = rawUserGuesses.filter(g => validMatchIds.has(g.matchId)); // Correção Veterano
                     
                     let zebraHunterCount = 0;
 
@@ -675,9 +681,7 @@ Término oficial: 31 de dezembro de 2026
                                 const pts = isF ? 6 : 3;
                                 p += pts; 
                                 if(isThisMonth) monthlyP += pts;
-
-                                v++; 
-                                if(isF) f++; 
+                                v++; if(isF) f++; 
                                 hist.push({ts: dl, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`}); 
                                 if(zebraMatchIds.includes(m.id)) zebraHunterCount++;
                             } else { 
@@ -688,9 +692,8 @@ Término oficial: 31 de dezembro de 2026
 
                     monthlyData.push({ name: u.name || "Sem Nome", points: monthlyP, uid: ud.id });
                     
-                    // --- CONSTRUÇÃO DAS MEDALHAS (COM DETALHES) ---
-                    let medalString = ""; // Apenas ícones (para a lista)
-                    let medalDetails = []; // Objetos completos (para o modal)
+                    let medalString = ""; 
+                    let medalDetails = []; 
 
                     if (finished.length > 0) {
                         let currentStreak = 0; let streakBroken = false;
@@ -713,16 +716,14 @@ Término oficial: 31 de dezembro de 2026
                                 if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++;
                             });
                             if (misses === 3) { medalString += "🐢 "; medalDetails.push({icon:"🐢", name:"MÃO DE ALFACE", desc:"3 erros seguidos"}); }
+                            
+                            // --- CORREÇÃO FANTASMA ---
                             if (noShows === 3) { medalString += "👻 "; medalDetails.push({icon:"👻", name:"FANTASMA", desc:"3 jogos sem votar"}); }
                         }
                     }
 
-                    // VETERANO CORRIGIDO (Usa userGuesses filtrado)
                     const veteranLevel = Math.floor(userGuesses.length / 50);
-                    for(let i=0; i<veteranLevel; i++) { 
-                        medalString += "🎓 "; 
-                        medalDetails.push({icon:"🎓", name:`VETERANO Nvl ${i+1}`, desc:`Fidelidade! Mais de ${(i+1)*50} palpites.`});
-                    }
+                    for(let i=0; i<veteranLevel; i++) { medalString += "🎓 "; medalDetails.push({icon:"🎓", name:`VETERANO Nvl ${i+1}`, desc:`Mais de ${(i+1)*50} palpites.`}); }
 
                     if(zebraHunterCount > 0) { medalString += "🦓 "; medalDetails.push({icon:"🦓", name:"ZEBRA", desc:"Caçador de Zebras"}); }
                     if (hist.some(h => h.text.includes("Bônus Oitavas"))) { medalString += "💎 "; medalDetails.push({icon:"💎", name:"DIAMANTE", desc:"Gabaritou Oitavas"}); }
@@ -732,23 +733,20 @@ Término oficial: 31 de dezembro de 2026
                     if (currentYear >= 2026) {
                         const userPayments = u.payments || {};
                         for(let i=0; i<=currentMonthIdx; i++) { if (!userPayments[monthsNames[i]]) { allPaid = false; break; } }
-                        if (allPaid) { medalString += "💰 "; medalDetails.push({icon:"💰", name:"PATRÃO", desc:"Mensalidades em dia"}); }
-                    } else { if ((u.debts || 0) === 0) { medalString += "💰 "; medalDetails.push({icon:"💰", name:"PATRÃO", desc:"Mensalidades em dia"}); } }
+                        if (allPaid) { medalString += "💰 "; medalDetails.push({icon:"💰", name:"PATRÃO", desc:"Pagamento em dia"}); }
+                    } else { if ((u.debts || 0) === 0) { medalString += "💰 "; medalDetails.push({icon:"💰", name:"PATRÃO", desc:"Pagamento em dia"}); } }
 
                     matches.forEach(m => { const dl = m.deadline.toDate(); if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
                     const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
                     
-                    users.push({
-                        uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, 
-                        medals: medalString, 
-                        medalDetails: medalDetails // Novo campo
-                    }); 
+                    users.push({ uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: medalString, medalDetails: medalDetails }); 
                 }); 
                 
+                // ORDENAÇÃO
                 users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); 
                 monthlyData.sort((a,b) => b.points - a.points); 
 
-                // Adiciona Medalha Rei do Mês (Sem mexer em Duelo)
+                // REI DO MÊS
                 if (monthlyData.length > 0 && monthlyData[0].points > 0) {
                     const kingId = monthlyData[0].uid;
                     const kingUser = users.find(u => u.uid === kingId);
@@ -758,76 +756,59 @@ Término oficial: 31 de dezembro de 2026
                     }
                 }
 
+                // --- CORREÇÃO: ADICIONAR ÂNCORA AOS 2 ÚLTIMOS ---
+                if (users.length > 2) {
+                    // Penúltimo e Último
+                    const lastUsers = [users[users.length-1], users[users.length-2]];
+                    lastUsers.forEach(u => {
+                        if (u) {
+                            // Adiciona visualmente na string
+                            u.medals += "⚓ ";
+                            // Adiciona no objeto para clicar no perfil
+                            u.medalDetails.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Entre os 2 últimos colocados."});
+                        }
+                    });
+                }
+
                 window.currentMonthlyRanking = monthlyData; 
                 currentRankingData = users; 
                 
-                // Renderização (Cabeçalho Verde + Lista)
                 let html = `
                 <div class="bg-[#006400] rounded-t-xl p-3 flex justify-between items-center shadow-md">
-                    <div>
-                        <h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3>
-                        <p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p>
-                    </div>
+                    <div><h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3><p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p></div>
                     <div class="flex gap-2">
                         <button onclick="window.showKingModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg shadow border border-white/20">🏆</button>
                         <button onclick="showMedalLegend()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white font-bold shadow border border-white/20">?</button>
                         <button onclick="loadRanking()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-[#FFD700] shadow border border-white/20"><i class="fas fa-sync-alt text-xs"></i></button>
                     </div>
                 </div>
-                
                 <div class="bg-[#005000] flex text-white/70 text-[9px] font-bold py-1 px-2 uppercase border-b border-white/10">
-                    <div class="w-[35px] text-center">Pos</div>
-                    <div class="flex-1 pl-2">Participante</div>
-                    <div class="w-[28px] text-center">D</div>
-                    <div class="w-[28px] text-center">V</div>
-                    <div class="w-[28px] text-center text-[#FFD700]">F</div>
-                    <div class="w-[40px] text-center text-white">Pts</div>
+                    <div class="w-[35px] text-center">Pos</div><div class="flex-1 pl-2">Participante</div><div class="w-[28px] text-center">D</div><div class="w-[28px] text-center">V</div><div class="w-[28px] text-center text-[#FFD700]">F</div><div class="w-[40px] text-center text-white">Pts</div>
                 </div>
-                
                 <div class="bg-white rounded-b-xl overflow-hidden shadow-sm">`;
 
                 html += users.map((u, i) => { 
                     const pos = i+1; 
-                    
-                    // Z-2 (Zona de Rebaixamento)
                     const isRelegation = (i >= users.length - 2) && (users.length > 2);
-                    
-                    let bgColor = 'bg-white'; 
-                    let borderColor = 'border-transparent';
-                    let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; 
-                    let nameColorClass = "text-gray-800";
-                    let anchorIcon = "";
+                    let bgColor = 'bg-white'; let borderColor = 'border-transparent'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; let nameColorClass = "text-gray-800"; let anchorIcon = "";
 
                     if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; } 
                     else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; } 
                     else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; }
-                    else if (isRelegation) {
-                        bgColor = 'bg-[#FFEBEE]'; // Fundo Vermelho
-                        nameColorClass = "text-[#8B0000]"; // Texto Vermelho Sangue
-                        anchorIcon = `<i class="fas fa-anchor text-[#8B0000] ml-1 text-[10px]" title="Zona de Rebaixamento"></i>`; 
-                    }
+                    else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; anchorIcon = `<i class="fas fa-anchor text-[#8B0000] ml-1 text-[10px]" title="Zona de Rebaixamento"></i>`; }
 
                     let diffHtml = ''; 
-                    if(u.lastRank > 0) { 
-                        if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; 
-                        else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; 
-                    } 
+                    if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } 
 
                     return `
                     <div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2 ${i<3 ? 'border-l-4' : ''}" style="${i<3 ? `border-left-color: ${borderColor.replace('border-[','').replace(']','')}` : ''}">
-                        <div class="w-[35px] text-center flex flex-col items-center justify-center">
-                            <div class="text-sm">${posIcon}</div>
-                            ${diffHtml}
-                        </div>
+                        <div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div>
                         <div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})">
                             <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">
                                 ${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}
                             </div>
                             <div class="flex flex-col overflow-hidden">
-                                <div class="flex items-center">
-                                    <span class="text-xs font-bold ${nameColorClass} truncate pl-2">${u.name}</span>
-                                    ${anchorIcon}
-                                </div>
+                                <div class="flex items-center"><span class="text-xs font-bold ${nameColorClass} truncate pl-2">${u.name}</span>${anchorIcon}</div>
                                 ${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}
                             </div>
                         </div>
@@ -837,14 +818,10 @@ Término oficial: 31 de dezembro de 2026
                         <div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div>
                     </div>`; 
                 }).join(''); 
-                
                 html += `</div>`; 
                 listContainer.innerHTML = html;
 
-            } catch (e) {
-                console.error(e);
-                listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro ao carregar ranking.</div>`;
-            }
+            } catch (e) { console.error(e); listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro.</div>`; }
         }
 window.showKingModal = () => {
             const modal = document.getElementById('modalOverlay');
@@ -915,9 +892,9 @@ window.showKingModal = () => {
             let medalsHtml = "";
             if (u.medalDetails && u.medalDetails.length > 0) {
                 medalsHtml = u.medalDetails.map(m => 
-                    // Ao clicar, atualiza o span com id "medalNameDisplay"
+                    // onclick chama showToast com o nome e desc
                     `<span class="cursor-pointer mx-1 hover:scale-110 transition-transform select-none" 
-                           onclick="document.getElementById('medalNameDisplay').innerHTML = '<span class=\\'text-[#006400] font-bold\\'>${m.name}</span>: ${m.desc}'">
+                           onclick="showToast('${m.name}', '${m.desc}')">
                         ${m.icon}
                     </span>`
                 ).join('');
@@ -934,13 +911,12 @@ window.showKingModal = () => {
                             ${imageContent}
                         </div>
                         
-                        <div class="mt-4 text-4xl tracking-widest flex justify-center flex-wrap">
+                        <div class="mt-4 text-4xl tracking-widest flex justify-center flex-wrap relative">
                             ${medalsHtml}
                         </div>
-                        
-                        <p id="medalNameDisplay" class="text-[11px] text-gray-500 mt-2 mb-4 h-4 font-medium">
-                            (Toque nas medalhas para ver o nome)
-                        </p>
+                        <p class="text-[10px] text-gray-500 mt-1 mb-4">(Toque nas medalhas para ver)</p>
+
+                        <div id="medalToast" class="medal-toast"></div>
 
                         <button id="btnStatsAction" class="w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
                             <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
@@ -958,6 +934,22 @@ window.showKingModal = () => {
             if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
             const btnCompare = document.getElementById('btnCompareAction');
             if (btnCompare) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
+        };
+
+        // Função auxiliar para mostrar o Toast
+        window.showToast = (title, desc) => {
+            const toast = document.getElementById('medalToast');
+            if (!toast) return;
+            toast.innerHTML = `<span class="text-[#FFD700]">${title}</span><br><span class="font-normal">${desc}</span>`;
+            toast.classList.add('show');
+            
+            // Limpa timeout anterior se houver
+            if (window.toastTimeout) clearTimeout(window.toastTimeout);
+            
+            // Some após 2.5 segundos
+            window.toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2500);
         };
         
         window.showModalHistory = (idx) => { const u = currentRankingData[idx]; const html = u.hist.length ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') : "Sem histórico."; document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 p-6 flex flex-col items-center"><i class="fas fa-trophy text-[#FFD700] text-4xl mb-2"></i><div class="bg-white/80 rounded px-3 py-1 mb-1"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div><div class="bg-white/80 rounded px-2 py-1 mb-4"><h2 class="font-black text-black text-lg">${u.name}</h2></div><div class="w-full bg-white/90 rounded-lg shadow-inner p-3 max-h-[50vh] overflow-y-auto">${html}</div><button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg">FECHAR</button></div></div>`; };
@@ -1261,6 +1253,7 @@ window.showMedalLegend = () => {
     </script>
 </body>
 </html>
+
 
 
 
