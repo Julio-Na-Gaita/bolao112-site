@@ -882,53 +882,72 @@ window.showKingModal = () => {
             
             let imageContent = u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">` : `<div class="w-full h-full bg-gray-200 flex items-center justify-center"><i class="fas fa-user text-6xl text-gray-400"></i></div>`;
 
-            // HTML das Medalhas (Sala de Troféus)
+            // HTML das Medalhas
             let medalsHtml = "";
             if (u.trophyRoom && u.trophyRoom.length > 0) {
                 medalsHtml = u.trophyRoom.map(m => 
-                    // Passa m.date para o showToast
-                    `<span class="cursor-pointer mx-1 hover:scale-110 transition-transform select-none" 
+                    `<span class="cursor-pointer mx-1 hover:scale-110 transition-transform select-none drop-shadow-md" 
                            onclick="showToast('${m.name}', '${m.desc}', '${m.date || ''}')">
                         ${m.icon}
                     </span>`
                 ).join('');
             } else {
-                medalsHtml = `<span class="text-xs text-gray-400">Vazia.</span>`;
+                medalsHtml = `<span class="text-xs text-gray-400 italic">Ainda não possui troféus.</span>`;
             }
+
+            // Verifica se sou eu para esconder o botão de comparar
+            const isMe = currentUser && currentUser.uid === u.uid;
+            const compareBtnClass = isMe ? "hidden" : "";
 
             document.getElementById('modalContainer').innerHTML = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
-                    <img src="bg_dialog_foto.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                    <img src="bg_dialog_foto.png" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                    
                     <div class="relative z-10 p-6 text-center flex flex-col items-center">
-                        <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl">${u.name}</h3>
-                        <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-xl bg-black w-[280px] h-[280px] flex items-center justify-center">
+                        <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl tracking-wider">${u.name}</h3>
+                        
+                        <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-2xl bg-black w-[260px] h-[260px] flex items-center justify-center mb-6 relative">
                             ${imageContent}
+                            <div class="absolute inset-0 border border-white/20 rounded-xl pointer-events-none"></div>
                         </div>
                         
-                        <div class="mt-6 w-full">
-                            <div class="bg-gray-100 border border-gray-200 rounded p-2 mb-2 shadow-sm">
-                                <p class="text-[10px] text-[#006400] font-black uppercase tracking-widest text-center">Sala de Troféus</p>
+                        <div class="w-full mb-4">
+                            <div class="bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#FFD700] border-y-2 border-[#B8860B] shadow-lg p-2 mb-3 transform skew-x-[-5deg]">
+                                <p class="text-[12px] text-[#3E2723] font-black uppercase tracking-[0.2em] transform skew-x-[5deg] drop-shadow-sm">
+                                    ✨ Sala de Troféus ✨
+                                </p>
                             </div>
                             
-                            <div class="text-4xl tracking-widest flex justify-center flex-wrap relative max-h-[80px] overflow-y-auto">
+                            <div class="text-4xl tracking-widest flex justify-center flex-wrap relative max-h-[80px] overflow-y-auto py-2">
                                 ${medalsHtml}
                             </div>
+                            <p class="text-[9px] text-gray-500 mt-1 font-bold">(Toque para detalhes)</p>
                         </div>
-                        
-                        <p class="text-[10px] text-gray-500 mt-1 mb-4">(Toque nas medalhas para ver)</p>
 
                         <div id="medalToast" class="medal-toast"></div>
 
-                        <button id="btnStatsAction" class="w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
-                            <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
-                        </button>
+                        <div class="w-full space-y-2 mt-2">
+                            <button id="btnStatsAction" class="w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
+                                <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
+                            </button>
+                            
+                            <button id="btnCompareAction" class="${compareBtnClass} w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press flex items-center justify-center gap-2">
+                                <i class="fas fa-exchange-alt"></i> COMPARAR PALPITES
+                            </button>
+                            
+                            <button onclick="closeModal()" class="w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press">
+                                FECHAR
+                            </button>
                         </div>
+                    </div>
                 </div>`;
             
+            // Reatribui os eventos de clique
             const btnStats = document.getElementById('btnStatsAction');
             if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
+            
             const btnCompare = document.getElementById('btnCompareAction');
-            if (btnCompare) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
+            if (btnCompare && !isMe) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
         };
 
         // Função auxiliar para mostrar o Toast
@@ -1263,6 +1282,7 @@ window.showKingModal = () => {
     </script>
 </body>
 </html>
+
 
 
 
