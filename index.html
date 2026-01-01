@@ -718,10 +718,11 @@ Término oficial: 31 de dezembro de 2026
                         }
                     }
 
-                    const veteranLevel = Math.floor(userGuesses.length / 50);
+                    // Alterado para basear em ACERTOS (vitórias 'v'), não em palpites totais
+const veteranLevel = Math.floor(v / 50);
                     for(let i=0; i<veteranLevel; i++) { medalString += "🎓 "; medalDetails.push({icon:"🎓", name:`VETERANO Nvl ${i+1}`, desc:`Mais de ${(i+1)*50} palpites.`}); }
 
-                    if(zebraHunterCount > 0) { medalString += "🦓 "; medalDetails.push({icon:"🦓", name:"ZEBRA", desc:"Caçador de Zebras"}); }
+                    if(zebraHunterCount > 0) { medalString += "🦓 "; medalDetails.push({icon:"🎓", name:`VETERANO Nvl ${i+1}`, desc:`Grande desempenho! Acumulou ${(i+1)*50} acertos.`}); }
                     if (hist.some(h => h.text.includes("Bônus Oitavas"))) { medalString += "💎 "; medalDetails.push({icon:"💎", name:"DIAMANTE", desc:"Gabaritou Oitavas"}); }
                     if (f > 0) { medalString += "🔮 "; medalDetails.push({icon:"🔮", name:"MÃE DINAH", desc:"Acertou campeão"}); }
 
@@ -987,58 +988,54 @@ window.showKingModal = () => {
         window.changePassword = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_login.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 p-6"><h3 class="font-black text-[#006400] text-center mb-6 text-lg uppercase">Nova Senha</h3><input type="password" id="newPassInput" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnConfirmPass" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CONFIRMAR</button><button onclick="closeModal()" class="w-full text-black font-black text-xs mt-4">CANCELAR</button></div></div>`; document.getElementById('btnConfirmPass').onclick = () => { const newPass = document.getElementById('newPassInput').value; if(newPass && newPass.length >= 6) { updatePassword(currentUser, newPass).then(() => { alert("Senha alterada com sucesso!"); closeModal(); }).catch(e => alert("Erro: Faça logout e login novamente para trocar a senha.")); } else { alert("A senha deve ter no mínimo 6 caracteres."); } }; };
         
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
-window.showAppGuideWeb = () => {
-            const modal = document.getElementById('modalOverlay');
-            const cont = document.getElementById('modalContainer');
-            modal.classList.remove('hidden');
-
-            cont.innerHTML = `
-            <div class="bg-white rounded-lg shadow-2xl relative overflow-hidden w-[90%] max-w-sm mx-auto my-auto flex flex-col max-h-[85vh]">
-                <img src="bg_ajuda.png" class="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none">
-                
-                <div class="relative z-10 flex flex-col h-full p-6">
-                    <div class="text-center mb-4 shrink-0">
-                        <h3 class="font-black text-[#006400] text-xl">GUIA DO APP</h3>
-                        <p class="text-xs text-gray-500">Versão v1.4.2</p>
+// --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
+        window.showAppGuide = () => { 
+            document.getElementById('modalOverlay').classList.remove('hidden'); 
+            document.getElementById('modalContainer').innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
+                <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
+                    <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
+                    
+                    <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
+                        <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
+                        <div class="text-xs text-gray-700 space-y-2 font-medium">
+                            <p>👉 <b>Como votar:</b> Toque no escudo do time. O voto fica verde quando salvo.</p>
+                            <p class="text-green-800 font-bold">👉 Termômetro: <span class="font-normal text-gray-700">Após o jogo acabar, uma barra colorida mostra a % de votos da galera.</span></p>
+                            <p class="text-green-800 font-bold">👉 Resenha: <span class="font-normal text-gray-700">Toque no ícone 💬 no card do jogo para abrir o chat. O balãozinho fica vermelho se tiver mensagens novas!</span></p>
+                        </div>
                     </div>
 
-                    <div class="overflow-y-auto flex-1 min-h-0 pr-2 text-sm text-gray-800 space-y-4 text-left">
-                        
-                        <div>
-                            <h4 class="font-bold text-[#006400] border-b border-gray-200 pb-1 mb-2">⚽ CONFRONTOS & PALPITES</h4>
-                            <p class="text-xs mb-1">• <strong>Votar:</strong> Clique no escudo do time. Ficou verde? Tá salvo!</p>
-                            <p class="text-xs mb-1 text-green-700">• <strong>Resenha:</strong> Use o ícone 💬 no card do jogo para zoar. O chat fecha ao fim do jogo.</p>
-                            <p class="text-xs">• <strong>Termômetro:</strong> Veja a % da torcida após o jogo.</p>
+                    <div class="mb-6">
+                        <h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">🏅 GALERIA DE CONQUISTAS (MEDALHAS)</h4>
+                        <div class="text-xs text-gray-700 space-y-3 font-medium bg-white p-3 rounded border border-gray-200">
+                            <div class="flex items-start gap-2"><span class="text-lg">👑</span> <div><b>Rei do Mês:</b> Líder da pontuação no mês vigente.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🔮</span> <div><b>Mãe Dinah:</b> Acertou na mosca o campeão do torneio.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">👽</span> <div><b>Alien:</b> Sequência de 10 acertos seguidos.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🎯</span> <div><b>Mito:</b> Sequência de 5 acertos seguidos.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🔥</span> <div><b>On Fire:</b> Sequência de 3 acertos seguidos.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">💎</span> <div><b>Diamante:</b> Gabaritou as Oitavas de Final (8/8).</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🦓</span> <div><b>Caçador de Zebras:</b> Acertou um jogo onde +80% da galera errou.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🎓</span> <div><b>Veterano:</b> Ganha 1 estrela a cada 50 ACERTOS.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">💰</span> <div><b>Patrão:</b> Mensalidade rigorosamente em dia.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">👻</span> <div><b>Fantasma:</b> Deixou de votar em 3 jogos seguidos.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🐢</span> <div><b>Mão de Alface:</b> Errou 3 palpites seguidos.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg text-[#8B0000]">⚓</span> <div class="text-[#8B0000]"><b>Zona de Rebaixamento:</b> Os 2 últimos colocados da tabela geral.</div></div>
                         </div>
-
-                        <div>
-                            <h4 class="font-bold text-[#006400] border-b border-gray-200 pb-1 mb-2">🏆 RANKING & DISPUTA</h4>
-                            <p class="text-xs mb-1">• <strong>Rei do Mês 👑:</strong> Pontuação mensal separada. O líder do mês ganha a coroa!</p>
-                            <p class="text-xs mb-1 text-red-700">• <strong>Z-2 (Rebaixamento) ⚓:</strong> Os 2 últimos colocados ficam marcados em vermelho.</p>
-                            <p class="text-xs mb-1">• <strong>Tira-Teima:</strong> Clique na foto de alguém > "COMPARAR" para ver palpites lado a lado.</p>
-                            <p class="text-xs">• <strong>Scout:</strong> Estatísticas completas no perfil de cada jogador.</p>
-                        </div>
-
-                        <div>
-                            <h4 class="font-bold text-[#006400] border-b border-gray-200 pb-1 mb-2">🏅 GALERIA DE CONQUISTAS</h4>
-                            <p class="text-xs mb-1">• <strong>Novas:</strong> Mito 🎯 (5 seguidas), Fantasma 👻 (não votou) e Mão de Alface 🐢.</p>
-                            <p class="text-xs font-bold">• Dica: Toque nas medalhas no perfil de alguém para ler o significado!</p>
-                        </div>
-
-                        <div>
-                            <h4 class="font-bold text-[#006400] border-b border-gray-200 pb-1 mb-2">⚙️ GERAL</h4>
-                            <p class="text-xs mb-1">• <strong>Pote de Ouro 🐷:</strong> Valor acumulado visível no topo.</p>
-                            <p class="text-xs">• <strong>Pix:</strong> Dados disponíveis nesta tela de Perfil.</p>
-                        </div>
-
                     </div>
 
-                    <div class="mt-6 shrink-0">
-                        <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-bold shadow btn-press">ENTENDI</button>
+                    <div>
+                        <h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">🏆 RANKING & DISPUTA</h4>
+                        <div class="text-xs text-gray-700 space-y-2 font-medium">
+                            <p>👉 <b>Detalhes:</b> Toque na foto de qualquer participante para ver suas medalhas e estatísticas.</p>
+                            <p class="text-green-800 font-bold">👉 Tira-Teima: <span class="font-normal text-gray-700">Ao abrir a foto de um rival, clique em <b>COMPARAR</b> para ver os palpites lado a lado.</span></p>
+                        </div>
                     </div>
+
+                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded-lg font-bold mt-6 shadow-lg btn-press text-sm">ENTENDI</button>
                 </div>
-            </div>`;
-        };        
+            </div>`; 
+        };      
         async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'}); }
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
         window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
@@ -1262,6 +1259,7 @@ window.showAppGuideWeb = () => {
     </script>
 </body>
 </html>
+
 
 
 
