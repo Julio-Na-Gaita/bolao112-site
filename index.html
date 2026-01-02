@@ -718,13 +718,39 @@ Término oficial: 31 de dezembro de 2026
                     }
                 });
 
-                if (finishedDisplay.length > 0) { 
-                    const last = finishedDisplay[0]; 
-                    const d = last.deadlineDate; 
+                // --- ATUALIZAÇÃO DO RODAPÉ (LEGENDA + DATA) ---
+                let footerContent = "";
+                
+                if (finishedDisplay.length > 0) {
+                    const last = finishedDisplay[0];
+                    const d = last.deadlineDate;
                     const dt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                    footer.innerHTML = `<div class="text-center text-[10px] text-white opacity-80 mt-2">Última atualização: ${last.teamA} x ${last.teamB} em ${dt}</div>`; 
-                } else footer.innerText = "Aguardando resultados..."; 
+                    
+                    footerContent = `
+                        <div class="text-[#FFD700] font-bold text-[10px] uppercase mb-1 tracking-wide">
+                            Legenda: D=Débitos(-1) | PTS=Pontos
+                        </div>
+                        <div class="text-white opacity-70 text-[9px]">
+                            Última atualização: ${last.teamA} x ${last.teamB} em ${dt}
+                        </div>
+                    `;
+                } else {
+                    footerContent = `
+                        <div class="text-[#FFD700] font-bold text-[10px] uppercase mb-1 tracking-wide">
+                            Legenda: D=Débitos(-1) | PTS=Pontos
+                        </div>
+                        <div class="text-white opacity-70 text-[9px]">
+                            Aguardando resultados...
+                        </div>
+                    `;
+                }
 
+                // Renderiza o Card Preto do Rodapé
+                footer.innerHTML = `
+                    <div class="bg-black/80 rounded-lg p-3 text-center shadow-lg backdrop-blur-sm mt-2 border border-white/10 mx-2">
+                        ${footerContent}
+                    </div>
+                `;
                 let users = []; 
                 const now = new Date(); const currentMonthIdx = now.getMonth(); const currentYear = now.getFullYear();
                 const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
@@ -1422,6 +1448,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
