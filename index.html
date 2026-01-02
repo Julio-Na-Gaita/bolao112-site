@@ -803,9 +803,9 @@ Término oficial: 31 de dezembro de 2026
                             vetCount++;
                             if(!simStreakBroken) {
                                 simStreak++;
-                                if(simStreak === 3) trophyRoom.push({icon:"🔥", name:"ON FIRE", desc:"Palpitou 3 acertos seguidos.", date: dateStr});
-                                if(simStreak === 5) trophyRoom.push({icon:"🎯", name:"MITO", desc:"Palpitou 5 acertos seguidos.", date: dateStr});
-                                if(simStreak === 10) trophyRoom.push({icon:"👽", name:"ALIEN", desc:"Palpitou 10 acertos seguidos!", date: dateStr});
+                                if(simStreak === 3) trophyRoom.push({icon:"🔥", name:"ON FIRE", desc:"Acertou 3 palpites seguidos.", date: dateStr});
+                                if(simStreak === 5) trophyRoom.push({icon:"🎯", name:"MITO", desc:"Acertou 5 palpites seguidos.", date: dateStr});
+                                if(simStreak === 10) trophyRoom.push({icon:"👽", name:"ALIEN", desc:"Acertou 10 palpites seguidos!", date: dateStr});
                             }
                             if(vetCount > 0 && vetCount % 50 === 0) {
                                 const lvl = vetCount / 50;
@@ -1301,85 +1301,103 @@ async function loadAdminMatches() {
             };
         };
         // --- NOVO: SCOUT DO PALPITEIRO (ESTILO FIFA) ---
-        window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
-            const cont = document.getElementById('modalContainer');
-            // Mostra carregando
-            document.getElementById('modalOverlay').classList.remove('hidden');
-            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i><p class="text-xs mt-2 font-bold text-gray-500">Gerando Scout...</p></div>`;
+        async function showPlayerScout(index) {
+            const modal = document.getElementById('modalDetails');
+            const cont = document.getElementById('modalDetailsContent');
+            modal.classList.remove('hidden');
+            cont.innerHTML = '<div class="text-center text-white p-10"><i class="fas fa-spinner fa-spin text-4xl"></i><p class="mt-4">Analisando performance...</p></div>';
 
             try {
-                // 1. Buscamos todos os jogos finalizados e os palpites desse usuário
-                const [mSnap, gSnap] = await Promise.all([
-                    getDocs(collection(db, "matches")),
-                    getDocs(query(collection(db, "guesses"), where("userId", "==", targetUid)))
+                // 1. Pega dados do usuário e jogos
+                const users = JSON.parse(localStorage.getItem('bolao_users_cache') || "[]");
+                const targetUser = users[index];
+                if (!targetUser) throw new Error("Usuário não encontrado");
+
+                const db = getFirestore();
+                const [gSnap, mSnap] = await Promise.all([
+                    getDocs(collection(db, "guesses")),
+                    getDocs(collection(db, "matches"))
                 ]);
 
-                // Organiza palpites num mapa: { matchId: "Time Apostado" }
-                const userGuesses = {};
-                gSnap.forEach(d => userGuesses[d.data().matchId] = d.data().teamSelected);
-
-                // Filtra e ordena jogos finalizados (do mais recente para o antigo)
+                // 2. Prepara os dados
                 const matches = [];
                 mSnap.forEach(d => {
                     const m = d.data();
-                    if (m.winner) matches.push({ id: d.id, ...m, deadlineDate: m.deadline.toDate() });
+                    if (m.winner) { // Só jogos finalizados
+                        matches.push({ id: d.id, ...m, deadlineDate: m.deadline.toDate() });
+                    }
                 });
-                matches.sort((a, b) => b.deadlineDate - a.deadlineDate); // Decrescente
+                // Ordena por data (Antigo -> Recente) para calcular sequência
+                matches.sort((a, b) => a.deadlineDate - b.deadlineDate);
 
-                // 2. Cálculos Estatísticos
+                const userGuesses = {};
+                gSnap.forEach(d => {
+                    if (d.data().userId === targetUser.id) {
+                        userGuesses[d.data().matchId] = d.data().teamSelected;
+                    }
+                });
+
+                // 3. Calcula Estatísticas
                 let totalGuesses = 0;
                 let totalHits = 0;
                 let currentStreak = 0;
+                let maxStreak = 0; // Para mostrar se ele teve uma sequência boa
                 let streakBroken = false;
-                const compStats = {}; // { 'Champions': {hits:0, total:0} }
+                
+                // Mapa para competições
+                const compStats = {}; // { "Champions": {played: 5, hits: 3} }
 
                 for (let m of matches) {
                     const vote = userGuesses[m.id];
-                    if (!vote) continue; // Pula se não votou
+                    
+                    // SE NÃO VOTOU, PULA (Não penaliza precisão, mas conta pro total de jogos no rodapé)
+                    if (!vote) {
+                        currentStreak = 0; // Quebra sequência
+                        continue;
+                    }
 
-                    totalGuesses++;
+                    totalGuesses++; // Incrementa votados
+                    
                     const isHit = vote === m.winner;
-                    if (isHit) totalHits++;
+                    if (isHit) {
+                        totalHits++;
+                        currentStreak++;
+                        if(currentStreak > maxStreak) maxStreak = currentStreak;
+                    } else {
+                        currentStreak = 0;
+                    }
 
-                    // Estatísticas por competições
-                    if (!compStats[m.competition]) compStats[m.competition] = { hits: 0, total: 0 };
-                    compStats[m.competition].total++;
+                    // Stats por competição
+                    if (!compStats[m.competition]) compStats[m.competition] = { played: 0, hits: 0 };
+                    compStats[m.competition].played++;
                     if (isHit) compStats[m.competition].hits++;
-
-                    // Sequência Atual (Streak)
-                    if (!streakBroken) {
-                        if (currentStreak === 0) {
-                            currentStreak = isHit ? 1 : -1; // Começa a contagem
-                        } else if (currentStreak > 0 && isHit) {
-                            currentStreak++; // Aumenta sequência de vitórias
-                        } else if (currentStreak < 0 && !isHit) {
-                            currentStreak--; // Aumenta sequência de derrotas
-                        } else {
-                            streakBroken = true; // Quebrou a sequência
-                        }
-                    }
                 }
 
-                // 3. Define Especialidade e Ponto Fraco (Mínimo 3 jogos)
-                let bestComp = "---"; let bestPct = -1;
-                let worstComp = "---"; let worstPct = 101;
+                // Cálculos Finais
+                const acc = totalGuesses > 0 ? ((totalHits / totalGuesses) * 100).toFixed(1) : "0.0";
+                
+                // Melhor e Pior Competição (Mínimo 3 jogos)
+                let bestComp = "N/A";
+                let worstComp = "N/A";
+                let bestRate = -1;
+                let worstRate = 101;
 
-                for (const [comp, stat] of Object.entries(compStats)) {
-                    const pct = (stat.hits / stat.total) * 100;
-                    if (stat.total >= 3) {
-                        if (pct > bestPct) { bestPct = pct; bestComp = comp; }
-                        if (pct < worstPct) { worstPct = pct; worstComp = comp; }
+                Object.keys(compStats).forEach(comp => {
+                    const s = compStats[comp];
+                    if (s.played >= 3) {
+                        const rate = (s.hits / s.played) * 100;
+                        if (rate > bestRate) { bestRate = rate; bestComp = `${comp} (${Math.round(rate)}%)`; }
+                        if (rate < worstRate) { worstRate = rate; worstComp = `${comp} (${Math.round(rate)}%)`; }
                     }
-                }
+                });
 
-const accuracy = totalGuesses > 0 ? ((totalHits / totalGuesses) * 100).toFixed(1) : "0.0";                
-                // Formata a sequência para exibição
+                // Visual da Sequência Atual
                 let streakDisplay = "";
-                if(currentStreak > 0) streakDisplay = `<div class="text-green-600"><i class="fas fa-fire"></i> +${currentStreak}</div><div class="text-[8px] text-gray-400">VITÓRIAS SEGUIDAS</div>`;
-                else if(currentStreak < 0) streakDisplay = `<div class="text-red-600"><i class="fas fa-snowflake"></i> ${currentStreak}</div><div class="text-[8px] text-gray-400">ERROS SEGUIDOS</div>`;
-                else streakDisplay = `<div class="text-gray-400">-</div><div class="text-[8px] text-gray-400">NEUTRO</div>`;
+                if (currentStreak >= 3) streakDisplay = `<div class="text-orange-500">🔥 ${currentStreak}</div><div class="text-[8px] text-gray-400 font-bold uppercase">Sequência Atual</div>`;
+                else if (maxStreak >= 5) streakDisplay = `<div class="text-purple-400">⚡ ${maxStreak}</div><div class="text-[8px] text-gray-400 font-bold uppercase">Melhor Seq.</div>`;
+                else streakDisplay = `<div class="text-gray-400">-</div><div class="text-[8px] text-gray-400 font-bold uppercase">Sem Sequência</div>`;
 
-                // 4. Monta o Card (HTML) - ATUALIZADO
+                // 4. Monta o Card (HTML)
                 const html = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
                     <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-[#006400] to-black opacity-90"></div>
@@ -1393,10 +1411,10 @@ const accuracy = totalGuesses > 0 ? ((totalHits / totalGuesses) * 100).toFixed(1
 
                         <div class="flex items-center gap-4 mb-6">
                             <div class="w-20 h-20 rounded-full border-4 border-[#FFD700] overflow-hidden bg-black shadow-lg shrink-0">
-                                ${targetPhoto ? `<img src="data:image/jpeg;base64,${targetPhoto}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gray-700 flex items-center justify-center"><i class="fas fa-user text-2xl"></i></div>`}
+                                ${targetUser.photo ? `<img src="data:image/jpeg;base64,${targetUser.photo}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gray-700 flex items-center justify-center"><i class="fas fa-user text-2xl"></i></div>`}
                             </div>
                             <div>
-                                <h2 class="font-black text-2xl uppercase leading-none mb-1">${targetName}</h2>
+                                <h2 class="font-black text-2xl uppercase leading-none mb-1">${targetUser.name}</h2>
                                 <div class="inline-block bg-[#FFD700] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase">Atleta Oficial</div>
                             </div>
                         </div>
@@ -1444,16 +1462,17 @@ const accuracy = totalGuesses > 0 ? ((totalHits / totalGuesses) * 100).toFixed(1
                     </div>
                 </div>
                 `;
-cont.innerHTML = html;
+                cont.innerHTML = html;
 
             } catch (e) {
                 console.error(e);
-                cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro ao carregar scout.</div>`;
+                cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro ao carregar scout.<br><span class="text-xs text-gray-500">${e.message}</span></div>`;
             }
-        };
+        }
     </script>
 </body>
 </html>
+
 
 
 
