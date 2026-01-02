@@ -255,7 +255,7 @@ Término oficial: 31 de dezembro de 2026
             },
             { 
                 t: "5️⃣ CRITÉRIOS DE DESEMPATE (ORDEM OFICIAL)", 
-                c: "Caso dois ou mais jogadores terminem com a mesma Pontuação Total, a ordem é:\n\n1. 📉 MENOR NÚMERO DE INADIMPLÊNCIAS (D)\nO critério financeiro é soberano.\n\n2. 💎 MAIOR VALOR DE MEDALHA (QUALIDADE)\nPrevalece quem tiver a medalha de maior hierarquia:\n1º 👽 Alien\n2º 💎 Diamante\n3º 👑 Rei do Mês\n4º 🎯 Mito\n5º 🦓 Zebra\n6º 🔥 On Fire\n7º 🔮 Mãe Dinah\n8º 🎓 Veterano\n\n3. 🔢 QUANTIDADE DA MEDALHA DE MAIOR VALOR\nCaso a melhor medalha seja igual, vence quem tiver mais unidades dela.\n\n4. 🎲 SORTEIO / ORDEM ALFABÉTICA" 
+                c: "Caso dois ou mais jogadores terminem com a mesma Pontuação Total, a ordem é:\n\n1. 📉 MENOR NÚMERO DE INADIMPLÊNCIAS (D)\nO critério financeiro é soberano.\n\n2. 💎 MAIOR VALOR DE MEDALHA (QUALIDADE)\nPrevalece quem tiver a medalha de maior hierarquia:\n1º 👽 Alien\n2º 💎 Diamante\n3º 👑 Rei do Mês\n4º 🎯 Mito\n5º 🦓 Zebra\n6º 🔥 On Fire\n7º 🔮 Mãe Dinah\n8º 🎓 Veterano\n\n3. 🔢 QUANTIDADE DA MEDALHA DE MAIOR VALOR\nCaso a melhor medalha seja igual, vence quem tiver mais unidades dela.\n\n4. 🎲 SORTEIO " 
             },
             { 
                 t: "6️⃣ PALPITES E PLATAFORMAS OFICIAIS", 
@@ -364,9 +364,12 @@ Término oficial: 31 de dezembro de 2026
                     statsMap[g.matchId].total++;
                 });
 
-                const now = new Date();
-                let open = [], waiting = [], finished = [];
+                // ... dentro de loadMatches, após buscar os dados do Firebase ...
 
+                const now = new Date();
+                let allMatchesList = [];
+
+                // 1. Primeiro, colocamos tudo numa lista bruta
                 matchesSnap.forEach(d => {
                     const m = {id:d.id, ...d.data()};
                     if(m.deadline) {
@@ -374,16 +377,34 @@ Término oficial: 31 de dezembro de 2026
                         m.expired = now > m.deadlineDate;
                         m.final = (m.round || "").toLowerCase() === 'final';
                         m.stats = statsMap[m.id] || {};
-                        
-                        if(m.winner) finished.push(m);
-                        else if(m.expired) waiting.push(m);
-                        else open.push(m);
+                        allMatchesList.push(m);
                     }
                 });
 
-                open.sort((a,b)=>a.deadlineDate-b.deadlineDate);
+                // 2. ORDENAÇÃO MESTRA (A mesma do Ranking: Data + ID)
+                allMatchesList.sort((a,b) => {
+                    const timeDiff = a.deadlineDate - b.deadlineDate;
+                    if (timeDiff !== 0) return timeDiff;
+                    return a.id.localeCompare(b.id);
+                });
+
+                // 3. Distribui para as categorias e atribui o NÚMERO SEQUENCIAL
+                let open = [], waiting = [], finished = [];
+                
+                allMatchesList.forEach((m, index) => {
+                    m.matchNumber = index + 1; // Jogo #1, #2...
+                    
+                    if(m.winner) finished.push(m);
+                    else if(m.expired) waiting.push(m);
+                    else open.push(m);
+                });
+
+                // Ordenação visual das abas (Abertos cresc, Finalizados decresc)
+                // (Isso não afeta o matchNumber que já foi fixado no passo anterior)
                 waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
                 finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
+                
+                // ... (restante do código de renderização html += ...)
                 
                 let html = "";
                 html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400");
@@ -477,12 +498,19 @@ Término oficial: 31 de dezembro de 2026
                     ${logo ? `<img src="${logo}" class="absolute inset-0 w-full h-full object-contain opacity-[0.15] z-0 pointer-events-none p-4">` : ''}
                     <div class="relative z-10 p-4">
                         <div class="flex justify-between items-start mb-3">
-                            <div class="flex flex-col">
-                                ${m.final ? '<span class="text-[10px] font-black text-orange-600 mb-1">★ FINAL • VALE DOBRO ★</span>' : ''}
-                                <span class="text-[10px] font-bold text-[#006400] uppercase">${m.competition}</span>
-                                <span class="text-[11px] text-gray-400">${m.round}</span>
-                                <span class="text-[10px] font-bold ${m.expired ? 'text-red-600' : 'text-black'} mt-1">${m.expired ? 'Encerrado:' : 'Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
-                            </div>
+                            <div class="flex flex-col w-full pr-2"> ${m.final ? '<span class="text-[9px] font-black text-orange-600 mb-0.5 leading-none">★ FINAL ★</span>' : ''}
+                                    
+                                    <div class="flex justify-between items-baseline">
+                                        <span class="text-[10px] font-black text-[#006400] uppercase truncate mr-2">${m.competition}</span>
+                                        <span class="text-[9px] font-bold text-gray-300">#${m.matchNumber}</span>
+                                    </div>
+
+                                    <span class="text-[11px] font-bold text-gray-800 leading-tight">${m.round}</span>
+                                    
+                                    <span class="text-[10px] font-medium ${m.expired ? 'text-red-600' : 'text-gray-500'} mt-0.5">
+                                        ${m.expired ? 'Encerrado:' : 'Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}
+                                    </span>
+                                </div>
                             
                             <div class="flex gap-2">
                                 <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="text-gray-500 p-2 relative"><i class="fas fa-comment-dots text-lg"></i></button>
@@ -1350,6 +1378,7 @@ window.showKingModal = () => {
     </script>
 </body>
 </html>
+
 
 
 
