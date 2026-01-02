@@ -624,7 +624,8 @@ Término oficial: 31 de dezembro de 2026
                 const matches = []; const validMatchIds = new Set(); 
                 mSnap.forEach(d => { matches.push({id:d.id, ...d.data(), deadlineDate: d.data().deadline.toDate()}); validMatchIds.add(d.id); });
 
-                // 1. ORDENAÇÃO DETERMINÍSTICA (Data Crescente -> ID) para cálculo
+                // 1. ORDENAÇÃO DETERMINÍSTICA (Data Crescente -> ID)
+                // Garante que sequências sejam calculadas na mesma ordem para todos
                 const chronoMatches = matches
                     .filter(m => m.winner)
                     .sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
@@ -1024,41 +1025,39 @@ window.showKingModal = () => {
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
                         <div class="text-xs text-gray-700 space-y-2 font-medium">
                             <p>👉 <b>Como votar:</b> Toque no escudo do time. O voto fica verde quando salvo.</p>
-                            <p class="text-green-800 font-bold">👉 Termômetro: <span class="font-normal text-gray-700">Após o jogo acabar, uma barra colorida mostra a % de votos da galera.</span></p>
-                            <p class="text-green-800 font-bold">👉 Resenha: <span class="font-normal text-gray-700">Toque no ícone 💬 no card do jogo para abrir o chat. O balãozinho fica vermelho se tiver mensagens novas!</span></p>
+                            <p class="text-green-800 font-bold">👉 Termômetro: <span class="font-normal text-gray-700">Após o jogo, veja a % da galera.</span></p>
+                            <p class="text-green-800 font-bold">👉 Resenha: <span class="font-normal text-gray-700">Toque no ícone 💬 para zoar. O balão fica vermelho se tiver msg nova!</span></p>
                         </div>
                     </div>
 
                     <div class="mb-6">
-                        <h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">🏅 GALERIA DE CONQUISTAS (MEDALHAS)</h4>
+                        <h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">🏅 HIERARQUIA DE CONQUISTAS</h4>
                         <div class="text-xs text-gray-700 space-y-3 font-medium bg-white p-3 rounded border border-gray-200">
-                            <div class="flex items-start gap-2"><span class="text-lg">👑</span> <div><b>Rei do Mês:</b> Líder da pontuação no mês vigente.</div></div>
-                            <div class="flex items-start gap-2"><span class="text-lg">🔮</span> <div><b>Mãe Dinah:</b> Acertou na mosca o campeão do torneio.</div></div>
-                            <div class="flex items-start gap-2"><span class="text-lg">👽</span> <div><b>Alien:</b> Sequência de 10 acertos seguidos.</div></div>
-                            <div class="flex items-start gap-2"><span class="text-lg">🎯</span> <div><b>Mito:</b> Sequência de 5 acertos seguidos.</div></div>
-                            <div class="flex items-start gap-2"><span class="text-lg">🔥</span> <div><b>On Fire:</b> Sequência de 3 acertos seguidos.</div></div>
-                            <div class="flex items-start gap-2"><span class="text-lg">💎</span> <div><b>Diamante:</b> Gabaritou as Oitavas de Final (8/8).</div></div>
-                            <div class="flex items-start gap-2"><span class="text-lg">🦓</span> <div><b>Caçador de Zebras:</b> Acertou um jogo onde +80% da galera errou.</div></div>
-                            <div class="flex items-start gap-2"><span class="text-lg">🎓</span> <div><b>Veterano:</b> Ganha 1 estrela a cada 50 ACERTOS.</div></div>
-                            <div class="flex items-start gap-2"><span class="text-lg">💰</span> <div><b>Patrão:</b> Mensalidade rigorosamente em dia.</div></div>
-                            <div class="flex items-start gap-2"><span class="text-lg">👻</span> <div><b>Fantasma:</b> Deixou de votar em 3 jogos seguidos.</div></div>
-                            <div class="flex items-start gap-2"><span class="text-lg">🐢</span> <div><b>Mão de Alface:</b> Errou 3 palpites seguidos.</div></div>
-                            <div class="flex items-start gap-2"><span class="text-lg text-[#8B0000]">⚓</span> <div class="text-[#8B0000]"><b>Zona de Rebaixamento:</b> Os 2 últimos colocados da tabela geral.</div></div>
-                        </div>
-                    </div>
+                            <p class="text-[9px] text-gray-400 text-center mb-2 uppercase font-bold tracking-widest">Ordem de Importância (Critério de Desempate)</p>
+                            
+                            <div class="flex items-start gap-2"><span class="text-lg">💎</span> <div><b>Diamante:</b> Gabaritou as Oitavas (8/8). O mais difícil!</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">👑</span> <div><b>Rei do Mês:</b> Regularidade! Maior pontuador do mês.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">👽</span> <div><b>Alien:</b> Consistência absurda. 10 acertos seguidos.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🎯</span> <div><b>Mito:</b> 5 acertos seguidos.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🦓</span> <div><b>Zebra:</b> Coragem! Acertou onde +80% errou.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🔥</span> <div><b>On Fire:</b> Bom momento. 3 acertos seguidos.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🔮</span> <div><b>Mãe Dinah:</b> Acertou o vencedor da Final.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🎓</span> <div><b>Veterano:</b> Fidelidade. 1 estrela a cada 50 ACERTOS.</div></div>
+                            
+                            <hr class="border-gray-100 my-2">
+                            <p class="text-[9px] text-gray-400 text-center mb-2 uppercase font-bold tracking-widest">Status & Alertas</p>
 
-                    <div>
-                        <h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">🏆 RANKING & DISPUTA</h4>
-                        <div class="text-xs text-gray-700 space-y-2 font-medium">
-                            <p>👉 <b>Detalhes:</b> Toque na foto de qualquer participante para ver suas medalhas e estatísticas.</p>
-                            <p class="text-green-800 font-bold">👉 Tira-Teima: <span class="font-normal text-gray-700">Ao abrir a foto de um rival, clique em <b>COMPARAR</b> para ver os palpites lado a lado.</span></p>
+                            <div class="flex items-start gap-2"><span class="text-lg">💰</span> <div><b>Patrão:</b> Mensalidade em dia.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">👻</span> <div><b>Fantasma:</b> Deixou de votar em 3 seguidos.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg">🐢</span> <div><b>Mão de Alface:</b> Errou 3 palpites seguidos.</div></div>
+                            <div class="flex items-start gap-2"><span class="text-lg text-[#8B0000]">⚓</span> <div class="text-[#8B0000]"><b>Z-2:</b> Os 2 últimos colocados.</div></div>
                         </div>
                     </div>
 
                     <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded-lg font-bold mt-6 shadow-lg btn-press text-sm">ENTENDI</button>
                 </div>
             </div>`; 
-        };      
+        };  
         async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'}); }
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
         window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
@@ -1282,6 +1281,7 @@ window.showKingModal = () => {
     </script>
 </body>
 </html>
+
 
 
 
