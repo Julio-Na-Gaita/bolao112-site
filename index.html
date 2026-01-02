@@ -197,7 +197,7 @@ Término oficial: 31 de dezembro de 2026
 
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-4"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
                 
-                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.4.1</p>
+                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5</p>
             </div>
         </div>
     </main>
@@ -247,7 +247,7 @@ Término oficial: 31 de dezembro de 2026
             },
             { 
                 t: "3️⃣ SISTEMA DE PONTUAÇÃO & DATAS", 
-                c: "✅ Acerto do vencedor/classificado: 3 pontos\n\n🔥 Finais (Peso 2)\nFinais de qualquer competição válida possuem pontuação dobrada\nCada acerto em final: 6 pontos\n\n💥 Rodada Perfeita – Oitavas de Final\nA rodada perfeita será considerada exclusivamente nas oitavas de final, em todas as competições válidas\nO participante que acertar 100% dos confrontos das oitavas receberá:\n+3 pontos extras, além da pontuação regular\n\n📌 Não existe rodada perfeita em quartas, semifinais ou finais.\n\n🗓️ REGRA DE DATA (COMPETÊNCIA MENSAL)\nPara fins de Ranking Mensal (Rei do Mês), a pontuação de um confronto pertence ao mês em que a VOTAÇÃO FOI ENCERRADA (Prazo Final), independentemente da data em que o administrador declarou o vencedor.\n\n• Exemplo Prático: Se um confronto tem prazo de votação até 23h59 do dia 31/01, os pontos contarão para JANEIRO, mesmo que o jogo termine em Fevereiro." 
+                c: "✅ Acerto do vencedor/classificado: 3 pontos\n\n🔥 Finais (Peso 2)\nFinais de qualquer competição válida possuem pontuação dobrada\nCada acerto em final: 6 pontos\n\n💥 Rodada Perfeita – Oitavas de Final\nA rodada perfeita será considerada exclusivamente nas oitavas de final, em todas as competições válidas\nO participante que acertar 100% dos confrontos das oitavas receberá:\n+3 pontos extras, além da pontuação regular\n\n📌 Não existe rodada perfeita em quartas, semifinais ou finais.\n\n🗓️ REGRA DE DATA (COMPETÊNCIA MENSAL)\nPara fins de Ranking Mensal (Rei do Mês), a pontuação de um confronto pertence ao mês em que a VOTAÇÃO FOI ENCERRADA (Prazo Final), independentemente da data em que o administrador declarou o vencedor.\n\n• Exemplo Prático: Se um confronto tem prazo de votação até 23h59 do dia 31/01, os pontos contarão para JANEIRO, mesmo que o jogo termine em Fevereiro.\n\n🔒 ORDEM DE PROCESSAMENTO (JOGOS SIMULTÂNEOS)\nPara garantir a transparência na contagem de medalhas de sequência (Ex: Alien, On Fire), caso dois ou mais jogos terminem no MESMO HORÁRIO, o critério de desempate para a ordem de processamento será o ID ÚNICO DO JOGO (visível no card).\n• A ordem é fixa e alfabética baseada no ID.\n• A ordem em que o Admin lança o resultado NÃO interfere na sequência."
             },
             { 
                 t: "4️⃣ COMPETIÇÕES E REQUISITOS DE JOGOS", 
@@ -307,15 +307,15 @@ Término oficial: 31 de dezembro de 2026
                 const name = document.getElementById('regName').value.trim(); const user = document.getElementById('regUser').value.trim().toLowerCase(); const pass = document.getElementById('regPass').value;
                 if(!name || !user || pass.length < 6) { alert("Dados inválidos."); return; }
                 if(user.includes(" ")) { alert("Usuário sem espaços."); return; }
-                try { const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); await setDoc(doc(db, "users", res.user.uid), { name, username: user, createdAt: new Date(), isAdmin: false, debts: 0, payments: {}, appVersion: "Web v1.4.1" }); alert("Conta criada!"); closeModal(); } catch(e) { alert("Erro ao criar conta: " + e.message); }
+                try { const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); await setDoc(doc(db, "users", res.user.uid), { name, username: user, createdAt: new Date(), isAdmin: false, debts: 0, payments: {}, appVersion: "Web v1.5" }); alert("Conta criada!"); closeModal(); } catch(e) { alert("Erro ao criar conta: " + e.message); }
             };
         };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // ATUALIZANDO VERSÃO PARA 1.4.1
-                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.4.1" }); } catch(e) {}
+                // ATUALIZANDO VERSÃO PARA 1.5
+                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5" }); } catch(e) {}
                 document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('mainScreens').classList.remove('hidden'); document.getElementById('bottomNav').classList.remove('hidden'); document.getElementById('btnLogout').classList.remove('hidden');
                 showTab('matches'); calculatePot();
             } else {
@@ -1418,6 +1418,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
