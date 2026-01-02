@@ -886,7 +886,10 @@ Término oficial: 31 de dezembro de 2026
                     </div>
                 </div>
                 <div class="bg-[#005000] flex text-white/70 text-[9px] font-bold py-1 px-2 uppercase border-b border-white/10">
-                    <div class="w-[35px] text-center">Pos</div><div class="flex-1 pl-2">Participante</div><div class="w-[28px] text-center">D</div><div class="w-[28px] text-center">V</div><div class="w-[28px] text-center text-[#FFD700]">F</div><div class="w-[40px] text-center text-white">Pts</div>
+                    <div class="w-[35px] text-center">Pos</div>
+                    <div class="flex-1 pl-2">Participante</div>
+                    <div class="w-[28px] text-center">D</div>
+                    <div class="w-[40px] text-center text-white">Pts</div>
                 </div>
                 <div class="bg-white rounded-b-xl overflow-hidden shadow-sm">`;
 
@@ -904,6 +907,7 @@ Término oficial: 31 de dezembro de 2026
                     if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } 
 
                     return `
+                    return `
                     <div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2 ${i<3 ? 'border-l-4' : ''}" style="${i<3 ? `border-left-color: ${borderColor.replace('border-[','').replace(']','')}` : ''}">
                         <div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div>
                         <div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})">
@@ -915,11 +919,11 @@ Término oficial: 31 de dezembro de 2026
                                 ${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}
                             </div>
                         </div>
+                        
                         <div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div>
-                        <div class="w-[28px] text-center text-xs font-bold text-gray-600" onclick="showModalHistory(${i})">${u.v}</div>
-                        <div class="w-[28px] text-center text-xs font-bold ${u.f > 0 ? 'text-[#FFD700]' : 'text-gray-400'}" onclick="showModalHistory(${i})">${u.f}</div>
+                        
                         <div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div>
-                    </div>`; 
+                    </div>`;
                 }).join(''); 
                 html += `</div>`; 
                 listContainer.innerHTML = html;
@@ -1418,6 +1422,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
