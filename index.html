@@ -749,7 +749,26 @@ Término oficial: 31 de dezembro de 2026
                     users.push({ uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: activeMedals, trophyRoom: trophyRoom }); 
                 }); 
                 
-                users.sort((a,b) => b.p - a.p || a.d - b.d || b.v - a.v || b.f - a.f); 
+// ORDENAÇÃO OFICIAL (HIERARQUIA DE MEDALHAS)
+                users.sort((a,b) => {
+                    // 1º Pontos (Maior melhor)
+                    if (b.p !== a.p) return b.p - a.p;
+                    
+                    // 2º Inadimplência (Menor melhor)
+                    if (a.d !== b.d) return a.d - b.d;
+                    
+                    // 3º Hierarquia de Medalhas (Conta quantas cada um tem na Sala de Troféus)
+                    const hierarchy = ["💎", "👑", "👽", "🎯", "🦓", "🔥", "🔮", "🎓"];
+                    
+                    for (let icon of hierarchy) {
+                        const countA = a.trophyRoom.filter(m => m.icon === icon).length;
+                        const countB = b.trophyRoom.filter(m => m.icon === icon).length;
+                        // Se um tiver mais que o outro dessa medalha, ele ganha
+                        if (countB !== countA) return countB - countA;
+                    }
+                    
+                    return 0; // Empate técnico absoluto
+                });
                 monthlyData.sort((a,b) => b.points - a.points); 
 
                 if (monthlyData.length > 0 && monthlyData[0].points > 0) {
@@ -1281,6 +1300,7 @@ window.showKingModal = () => {
     </script>
 </body>
 </html>
+
 
 
 
