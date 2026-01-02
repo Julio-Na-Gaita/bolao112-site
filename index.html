@@ -1444,6 +1444,18 @@ const accuracy = totalGuesses > 0 ? ((totalHits / totalGuesses) * 100).toFixed(1
                     </div>
                 </div>
                 `;
+cont.innerHTML = html;
+
+            } catch (e) {
+                console.error(e);
+                cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro ao carregar scout.</div>`;
+            }
+        };
+    </script>
+</body>
+</html>
+
+
 
 
 
