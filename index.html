@@ -907,7 +907,7 @@ Término oficial: 31 de dezembro de 2026
                     if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } 
 
                     return `
-                    return `
+                    
                     <div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2 ${i<3 ? 'border-l-4' : ''}" style="${i<3 ? `border-left-color: ${borderColor.replace('border-[','').replace(']','')}` : ''}">
                         <div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div>
                         <div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})">
@@ -1422,6 +1422,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
