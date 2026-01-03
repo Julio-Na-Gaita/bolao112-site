@@ -284,6 +284,7 @@ Término oficial: 31 de dezembro de 2026
         let currentUser = null;
         let currentRankingData = [];
         let compMap = {}; 
+        let globalServerCounts = {}; // <--- ADICIONE ISSO
 
 // --- REGRAS ATUALIZADAS (WEB v1.4.3) ---
         const rulesData = [
@@ -387,10 +388,50 @@ Término oficial: 31 de dezembro de 2026
         }
 
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
+
+// Função para recalcular badges sem recarregar tudo
+        window.updateBadges = () => {
+            let totalUnread = 0;
+            let unreadInOpen = false;
+            let unreadInWaiting = false;
+            let unreadInFinished = false;
+
+            // Varre os jogos carregados na memória (ou no DOM)
+            // Como não temos a lista de jogos fácil aqui fora, vamos iterar pelos IDs que temos no globalServerCounts
+            // Mas o ideal é iterar pelos botões de chat existentes na tela para atualizar a bolinha individualmente
+            
+            const chatButtons = document.querySelectorAll('button[id^="btn-chat-"]'); // Vamos dar ID aos botões
+            
+            // Mas para ser mais simples e usar o que já temos:
+            // Vamos apenas recalcular o SINO e os PULSES baseados nos dados globais
+            
+            // Requer que a lista de jogos esteja salva ou acessível. 
+            // Vamos simplificar: Ao abrir o chat, apenas atualizamos o localStorage e rodamos a lógica do sino.
+            
+            let allMatchesElements = document.querySelectorAll('[data-match-id]'); // Vamos precisar marcar os cards
+            // ... Essa abordagem é complexa para "cirúrgica".
+            
+            // ABORDAGEM SIMPLES:
+            // O sino conta tudo. Vamos recalcular o totalUnread baseando-se no globalServerCounts vs LocalStorage
+            Object.keys(globalServerCounts).forEach(mid => {
+                const sCount = globalServerCounts[mid];
+                const lCount = parseInt(localStorage.getItem(`read_count_${mid}`) || "0");
+                if (sCount > lCount) totalUnread++;
+            });
+
+            // Atualiza Sino
+            const btnBell = document.getElementById('btnBell');
+            const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
+            if (totalUnread > 0) {
+                btnBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
+                btnBell.classList.add('text-red-400'); // Destaque visual opcional
+            } else {
+                btnBell.classList.remove('text-red-400');
+            }
+        };
         
         // --- FUNÇÃO LOADMATCHES COM TERMÔMETRO ---
-        // --- FUNÇÃO LOADMATCHES CORRIGIDA ---
-        async function loadMatches() {
+           async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
             try {
@@ -423,7 +464,8 @@ Término oficial: 31 de dezembro de 2026
                     const mid = doc.data().matchId;
                     serverCounts[mid] = (serverCounts[mid] || 0) + 1;
                 });
-
+                globalServerCounts = serverCounts; // <--- SALVA NO GLOBAL
+                
                 const now = new Date();
                 let allMatchesList = [];
 
@@ -1346,6 +1388,20 @@ async function loadAdminMatches() {
 
         // --- RESENHA (COMENTÁRIOS) COM BLOQUEIO ---
         window.openMatchComments = async (mid, ta, tb, winner) => {
+            // 1. Marca como lido imediatamente
+            const currentCount = globalServerCounts[mid] || 0;
+            localStorage.setItem(`read_count_${mid}`, currentCount);
+            
+            // 2. Remove a bolinha do botão deste jogo especificamente (Visual imediato)
+            // (O botão que foi clicado)
+            const btn = event.currentTarget; // O botão que chamou a função
+            if(btn) {
+                const badge = btn.querySelector('.absolute'); // A div da bolinha
+                if(badge) badge.remove();
+            }
+
+            // 3. Atualiza o Sino Global
+            window.updateBadges();
             const modal = document.getElementById('modalOverlay'); 
             const cont = document.getElementById('modalContainer'); 
             modal.classList.remove('hidden'); 
@@ -1567,6 +1623,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
