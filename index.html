@@ -514,14 +514,14 @@ Término oficial: 31 de dezembro de 2026
                 waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
                 finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
                 
-                // --- RENDERIZAÇÃO ---
+                // --- RENDERIZAÇÃO COM CONTADORES ---
                 let html = "";
                 
-                // Cabeçalho Open (Com Pulse se tiver msg)
+                // 1. Abertos (Adicionado: (${open.length}))
                 const pulseOpen = unreadInOpen ? '<span class="pulse-dot"></span>' : '';
                 html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press">
                             <div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
-                                <h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ CONFRONTOS DISPONÍVEIS ✅ ${pulseOpen}</h4>
+                                <h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">(${open.length})✅ DISPONÍVEIS ✅${pulseOpen}</h4>
                                 <i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i>
                             </div>
                          </div>
@@ -529,18 +529,18 @@ Término oficial: 31 de dezembro de 2026
                             ${open.length > 0 ? await renderMatchList(open, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}
                          </div>`;
                 
-                // Cabeçalho Waiting
+                // 2. Aguardando (Adicionado: (${waiting.length}))
                 const pulseWait = unreadInWaiting ? '<span class="pulse-dot"></span>' : '';
-                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳ ${pulseWait}</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">
+                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">(${waiting.length})⏳ AGUARDANDO ⏳${pulseWait}</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">
                     ${waiting.length 
                         ? await renderMatchList(waiting, totalParticipants, serverCounts) 
                         : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando.</div>`
                     }</div>`;
                 
-                // Cabeçalho Finished
+                // 3. Finalizados (Adicionado: (${finished.length}))
                 if(finished.length) {
                     const pulseFin = unreadInFinished ? '<span class="pulse-dot"></span>' : '';
-                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 CONFRONTOS FINALIZADOS 🚫 ${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`;
+                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">(${finished.length})🚫 FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`;
                 }
                 
                 container.innerHTML = html;
@@ -1634,6 +1634,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
