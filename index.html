@@ -863,13 +863,23 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                 const finishedDisplay = [...chronoMatches].reverse(); // Para exibir (Novo -> Antigo)
 
                 // ... (zebra e rodapé igual) ...
+                // Lógica Zebra Atualizada: Baseada no TOTAL de participantes
                 const zebraMatchIds = [];
+                const totalParticipants = uSnap.size || 1; // Total de usuários cadastrados
+
                 finishedDisplay.forEach(m => {
-                    let matchGuesses = [];
-                    gSnap.forEach(g => { if(g.data().matchId === m.id) matchGuesses.push(g.data()); });
-                    if(matchGuesses.length >= 5) {
-                        const winnerVotes = matchGuesses.filter(g => g.teamSelected === m.winner).length;
-                        if((winnerVotes / matchGuesses.length) < 0.20) zebraMatchIds.push(m.id);
+                    // Conta quantos acertaram esse jogo
+                    let winnerVotes = 0;
+                    gSnap.forEach(g => { 
+                        if(g.data().matchId === m.id && g.data().teamSelected === m.winner) {
+                            winnerVotes++;
+                        }
+                    });
+
+                    // Se menos de 20% DO TOTAL acertou (incluindo quem errou e quem não votou)
+                    // Ex: 50 participantes. Se 9 acertaram (18%), é Zebra. Se 10 acertaram (20%), não é.
+                    if (totalParticipants > 0 && (winnerVotes / totalParticipants) < 0.20) {
+                        zebraMatchIds.push(m.id);
                     }
                 });
 
@@ -1634,6 +1644,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
