@@ -389,22 +389,25 @@ Término oficial: 31 de dezembro de 2026
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
         
         // --- FUNÇÃO LOADMATCHES COM TERMÔMETRO ---
+        // --- FUNÇÃO LOADMATCHES CORRIGIDA ---
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
             try {
-                // 1. Buscamos Settings, Matches, Guesses E AGORA USERS (para o termômetro)
-                const [setSnap, matchesSnap, guessesSnap, uSnap] = await Promise.all([
+                // 1. Buscamos TUDO de uma vez (Inclusive Comentários agora)
+                const [setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap] = await Promise.all([
                     getDoc(doc(db, "settings", "competitions")),
                     getDocs(collection(db, "matches")),
                     getDocs(collection(db, "guesses")),
-                    getDocs(collection(db, "users")) // <--- NOVO
+                    getDocs(collection(db, "users")),
+                    getDocs(collection(db, "match_comments")) // <--- TRAZEMOS PARA O INÍCIO
                 ]);
 
-                const totalParticipants = uSnap.size || 1; // Evita divisão por zero
+                const totalParticipants = uSnap.size || 1; 
 
                 if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
 
+                // Mapa de Votos (Termômetro)
                 const statsMap = {};
                 guessesSnap.forEach(d => {
                     const g = d.data();
@@ -414,12 +417,16 @@ Término oficial: 31 de dezembro de 2026
                     statsMap[g.matchId].total++;
                 });
 
-                // ... dentro de loadMatches, após buscar os dados do Firebase ...
+                // Mapa de Comentários (Chat)
+                const serverCounts = {};
+                commentsSnap.forEach(doc => {
+                    const mid = doc.data().matchId;
+                    serverCounts[mid] = (serverCounts[mid] || 0) + 1;
+                });
 
                 const now = new Date();
                 let allMatchesList = [];
 
-                // 1. Primeiro, colocamos tudo numa lista bruta
                 matchesSnap.forEach(d => {
                     const m = {id:d.id, ...d.data()};
                     if(m.deadline) {
@@ -431,173 +438,105 @@ Término oficial: 31 de dezembro de 2026
                     }
                 });
 
-                // 2. ORDENAÇÃO MESTRA (A mesma do Ranking: Data + ID)
+                // Ordenação Mestra
                 allMatchesList.sort((a,b) => {
                     const timeDiff = a.deadlineDate - b.deadlineDate;
                     if (timeDiff !== 0) return timeDiff;
                     return a.id.localeCompare(b.id);
                 });
 
-                // 3. Distribui para as categorias e atribui o NÚMERO SEQUENCIAL
                 let open = [], waiting = [], finished = [];
                 
-                allMatchesList.forEach((m, index) => {
-                    m.matchNumber = index + 1; // Jogo #1, #2...
-                    
-                    if(m.winner) finished.push(m);
-                    else if(m.expired) waiting.push(m);
-                    else open.push(m);
-                });
-
-                // Ordenação visual das abas (Abertos cresc, Finalizados decresc)
-                // (Isso não afeta o matchNumber que já foi fixado no passo anterior)
-                waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
-                finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
-                
-                // ... (restante do código de renderização html += ...)
-                
-                let html = "";
-                
-                // 1. CABEÇALHO CLICÁVEL (Inicia com seta para CIMA pois está aberto)
-                html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press">
-                            <div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
-                                <h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ CONFRONTOS DISPONÍVEIS ✅</h4>
-                                <i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i>
-                            </div>
-                         </div>`;
-                
-                // 2. CONTAINER DE CONTEÚDO (NÃO TEM A CLASSE 'hidden' INICIALMENTE)
-                html += `<div id="openContainer">`;
-                
-                if(open.length > 0) { 
-                    html += await renderMatchList(open, totalParticipants); 
-                } else { 
-                    html += `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto para votação no momento.</div>`; 
-                }
-                
-                html += `</div>`; // Fecha o container
-                
-                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">
-                    ${waiting.length 
-                        ? await renderMatchList(waiting, totalParticipants) 
-                        : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando resultado no momento.</div>`
-                    }</div>`;
-                
-                if(finished.length) {
-                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 CONFRONTOS FINALIZADOS 🚫</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants)}</div>`;
-                }
-                
-                container.innerHTML = html;
-            // --- NOVO: ATUALIZA BADGE NA BARRA INFERIOR ---
-                // open é a lista de jogos abertos que já calculamos acima
-                let pendingCount = 0;
-                // Precisamos saber em quais EU votei. 
-                // A variável 'guessesSnap' tem todos os votos de todos. Vamos filtrar os meus.
-                const myVotesSet = new Set();
-                guessesSnap.forEach(d => {
-                    if(d.data().userId === currentUser.uid) myVotesSet.add(d.data().matchId);
-                });
-
-                open.forEach(m => {
-                    if (!myVotesSet.has(m.id)) pendingCount++;
-                });
-
-                const navBtn = document.getElementById('nav-matches');
-                // Remove badge anterior se existir
-                const oldBadge = document.getElementById('matches-badge');
-                if(oldBadge) oldBadge.remove();
-
-                if (pendingCount > 0) {
-                    // Adiciona badge
-                    navBtn.style.position = 'relative'; // Garante posicionamento
-                    navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`;
-                }
-                // ----------------------------------------------
-// --- LÓGICA DE NOTIFICAÇÕES (SINO E PULSE) ---
-                // 1. Pega todos os comentários do banco (snapshot leve)
-                const commentsSnap = await getDocs(collection(db, "match_comments"));
-                
-                // 2. Conta comentários por matchId
-                const serverCounts = {};
-                commentsSnap.forEach(doc => {
-                    const mid = doc.data().matchId;
-                    serverCounts[mid] = (serverCounts[mid] || 0) + 1;
-                });
-
-                // 3. Compara com o localStorage (o que eu já li)
+                // Lógica de Notificação Global (Sino e Pulse)
                 let totalUnread = 0;
-                let unreadInOpen = false;
-                let unreadInWaiting = false;
-                let unreadInFinished = false;
+                let unreadInOpen = false, unreadInWaiting = false, unreadInFinished = false;
 
-                // Verifica em todos os jogos listados
-                allMatchesList.forEach(m => {
-                    const serverCount = serverCounts[m.id] || 0;
-                    const localCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
+                allMatchesList.forEach((m, index) => {
+                    m.matchNumber = index + 1;
                     
-                    if (serverCount > localCount) {
+                    // Checa mensagens não lidas
+                    const sCount = serverCounts[m.id] || 0;
+                    const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
+                    if (sCount > lCount) {
                         totalUnread++;
                         if (m.winner) unreadInFinished = true;
                         else if (m.expired) unreadInWaiting = true;
                         else unreadInOpen = true;
                     }
+
+                    if(m.winner) finished.push(m);
+                    else if(m.expired) waiting.push(m);
+                    else open.push(m);
                 });
 
-                // 4. Atualiza o SINO (Topo)
+                waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
+                finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
+                
+                // --- RENDERIZAÇÃO ---
+                let html = "";
+                
+                // Cabeçalho Open (Com Pulse se tiver msg)
+                const pulseOpen = unreadInOpen ? '<span class="pulse-dot"></span>' : '';
+                html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press">
+                            <div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
+                                <h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ CONFRONTOS DISPONÍVEIS ✅ ${pulseOpen}</h4>
+                                <i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i>
+                            </div>
+                         </div>
+                         <div id="openContainer">
+                            ${open.length > 0 ? await renderMatchList(open, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}
+                         </div>`;
+                
+                // Cabeçalho Waiting
+                const pulseWait = unreadInWaiting ? '<span class="pulse-dot"></span>' : '';
+                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳ ${pulseWait}</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">
+                    ${waiting.length 
+                        ? await renderMatchList(waiting, totalParticipants, serverCounts) 
+                        : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando.</div>`
+                    }</div>`;
+                
+                // Cabeçalho Finished
+                if(finished.length) {
+                    const pulseFin = unreadInFinished ? '<span class="pulse-dot"></span>' : '';
+                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 CONFRONTOS FINALIZADOS 🚫 ${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`;
+                }
+                
+                container.innerHTML = html;
+
+                // Atualiza SINO
                 const btnBell = document.getElementById('btnBell');
+                const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
                 if (totalUnread > 0) {
-                    // Remove badge antigo se houver e adiciona novo
-                    const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
                     btnBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
-                    btnBell.onclick = () => alert(`Você tem mensagens não lidas em ${totalUnread} jogos! Procure os cards com balão vermelho.`);
+                    btnBell.onclick = () => alert(`Você tem mensagens não lidas em ${totalUnread} jogos!`);
                 } else {
-                    const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
                     btnBell.onclick = () => alert("Nenhuma nova mensagem.");
                 }
 
-                // 5. Atualiza os CABEÇALHOS (Pulse)
-                // Função auxiliar para injetar o ponto vermelho
-                const togglePulse = (containerId, hasUnread) => {
-                    // O containerId é da div que envolve o header. Precisamos achar o H4 ou o ícone.
-                    // Na nossa estrutura atual, o header é desenhado via HTML string.
-                    // Vamos reinjetar o HTML do header se necessário ou manipulá-lo.
-                    
-                    // Como já renderizamos o HTML acima, vamos buscar pelo ID do ícone que colocamos
-                    // Mas espera! Os headers Waiting e Finished são gerados dinamicamente.
-                    // Vamos simplificar: Se tiver notificação, buscamos o elemento pelo texto e adicionamos a bolinha.
-                };
-
-                // RE-RENDERIZA OS HEADERS COM O PULSE SE NECESSÁRIO
-                // (Truque: Substituímos o HTML do título se tiver notificação)
+                // Atualiza Badge de Votos Pendentes (Aba Inferior)
+                let pendingCount = 0;
+                const myVotesSet = new Set();
+                guessesSnap.forEach(d => { if(d.data().userId === currentUser.uid) myVotesSet.add(d.data().matchId); });
+                open.forEach(m => { if (!myVotesSet.has(m.id)) pendingCount++; });
                 
-                if (unreadInOpen) {
-                    const openHeader = document.querySelector("#openContainer").previousElementSibling.querySelector("h4");
-                    if(openHeader && !openHeader.querySelector(".pulse-dot")) openHeader.innerHTML += `<span class="pulse-dot"></span>`;
+                const navBtn = document.getElementById('nav-matches');
+                const oldBadge = document.getElementById('matches-badge'); if(oldBadge) oldBadge.remove();
+                if (pendingCount > 0) {
+                    navBtn.style.position = 'relative';
+                    navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`;
                 }
-                
-                // Para Waiting e Finished, precisamos garantir que o elemento existe (eles iniciam ocultos ou visíveis dependendo da lógica)
-                // O header está dentro do `container.innerHTML`, então podemos buscar pelo texto
-                const headers = document.querySelectorAll("h4");
-                headers.forEach(h => {
-                    if (h.innerText.includes("AGUARDANDO") && unreadInWaiting) {
-                        if(!h.querySelector(".pulse-dot")) h.innerHTML += `<span class="pulse-dot"></span>`;
-                    }
-                    if (h.innerText.includes("FINALIZADOS") && unreadInFinished) {
-                        if(!h.querySelector(".pulse-dot")) h.innerHTML += `<span class="pulse-dot"></span>`;
-                    }
-                });
-                
-                // ----------------------------------------------
+
             } catch(e) {
                 console.error("Erro loadMatches:", e);
             }
-                document.getElementById('progressBar').classList.add('hidden');
+            document.getElementById('progressBar').classList.add('hidden');
         }
 window.toggleOpen = () => { document.getElementById('openContainer').classList.toggle('hidden'); document.getElementById('iconOpen').classList.toggle('fa-chevron-up'); document.getElementById('iconOpen').classList.toggle('fa-chevron-down'); };
         window.toggleWaiting = () => { document.getElementById('waitingContainer').classList.toggle('hidden'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-down'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-up'); };
         window.toggleFinished = () => { document.getElementById('finishedContainer').classList.toggle('hidden'); document.getElementById('iconFinished').classList.toggle('fa-chevron-down'); document.getElementById('iconFinished').classList.toggle('fa-chevron-up'); };
         
-        async function renderMatchList(list, totalParticipants) {
+        // Recebe o serverCounts como 3º parâmetro
+        async function renderMatchList(list, totalParticipants, serverCounts) {
             let html = "";
             for (const m of list) {
                 let userVote = ""; 
@@ -608,6 +547,21 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                 const bgColor = m.final ? 'bg-[#FFF9C4]' : 'bg-white';
                 const logo = compMap[m.competition] || "";
                 
+                // LÓGICA DA BOLINHA DE CHAT
+                const sCount = serverCounts[m.id] || 0;
+                const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
+                let chatBadge = "";
+                
+                if (sCount > 0) {
+                    const isUnread = sCount > lCount;
+                    const badgeColor = isUnread ? "bg-red-600" : "bg-gray-400";
+                    const badgeText = sCount > 9 ? "+9" : sCount;
+                    chatBadge = `<div class="absolute -top-1 -right-1 ${badgeColor} text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">${badgeText}</div>`;
+                }
+                // --------------------------
+
+                // ... (O resto do HTML do card permanece igual, só preste atenção onde entra o botão do chat) ...
+                
                 // --- NOVO TERMÔMETRO WEB ---
                 let thermoHtml = "";
                 const votesA = m.stats[m.teamA] || 0;
@@ -616,7 +570,6 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                 const safeTotalUsers = totalParticipants || 1;
 
                 if (!m.expired) {
-                    // Cenario 1: Jogo Aberto (Apenas Participação)
                     const partPct = Math.round((totalVotes / safeTotalUsers) * 100);
                     thermoHtml = `
                         <div class="mt-3 pt-2 border-t border-gray-100">
@@ -630,13 +583,10 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                             <p class="text-[8px] text-gray-400 text-right mt-1">${totalVotes} de ${safeTotalUsers} participantes</p>
                         </div>`;
                 } else {
-                    // Cenario 2: Jogo Expirado (A vs Abstenção vs B)
                     const abstencoes = safeTotalUsers - totalVotes;
                     const absReal = abstencoes < 0 ? 0 : abstencoes;
-                    
                     const pctA = Math.round((votesA / safeTotalUsers) * 100);
                     const pctB = Math.round((votesB / safeTotalUsers) * 100);
-                    // O restante é abstenção
                     
                     thermoHtml = `
                         <div class="mt-3 pt-2 border-t border-gray-100">
@@ -661,18 +611,17 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                 html += `<div class="card-cut relative border-l-[6px] ${bgColor} mb-6 overflow-hidden" style="border-left-color: ${borderColor.replace('border-[','').replace(']','')};">
                                     ${logo ? `<img src="${logo}" class="absolute inset-0 w-full h-full object-contain opacity-[0.10] z-0 pointer-events-none p-8">` : ''}
                                     <div class="relative z-10 p-3">
-                                        
                                         <div class="text-center mb-3 border-b border-gray-100 pb-2">
                                             ${m.final ? '<div class="text-[10px] font-black text-orange-600 mb-1">★ FINAL ★</div>' : ''}
                                             <div class="text-[12px] font-black text-[#006400] uppercase tracking-wide">${m.competition}</div>
                                         </div>
 
                                         <div class="flex justify-between items-start mb-4">
-                                            <div class="flex flex-col">
-                                                <span class="text-[14px] font-black text-black leading-none mb-1">JOGO #${m.matchNumber}</span>
-                                                
+                                            <div class="flex flex-col w-full pr-2">
+                                                 <div class="flex justify-between items-baseline">
+                                                    <span class="text-[14px] font-black text-black leading-none mb-1">JOGO #${m.matchNumber}</span>
+                                                 </div>
                                                 <span class="text-[10px] text-gray-500 font-bold leading-tight mb-1">${m.round}</span>
-                                                
                                                 <span class="text-[11px] font-black text-[#D32F2F]">
                                                     ${m.expired ? 'Encerrado:' : '⚠️ Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}
                                                 </span>
@@ -681,7 +630,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                                             <div class="flex gap-3 pt-1">
                                                 <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="text-gray-500 hover:text-[#006400] transition-colors relative">
                                                     <i class="fas fa-comment-dots text-xl"></i>
-                                                </button>
+                                                    ${chatBadge} </button>
                                                 <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] hover:scale-110 transition-transform">
                                                     <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-xl"></i>
                                                 </button>
@@ -1618,6 +1567,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
