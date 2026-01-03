@@ -998,7 +998,19 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                         if (misses === 3) { activeMedals += "🐢 "; trophyRoom.push({icon:"🐢", name:"MÃO DE ALFACE", desc:"Atual: 3 erros seguidos."}); }
                         if (noShows === 3) { activeMedals += "👻 "; trophyRoom.push({icon:"👻", name:"FANTASMA", desc:"Atual: 3 jogos sem votar."}); }
                     }
-
+                    // --- CORREÇÃO ZEBRA: Apenas se ganhou no ÚLTIMO jogo ---
+                    if (finishedDisplay.length > 0) {
+                        const lastMatch = finishedDisplay[0]; // Pega o jogo mais recente
+                        // Verifica se esse jogo foi Zebra
+                        if (zebraMatchIds.includes(lastMatch.id)) {
+                            const g = userGuesses.find(x => x.matchId === lastMatch.id);
+                            // Se o usuário acertou
+                            if (g && g.teamSelected === lastMatch.winner) {
+                                activeMedals += "🦓 "; 
+                            }
+                        }
+                    }
+                    // -------------------------------------------------------
                     const veteranLevel = Math.floor(v / 50);
                     for(let i=0; i<veteranLevel; i++) { activeMedals += "🎓 "; trophyRoom.push({icon:"🎓", name:`VETERANO Nvl ${i+1}`, desc:`Conquistou ${(i+1)*50} acertos.`}); }
 
@@ -1384,7 +1396,7 @@ async function loadAdminMatches() {
                                 <div class="flex items-start gap-2"><span class="text-lg">💎</span> <div><b>Diamante:</b> Gabaritou as Oitavas de Final (8/8).</div></div>
                                 <div class="flex items-start gap-2"><span class="text-lg">👑</span> <div><b>Rei do Mês:</b> Líder da pontuação no mês vigente.</div></div>
                                 <div class="flex items-start gap-2"><span class="text-lg">🎯</span> <div><b>Mito:</b> Sequência de 5 acertos seguidos.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg">🦓</span> <div><b>Caçador de Zebras:</b> Acertou um jogo onde +80% da galera errou.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">🦓</span> <div><b>Caçador de Zebras:</b> Acertou um jogo onde +80% da galera não acertou (errou ou não votou).</div></div>
                                 <div class="flex items-start gap-2"><span class="text-lg">🔥</span> <div><b>On Fire:</b> Sequência de 3 acertos seguidos.</div></div>
                                 <div class="flex items-start gap-2"><span class="text-lg">🔮</span> <div><b>Mãe Dinah:</b> Acertou na mosca o campeão do torneio.</div></div>
                                 <div class="flex items-start gap-2"><span class="text-lg">🎓</span> <div><b>Veterano:</b> Ganha 1 estrela a cada 50 ACERTOS.</div></div>
@@ -1644,6 +1656,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
