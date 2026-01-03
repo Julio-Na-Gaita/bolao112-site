@@ -407,11 +407,25 @@ Término oficial: 31 de dezembro de 2026
                 // ... (restante do código de renderização html += ...)
                 
                 let html = "";
-                html += SectionHeader("✅ CONFRONTOS DISPONÍVEIS ✅", "#006400");
                 
-                // PASSAMOS O TOTAL DE PARTICIPANTES PARA A RENDERIZAÇÃO
-                if(open.length > 0) { html += await renderMatchList(open, totalParticipants); } 
-                else { html += `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto para votação no momento.</div>`; }
+                // 1. CABEÇALHO CLICÁVEL (Inicia com seta para CIMA pois está aberto)
+                html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press">
+                            <div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
+                                <h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ CONFRONTOS DISPONÍVEIS ✅</h4>
+                                <i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i>
+                            </div>
+                         </div>`;
+                
+                // 2. CONTAINER DE CONTEÚDO (NÃO TEM A CLASSE 'hidden' INICIALMENTE)
+                html += `<div id="openContainer">`;
+                
+                if(open.length > 0) { 
+                    html += await renderMatchList(open, totalParticipants); 
+                } else { 
+                    html += `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto para votação no momento.</div>`; 
+                }
+                
+                html += `</div>`; // Fecha o container
                 
                 html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ AGUARDANDO RESULTADO ⏳</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">
                     ${waiting.length 
@@ -429,7 +443,7 @@ Término oficial: 31 de dezembro de 2026
             }
             document.getElementById('progressBar').classList.add('hidden');
         }
-
+window.toggleOpen = () => { document.getElementById('openContainer').classList.toggle('hidden'); document.getElementById('iconOpen').classList.toggle('fa-chevron-up'); document.getElementById('iconOpen').classList.toggle('fa-chevron-down'); };
         window.toggleWaiting = () => { document.getElementById('waitingContainer').classList.toggle('hidden'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-down'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-up'); };
         window.toggleFinished = () => { document.getElementById('finishedContainer').classList.toggle('hidden'); document.getElementById('iconFinished').classList.toggle('fa-chevron-down'); document.getElementById('iconFinished').classList.toggle('fa-chevron-up'); };
         
@@ -1454,4 +1468,5 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
