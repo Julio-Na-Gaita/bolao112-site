@@ -732,31 +732,130 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
             }); 
         };
         
-        window.openVoters = async (mid, ta, tb, taUrl, tbUrl, exp, win) => { 
-            const modal = document.getElementById('modalOverlay'); 
-            const cont = document.getElementById('modalContainer'); 
-            modal.classList.remove('hidden'); 
-            cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`; 
-            const gSnap = await getDocs(query(collection(db, "guesses"), where("matchId", "==", mid))); 
-            const uSnap = await getDocs(collection(db, "users")); 
-            const uMap = {}; uSnap.forEach(u => uMap[u.id] = u.data()); 
-            let rows = ""; const guesses = []; gSnap.forEach(g => guesses.push(g.data())); 
-            guesses.sort((a,b) => { const uA = uMap[a.userId]?.name || ""; const uB = uMap[b.userId]?.name || ""; if(win) { const wa = a.teamSelected===win, wb = b.teamSelected===win; if(wa && !wb) return -1; if(!wa && wb) return 1; } return uA.localeCompare(uB); }); 
-            guesses.forEach(d => { 
-                const u = uMap[d.userId] || {name: "Desc.", photoBase64: ""}; 
-                let voteDisplay = `<span class="text-[10px] text-gray-400 italic"><i class="fas fa-lock"></i> Sigilo</span>`; let bg = "bg-white/80"; 
-                if (exp) { 
-                    let teamImg = ""; if (d.teamSelected === ta) teamImg = taUrl; else if (d.teamSelected === tb) teamImg = tbUrl;
-                    if (teamImg) voteDisplay = `<img src="${teamImg}" class="w-8 h-8 object-contain">`; else voteDisplay = `<span class="text-[11px] font-bold">${d.teamSelected}</span>`; 
-                    if(win) { if(d.teamSelected === win) { bg = "bg-green-50/90"; voteDisplay += ` <i class="fas fa-check-circle text-green-600 ml-2"></i>`; } else { bg = "bg-red-50/90"; voteDisplay += ` <i class="fas fa-times-circle text-red-600 ml-2"></i>`; } } 
-                    voteDisplay = `<div class="flex items-center justify-end">${voteDisplay}</div>`;
-                } 
-                rows += `<div class="flex justify-between items-center p-2 border-b border-gray-100 ${bg}"><div class="flex items-center gap-2">${u.photoBase64 ? `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-6 h-6 rounded-full object-cover">` : `<i class="fas fa-user-circle text-gray-300"></i>`}<span class="text-xs font-bold truncate w-24">${u.name}</span></div><div>${voteDisplay}</div></div>`; 
-            }); 
-            const bgImg = exp ? 'fundo_dialog_palpites.jpeg' : 'bg_dialog_votantes.jpeg'; 
-            cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="${bgImg}" class="absolute inset-0 w-full h-full object-cover opacity-40"><div class="relative z-10"><div class="bg-gray-50/90 p-3 border-b flex justify-between items-center"><h3 class="font-bold text-[#006400] uppercase text-xs">${exp ? 'Palpites' : 'Quem já votou?'}</h3><button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button></div><div class="max-h-[60vh] overflow-y-auto p-2">${rows || '<p class="text-xs text-center p-4">Sem votos.</p>'}</div><div class="bg-gray-50/90 p-3 text-center"><button onclick="closeModal()" class="text-[#006400] font-black text-xs">FECHAR</button></div></div></div>`; 
-        };
+        // --- FUNÇÃO QUEM VOTOU (CORRIGIDA: Nomes Longos + Cache) ---
+        window.openVoters = async (matchId, ta, tb, taUrl, tbUrl, isExpired, winner) => {
+            const container = document.getElementById('modalContainer');
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            
+            // Loading inicial
+            container.innerHTML = `
+                <div class="bg-white rounded-lg p-6 shadow-xl relative w-80 text-center">
+                    <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-4"></i>
+                    <p class="font-bold text-gray-500">Carregando lista atualizada...</p>
+                </div>`;
 
+            try {
+                // 1. Busca Usuários (Garante lista fresca) e Palpites
+                const [uSnap, gSnap] = await Promise.all([
+                    getDocs(collection(db, "users")),
+                    getDocs(query(collection(db, "guesses"), where("matchId", "==", matchId)))
+                ]);
+
+                // 2. Cria Mapa de Usuários (ID Limpo -> Dados)
+                const userMap = {};
+                uSnap.forEach(doc => {
+                    const d = doc.data();
+                    const name = d.name || d.username || "Sem Nome";
+                    // Salva no mapa usando o ID sem espaços
+                    userMap[doc.id.trim()] = { 
+                        name: name, 
+                        photo: d.photoBase64 || "" 
+                    };
+                });
+
+                let votersList = [];
+                gSnap.forEach(doc => {
+                    const g = doc.data();
+                    const cleanUid = (g.userId || "").trim(); // Limpa o ID do palpite
+                    
+                    // Busca segura
+                    const user = userMap[cleanUid] || { name: `Desconhecido`, photo: "" };
+                    
+                    let imgShow = "";
+                    if(isExpired) {
+                        const voted = (g.teamSelected||"").trim().toLowerCase();
+                        if(voted === ta.trim().toLowerCase()) imgShow = taUrl;
+                        else if(voted === tb.trim().toLowerCase()) imgShow = tbUrl;
+                    }
+
+                    votersList.push({
+                        name: user.name,
+                        photo: user.photo,
+                        team: g.teamSelected,
+                        img: imgShow,
+                        isWinner: winner && g.teamSelected === winner
+                    });
+                });
+
+                // Ordenação
+                if(winner) {
+                    votersList.sort((a,b) => (b.isWinner === a.isWinner) ? a.name.localeCompare(b.name) : (b.isWinner ? 1 : -1));
+                } else {
+                    votersList.sort((a,b) => a.name.localeCompare(b.name));
+                }
+
+                // Renderização
+                let listHtml = "";
+                if(votersList.length === 0) listHtml = `<p class="text-center text-gray-400 text-xs py-4">Nenhum voto registrado.</p>`;
+                else {
+                    votersList.forEach(v => {
+                        let bgClass = "bg-transparent";
+                        let statusIcon = "";
+                        
+                        if(winner) {
+                            if(v.isWinner) {
+                                bgClass = "bg-green-50";
+                                statusIcon = `<i class="fas fa-check-circle text-green-600 ml-2"></i>`;
+                            } else {
+                                bgClass = "bg-red-50";
+                                statusIcon = `<i class="fas fa-times-circle text-red-600 ml-2"></i>`;
+                            }
+                        }
+
+                        // TRATAMENTO DE NOME LONGO: 'truncate' e 'max-w'
+                        listHtml += `
+                        <div class="flex items-center justify-between p-2 mb-1 rounded border-b border-gray-100 ${bgClass}">
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                ${v.photo ? `<img src="data:image/jpeg;base64,${v.photo}" class="w-8 h-8 rounded-full border border-gray-300 object-cover">` : `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-400"><i class="fas fa-user"></i></div>`}
+                                
+                                <span class="text-sm font-bold text-gray-800 truncate max-w-[130px]" title="${v.name}">${v.name}</span>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                ${!isExpired 
+                                    ? `<span class="text-[10px] font-bold text-gray-400 flex items-center"><i class="fas fa-lock mr-1"></i> Sigilo</span>` 
+                                    : (v.img ? `<img src="${v.img}" class="w-6 h-6 object-contain">` : `<span class="text-xs font-bold">${v.team}</span>`)
+                                }
+                                ${winner ? statusIcon : ''}
+                            </div>
+                        </div>`;
+                    });
+                }
+
+                const title = isExpired ? "PALPITES REGISTRADOS" : "QUEM JÁ VOTOU?";
+                const bgImage = isExpired ? "bg_dialog_palpites.png" : "bg_dialog_votantes.png"; // Ajuste se tiver essas imagens na web, senão remova
+
+                container.innerHTML = `
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 80vh; display:flex; flex-direction:column;">
+                    <div class="p-4 border-b border-gray-100 bg-gray-50 text-center relative z-10">
+                        <h3 class="font-black text-[#006400] text-lg uppercase tracking-wide">${title}</h3>
+                        ${!isExpired ? '<p class="text-[10px] text-gray-500 font-bold mt-1">Os palpites são revelados após o prazo.</p>' : ''}
+                    </div>
+                    
+                    <div class="p-4 overflow-y-auto relative z-10 flex-1">
+                        ${listHtml}
+                    </div>
+
+                    <div class="p-4 bg-gray-50 border-t border-gray-100 z-10">
+                        <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded-lg font-bold shadow-md btn-press text-sm uppercase">Fechar</button>
+                    </div>
+                </div>`;
+
+            } catch(e) {
+                console.error(e);
+                container.innerHTML = `<div class="bg-white p-6 rounded text-center"><p class="text-red-500 font-bold">Erro ao carregar lista.</p><button onclick="closeModal()" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded">Fechar</button></div>`;
+            }
+        };
         // --- TIRA-TEIMA (WEB) COM ESCUDOS, DATA E SOMA 100% ---
         window.compareGuesses = async (targetUid, targetName) => {
             const modal = document.getElementById('modalOverlay'); 
@@ -1656,6 +1755,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
