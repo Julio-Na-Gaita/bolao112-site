@@ -1263,54 +1263,60 @@ window.showKingModal = () => {
             
             const ranking = window.currentMonthlyRanking || [];
             
+            // Verifica líder isolado para exibir a coroa apenas aqui
+            let hasKing = false;
+            if(ranking.length > 0 && ranking[0].points > 0) {
+                if(ranking.length === 1) hasKing = true;
+                else if(ranking[0].points > ranking[1].points) hasKing = true;
+            }
+
             let listHtml = "";
             if(ranking.length === 0 || ranking[0].points === 0) {
                 listHtml = `<div class="text-center p-6 text-xs text-gray-500 italic">Nenhum ponto marcado neste mês ainda.</div>`;
             } else {
                 listHtml = ranking.map((u, i) => {
-                    const isKing = i === 0;
-                    const bg = isKing ? 'bg-[#FFF9C4]' : 'bg-white';
-                    const icon = isKing ? '👑 ' : '';
-                    const bold = isKing ? 'font-black' : 'font-normal';
-                    const color = isKing ? 'text-[#006400]' : 'text-black';
+                    const isKingRow = i === 0 && hasKing;
+                    const bg = isKingRow ? 'bg-[#FFF9C4]' : 'bg-white';
+                    const icon = isKingRow ? '👑 ' : '';
+                    const bold = isKingRow ? 'font-black' : 'font-normal';
+                    const color = isKingRow ? 'text-[#006400]' : 'text-black';
                     
                     return `
-                    <div class="flex items-center justify-between p-3 border-b border-gray-100 ${bg}">
-                        <div class="flex items-center gap-3">
-                            <span class="text-xs font-bold text-gray-400 w-6 text-center">${i+1}º</span>
-                            <span class="text-xs ${bold} truncate max-w-[160px]">${icon}${u.name}</span>
+                    <div class="flex items-center justify-between p-3 border-b border-gray-100 ${bg} shrink-0">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <span class="text-xs font-bold text-gray-400 w-6 text-center shrink-0">${i+1}º</span>
+                            <span class="text-xs ${bold} truncate max-w-[150px]">${icon}${u.name}</span>
                         </div>
-                        <span class="text-sm ${bold} ${color}">${u.points}</span>
+                        <span class="text-sm ${bold} ${color} shrink-0">${u.points}</span>
                     </div>`;
                 }).join('');
             }
 
+            // CORREÇÃO IPHONE: Estrutura flexível com altura máxima controlada
             cont.innerHTML = `
-            <div class="bg-white rounded-lg shadow-2xl relative overflow-hidden w-[90%] max-w-sm mx-auto my-auto flex flex-col max-h-[85vh]">
+            <div class="bg-white rounded-lg shadow-2xl relative overflow-hidden w-[95%] max-w-sm mx-auto flex flex-col" style="max-height: 80vh;">
                 <img src="bg_ranking.png" class="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none">
                 
-                <div class="relative z-10 flex flex-col h-full">
-                    <div class="bg-[#006400] p-4 text-center shrink-0">
-                        <div class="text-4xl mb-2">🏆</div>
-                        <h3 class="font-black text-[#FFD700] text-lg tracking-widest uppercase">REI DE ${currentMonthName}</h3>
-                        <p class="text-[10px] text-white font-bold opacity-80 uppercase">Classificação Mensal</p>
-                    </div>
-                    
-                    <div class="flex justify-between bg-gray-100 p-2 text-[10px] font-bold text-gray-500 uppercase shrink-0 border-b">
-                        <span class="pl-4">Participante</span>
-                        <span class="pr-2">Pts</span>
-                    </div>
+                <div class="relative z-10 bg-[#006400] p-4 text-center shrink-0">
+                    <div class="text-3xl mb-1">🏆</div>
+                    <h3 class="font-black text-[#FFD700] text-lg tracking-widest uppercase leading-none">REI DE ${currentMonthName}</h3>
+                    <p class="text-[10px] text-white font-bold opacity-80 uppercase mt-1">Classificação Mensal</p>
+                </div>
+                
+                <div class="relative z-10 flex justify-between bg-gray-100 p-2 text-[10px] font-bold text-gray-500 uppercase shrink-0 border-b">
+                    <span class="pl-4">Participante</span>
+                    <span class="pr-2">Pts</span>
+                </div>
 
-                    <div class="overflow-y-auto flex-1 min-h-0 bg-white/80">
-                        ${listHtml}
-                    </div>
+                <div class="relative z-10 overflow-y-auto flex-1 bg-white/80 overscroll-contain">
+                    ${listHtml}
+                </div>
 
-                    <div class="p-4 bg-gray-50 shrink-0 border-t">
-                        <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-bold shadow btn-press">FECHAR</button>
-                    </div>
+                <div class="relative z-10 p-3 bg-gray-50 shrink-0 border-t pb-safe">
+                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-bold shadow btn-press text-sm">FECHAR</button>
                 </div>
             </div>`;
-        };    
+        }; 
 
        window.showModalPhoto = (idx) => { 
             const u = currentRankingData[idx]; 
@@ -1776,6 +1782,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
