@@ -346,19 +346,12 @@ Término oficial: 31 de dezembro de 2026
 
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
 
-// --- FUNÇÃO UPDATE BADGES (SINO INTELIGENTE) ---
-        window.updateBadges = async () => {
-            // Precisamos dos nomes dos times para o modal. 
-            // Como globalServerCounts só tem ID, vamos tentar pegar do DOM ou cache se possível.
-            // Para simplificar, vamos assumir que 'allMatchesList' (variavel global que precisamos criar/expor) está disponivel
-            // OU vamos iterar os elementos da tela.
-            
-            // Melhor abordagem WEB: Ler os cards na tela para pegar os nomes, já que matches estão carregados.
+// --- FUNÇÃO SINO INTELIGENTE (LISTA ONDE TEM MENSAGEM) ---
+        window.updateBadges = () => {
             let unreadGames = [];
             let totalUnread = 0;
 
-            // Itera sobre todos os dados de Match que temos carregados (precisamos salvar isso globalmente no loadMatches)
-            // Vamos assumir que window.cachedMatches existe (vamos criar no loadMatches)
+            // Usa a lista salva no passo 1
             if(window.cachedMatches) {
                 window.cachedMatches.forEach(m => {
                     const sCount = globalServerCounts[m.id] || 0;
@@ -366,45 +359,82 @@ Término oficial: 31 de dezembro de 2026
                     
                     if (sCount > lCount) {
                         totalUnread++;
-                        unreadGames.push(`${m.teamA} x ${m.teamB}`);
+                        // Adiciona o nome do jogo na lista
+                        unreadGames.push({
+                            id: m.id,
+                            title: `${m.teamA} x ${m.teamB}`
+                        });
                     }
                 });
             }
 
-            // Atualiza Sino
+            // Atualiza o Ícone do Sino
             const btnBell = document.getElementById('btnBell');
-            const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
+            // Remove badge antigo se houver
+            const old = btnBell.querySelector('.bell-badge'); 
+            if(old) old.remove();
             
-            // Remove listeners antigos para evitar duplicação
+            // Recria o botão para limpar eventos de clique antigos (evita duplicação)
             const newBell = btnBell.cloneNode(true);
             btnBell.parentNode.replaceChild(newBell, btnBell);
 
             if (totalUnread > 0) {
+                // Adiciona a bolinha vermelha com o número
                 newBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
-                newBell.classList.add('text-red-400');
+                newBell.classList.add('text-red-400'); // Deixa o sino vermelho
                 
-                // Clique no Sino com mensagens
+                // --- CLIQUE NO SINO: ABRE LISTA DE JOGOS ---
                 newBell.onclick = () => {
-                    let gamesHtml = unreadGames.map(t => `<div class="p-2 bg-gray-50 border-b border-gray-200 font-bold text-gray-700 text-xs">⚽ ${t}</div>`).join('');
+                    const modal = document.getElementById('modalOverlay');
+                    const cont = document.getElementById('modalContainer');
                     
-                    document.getElementById('modalOverlay').classList.remove('hidden');
-                    document.getElementById('modalContainer').innerHTML = `
-                    <div class="bg-white rounded-lg p-5 w-72 shadow-xl">
-                        <div class="flex items-center mb-4 text-[#006400]">
-                            <i class="fas fa-comment-dots text-xl mr-2"></i>
-                            <h3 class="font-bold text-lg">Novas Mensagens</h3>
+                    // Gera o HTML da lista de jogos
+                    let listHtml = unreadGames.map(game => `
+                        <div class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-700">⚽ ${game.title}</span>
+                            <span class="text-[9px] text-green-600 font-bold uppercase tracking-wider">Nova Msg</span>
                         </div>
-                        <p class="text-xs text-gray-500 mb-2">A resenha está rolando em:</p>
-                        <div class="max-h-60 overflow-y-auto border border-gray-100 rounded mb-4">
-                            ${gamesHtml}
+                    `).join('');
+
+                    modal.classList.remove('hidden');
+                    cont.innerHTML = `
+                    <div class="bg-white rounded-lg shadow-2xl w-72 overflow-hidden">
+                        <div class="bg-[#006400] p-3 text-center">
+                            <h3 class="font-black text-[#FFD700] text-sm uppercase tracking-widest">
+                                <i class="fas fa-comment-dots mr-1"></i> RESENHA ATIVA
+                            </h3>
                         </div>
-                        <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-2 rounded font-bold text-sm">OK, VOU LÁ!</button>
+                        
+                        <div class="p-4">
+                            <p class="text-[10px] text-gray-500 font-bold mb-2 uppercase text-center">Mensagens não lidas em:</p>
+                            
+                            <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg mb-4 shadow-inner bg-gray-100">
+                                ${listHtml}
+                            </div>
+
+                            <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-2 rounded font-bold text-xs shadow-md btn-press">
+                                OK, VOU LÁ!
+                            </button>
+                        </div>
                     </div>`;
                 };
 
             } else {
+                // Se não tem mensagens
                 newBell.classList.remove('text-red-400');
-                newBell.onclick = () => alert("Nenhuma nova mensagem.");
+                newBell.onclick = () => {
+                    const modal = document.getElementById('modalOverlay');
+                    const cont = document.getElementById('modalContainer');
+                    modal.classList.remove('hidden');
+                    cont.innerHTML = `
+                        <div class="bg-white p-6 rounded-lg text-center shadow-xl w-64">
+                            <i class="fas fa-check-circle text-4xl text-gray-300 mb-3"></i>
+                            <p class="text-gray-600 font-bold text-sm">Tudo lido por aqui!</p>
+                            <p class="text-[10px] text-gray-400 mt-1">Nenhuma nova resenha.</p>
+                            <button onclick="closeModal()" class="mt-4 text-[#006400] font-bold text-xs uppercase btn-press">Fechar</button>
+                        </div>
+                    `;
+                };
             }
         };
         
@@ -464,7 +494,9 @@ Término oficial: 31 de dezembro de 2026
                     if (timeDiff !== 0) return timeDiff;
                     return a.id.localeCompare(b.id);
                 });
-
+// --- ADICIONE ESTA LINHA AQUI ---
+                window.cachedMatches = allMatchesList; // Salva para o sino usar
+                // --------------------------------
                 let open = [], waiting = [], finished = [];
                 
                 // Lógica de Notificação Global (Sino e Pulse)
@@ -1739,6 +1771,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
