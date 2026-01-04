@@ -16,121 +16,74 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700;900&display=swap');
 
-        /* Balão de fala temporário */
-.medal-toast {
-    position: absolute;
-    bottom: 20%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: bold;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    z-index: 50;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none; /* Para não atrapalhar cliques */
-    text-align: center;
-    min-width: 200px;
-}
-        /* Badge de Notificação */
-        .nav-badge {
-            position: absolute;
-            top: -5px;
-            right: 20px; /* Ajuste conforme a largura do ícone */
-            background-color: red;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 5px;
-            font-size: 9px;
-            font-weight: bold;
-            border: 1px solid white;
-            z-index: 60;
+        /* --- CORREÇÕES CRÍTICAS IOS (Flickering & Scroll) --- */
+        html {
+            height: 100%;
+            overflow: hidden; /* Impede que a página inteira role (o iPhone odeia isso) */
+            -webkit-text-size-adjust: 100%;
         }
-.medal-toast.show { opacity: 1; }
         
-        :root { --dark-green: #006400; --gold: #FFD700; }
-        
-        body { 
+        body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* O scroll será delegado para a div principal */
+            background-color: #f3f4f6;
+            -webkit-font-smoothing: antialiased;
             font-family: 'PT Serif', serif; 
             -webkit-tap-highlight-color: transparent;
             user-select: none;
-            background-color: #f3f4f6;
         }
-/* Animação de Pulse para Notificações */
-        @keyframes pulse-red {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 82, 82, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+
+        /* Container principal que rola (Substitui o scroll do body) */
+        #appContent {
+            /* Isso habilita a aceleração de hardware e scroll nativo do iOS */
+            -webkit-overflow-scrolling: touch; 
+            transform: translateZ(0); 
+            will-change: scroll-position;
         }
+
+        /* Ajuste para o Topo e Fundo do iPhone (Notch e Barra Home) */
+        .pt-safe { padding-top: env(safe-area-inset-top, 20px); }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
         
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #FF5252;
-            border-radius: 50%;
-            display: inline-block;
-            margin-left: 8px;
-            animation: pulse-red 2s infinite;
+        /* --- ESTILOS GERAIS & CORES --- */
+        :root { --dark-green: #006400; --gold: #FFD700; }
+        
+        .btn-press:active { transform: scale(0.96); transition: transform 0.1s; }
+        
+        /* --- BADGES E NOTIFICAÇÕES --- */
+        @keyframes pulse-red { 
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 82, 82, 0); } 
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } 
         }
+        .pulse-dot { width: 8px; height: 8px; background-color: #FF5252; border-radius: 50%; display: inline-block; margin-left: 8px; animation: pulse-red 2s infinite; }
+        
+        .bell-badge { position: absolute; top: 5px; right: 5px; background-color: #FF5252; color: white; border-radius: 50%; width: 14px; height: 14px; font-size: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 1px solid #006400; }
+        
+        .nav-badge { position: absolute; top: -5px; right: 20px; background-color: red; color: white; border-radius: 50%; padding: 2px 5px; font-size: 9px; font-weight: bold; border: 1px solid white; z-index: 60; }
+        
+        .medal-toast { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); background-color: #333; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 50; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; text-align: center; min-width: 200px; }
+        .medal-toast.show { opacity: 1; }
 
-        .bell-badge {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background-color: #FF5252;
-            color: white;
-            border-radius: 50%;
-            width: 14px;
-            height: 14px;
-            font-size: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            border: 1px solid #006400;
-        }
-        .card-cut {
-            background: white;
-            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
-            filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07));
-            border: 1px solid #e5e7eb;
-        }
-/* Adicione ou garanta que isso exista no seu style */
-.bg-ranking { background-image: url('bg_ranking.png'); background-size: cover; background-position: center; }
-/* Cor de fundo para o Z-2 */
-.bg-z2 { background-color: #FFEBEE !important; } 
-/* Texto vermelho sangue para o Z-2 */
-.text-blood { color: #8B0000 !important; }
-        /* --- FUNDOS DINÂMICOS --- */
-        .bg-main { background-size: cover; background-attachment: fixed; background-position: center; transition: background 0.3s ease; }
-        .tab-matches { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg'); }
-        .tab-ranking { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_ranking.png'); }
-        .tab-rules { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_regras.png'); }
-        .tab-profile { background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_perfil.png'); }
-
-        .btn-press:active { transform: scale(0.95); transition: 0.1s; }
-        .safe-top { padding-top: env(safe-area-inset-top); }
-        .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        /* --- CARDS E LAYOUT --- */
+        .card-cut { background: white; clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)); border: 1px solid #e5e7eb; }
+        
+        /* Utilitários de Texto e Scroll */
         ::-webkit-scrollbar { display: none; }
         .rules-text { white-space: pre-wrap; }
-
-        .gold-text-outline {
-            background: linear-gradient(to bottom, #B8860B, #FFD700, #B8860B);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-stroke: 1.2px black;
-            color: transparent;
-            font-weight: 900;
-        }
+        
+        .gold-text-outline { background: linear-gradient(to bottom, #B8860B, #FFD700, #B8860B); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 1.2px black; color: transparent; font-weight: 900; }
+        
+        .bg-z2 { background-color: #FFEBEE !important; } 
+        .text-blood { color: #8B0000 !important; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="h-full w-full overflow-hidden relative text-gray-900">
 
-    <nav class="bg-[#006400] text-white pt-[env(safe-area-inset-top)] sticky top-0 z-50 shadow-md">
+    <div id="bgLayer" class="fixed inset-0 z-[-1] bg-cover bg-center transition-all duration-300" style="background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg');"></div>
+
+    <nav class="bg-[#006400] text-white pt-safe sticky top-0 z-50 shadow-md w-full">
         <div class="p-4 flex justify-between items-center">
             <h1 class="text-lg font-bold tracking-tighter uppercase">Bolão 112 F.C</h1>
             <div class="flex gap-4">
@@ -146,7 +99,7 @@
         <div id="progressBar" class="hidden h-1 w-full bg-[#006400]"><div class="h-full bg-[#FFD700] animate-pulse w-full"></div></div>
     </nav>
 
-    <main id="appContent" class="flex-1 overflow-y-auto bg-main tab-matches pb-32">
+    <main id="appContent" class="flex-1 w-full h-full overflow-y-auto overflow-x-hidden pb-32 relative z-10">
         
         <section id="loginScreen" class="flex flex-col items-center justify-center min-h-[70vh] p-6">
             <div class="card-cut w-full max-w-sm p-8 border-t-4 border-[#006400]">
@@ -1782,6 +1735,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
