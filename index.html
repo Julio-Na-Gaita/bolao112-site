@@ -35,11 +35,15 @@
         }
 
         /* Container principal que rola (Substitui o scroll do body) */
+        /* Container principal que rola (Substitui o scroll do body) */
         #appContent {
-            /* Isso habilita a aceleração de hardware e scroll nativo do iOS */
-            -webkit-overflow-scrolling: touch; 
-            transform: translateZ(0); 
+            flex: 1; /* Ocupa todo o espaço restante */
+            overflow-y: auto; /* Habilita a rolagem vertical */
+            overflow-x: hidden; /* Evita rolagem lateral */
+            -webkit-overflow-scrolling: touch; /* Rolagem suave no iOS */
+            transform: translateZ(0); /* Força GPU */
             will-change: scroll-position;
+            padding-bottom: 120px; /* Garante espaço para não cortar o fim da lista */
         }
 
         /* Ajuste para o Topo e Fundo do iPhone (Notch e Barra Home) */
@@ -79,8 +83,8 @@
         .text-blood { color: #8B0000 !important; }
     </style>
 </head>
-<body class="h-full w-full overflow-hidden relative text-gray-900">
-
+<body class="h-full w-full overflow-hidden relative text-gray-900 flex flex-col">
+    
     <div id="bgLayer" class="fixed inset-0 z-[-1] bg-cover bg-center transition-all duration-300" style="background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg');"></div>
 
     <nav class="bg-[#006400] text-white pt-safe sticky top-0 z-50 shadow-md w-full">
@@ -1735,6 +1739,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
