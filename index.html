@@ -713,27 +713,37 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
             const border = selected ? 'border-2 border-[#FFD700]' : ''; 
             
             // Adicionamos a classe 'match-btn-${mid}' para agrupar botões do mesmo jogo
-            return `<button id="${btnId}" onclick="window.vote('${mid}', '${name}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}"><img src="${url}" class="w-10 h-10 object-contain mb-1"><span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`; 
+            return `<button id="${btnId}" onclick="('${mid}', '${name}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}"><img src="${url}" class="w-10 h-10 object-contain mb-1"><span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`; 
         }
 
         window.vote = async (mid, team, btnId) => { 
             if(!currentUser) return; 
+
+            // --- TRAVA DE SEGURANÇA (NOVO) ---
+            // Verifica se o usuário realmente existe no banco antes de aceitar o voto
+            const userRef = doc(db, "users", currentUser.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (!userSnap.exists()) {
+                alert("Sessão inválida ou duplicada.\n\nVocê será desconectado para corrigir seu cadastro. Por favor, faça login novamente.");
+                await signOut(auth);
+                location.reload();
+                return;
+            }
+            // ----------------------------------
             
             // 1. ATUALIZAÇÃO VISUAL IMEDIATA (Otimista)
-            // Remove o estilo de "selecionado" de todos os botões desse jogo
             const buttons = document.getElementsByClassName(`match-btn-${mid}`);
             for (let btn of buttons) {
                 btn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#EEEEEE] text-gray-800`;
             }
 
-            // Aplica o estilo "selecionado" no botão clicado
             const clickedBtn = document.getElementById(btnId);
             if(clickedBtn) {
                 clickedBtn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#006400] text-white border-2 border-[#FFD700]`;
             }
 
-            // 2. SALVA NO BANCO EM SEGUNDO PLANO
-            // Não chamamos loadMatches() aqui para evitar recarregar a tela toda
+            // 2. SALVA NO BANCO
             await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { 
                 matchId: mid, 
                 userId: currentUser.uid, 
@@ -1771,6 +1781,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
