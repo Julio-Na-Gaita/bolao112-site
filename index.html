@@ -705,17 +705,30 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
         // --- FUNÇÕES DE VOTO OTIMIZADAS (SEM LAG) ---
         
         function createTeamBtn(mid, name, url, selected, expired) { 
-            // Cria um ID único para o botão para podermos achá-lo via código
+            // Limpa o nome para criar um ID válido
             const safeName = name.replace(/[^a-zA-Z0-9]/g, '');
             const btnId = `btn-${mid}-${safeName}`;
             
             const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800'; 
             const border = selected ? 'border-2 border-[#FFD700]' : ''; 
             
-            // CORREÇÃO AQUI: Adicionado 'window.vote' antes dos parênteses
-            return `<button id="${btnId}" onclick="window.vote('${mid}', '${name}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}"><img src="${url}" class="w-10 h-10 object-contain mb-1"><span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`; 
-        }
+            // LÓGICA DE CORREÇÃO DE IMAGEM
+            // Verifica se a URL existe e não é a string "false"
+            const hasImage = url && url !== "false" && url !== "null" && url.trim() !== "";
+            
+            // Se tiver imagem, mostra IMG. Se der erro ao carregar, esconde IMG e mostra Ícone.
+            // Se não tiver imagem, mostra direto o Ícone.
+            const iconHtml = hasImage 
+                ? `<img src="${url}" class="w-10 h-10 object-contain mb-1" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                   <i class="fas fa-shield-alt text-2xl mb-1 text-gray-400 hidden"></i>` 
+                : `<i class="fas fa-shield-alt text-2xl mb-1 text-gray-400"></i>`;
 
+            // Retorna o botão com a função de voto CORRIGIDA (window.vote)
+            return `<button id="${btnId}" onclick="window.vote('${mid}', '${name}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}">
+                ${iconHtml}
+                <span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span>
+            </button>`; 
+        }
         window.vote = async (mid, team, btnId) => { 
             if(!currentUser) return; 
 
@@ -1781,6 +1794,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
