@@ -690,9 +690,9 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                                         </div>
 
                                         <div class="flex items-center justify-between px-1">
-                                            ${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}
+                                            ${(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}
                                             <span class="font-black text-gray-300 text-xl">X</span>
-                                            ${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}
+                                            ${(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}
                                         </div>
                                         
                                         ${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="text-[#006400] font-black text-lg">${m.winner}</p></div>` : ''}
@@ -712,8 +712,8 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
             const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800'; 
             const border = selected ? 'border-2 border-[#FFD700]' : ''; 
             
-            // Adicionamos a classe 'match-btn-${mid}' para agrupar botões do mesmo jogo
-            return `<button id="${btnId}" onclick="('${mid}', '${name}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}"><img src="${url}" class="w-10 h-10 object-contain mb-1"><span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`; 
+            // CORREÇÃO AQUI: Adicionado 'window.vote' antes dos parênteses
+            return `<button id="${btnId}" onclick="window.vote('${mid}', '${name}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}"><img src="${url}" class="w-10 h-10 object-contain mb-1"><span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`; 
         }
 
         window.vote = async (mid, team, btnId) => { 
@@ -1781,6 +1781,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
