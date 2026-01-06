@@ -1211,7 +1211,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                         const kingUser = users.find(u => u.uid === kingId);
                         if(kingUser) {
                             kingUser.medals = "👑 " + kingUser.medals;
-                            kingUser.trophyRoom.unshift({icon:"👑", name:"REI DO MÊS", desc:"Líder Isolado"});
+                            kingUser.trophyRoom.unshift({icon:"👑", name:"REI DO MÊS", desc:"Líder Isolado do mês"});
                         }
                     }
                 }
@@ -1806,6 +1806,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
