@@ -1044,6 +1044,49 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     
                     // --- SALA DE TROFÉUS (ACUMULATIVA) ---
                     let trophyRoom = [];
+                    // --- 💎 LÓGICA DIAMANTE CORRIGIDA (WEB) ---
+                    const oitavasMatches = finishedDisplay.filter(m => m.round === "Oitavas de final");
+                    const oitavasByComp = {};
+                    oitavasMatches.forEach(m => {
+                        if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = [];
+                        oitavasByComp[m.competition].push(m);
+                    });
+
+                    for (const [compName, matches] of Object.entries(oitavasByComp)) {
+                        if (matches.length === 8) {
+                            let hits = 0;
+                            matches.forEach(m => {
+                                const g = userGuesses.find(x => x.matchId === m.id);
+                                if (g && g.teamSelected === m.winner) hits++;
+                            });
+
+                            if (hits === 8) {
+                                p += 3; // Soma +3 no total
+                                // Verifica mês
+                                const lastDate = matches[0].deadlineDate;
+                                if (lastDate.getMonth() === currentMonthIdx && lastDate.getFullYear() === currentYear) {
+                                    monthlyP += 3;
+                                }
+                                
+                                // Adiciona Medalha Detalhada
+                                trophyRoom.push({
+                                    icon: "💎", 
+                                    name: "DIAMANTE", 
+                                    desc: `Gabaritou as Oitavas (8/8) da ${compName}.`,
+                                    date: lastDate.toLocaleDateString('pt-BR')
+                                });
+                                
+                                // Adiciona ao Histórico se ainda não estiver lá (para evitar duplicidade visual se rodar 2x)
+                                const histText = `💎 BÔNUS: Gabaritou Oitavas (${compName})`;
+                                if(!hist.some(h => h.text.includes(histText))) {
+                                     hist.push({ ts: lastDate, text: `📅 Extra - ${histText} (+3 pts)`, type: 'good' });
+                                }
+                            }
+                        }
+                    }
+                    // Verifica se tem medalha diamante na sala para por no nome
+                    if(trophyRoom.some(t => t.icon === "💎")) activeMedals += "💎 ";
+                    // ------------------------------------------
                     let simStreak = 0;
                     let simStreakBroken = false;
                     let vetCount = 0;
@@ -1107,7 +1150,6 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     const veteranLevel = Math.floor(v / 50);
                     for(let i=0; i<veteranLevel; i++) { activeMedals += "🎓 "; trophyRoom.push({icon:"🎓", name:`VETERANO Nvl ${i+1}`, desc:`Conquistou ${(i+1)*50} acertos.`}); }
 
-                    if(hist.some(h => h.text.includes("Bônus Oitavas"))) { activeMedals += "💎 "; trophyRoom.push({icon:"💎", name:"DIAMANTE", desc:"Gabaritou Oitavas."}); }
                     if (f > 0) { activeMedals += "🔮 "; trophyRoom.push({icon:"🔮", name:"MÃE DINAH", desc:`Acertou ${f} campeões.`}); }
 
                     let allPaid = true;
@@ -1755,6 +1797,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
