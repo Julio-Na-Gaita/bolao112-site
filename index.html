@@ -1040,58 +1040,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                         } 
                     }); 
 // ==============================================================================
-                    // 💎 LÓGICA MEDALHA DIAMANTE (WEB - CORRIGIDA)
-                    // ==============================================================================
-                    
-                    // 1. Agrupa jogos das Oitavas por Competição
-                    const oitavasMatches = finishedDisplay.filter(m => m.round === "Oitavas de final");
-                    const oitavasByComp = {};
-                    
-                    oitavasMatches.forEach(m => {
-                        if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = [];
-                        oitavasByComp[m.competition].push(m);
-                    });
-
-                    // 2. Verifica cada competição
-                    for (const [compName, matches] of Object.entries(oitavasByComp)) {
-                        // Só vale se tiver exatamente 8 jogos cadastrados e finalizados
-                        if (matches.length === 8) {
-                            let hits = 0;
-                            matches.forEach(m => {
-                                const g = userGuesses.find(x => x.matchId === m.id);
-                                if (g && g.teamSelected === m.winner) hits++;
-                            });
-
-                            // 3. Se gabaritou (8/8)
-                            if (hits === 8) {
-                                // Pontos Bônus
-                                p += 3;
-                                
-                                // Verifica se conta para o Mês Atual (Rei do Mês)
-                                // Pega a data do último jogo do grupo para decidir o mês
-                                const lastDate = matches[0].deadlineDate; 
-                                if (lastDate.getMonth() === currentMonthIdx && lastDate.getFullYear() === currentYear) {
-                                    monthlyP += 3;
-                                }
-
-                                // Adiciona ao Histórico (Extrato)
-                                const dStr = `📅 ${String(lastDate.getDate()).padStart(2,'0')}/${String(lastDate.getMonth()+1).padStart(2,'0')}`;
-                                hist.push({
-                                    ts: lastDate, 
-                                    text: `${dStr} - 💎 BÔNUS: Gabaritou Oitavas (${compName}) (+3 pts)`,
-                                    type: 'good'
-                                });
-
-                                // Adiciona a Medalha na Sala de Troféus (Agora com Nome da Competição)
-                                // Nota: trophyRoom será inicializado logo abaixo, então vamos adicionar numa lista temporária ou injetar depois
-                                // Como a estrutura do seu código web reinicia trophyRoom abaixo, vamos salvar numa flag ou injetar direto na string activeMedals aqui e tratar o trophyRoom depois.
-                                
-                                // AJUSTE PARA O SEU CÓDIGO ESPECÍFICO WEB:
-                                // Como 'trophyRoom' é declarado DEPOIS nesse loop, vamos adicionar uma propriedade no usuário temporário ou forçar a medalha no array trophyRoom depois de declarado.
-                                // A melhor forma no seu código atual é inserir isso APÓS a declaração de 'let trophyRoom = [];'
-                            }
-                        }
-                    }
+                
                     monthlyData.push({ name: u.name || "Sem Nome", points: monthlyP, uid: ud.id });
                     
                     // --- SALA DE TROFÉUS (ACUMULATIVA) ---
@@ -1100,6 +1049,70 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     let simStreakBroken = false;
                     let vetCount = 0;
 
+// ==============================================================================
+                    // 💎 LÓGICA MEDALHA DIAMANTE (Sincronizada com Android)
+                    // ==============================================================================
+                    
+                    // 1. Filtra apenas jogos das Oitavas
+                    const oitavasMatches = finishedDisplay.filter(m => m.round === "Oitavas de final");
+                    
+                    // 2. Agrupa por Competição (Ex: { "Copa do Mundo": [jogo1, jogo2...], "Champions": [...] })
+                    const oitavasByComp = {};
+                    oitavasMatches.forEach(m => {
+                        if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = [];
+                        oitavasByComp[m.competition].push(m);
+                    });
+
+                    // 3. Verifica cada grupo
+                    for (const [compName, matches] of Object.entries(oitavasByComp)) {
+                        // Regra: Só vale se tiver exatamente 8 jogos cadastrados E finalizados nessa fase
+                        if (matches.length === 8) {
+                            let hits = 0;
+                            matches.forEach(m => {
+                                const g = userGuesses.find(x => x.matchId === m.id);
+                                if (g && g.teamSelected === m.winner) hits++;
+                            });
+
+                            // 4. Se gabaritou (8/8)
+                            if (hits === 8) {
+                                p += 3; // Adiciona +3 pontos no total geral
+                                
+                                // Verifica se conta para o Mês Atual (Rei do Mês)
+                                // Usa a data do último jogo do grupo para decidir
+                                // (Como 'matches' vem do finishedDisplay reverso, o índice 0 é o mais recente)
+                                const lastDate = matches[0].deadlineDate; 
+                                if (lastDate.getMonth() === currentMonthIdx && lastDate.getFullYear() === currentYear) {
+                                    monthlyP += 3;
+                                }
+
+                                // Adiciona Medalha Detalhada na Sala de Troféus
+                                trophyRoom.push({
+                                    icon: "💎", 
+                                    name: "DIAMANTE", 
+                                    desc: `Gabaritou as Oitavas (8/8) da ${compName}.`,
+                                    date: lastDate.toLocaleDateString('pt-BR')
+                                });
+                                
+                                // Adiciona ao Histórico (Extrato) para o usuário ver de onde veio o ponto
+                                // Verifica duplicidade visual antes de adicionar
+                                const histText = `💎 BÔNUS: Gabaritou Oitavas (${compName})`;
+                                if(!hist.some(h => h.text.includes(histText))) {
+                                     const dStr = `📅 ${String(lastDate.getDate()).padStart(2,'0')}/${String(lastDate.getMonth()+1).padStart(2,'0')}`;
+                                     hist.push({ 
+                                         ts: lastDate, 
+                                         text: `${dStr} - ${histText} (+3 pts)`, 
+                                         type: 'good' 
+                                     });
+                                }
+                            }
+                        }
+                    }
+
+                    // 5. Atualiza a string de medalhas ao lado do nome
+                    if(trophyRoom.some(t => t.icon === "💎")) activeMedals += "💎 ";
+
+                    // ==============================================================================
+                    
                     // Simulação Cronológica
                     chronoMatches.forEach(m => {
                         const g = userGuesses.find(x => x.matchId === m.id);
@@ -1806,6 +1819,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
