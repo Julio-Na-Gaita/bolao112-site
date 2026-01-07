@@ -232,17 +232,29 @@ Término oficial: 31 de dezembro de 2026
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // ADICIONADO: enableIndexedDbPersistence
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+
+        // --- OTIMIZAÇÃO: ATIVAR CACHE OFFLINE ---
+        // Isso faz o site carregar instantaneamente na 2ª visita
+        enableIndexedDbPersistence(db).catch((err) => {
+            if (err.code == 'failed-precondition') {
+                console.log('Muitas abas abertas. O cache funcionará em apenas uma.');
+            } else if (err.code == 'unimplemented') {
+                console.log('Navegador não suporta persistência.');
+            }
+        });
+        // ----------------------------------------
+
         let currentUser = null;
         let currentRankingData = [];
         let compMap = {}; 
-        let globalServerCounts = {}; // <--- ADICIONE ISSO
-
+        let globalServerCounts = {};
 // --- REGRAS ATUALIZADAS (WEB v1.4.3) ---
         const rulesData = [
             { 
@@ -1716,6 +1728,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
