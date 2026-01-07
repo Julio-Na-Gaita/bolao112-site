@@ -348,11 +348,11 @@ Término oficial: 31 de dezembro de 2026
 
 // --- FUNÇÃO SINO INTELIGENTE (LISTA ONDE TEM MENSAGEM) ---
        // --- FUNÇÃO SINO: LISTA INTELIGENTE E CLICÁVEL ---
+        // --- FUNÇÃO SINO: SEM ALERT E COM LAYOUT CORRIGIDO ---
         window.updateBadges = () => {
             let unreadGames = [];
             let totalUnread = 0;
 
-            // Usa a lista em cache para não gastar leitura no banco
             if(window.cachedMatches) {
                 window.cachedMatches.forEach(m => {
                     const sCount = globalServerCounts[m.id] || 0;
@@ -360,7 +360,6 @@ Término oficial: 31 de dezembro de 2026
                     
                     if (sCount > lCount) {
                         totalUnread++;
-                        // Salvamos os dados necessários para abrir o chat
                         unreadGames.push({
                             id: m.id,
                             title: `${m.teamA} x ${m.teamB}`,
@@ -372,23 +371,19 @@ Término oficial: 31 de dezembro de 2026
                 });
             }
 
-            // Atualiza o ícone do sino visualmente
             const btnBell = document.getElementById('btnBell');
-            // Remove badge antigo
             const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
-            // Clona para limpar eventos anteriores
             const newBell = btnBell.cloneNode(true); btnBell.parentNode.replaceChild(newBell, btnBell);
 
             if (totalUnread > 0) {
                 newBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
                 newBell.classList.add('text-red-400');
                 
-                // Ao clicar no sino
+                // CLICK NO SINO: Abre direto (sem alert)
                 newBell.onclick = () => {
                     const modal = document.getElementById('modalOverlay');
                     const cont = document.getElementById('modalContainer');
                     
-                    // Gera a lista clicável
                     let listHtml = unreadGames.map(game => `
                         <div onclick="window.openMatchComments('${game.id}', '${game.teamA}', '${game.teamB}', '${game.winner}');" 
                              class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-green-50 transition-colors btn-press">
@@ -398,8 +393,9 @@ Término oficial: 31 de dezembro de 2026
                     `).join('');
 
                     modal.classList.remove('hidden');
+                    // AQUI ESTÁ A CORREÇÃO DO LAYOUT (w-full max-w-sm)
                     cont.innerHTML = `
-                    <div class="bg-white rounded-lg shadow-2xl w-72 overflow-hidden">
+                    <div class="w-full max-w-sm bg-white rounded-lg shadow-2xl overflow-hidden">
                         <div class="bg-[#006400] p-3 text-center">
                             <h3 class="font-black text-[#FFD700] text-sm uppercase tracking-widest">
                                 <i class="fas fa-comment-dots mr-1"></i> RESENHA ATIVA
@@ -410,7 +406,7 @@ Término oficial: 31 de dezembro de 2026
                             <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg mb-4 shadow-inner bg-gray-100">
                                 ${listHtml}
                             </div>
-                            <button onclick="closeModal()" class="w-full bg-gray-800 text-white py-2 rounded font-bold text-xs shadow-md btn-press">
+                            <button onclick="closeModal()" class="w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow-md btn-press">
                                 FECHAR LISTA
                             </button>
                         </div>
@@ -1270,8 +1266,8 @@ window.showKingModal = () => {
         };
 
         // --- NOVA FUNÇÃO PARA LISTA DE MEDALHAS (STACKING) ---
+        // --- NOVA FUNÇÃO PARA LISTA DE MEDALHAS (STACKING) COM FUNDO ---
         window.showMedalList = (medalName) => {
-            // Recupera o usuário atual do modal aberto
             const modalEl = document.getElementById('profileModal');
             if(!modalEl) return;
             const uid = modalEl.getAttribute('data-uid');
@@ -1282,10 +1278,11 @@ window.showKingModal = () => {
             if(medals.length === 0) return;
             
             const first = medals[0];
-
-            // Cria um modal sobreposto (Simples para Web) ou substitui o conteúdo
+            const oldContent = document.getElementById('modalContainer').innerHTML;
+            
+            // Itens da lista com fundo levemente branco para ler em cima da imagem
             const listHtml = medals.map(m => `
-                <div class="bg-gray-50 border border-gray-200 rounded p-3 mb-2 flex flex-col items-center text-center shadow-sm">
+                <div class="bg-white/90 border border-gray-200 rounded p-3 mb-2 flex flex-col items-center text-center shadow-sm">
                     <p class="text-xs font-bold text-black">${m.desc}</p>
                     <div class="flex items-center mt-1 text-[#EF6C00]">
                         <i class="fas fa-calendar-alt text-[10px] mr-1"></i>
@@ -1294,30 +1291,26 @@ window.showKingModal = () => {
                 </div>
             `).join('');
 
-            // Mostra num SweetAlert customizado ou injeta no container
-            // Vamos usar o modalContainer para simplificar, com um botão voltar
-            const oldContent = document.getElementById('modalContainer').innerHTML;
-            
             document.getElementById('modalContainer').innerHTML = `
-                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden h-[400px] flex flex-col">
-                    <div class="bg-white p-4 border-b flex flex-col items-center">
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden h-[400px] flex flex-col relative">
+                    <img src="bg_perfil.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none">
+
+                    <div class="relative z-10 bg-white/80 p-4 border-b flex flex-col items-center">
                         <span class="text-5xl mb-2">${first.icon}</span>
                         <h3 class="font-black text-[#006400] text-lg uppercase">${first.name}</h3>
                         <p class="text-xs text-gray-400">Histórico de Conquistas</p>
                     </div>
-                    <div class="flex-1 overflow-y-auto p-4">
+                    <div class="relative z-10 flex-1 overflow-y-auto p-4">
                         ${listHtml}
                     </div>
-                    <div class="p-3 border-t">
-                        <button id="btnBackMedal" class="w-full bg-[#006400] text-white py-3 rounded font-bold">VOLTAR</button>
+                    <div class="relative z-10 p-3 border-t bg-white">
+                        <button id="btnBackMedal" class="w-full bg-[#006400] text-white py-3 rounded font-bold shadow btn-press">VOLTAR</button>
                     </div>
                 </div>
             `;
             
             document.getElementById('btnBackMedal').onclick = () => {
                 document.getElementById('modalContainer').innerHTML = oldContent;
-                // Re-bind dos eventos do modal anterior (Chato no JS puro, mas necessário)
-                // Truque: Rechamamos showModalPhoto para reconstruir
                 const idx = currentRankingData.findIndex(x => x.uid === uid);
                 window.showModalPhoto(idx);
             };
@@ -1720,5 +1713,6 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
