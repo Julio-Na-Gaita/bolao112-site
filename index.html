@@ -1323,50 +1323,6 @@ window.showKingModal = () => {
             };
         };
 
-        // --- ATUALIZAÇÃO DA FUNÇÃO DO SINO (CLICK ABRE CHAT) ---
-        window.updateBadges = () => {
-            let unreadGames = [];
-            let totalUnread = 0;
-            if(window.cachedMatches) {
-                window.cachedMatches.forEach(m => {
-                    const sCount = globalServerCounts[m.id] || 0;
-                    const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
-                    if (sCount > lCount) {
-                        totalUnread++;
-                        // Agora guardamos o Objeto match todo, e o titulo
-                        unreadGames.push({ id: m.id, title: `${m.teamA} x ${m.teamB}`, teamA: m.teamA, teamB: m.teamB, winner: m.winner });
-                    }
-                });
-            }
-
-            const btnBell = document.getElementById('btnBell');
-            const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
-            const newBell = btnBell.cloneNode(true); btnBell.parentNode.replaceChild(newBell, btnBell);
-
-            if (totalUnread > 0) {
-                newBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
-                newBell.classList.add('text-red-400');
-                
-                newBell.onclick = () => {
-                    const modal = document.getElementById('modalOverlay');
-                    const cont = document.getElementById('modalContainer');
-                    
-                    let listHtml = unreadGames.map(game => `
-                        <div onclick="window.openMatchComments('${game.id}', '${game.teamA}', '${game.teamB}', '${game.winner||''}');" class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-100">
-                            <span class="text-xs font-bold text-gray-700">💬 ⚽ ${game.title}</span>
-                            <span class="text-[9px] text-green-600 font-bold uppercase tracking-wider">Nova Msg</span>
-                        </div>
-                    `).join('');
-
-                    modal.classList.remove('hidden');
-                    cont.innerHTML = `<div class="bg-white rounded-lg shadow-2xl w-72 overflow-hidden"><div class="bg-[#006400] p-3 text-center"><h3 class="font-black text-[#FFD700] text-sm uppercase tracking-widest"><i class="fas fa-comment-dots mr-1"></i> RESENHA ATIVA</h3></div><div class="p-4"><p class="text-[10px] text-gray-500 font-bold mb-2 uppercase text-center">Toque para abrir:</p><div class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg mb-4 shadow-inner bg-gray-100">${listHtml}</div><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-2 rounded font-bold text-xs shadow-md btn-press">FECHAR</button></div></div>`;
-                };
-            } else {
-                newBell.classList.remove('text-red-400');
-                newBell.onclick = () => alert("Nenhuma nova mensagem.");
-            }
-        };
-
         // Função auxiliar para mostrar o Toast
         window.showToast = (title, desc, date) => {
             const toast = document.getElementById('medalToast');
@@ -1764,4 +1720,5 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
