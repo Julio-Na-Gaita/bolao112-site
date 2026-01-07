@@ -424,18 +424,18 @@ Término oficial: 31 de dezembro de 2026
             }
         };
         
-        // --- FUNÇÃO LOADMATCHES COM TERMÔMETRO ---
-           async function loadMatches() {
+        // --- FUNÇÃO LOADMATCHES (SEM O ALERT CHATO) ---
+        async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
             try {
-                // 1. Buscamos TUDO de uma vez (Inclusive Comentários agora)
+                // 1. Buscamos TUDO de uma vez
                 const [setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap] = await Promise.all([
                     getDoc(doc(db, "settings", "competitions")),
                     getDocs(collection(db, "matches")),
                     getDocs(collection(db, "guesses")),
                     getDocs(collection(db, "users")),
-                    getDocs(collection(db, "match_comments")) // <--- TRAZEMOS PARA O INÍCIO
+                    getDocs(collection(db, "match_comments"))
                 ]);
 
                 const totalParticipants = uSnap.size || 1; 
@@ -458,7 +458,7 @@ Término oficial: 31 de dezembro de 2026
                     const mid = doc.data().matchId;
                     serverCounts[mid] = (serverCounts[mid] || 0) + 1;
                 });
-                globalServerCounts = serverCounts; // <--- SALVA NO GLOBAL
+                globalServerCounts = serverCounts; // Salva no Global para a função do sino usar
                 
                 const now = new Date();
                 let allMatchesList = [];
@@ -480,19 +480,17 @@ Término oficial: 31 de dezembro de 2026
                     if (timeDiff !== 0) return timeDiff;
                     return a.id.localeCompare(b.id);
                 });
-// --- ADICIONE ESTA LINHA AQUI ---
-                window.cachedMatches = allMatchesList; // Salva para o sino usar
-                // --------------------------------
+
+                window.cachedMatches = allMatchesList; // Salva cache para o sino
+
                 let open = [], waiting = [], finished = [];
-                
-                // Lógica de Notificação Global (Sino e Pulse)
                 let totalUnread = 0;
                 let unreadInOpen = false, unreadInWaiting = false, unreadInFinished = false;
 
                 allMatchesList.forEach((m, index) => {
                     m.matchNumber = index + 1;
                     
-                    // Checa mensagens não lidas
+                    // Lógica das bolinhas vermelhas nos cabeçalhos (Pulse)
                     const sCount = serverCounts[m.id] || 0;
                     const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
                     if (sCount > lCount) {
@@ -510,10 +508,10 @@ Término oficial: 31 de dezembro de 2026
                 waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
                 finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
                 
-                // --- RENDERIZAÇÃO COM CONTADORES ---
+                // --- RENDERIZAÇÃO ---
                 let html = "";
                 
-                // 1. Abertos (Adicionado: (${open.length}))
+                // 1. Abertos
                 const pulseOpen = unreadInOpen ? '<span class="pulse-dot"></span>' : '';
                 html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press">
                             <div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
@@ -525,7 +523,7 @@ Término oficial: 31 de dezembro de 2026
                             ${open.length > 0 ? await renderMatchList(open, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}
                          </div>`;
                 
-                // 2. Aguardando (Adicionado: (${waiting.length}))
+                // 2. Aguardando
                 const pulseWait = unreadInWaiting ? '<span class="pulse-dot"></span>' : '';
                 html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${waiting.length}) AGUARDANDO ⏳${pulseWait}</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">
                     ${waiting.length 
@@ -533,7 +531,7 @@ Término oficial: 31 de dezembro de 2026
                         : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando.</div>`
                     }</div>`;
                 
-                // 3. Finalizados (Adicionado: (${finished.length}))
+                // 3. Finalizados
                 if(finished.length) {
                     const pulseFin = unreadInFinished ? '<span class="pulse-dot"></span>' : '';
                     html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`;
@@ -541,15 +539,11 @@ Término oficial: 31 de dezembro de 2026
                 
                 container.innerHTML = html;
 
-                // Atualiza SINO
-                const btnBell = document.getElementById('btnBell');
-                const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
-                if (totalUnread > 0) {
-                    btnBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
-                    btnBell.onclick = () => alert(`Você tem mensagens não lidas em ${totalUnread} jogos!`);
-                } else {
-                    btnBell.onclick = () => alert("Nenhuma nova mensagem.");
-                }
+                // =================================================================
+                // 🔔 CORREÇÃO SINO: REMOVIDO CÓDIGO ANTIGO, CHAMAMOS A NOVA LÓGICA
+                // =================================================================
+                window.updateBadges(); 
+                // =================================================================
 
                 // Atualiza Badge de Votos Pendentes (Aba Inferior)
                 let pendingCount = 0;
@@ -1722,6 +1716,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
