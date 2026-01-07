@@ -1070,6 +1070,18 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
 
                             // 3. Se gabaritou (8/8)
                             if (hits === 8) {
+                                const dStr = lastDate.toLocaleDateString('pt-BR').substring(0,5); // Ex: 15/06
+                                const histText = `💎 BÔNUS: Gabaritou Oitavas (${compName})`;
+                                
+                                // Verifica duplicidade antes de adicionar
+                                if(!hist.some(h => h.text.includes(histText))) {
+                                     hist.push({ 
+                                         ts: lastDate, 
+                                         // AQUI ESTÁ O TEXTO QUE VAI APARECER:
+                                         text: `📅 ${dStr} - ${histText} (+3 pts)`, 
+                                         type: 'good' // 'good' deixa o texto verde
+                                     });
+                                }
                                 // Pontos Bônus
                                 p += 3;
                                 
@@ -1175,7 +1187,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
 
                     matches.forEach(m => { const dl = m.deadlineDate; if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
                     const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
-                    
+                    hist.sort((a,b) => b.ts - a.ts);
                     users.push({ uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: activeMedals, trophyRoom: trophyRoom }); 
                 }); 
                 
@@ -1814,6 +1826,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
