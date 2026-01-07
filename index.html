@@ -248,7 +248,7 @@ Término oficial: 31 de dezembro de 2026
 
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-4"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
                 
-                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5.3</p>
+                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5.5</p>
             </div>
         </div>
     </main>
@@ -371,15 +371,15 @@ Término oficial: 31 de dezembro de 2026
                 const name = document.getElementById('regName').value.trim(); const user = document.getElementById('regUser').value.trim().toLowerCase(); const pass = document.getElementById('regPass').value;
                 if(!name || !user || pass.length < 6) { alert("Dados inválidos."); return; }
                 if(user.includes(" ")) { alert("Usuário sem espaços."); return; }
-                try { const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); await setDoc(doc(db, "users", res.user.uid), { name, username: user, createdAt: new Date(), isAdmin: false, debts: 0, payments: {}, appVersion: "Web v1.5.3" }); alert("Conta criada!"); closeModal(); } catch(e) { alert("Erro ao criar conta: " + e.message); }
+                try { const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); await setDoc(doc(db, "users", res.user.uid), { name, username: user, createdAt: new Date(), isAdmin: false, debts: 0, payments: {}, appVersion: "Web v1.5.5" }); alert("Conta criada!"); closeModal(); } catch(e) { alert("Erro ao criar conta: " + e.message); }
             };
         };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // ATUALIZANDO VERSÃO PARA 1.5.3
-                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.3" }); } catch(e) {}
+                // ATUALIZANDO VERSÃO PARA 1.5.5
+                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.5" }); } catch(e) {}
                 document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('mainScreens').classList.remove('hidden'); document.getElementById('bottomNav').classList.remove('hidden'); document.getElementById('btnLogout').classList.remove('hidden');
                 showTab('matches'); calculatePot();
             } else {
@@ -1624,7 +1624,7 @@ async function loadAdminMatches() {
         
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.5.1) ---
+        // --- GUIA DO APP ATUALIZADO (v1.5.5) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
@@ -1632,7 +1632,7 @@ async function loadAdminMatches() {
                 <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
-                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.5.3</p>
+                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.5.5</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
@@ -1926,6 +1926,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
