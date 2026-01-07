@@ -1044,6 +1044,65 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     
                     // --- SALA DE TROFÉUS (ACUMULATIVA) ---
                     let trophyRoom = [];
+
+// ==============================================================================
+                    // ⬇️ COLE ESTE BLOCO AQUI (LÓGICA DIAMANTE CORRIGIDA) ⬇️
+                    // ==============================================================================
+                    
+                    // 1. Agrupa jogos das Oitavas por Competição
+                    const oitavasMatches = finishedDisplay.filter(m => m.round === "Oitavas de final");
+                    const oitavasByComp = {};
+                    
+                    oitavasMatches.forEach(m => {
+                        if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = [];
+                        oitavasByComp[m.competition].push(m);
+                    });
+
+                    // 2. Verifica cada competição
+                    for (const [compName, matches] of Object.entries(oitavasByComp)) {
+                        // Só vale se tiver exatamente 8 jogos cadastrados e finalizados nesta competição
+                        if (matches.length === 8) {
+                            let hits = 0;
+                            matches.forEach(m => {
+                                const g = userGuesses.find(x => x.matchId === m.id);
+                                if (g && g.teamSelected === m.winner) hits++;
+                            });
+
+                            // 3. Se gabaritou (8/8)
+                            if (hits === 8) {
+                                // Pontos Bônus
+                                p += 3;
+                                
+                                // Verifica se conta para o Mês Atual
+                                const lastDate = matches[0].deadlineDate; 
+                                if (lastDate.getMonth() === currentMonthIdx && lastDate.getFullYear() === currentYear) {
+                                    monthlyP += 3;
+                                }
+
+                                // Adiciona Medalha na Sala (Agora detalhada)
+                                const dStr = lastDate.toLocaleDateString('pt-BR');
+                                trophyRoom.push({
+                                    icon: "💎", 
+                                    name: "DIAMANTE", 
+                                    desc: `Gabaritou as Oitavas (8/8) da ${compName}.`,
+                                    date: dStr
+                                });
+                                
+                                // Adiciona ao Extrato (Histórico)
+                                const histText = `💎 BÔNUS: Gabaritou Oitavas (${compName})`;
+                                if(!hist.some(h => h.text.includes(histText))) {
+                                     hist.push({ 
+                                         ts: lastDate, 
+                                         text: `📅 ${dStr.substring(0,5)} - ${histText} (+3 pts)`, 
+                                         type: 'good' 
+                                     });
+                                }
+                            }
+                        }
+                    }
+                    // ==============================================================================
+                    // ⬆️ FIM DO BLOCO DIAMANTE ⬆️
+                    
                     let simStreak = 0;
                     let simStreakBroken = false;
                     let vetCount = 0;
@@ -1106,8 +1165,8 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     // -------------------------------------------------------
                     const veteranLevel = Math.floor(v / 50);
                     for(let i=0; i<veteranLevel; i++) { activeMedals += "🎓 "; trophyRoom.push({icon:"🎓", name:`VETERANO Nvl ${i+1}`, desc:`Conquistou ${(i+1)*50} acertos.`}); }
-
-                    if(hist.some(h => h.text.includes("Bônus Oitavas"))) { activeMedals += "💎 "; trophyRoom.push({icon:"💎", name:"DIAMANTE", desc:"Gabaritou Oitavas."}); }
+// ADICIONE ISSO NO LUGAR (Para aparecer o ícone 💎 ao lado do nome):
+                    if (trophyRoom.some(t => t.icon === "💎")) activeMedals += "💎 ";
                     if (f > 0) { activeMedals += "🔮 "; trophyRoom.push({icon:"🔮", name:"MÃE DINAH", desc:`Acertou ${f} campeões.`}); }
 
                     let allPaid = true;
@@ -1755,6 +1814,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
