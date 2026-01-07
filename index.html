@@ -1002,7 +1002,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     const rawUserGuesses = []; gSnap.forEach(gd => { if(gd.data().userId === ud.id) rawUserGuesses.push(gd.data()) }); 
                     const userGuesses = rawUserGuesses.filter(g => validMatchIds.has(g.matchId)); 
                     
-                    // Pontos base dos jogos individuais
+                    // Pontos base
                     finishedDisplay.forEach(m => { 
                         const g = userGuesses.find(x => x.matchId === m.id); 
                         const isThisMonth = m.deadlineDate.getMonth() === currentMonthIdx && m.deadlineDate.getFullYear() === currentYear; 
@@ -1018,19 +1018,17 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                         } 
                     }); 
                     
-                    // NOTA: A linha monthlyData.push NÃO fica aqui, pois o bônus Diamante ainda não foi somado.
-                    
                     let trophyRoom = []; 
 
                     // ==========================================================
-                    // 💎 LÓGICA DIAMANTE (Igual Android)
+                    // 💎 LÓGICA DIAMANTE & MENSAL (Igual Android)
                     // ==========================================================
                     const oitavasMatches = finishedDisplay.filter(m => m.round === "Oitavas de final");
                     const oitavasByComp = {};
                     oitavasMatches.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); });
 
                     for (const [compName, groupMatches] of Object.entries(oitavasByComp)) {
-                        if (groupMatches.length === 8) { // Só se tiver 8 jogos
+                        if (groupMatches.length === 8) { 
                             let hits = 0;
                             groupMatches.forEach(m => {
                                 const g = userGuesses.find(x => x.matchId === m.id);
@@ -1038,19 +1036,19 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                             });
 
                             if (hits === 8) {
-                                p += 3; // Bônus no total
-                                const lastDate = groupMatches[0].deadlineDate; 
+                                p += 3; // Bônus Geral
+                                const lastDate = groupMatches[0].deadlineDate;
                                 
-                                // Bônus no mensal (se for do mês atual)
+                                // Bônus Mensal (Se for do mês atual)
                                 if (lastDate.getMonth() === currentMonthIdx && lastDate.getFullYear() === currentYear) {
-                                    monthlyP += 3; // <--- AGORA SIM SOMA NO MENSAL
+                                    monthlyP += 3; 
                                 }
 
-                                // Medalha na Sala
+                                // Medalha
                                 const dStr = lastDate.toLocaleDateString('pt-BR');
                                 trophyRoom.push({ icon: "💎", name: "DIAMANTE", desc: `Gabaritou as Oitavas (8/8) da ${compName}.`, date: dStr });
                                 
-                                // Histórico (Extrato)
+                                // Histórico
                                 const histText = `💎 BÔNUS: Gabaritou Oitavas (${compName})`;
                                 if(!hist.some(h => h.text.includes(histText))) {
                                      hist.push({ ts: lastDate, text: `📅 ${dStr.substring(0,5)} - ${histText} (+3 pts)`, type: 'good' });
@@ -1088,7 +1086,6 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     if (finishedDisplay.length > 0) { const lastMatch = finishedDisplay[0]; if (zebraMatchIds.includes(lastMatch.id)) { const g = userGuesses.find(x => x.matchId === lastMatch.id); if (g && g.teamSelected === lastMatch.winner) { activeMedals += "🦓 "; } } }
                     const veteranLevel = Math.floor(v / 50); for(let i=0; i<veteranLevel; i++) { activeMedals += "🎓 "; }
                     
-                    // Adiciona Diamante ao nome se tiver ganho
                     if (trophyRoom.some(t => t.icon === "💎")) activeMedals += "💎 ";
 
                     if (f > 0) { activeMedals += "🔮 "; trophyRoom.push({icon:"🔮", name:"MÃE DINAH", desc:`Acertou ${f} campeões.`}); }
@@ -1099,15 +1096,27 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     matches.forEach(m => { const dl = m.deadlineDate; if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
                     const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
                     
-                    hist.sort((a,b) => b.ts - a.ts); // Ordena extrato pela data (novo em cima)
+                    // Ordena Histórico
+                    hist.sort((a,b) => b.ts - a.ts);
                     
-                    // AGORA SIM SALVAMOS NA LISTA MENSAL (Com o bônus Diamante já somado)
+                    // Salva na lista
                     monthlyData.push({ name: u.name || "Sem Nome", points: monthlyP, uid: ud.id });
-                    
                     users.push({ uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: activeMedals, trophyRoom: trophyRoom }); 
                 }); 
                 
-                users.sort((a,b) => { if (b.p !== a.p) return b.p - a.p; if (a.d !== b.d) return a.d - b.d; const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"]; for (let icon of hierarchy) { const countA = a.trophyRoom.filter(m => m.icon === icon).length; const countB = b.trophyRoom.filter(m => m.icon === icon).length; if (countB !== countA) return countB - countA; } return 0; });
+                // Ordenação Geral
+                users.sort((a,b) => { 
+                    if (b.p !== a.p) return b.p - a.p; 
+                    if (a.d !== b.d) return a.d - b.d; 
+                    const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"]; 
+                    for (let icon of hierarchy) { 
+                        const countA = a.trophyRoom.filter(m => m.icon === icon).length; 
+                        const countB = b.trophyRoom.filter(m => m.icon === icon).length; 
+                        if (countB !== countA) return countB - countA; 
+                    } 
+                    return 0; 
+                });
+                
                 monthlyData.sort((a,b) => b.points - a.points); 
                 
                 if (users.length > 2) { const lastUsers = [users[users.length-1], users[users.length-2]]; lastUsers.forEach(u => { if(u) u.trophyRoom.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Atual: Z-2"}); }); }
@@ -1189,72 +1198,189 @@ window.showKingModal = () => {
             
             let imageContent = u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">` : `<div class="w-full h-full bg-gray-200 flex items-center justify-center"><i class="fas fa-user text-6xl text-gray-400"></i></div>`;
 
-            // HTML das Medalhas
+            // --- LÓGICA DE STACKING E ORDENAÇÃO DE MEDALHAS ---
             let medalsHtml = "";
             if (u.trophyRoom && u.trophyRoom.length > 0) {
-                medalsHtml = u.trophyRoom.map(m => 
-                    `<span class="cursor-pointer mx-1 hover:scale-110 transition-transform select-none drop-shadow-md" 
-                           onclick="showToast('${m.name}', '${m.desc}', '${m.date || ''}')">
-                        ${m.icon}
-                    </span>`
-                ).join('');
+                // 1. Ordem de prioridade
+                const priorityOrder = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰"];
+                
+                // 2. Ordena
+                u.trophyRoom.sort((a,b) => {
+                    const idxA = priorityOrder.indexOf(a.icon);
+                    const idxB = priorityOrder.indexOf(b.icon);
+                    return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+                });
+
+                // 3. Agrupa por nome
+                const grouped = {};
+                u.trophyRoom.forEach(m => {
+                    if (!grouped[m.name]) grouped[m.name] = [];
+                    grouped[m.name].push(m);
+                });
+
+                // 4. Gera HTML
+                for (const [name, medals] of Object.entries(grouped)) {
+                    const count = medals.length;
+                    const first = medals[0];
+                    const isLegendary = count >= 10;
+                    
+                    // Estilos da Bolinha (Badge)
+                    const badgeBg = isLegendary ? "bg-[#FFD700] text-black shadow-lg" : "bg-[#D32F2F] text-white shadow-md";
+                    const badgeSize = isLegendary ? "w-6 h-6 text-[9px]" : "w-5 h-5 text-[8px]";
+                    
+                    let badgeHtml = "";
+                    if (count > 1) {
+                        badgeHtml = `<div class="absolute -top-2 -right-2 ${badgeBg} ${badgeSize} rounded-full flex items-center justify-center font-black border-2 border-white z-10">${count}x</div>`;
+                    }
+                    
+                    // Click: Se > 1 abre lista, senão Toast
+                    const clickAction = count > 1 
+                        ? `showMedalList('${name}')` 
+                        : `showToast('${first.name}', '${first.desc}', '${first.date}')`;
+
+                    medalsHtml += `
+                        <div class="relative inline-block mx-1 my-1 cursor-pointer hover:scale-110 transition-transform select-none group" onclick="${clickAction}">
+                            ${badgeHtml}
+                            <span class="text-4xl drop-shadow-sm">${first.icon}</span>
+                        </div>
+                    `;
+                }
             } else {
                 medalsHtml = `<span class="text-xs text-gray-400 italic">Ainda não possui troféus.</span>`;
             }
+            // ----------------------------------------------------
 
-            // Verifica se sou eu para esconder o botão de comparar
             const isMe = currentUser && currentUser.uid === u.uid;
             const compareBtnClass = isMe ? "hidden" : "";
 
+            // ATENÇÃO: Adicionei um ID para recuperar a lista depois (data-uid)
             document.getElementById('modalContainer').innerHTML = `
-                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" id="profileModal" data-uid="${u.uid}">
                     <img src="bg_dialog_foto.png" class="absolute inset-0 w-full h-full object-cover opacity-100">
-                    
-                    <div class="relative z-10 p-6 text-center flex flex-col items-center">
+                    <div class="relative z-10 p-6 text-center flex flex-col items-center max-h-[85vh] overflow-y-auto">
                         <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl tracking-wider">${u.name}</h3>
-                        
-                        <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-2xl bg-black w-[260px] h-[260px] flex items-center justify-center mb-6 relative">
+                        <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-2xl bg-black w-[240px] h-[240px] flex items-center justify-center mb-6 relative">
                             ${imageContent}
                             <div class="absolute inset-0 border border-white/20 rounded-xl pointer-events-none"></div>
                         </div>
-                        
                         <div class="w-full mb-4">
                             <div class="bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#FFD700] border-y-2 border-[#B8860B] shadow-lg p-2 mb-3 transform skew-x-[-5deg]">
-                                <p class="text-[12px] text-[#3E2723] font-black uppercase tracking-[0.2em] transform skew-x-[5deg] drop-shadow-sm">
-                                    ✨ Sala de Troféus ✨
-                                </p>
+                                <p class="text-[12px] text-[#3E2723] font-black uppercase tracking-[0.2em] transform skew-x-[5deg]">✨ Sala de Troféus ✨</p>
                             </div>
-                            
-                            <div class="text-4xl tracking-widest flex justify-center flex-wrap relative max-h-[80px] overflow-y-auto py-2">
+                            <div class="flex flex-wrap justify-center py-2 px-2 min-h-[60px]">
                                 ${medalsHtml}
                             </div>
-                            <p class="text-[9px] text-black-500 mt-1 font-bold">(Toque para detalhes)</p>
+                            <p class="text-[9px] text-gray-500 mt-1 font-bold">(Toque na medalha para ver detalhes)</p>
                         </div>
-
                         <div id="medalToast" class="medal-toast"></div>
-
                         <div class="w-full space-y-2 mt-2">
-                            <button id="btnStatsAction" class="w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
-                                <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
-                            </button>
-                            
-                            <button id="btnCompareAction" class="${compareBtnClass} w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press flex items-center justify-center gap-2">
-                                <i class="fas fa-exchange-alt"></i> COMPARAR PALPITES
-                            </button>
-                            
-                            <button onclick="closeModal()" class="w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press">
-                                FECHAR
-                            </button>
+                            <button id="btnStatsAction" class="w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press"><i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO</button>
+                            <button id="btnCompareAction" class="${compareBtnClass} w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press flex items-center justify-center gap-2"><i class="fas fa-exchange-alt"></i> COMPARAR PALPITES</button>
+                            <button onclick="closeModal()" class="w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press">FECHAR</button>
                         </div>
                     </div>
                 </div>`;
             
-            // Reatribui os eventos de clique
-            const btnStats = document.getElementById('btnStatsAction');
-            if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
+            const btnStats = document.getElementById('btnStatsAction'); if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
+            const btnCompare = document.getElementById('btnCompareAction'); if (btnCompare && !isMe) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
+        };
+
+        // --- NOVA FUNÇÃO PARA LISTA DE MEDALHAS (STACKING) ---
+        window.showMedalList = (medalName) => {
+            // Recupera o usuário atual do modal aberto
+            const modalEl = document.getElementById('profileModal');
+            if(!modalEl) return;
+            const uid = modalEl.getAttribute('data-uid');
+            const u = currentRankingData.find(user => user.uid === uid);
+            if(!u) return;
+
+            const medals = u.trophyRoom.filter(m => m.name === medalName);
+            if(medals.length === 0) return;
             
-            const btnCompare = document.getElementById('btnCompareAction');
-            if (btnCompare && !isMe) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
+            const first = medals[0];
+
+            // Cria um modal sobreposto (Simples para Web) ou substitui o conteúdo
+            const listHtml = medals.map(m => `
+                <div class="bg-gray-50 border border-gray-200 rounded p-3 mb-2 flex flex-col items-center text-center shadow-sm">
+                    <p class="text-xs font-bold text-black">${m.desc}</p>
+                    <div class="flex items-center mt-1 text-[#EF6C00]">
+                        <i class="fas fa-calendar-alt text-[10px] mr-1"></i>
+                        <span class="text-[10px] font-bold">Conquistado em: ${m.date}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Mostra num SweetAlert customizado ou injeta no container
+            // Vamos usar o modalContainer para simplificar, com um botão voltar
+            const oldContent = document.getElementById('modalContainer').innerHTML;
+            
+            document.getElementById('modalContainer').innerHTML = `
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden h-[400px] flex flex-col">
+                    <div class="bg-white p-4 border-b flex flex-col items-center">
+                        <span class="text-5xl mb-2">${first.icon}</span>
+                        <h3 class="font-black text-[#006400] text-lg uppercase">${first.name}</h3>
+                        <p class="text-xs text-gray-400">Histórico de Conquistas</p>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4">
+                        ${listHtml}
+                    </div>
+                    <div class="p-3 border-t">
+                        <button id="btnBackMedal" class="w-full bg-[#006400] text-white py-3 rounded font-bold">VOLTAR</button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('btnBackMedal').onclick = () => {
+                document.getElementById('modalContainer').innerHTML = oldContent;
+                // Re-bind dos eventos do modal anterior (Chato no JS puro, mas necessário)
+                // Truque: Rechamamos showModalPhoto para reconstruir
+                const idx = currentRankingData.findIndex(x => x.uid === uid);
+                window.showModalPhoto(idx);
+            };
+        };
+
+        // --- ATUALIZAÇÃO DA FUNÇÃO DO SINO (CLICK ABRE CHAT) ---
+        window.updateBadges = () => {
+            let unreadGames = [];
+            let totalUnread = 0;
+            if(window.cachedMatches) {
+                window.cachedMatches.forEach(m => {
+                    const sCount = globalServerCounts[m.id] || 0;
+                    const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
+                    if (sCount > lCount) {
+                        totalUnread++;
+                        // Agora guardamos o Objeto match todo, e o titulo
+                        unreadGames.push({ id: m.id, title: `${m.teamA} x ${m.teamB}`, teamA: m.teamA, teamB: m.teamB, winner: m.winner });
+                    }
+                });
+            }
+
+            const btnBell = document.getElementById('btnBell');
+            const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
+            const newBell = btnBell.cloneNode(true); btnBell.parentNode.replaceChild(newBell, btnBell);
+
+            if (totalUnread > 0) {
+                newBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
+                newBell.classList.add('text-red-400');
+                
+                newBell.onclick = () => {
+                    const modal = document.getElementById('modalOverlay');
+                    const cont = document.getElementById('modalContainer');
+                    
+                    let listHtml = unreadGames.map(game => `
+                        <div onclick="window.openMatchComments('${game.id}', '${game.teamA}', '${game.teamB}', '${game.winner||''}');" class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-100">
+                            <span class="text-xs font-bold text-gray-700">💬 ⚽ ${game.title}</span>
+                            <span class="text-[9px] text-green-600 font-bold uppercase tracking-wider">Nova Msg</span>
+                        </div>
+                    `).join('');
+
+                    modal.classList.remove('hidden');
+                    cont.innerHTML = `<div class="bg-white rounded-lg shadow-2xl w-72 overflow-hidden"><div class="bg-[#006400] p-3 text-center"><h3 class="font-black text-[#FFD700] text-sm uppercase tracking-widest"><i class="fas fa-comment-dots mr-1"></i> RESENHA ATIVA</h3></div><div class="p-4"><p class="text-[10px] text-gray-500 font-bold mb-2 uppercase text-center">Toque para abrir:</p><div class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg mb-4 shadow-inner bg-gray-100">${listHtml}</div><button onclick="closeModal()" class="w-full bg-[#006400] text-white py-2 rounded font-bold text-xs shadow-md btn-press">FECHAR</button></div></div>`;
+                };
+            } else {
+                newBell.classList.remove('text-red-400');
+                newBell.onclick = () => alert("Nenhuma nova mensagem.");
+            }
         };
 
         // Função auxiliar para mostrar o Toast
@@ -1647,6 +1773,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
