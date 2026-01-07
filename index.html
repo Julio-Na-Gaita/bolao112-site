@@ -347,11 +347,12 @@ Término oficial: 31 de dezembro de 2026
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
 
 // --- FUNÇÃO SINO INTELIGENTE (LISTA ONDE TEM MENSAGEM) ---
+       // --- FUNÇÃO SINO: LISTA INTELIGENTE E CLICÁVEL ---
         window.updateBadges = () => {
             let unreadGames = [];
             let totalUnread = 0;
 
-            // Usa a lista salva no passo 1
+            // Usa a lista em cache para não gastar leitura no banco
             if(window.cachedMatches) {
                 window.cachedMatches.forEach(m => {
                     const sCount = globalServerCounts[m.id] || 0;
@@ -359,40 +360,40 @@ Término oficial: 31 de dezembro de 2026
                     
                     if (sCount > lCount) {
                         totalUnread++;
-                        // Adiciona o nome do jogo na lista
+                        // Salvamos os dados necessários para abrir o chat
                         unreadGames.push({
                             id: m.id,
-                            title: `${m.teamA} x ${m.teamB}`
+                            title: `${m.teamA} x ${m.teamB}`,
+                            teamA: m.teamA,
+                            teamB: m.teamB,
+                            winner: m.winner || ''
                         });
                     }
                 });
             }
 
-            // Atualiza o Ícone do Sino
+            // Atualiza o ícone do sino visualmente
             const btnBell = document.getElementById('btnBell');
-            // Remove badge antigo se houver
-            const old = btnBell.querySelector('.bell-badge'); 
-            if(old) old.remove();
-            
-            // Recria o botão para limpar eventos de clique antigos (evita duplicação)
-            const newBell = btnBell.cloneNode(true);
-            btnBell.parentNode.replaceChild(newBell, btnBell);
+            // Remove badge antigo
+            const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
+            // Clona para limpar eventos anteriores
+            const newBell = btnBell.cloneNode(true); btnBell.parentNode.replaceChild(newBell, btnBell);
 
             if (totalUnread > 0) {
-                // Adiciona a bolinha vermelha com o número
                 newBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
-                newBell.classList.add('text-red-400'); // Deixa o sino vermelho
+                newBell.classList.add('text-red-400');
                 
-                // --- CLIQUE NO SINO: ABRE LISTA DE JOGOS ---
+                // Ao clicar no sino
                 newBell.onclick = () => {
                     const modal = document.getElementById('modalOverlay');
                     const cont = document.getElementById('modalContainer');
                     
-                    // Gera o HTML da lista de jogos
+                    // Gera a lista clicável
                     let listHtml = unreadGames.map(game => `
-                        <div class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                        <div onclick="window.openMatchComments('${game.id}', '${game.teamA}', '${game.teamB}', '${game.winner}');" 
+                             class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-green-50 transition-colors btn-press">
                             <span class="text-xs font-bold text-gray-700">⚽ ${game.title}</span>
-                            <span class="text-[9px] text-green-600 font-bold uppercase tracking-wider">Nova Msg</span>
+                            <span class="text-[9px] text-green-600 font-bold uppercase tracking-wider bg-green-100 px-2 py-1 rounded">Ler</span>
                         </div>
                     `).join('');
 
@@ -404,37 +405,20 @@ Término oficial: 31 de dezembro de 2026
                                 <i class="fas fa-comment-dots mr-1"></i> RESENHA ATIVA
                             </h3>
                         </div>
-                        
                         <div class="p-4">
-                            <p class="text-[10px] text-gray-500 font-bold mb-2 uppercase text-center">Mensagens não lidas em:</p>
-                            
+                            <p class="text-[10px] text-gray-500 font-bold mb-2 uppercase text-center">Toque para responder:</p>
                             <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg mb-4 shadow-inner bg-gray-100">
                                 ${listHtml}
                             </div>
-
-                            <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-2 rounded font-bold text-xs shadow-md btn-press">
-                                OK, VOU LÁ!
+                            <button onclick="closeModal()" class="w-full bg-gray-800 text-white py-2 rounded font-bold text-xs shadow-md btn-press">
+                                FECHAR LISTA
                             </button>
                         </div>
                     </div>`;
                 };
-
             } else {
-                // Se não tem mensagens
                 newBell.classList.remove('text-red-400');
-                newBell.onclick = () => {
-                    const modal = document.getElementById('modalOverlay');
-                    const cont = document.getElementById('modalContainer');
-                    modal.classList.remove('hidden');
-                    cont.innerHTML = `
-                        <div class="bg-white p-6 rounded-lg text-center shadow-xl w-64">
-                            <i class="fas fa-check-circle text-4xl text-gray-300 mb-3"></i>
-                            <p class="text-gray-600 font-bold text-sm">Tudo lido por aqui!</p>
-                            <p class="text-[10px] text-gray-400 mt-1">Nenhuma nova resenha.</p>
-                            <button onclick="closeModal()" class="mt-4 text-[#006400] font-bold text-xs uppercase btn-press">Fechar</button>
-                        </div>
-                    `;
-                };
+                newBell.onclick = () => alert("Nenhuma nova mensagem.");
             }
         };
         
@@ -1536,28 +1520,29 @@ async function loadAdminMatches() {
         document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
         document.getElementById('btnLogout').onclick = () => signOut(auth);
 
-        // --- RESENHA (COMENTÁRIOS) COM BLOQUEIO ---
+       // --- RESENHA (CHAT) COM ATUALIZAÇÃO IMEDIATA DE LEITURA ---
         window.openMatchComments = async (mid, ta, tb, winner) => {
-            // 1. Marca como lido imediatamente
+            // 1. Marca como lido IMEDIATAMENTE ao abrir
             const currentCount = globalServerCounts[mid] || 0;
             localStorage.setItem(`read_count_${mid}`, currentCount);
             
-            // 2. Remove a bolinha do botão deste jogo especificamente (Visual imediato)
-            // (O botão que foi clicado)
-            const btn = event.currentTarget; // O botão que chamou a função
-            if(btn) {
-                const badge = btn.querySelector('.absolute'); // A div da bolinha
+            // 2. Remove a bolinha do card do jogo (Visual)
+            // (Tenta achar o botão na tela se estiver visível)
+            const matchBtns = document.querySelectorAll(`button[onclick*="${mid}"]`);
+            matchBtns.forEach(btn => {
+                const badge = btn.querySelector('.absolute');
                 if(badge) badge.remove();
-            }
+            });
 
-            // 3. Atualiza o Sino Global
+            // 3. Atualiza o Sino Global (Remove a notificação lá em cima)
             window.updateBadges();
+
+            // 4. Abre o Modal do Chat
             const modal = document.getElementById('modalOverlay'); 
             const cont = document.getElementById('modalContainer'); 
             modal.classList.remove('hidden'); 
             cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
             
-            // Verifica se está finalizado
             const isFinished = winner && winner !== "";
 
             const renderChat = (msgs) => {
@@ -1606,6 +1591,12 @@ async function loadAdminMatches() {
                 const msgs = [];
                 snap.forEach(d => msgs.push(d.data()));
                 msgs.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+                
+                // Atualiza contagem local se chegar msg nova com chat aberto
+                if(msgs.length > currentCount) {
+                    localStorage.setItem(`read_count_${mid}`, msgs.length);
+                }
+                
                 renderChat(msgs);
             });
             
@@ -1773,30 +1764,4 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
