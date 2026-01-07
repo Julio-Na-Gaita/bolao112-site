@@ -348,6 +348,7 @@ Término oficial: 31 de dezembro de 2026
 
 // --- FUNÇÃO SINO INTELIGENTE (LISTA ONDE TEM MENSAGEM) ---
           // --- FUNÇÃO SINO: SEM ALERT E COM LAYOUT CORRIGIDO ---
+        // --- FUNÇÃO SINO: SEM ALERT E COM LAYOUT CORRIGIDO ---
         window.updateBadges = () => {
             let unreadGames = [];
             let totalUnread = 0;
@@ -382,7 +383,7 @@ Término oficial: 31 de dezembro de 2026
                 newBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
                 newBell.classList.add('text-red-400');
                 
-                // AQUI ESTAVA O ERRO: Agora abre o modal DIRETO (sem alert)
+                // AQUI ESTAVA O PROBLEMA: Agora o onclick abre o modal DIRETO
                 newBell.onclick = () => {
                     const modal = document.getElementById('modalOverlay');
                     const cont = document.getElementById('modalContainer');
@@ -398,9 +399,9 @@ Término oficial: 31 de dezembro de 2026
 
                     modal.classList.remove('hidden');
                     
-                    // Layout corrigido (w-full max-w-sm) para não ficar estreito
+                    // CORREÇÃO DO LAYOUT: Usando classes padrão (w-full max-w-sm) em vez de w-72 fixo
                     cont.innerHTML = `
-                    <div class="w-full max-w-sm bg-white rounded-lg shadow-2xl overflow-hidden">
+                    <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden">
                         <div class="bg-[#006400] p-3 text-center">
                             <h3 class="font-black text-[#FFD700] text-sm uppercase tracking-widest">
                                 <i class="fas fa-comment-dots mr-1"></i> RESENHA ATIVA
@@ -1270,8 +1271,6 @@ window.showKingModal = () => {
             const btnCompare = document.getElementById('btnCompareAction'); if (btnCompare && !isMe) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
         };
 
-        // --- NOVA FUNÇÃO PARA LISTA DE MEDALHAS (STACKING) ---
-        // --- NOVA FUNÇÃO PARA LISTA DE MEDALHAS (STACKING) COM FUNDO ---
         // --- NOVA FUNÇÃO PARA LISTA DE MEDALHAS (STACKING) COM FUNDO ---
         window.showMedalList = (medalName) => {
             // Recupera o usuário atual do modal aberto (usando o ID salvo no atributo data-uid)
@@ -1287,8 +1286,6 @@ window.showKingModal = () => {
             const first = medals[0];
             
             // Salva o conteúdo anterior para o botão voltar funcionar
-            // Nota: Se o modal anterior foi destruído, pode precisar recarregar o perfil. 
-            // Mas vamos assumir que o modalContainer tinha o perfil.
             const oldContent = document.getElementById('modalContainer').innerHTML;
             
             const listHtml = medals.map(m => `
@@ -1322,7 +1319,7 @@ window.showKingModal = () => {
             `;
             
             document.getElementById('btnBackMedal').onclick = () => {
-                // Reconstrói o modal do perfil para garantir que eventos (scout, etc) funcionem
+                // Reconstrói o modal do perfil
                 const idx = currentRankingData.findIndex(x => x.uid === uid);
                 window.showModalPhoto(idx);
             };
@@ -1725,6 +1722,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
