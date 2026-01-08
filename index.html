@@ -570,10 +570,33 @@ Término oficial: 31 de dezembro de 2026
                 // =================================================================
                 // 📰 GERADOR DE NOTÍCIAS (HALL DA FAMA E DA LAMA) - LÓGICA ANDROID
                 // =================================================================
+                // =================================================================
+                // 📰 GERADOR DE NOTÍCIAS (LÓGICA IDÊNTICA AO ANDROID)
+                // =================================================================
                 const generateNewsFeed = () => {
-                    const news = [];
-                    
-                    // Prepara dados dos usuários (Nome e Débitos)
+                    let newsSegments = []; // Lista temporária para guardar as frases
+
+                    // Função auxiliar para adicionar segmentos com cor
+                    // No Web usamos HTML inline style para garantir a cor exata do Android
+                    const addSegment = (text, colorHex) => {
+                        newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`);
+                    };
+
+                    // Cores (Hex codes copiados do seu Android)
+                    const C_GOLD = "#FFD700";
+                    const C_BLUE_LIGHT = "#4FC3F7"; // 4º lugar
+                    const C_GRAY = "#808080";      // Meio de tabela / Dorminhoco
+                    const C_ORANGE = "#FF6D00";    // Z-2 Porteiro
+                    const C_RED = "#FF5252";       // Lanterna / Alface
+                    const C_ALIEN = "#64DD17";     // Alien
+                    const C_FIRE = "#00E676";      // On Fire
+                    const C_DIAMOND = "#00E5FF";
+                    const C_MAGIC = "#E040FB";     // Mãe Dinah
+                    const C_WHITE = "#FFFFFF";
+                    const C_SILVER = "#C0C0C0";
+                    const C_BRONZE = "#CD7F32";
+
+                    // Prepara dados dos usuários
                     const users = [];
                     uSnap.forEach(u => users.push({
                         id: u.id, 
@@ -581,10 +604,8 @@ Término oficial: 31 de dezembro de 2026
                         debts: u.data().debts || 0
                     }));
 
-                    // Jogos finalizados recentes (para sequência) e totais (para ranking)
-                    const recentFinished = finished.slice(0, 10); 
-
-                    // --- 1. CÁLCULO RÁPIDO DE RANKING ---
+                    // --- 1. CÁLCULO DE RANKING (NA HORA) ---
+                    // Mapeia, Calcula Pontos e Ordena (Igual ao Kotlin)
                     const rankingSnapshot = users.map(u => {
                         let pts = 0;
                         finished.forEach(m => {
@@ -593,47 +614,75 @@ Término oficial: 31 de dezembro de 2026
                                 pts += (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
                             }
                         });
-                        pts -= u.debts;
-                        return { ...u, pts };
-                    }).sort((a,b) => b.pts - a.pts);
+                        pts -= u.debts; // Deduz débitos
+                        return { name: u.name, pts: pts, id: u.id };
+                    }).sort((a,b) => b.pts - a.pts); // Ordena APENAS por pontos (Desempate "natural" do banco)
 
+                    // Se tem jogos finalizados e usuários...
                     if (finished.length > 0 && rankingSnapshot.length > 0) {
+                        
                         const lider = rankingSnapshot[0];
                         const lanterna = rankingSnapshot[rankingSnapshot.length - 1];
 
-                        // LÍDER
-                        news.push(`<span class="txt-gold">👑 CURVEM-SE! O ${lider.name} TÁ LIDERANDO O CAMPEONATO (POR ENQUANTO)! (${lider.pts} PTS)</span>`);
+                        // --- POSIÇÕES DO TOPO ---
+                        // 1º Lugar
+                        addSegment(`   👑 SEGUE O LÍDER! O ${lider.name} TÁ TRANQUILO COM SEUS ${lider.pts} PTS!   |`, C_GOLD);
 
-                        // PORTEIRO DO Z-2
+                        // 2º Lugar (Vice)
+                        if (rankingSnapshot.length >= 2) {
+                            const vice = rankingSnapshot[1];
+                            addSegment(`   🥈 O ${vice.name} TÁ NA COLA DO LÍDER! SÓ UM VACILO E ELE ASSUME!   |`, C_SILVER);
+                        }
+
+                        // 3º Lugar (Bronze)
+                        if (rankingSnapshot.length >= 3) {
+                            const terceiro = rankingSnapshot[2];
+                            addSegment(`   🥉 ${terceiro.name} FECHA O PÓDIO! O BRONZE JÁ É DELE!   |`, C_BRONZE);
+                        }
+
+                        // 4º Lugar
+                        if (rankingSnapshot.length >= 4) {
+                            const quarto = rankingSnapshot[3]; // Índice 3 = 4º lugar
+                            addSegment(`   👀 OLHO NO ${quarto.name}! TÁ CHEGANDO NO G3, HEIN?   |`, C_BLUE_LIGHT);
+                        }
+
+                        // Meio de Tabela (Ex: se tiver pelo menos 7 pessoas)
+                        if (rankingSnapshot.length >= 7) {
+                            const meioIndex = Math.floor(rankingSnapshot.length / 2);
+                            const meio = rankingSnapshot[meioIndex];
+                            addSegment(`   😐 ${meio.name} TÁ ÁGUA DE SALSICHA... NEM FEDE NEM CHEIRA NA TABELA!   |`, C_GRAY);
+                        }
+
+                        // --- POSIÇÕES DO FUNDO ---
+                        // Porteiro do Z-2 (Antepenúltimo)
                         if (rankingSnapshot.length >= 3) {
                             const indexPorteiro = rankingSnapshot.length - 3;
                             if (indexPorteiro >= 0) {
                                 const porteiro = rankingSnapshot[indexPorteiro];
-                                news.push(`<span style="color: #FF6D00;">⚓ CUIDADO ${porteiro.name}! O Z-2 TÁ TE PUXANDO, TONTEIRA!</span>`);
+                                addSegment(`   ⚓ CUIDADO ${porteiro.name}! O Z-2 TÁ TE PUXANDO, TONTEIRA!   |`, C_ORANGE);
                             }
                         }
 
-                        // LANTERNA
+                        // Lanterna
                         if (rankingSnapshot.length > 1) {
-                            news.push(`<span class="txt-lama">🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA NÃO?</span>`);
+                            addSegment(`   🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA NÃO, ARROMBADO?   |`, C_RED);
                         }
 
-                        // 4º COLOCADO
-                        if (rankingSnapshot.length >= 4) {
-                            const quarto = rankingSnapshot[3];
-                            news.push(`<span class="txt-info">👀 OLHO NO ${quarto.name}! TÁ CHEGANDO NO TOP 3, HEIN?</span>`);
-                        }
+                        // --- SEQUÊNCIAS (Últimos 10 jogos) ---
+                        // Pega os 10 mais recentes (finished já está ordenado por data decrescente no loadMatches)
+                        const recent10 = finished.slice(0, 10);
 
-                        // --- 2. SEQUÊNCIAS E DORMINHOCO ---
                         users.forEach(u => {
                             let streak = 0;
                             let isNegative = false;
 
-                            for (let i = 0; i < recentFinished.length; i++) {
-                                const m = recentFinished[i];
+                            for (let i = 0; i < recent10.length; i++) {
+                                const m = recent10[i];
                                 const g = guessesData.find(x => x.userId === u.id && x.matchId === m.id);
                                 
-                                if (g && g.teamSelected === m.winner) {
+                                const vote = g ? g.teamSelected : null;
+
+                                if (vote && vote === m.winner) {
                                     if (isNegative) break;
                                     streak++;
                                 } else {
@@ -644,71 +693,82 @@ Término oficial: 31 de dezembro de 2026
                             }
 
                             if (!isNegative) {
-                                if (streak >= 10) news.push(`<span style="color: #64DD17;">👽 CHAMEM A NASA! O ${u.name} É DE OUTRO MUNDO (${streak} ACERTOS)!</span>`);
-                                else if (streak >= 5) news.push(`<span class="txt-gold">🎯 TEM UM MITO ENTRE NÓS! ${u.name} CRAVOU ${streak} SEGUIDAS!</span>`);
-                                else if (streak >= 3) news.push(`<span class="txt-fama">🔥 ${u.name} TÁ CRUEL, DOIDO! (${streak} ACERTOS SEGUIDOS)</span>`);
+                                if (streak >= 10) addSegment(`   👽 CHAMEM A NASA! O ${u.name} É DE OUTRO MUNDO (${streak} ACERTOS)!   |`, C_ALIEN);
+                                else if (streak >= 5) addSegment(`   🎯 TEM UM MITO ENTRE NÓS! ${u.name} CRAVOU ${streak} SEGUIDAS!   |`, C_GOLD);
+                                else if (streak >= 3) addSegment(`   🔥 ${u.name} TÁ CRUEL, DOIDO! (${streak} ACERTOS SEGUIDOS)   |`, C_FIRE);
                             } else {
-                                if (streak >= 3) news.push(`<span class="txt-lama">🐢 ${u.name} TÁ COM MÃO DE ALFACE! (${streak} ERROS SEGUIDOS)</span>`);
+                                // AQUI: LÓGICA DO ALFACE 🥬
+                                if (streak >= 3) addSegment(`   🥬 ${u.name} TÁ COM MÃO DE ALFACE! (${streak} ERROS SEGUIDOS)   |`, C_RED);
                             }
 
-                            // Dorminhoco
-                            if (recentFinished.length > 0) {
-                                const lastM = recentFinished[0];
+                            // Dorminhoco (Não votou no último jogo)
+                            if (finished.length > 0) {
+                                const lastM = finished[0];
                                 const voted = guessesData.some(x => x.userId === u.id && x.matchId === lastM.id);
                                 if (!voted) {
-                                    news.push(`<span style="color: gray;">💤 O BURRÃO DO ${u.name} NÃO VOTOU NO ÚLTIMO JOGO!</span>`);
+                                    addSegment(`   💤 O BURRÃO DO ${u.name} NÃO VOTOU NO ÚLTIMO JOGO!   |`, C_GRAY);
                                 }
                             }
                         });
 
-                        // ZEBRA
+                        // Zebra (Último jogo)
                         if (finished.length > 0) {
                             const lastM = finished[0];
                             const totalV = lastM.stats.total || 1;
                             const winnerV = lastM.stats[lastM.winner] || 0;
-                            const pct = winnerV / totalV;
                             
-                            if (pct < 0.30 && totalV > 3) {
-                                const acertadores = users.filter(u => 
-                                    guessesData.some(g => g.userId === u.id && g.matchId === lastM.id && g.teamSelected === lastM.winner)
-                                );
-                                if (acertadores.length > 0 && acertadores.length <= 4) {
-                                    const nomes = acertadores.map(u => u.name).join(', ');
-                                    news.push(`<span class="txt-gold">🦓 OLHA A ZEBRA! SÓ ${nomes} ACERTOU ${lastM.teamA} x ${lastM.teamB}!</span>`);
+                            // Se tiver participantes suficientes
+                            if (totalParticipants > 0) {
+                                const pct = winnerV / totalParticipants;
+                                if (pct < 0.30 && totalV > 3) {
+                                    const acertadores = users.filter(u => 
+                                        guessesData.some(g => g.userId === u.id && g.matchId === lastM.id && g.teamSelected === lastM.winner)
+                                    ).map(u => u.name);
+
+                                    if (acertadores.length > 0 && acertadores.length <= 4) {
+                                        addSegment(`   🦓 OLHA A ZEBRA! O ${acertadores.join(', ')} ACERTOU ${lastM.teamA} x ${lastM.teamB}!   |`, C_GOLD);
+                                    }
                                 }
                             }
                         }
                     }
 
-                    // --- 3. FRASES ALEATÓRIAS ---
+                    // --- FRASES ALEATÓRIAS ---
                     const frasesExtras = [
-                        `<span class="txt-gold">👑 A COROA TÁ PESADA? A BRIGA PELO REI DO MÊS TÁ BOA!</span>`,
-                        `<span style="color: #00E5FF;">💎 QUEM VAI GABARITAR AS OITAVAS E LEVAR O DIAMANTE?</span>`,
-                        `<span style="color: #E040FB;">🔮 MÃE DINAH: ACERTE O CAMPEÃO E DOBRE SEUS PONTOS NA FINAL!</span>`,
-                        `<span class="txt-info">🎓 QUEM SERÁ O PRIMEIRO VETERANO A COMPLETAR 50 ACERTOS?</span>`,
-                        `<span class="txt-info">⏳ BORA VOTAR MEU FI! O PRÓXIMO JOGO JÁ VAI COMEÇAR...</span>`,
-                        `<span class="txt-gold">💸 QUEM PAGA EM DIA NÃO CRIA BARRIGA! EVITE MULTAS.</span>`,
-                        `<span class="txt-info">👀 QUEM SERÁ O PRÓXIMO MITO DO GRUPO?</span>`,
-                        `<span style="color: gray;">👇 O VEVE É FRACO Ó MAN! 👇</span>`
+                        { t: "   💎 QUEM VAI GABARITAR AS OITAVAS E LEVAR O DIAMANTE?   |", c: C_DIAMOND },
+                        { t: "   🔮 MÃE DINAH: ACERTE O CAMPEÃO E DOBRE SEUS PONTOS NA FINAL!   |", c: C_MAGIC },
+                        { t: "   🎓 QUEM SERÁ O PRIMEIRO VETERANO A COMPLETAR 50 ACERTOS?   |", c: C_WHITE },
+                        { t: "   ⏳ BORA VOTAR MEU FI! O PRÓXIMO JOGO JÁ VAI COMEÇAR...   |", c: C_WHITE },
+                        { t: "   💸 QUEM PAGA EM DIA NÃO CRIA BARRIGA! EVITE MULTAS.   |", c: C_GOLD },
+                        { t: "   🦖 DIZEM AS LENDAS QUE TEM GENTE AQUI QUE JÁ FOI BOM DE PALPITE...   |", c: C_WHITE },
+                        { t: "   👇 O VEVE É FRACO Ó MAN! 👇   |", c: C_GRAY }
                     ];
 
-                    // Pega 4 aleatórias e mistura com as notícias reais
-                    for (let i = 0; i < 4; i++) {
-                        const randomPhrase = frasesExtras[Math.floor(Math.random() * frasesExtras.length)];
-                        news.push(randomPhrase);
+                    // Embaralha e pega 4
+                    const shuffledExtras = frasesExtras.sort(() => 0.5 - Math.random()).slice(0, 4);
+                    shuffledExtras.forEach(item => addSegment(item.t, item.c));
+
+                    if (newsSegments.length === 0) {
+                        addSegment("   ⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!   |", C_GOLD);
                     }
 
-                    if (news.length === 0) {
-                        news.push(`<span class="txt-gold">⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!</span>`);
+                    // =================================================================
+                    // 2. EMBARALHAR E CONSTRUIR O TEXTO FINAL (CORRIGIDO)
+                    // =================================================================
+                    // Função de Shuffle para garantir aleatoriedade na exibição
+                    for (let i = newsSegments.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [newsSegments[i], newsSegments[j]] = [newsSegments[j], newsSegments[i]];
                     }
+
+                    // Junta tudo numa string HTML única
+                    // Duplicamos o conteúdo (join + join) para garantir o loop infinito suave no CSS
+                    const finalHTML = newsSegments.join('') + newsSegments.join('');
                     
-                    // Retorna HTML formatado
-                    return news.join('<span class="mx-4 text-gray-600">|</span>') + '<span class="mx-4 text-gray-600">|</span>' + news.join('<span class="mx-4 text-gray-600">|</span>');
+                    return finalHTML;
                 };
 
                 const newsHTML = generateNewsFeed();
-                // =================================================================
-
                 // --- RENDERIZAÇÃO ---
                 let html = "";
                 
@@ -1926,6 +1986,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
