@@ -98,7 +98,7 @@
         .ticker-wrapper {
             display: flex;
             white-space: nowrap;
-            animation: ticker-scroll 80s linear infinite; /* Velocidade do letreiro */
+            animation: ticker-scroll 100s linear infinite; /* Velocidade do letreiro */
         }
         
         .ticker-wrapper:hover {
@@ -627,19 +627,7 @@ Término oficial: 31 de dezembro de 2026
                         // --- POSIÇÕES DO TOPO ---
                         // 1º Lugar
                         addSegment(`   👑 SEGUE O LÍDER! O ${lider.name} TÁ TRANQUILO COM SEUS ${lider.pts} PTS!   |`, C_GOLD);
-
-                        // 2º Lugar (Vice)
-                        if (rankingSnapshot.length >= 2) {
-                            const vice = rankingSnapshot[1];
-                            addSegment(`   🥈 O ${vice.name} TÁ NA COLA DO LÍDER! SÓ UM VACILO E ELE ASSUME!   |`, C_SILVER);
-                        }
-
-                        // 3º Lugar (Bronze)
-                        if (rankingSnapshot.length >= 3) {
-                            const terceiro = rankingSnapshot[2];
-                            addSegment(`   🥉 ${terceiro.name} FECHA O PÓDIO! O BRONZE JÁ É DELE!   |`, C_BRONZE);
-                        }
-
+                    
                         // 4º Lugar
                         if (rankingSnapshot.length >= 4) {
                             const quarto = rankingSnapshot[3]; // Índice 3 = 4º lugar
@@ -1986,6 +1974,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
