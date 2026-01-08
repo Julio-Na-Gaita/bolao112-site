@@ -238,7 +238,7 @@ Término oficial: 31 de dezembro de 2026
                             <p class="font-black text-[#006400] text-lg mt-1">PAGAMENTO PIX</p>
                             <div class="h-4"></div>
                             <p class="text-xs font-bold text-gray-800">Valor da Mensalidade</p>
-                            <p class="text-3xl font-black text-black">R$ 15,00</p>
+                            <p class="text-3xl font-black text-black">R$ 10,00</p>
                         </div>
                         <div class="text-center text-[10px] text-gray-800 mb-2">Beneficiário:<br><b class="text-[#006400] text-sm">MATHEUS FERREIRA ALVES</b></div>
                         <div><button id="btnCopyPix" class="w-full bg-[#32BCAD] text-white py-2 rounded font-bold text-xs shadow btn-press mb-3"><i class="fas fa-copy mr-1"></i> PIX COPIA E COLA</button><label class="text-[10px] text-gray-500 font-bold">Chave Pix Manual</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded shadow-sm"><button onclick="copyKeyOnly()" class="bg-[#006400] text-white px-3 rounded shadow-sm"><i class="fas fa-copy"></i></button></div></div>
@@ -248,35 +248,21 @@ Término oficial: 31 de dezembro de 2026
 
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-4"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
                 
-                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5.6</p>
+                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5.5</p>
             </div>
         </div>
     </main>
 
     <div id="modalOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="closeModal()"><div id="modalContainer" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden" onclick="event.stopPropagation()"></div></div>
     <div id="potModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6" onclick="document.getElementById('potModal').classList.add('hidden')">
-        <div class="card-cut w-full max-w-sm p-6 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), url('https://cdn.pixabay.com/photo/2017/09/07/08/54/money-2724241_640.jpg'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
-            <i class="fas fa-piggy-bank text-4xl text-[#FFD700] mb-2 drop-shadow-sm"></i>
-            <h2 class="text-lg font-bold text-gray-800 uppercase tracking-widest">ACUMULADO!</h2>
-            <p class="text-xs text-gray-500 font-bold mb-4">Mensalidade: R$ 15,00</p>
-            
-            <div class="space-y-3 mb-6">
-                <div class="bg-[#FFF8E1] border border-[#FFD700] rounded p-3 shadow-sm">
-                    <p class="text-xs font-black text-[#F57F17] uppercase">🏆 Pote de Premiação</p>
-                    <p id="potValue" class="text-3xl font-black text-black">R$ 0,00</p>
-                    <p class="text-[9px] text-gray-500">Ref. R$ 10,00 por cota</p>
-                </div>
-
-                <div class="bg-[#E3F2FD] border border-[#42A5F5] rounded p-3 shadow-sm">
-                    <p class="text-xs font-black text-[#1565C0] uppercase">🍻 Festa & Troféus</p>
-                    <p id="partyValue" class="text-2xl font-black text-black">R$ 0,00</p>
-                    <p class="text-[9px] text-gray-500">Ref. R$ 5,00 por cota</p>
-                </div>
-                
-                <p id="totalValue" class="text-xs font-bold text-[#006400] pt-2">Total Arrecadado: R$ 0,00</p>
+        <div class="card-cut w-full max-w-sm p-8 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('https://cdn.pixabay.com/photo/2017/09/07/08/54/money-2724241_640.jpg'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
+            <i class="fas fa-piggy-bank text-5xl text-[#FFD700] mb-4 drop-shadow-sm"></i>
+            <h2 class="text-xl font-bold text-gray-800">POTE DE OURO</h2>
+            <div class="my-6">
+                <p id="potValue" class="text-4xl font-black text-[#006400]">R$ 0,00</p>
+                <p class="gold-text-outline text-xl mt-2">Prêmio acumulado!</p>
             </div>
-
-            <button onclick="document.getElementById('potModal').classList.add('hidden')" class="w-full bg-[#006400] text-white py-3 font-bold rounded shadow-lg btn-press text-sm">SHOW DE BOLA!</button>
+            <button onclick="document.getElementById('potModal').classList.add('hidden')" class="w-full bg-[#006400] text-white py-3 font-bold rounded shadow-lg btn-press">SHOW!</button>
         </div>
     </div>
 
@@ -317,11 +303,11 @@ Término oficial: 31 de dezembro de 2026
         const rulesData = [
             { 
                 t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", 
-                c: "💰 Aporte Mensal\nValor: R$ 15,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" 
+                c: "💰 Aporte Mensal\nValor: R$ 10,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" 
             },
             { 
-                t: "2️⃣ PREMIAÇÃO, FESTA & REI DO MÊS", 
-                c: "💰 DESTINAÇÃO DA MENSALIDADE (R$ 15,00)\nO valor mensal arrecadado de cada participante será dividido da seguinte forma:\n\n💵 R$ 10,00 -> Pote Anual (Premiação em Dinheiro)\n🍻 R$ 5,00 -> Fundo de Confraternização (Festa + Troféus)\n\n🏆 DISTRIBUIÇÃO DO POTE (DINHEIRO)\nO valor acumulado no \"Pote Anual\" (parte de R$ 10) será distribuído aos 3 primeiros colocados da Classificação Geral:\n🥇 1º Lugar: 60% do valor\n🥈 2º Lugar: 30% do valor\n🥉 3º Lugar: 10% do valor\n\n🎉 CONFRATERNIZAÇÃO E TROFÉUS\nO \"Fundo de Confraternização\" (parte de R$ 5) será utilizado integralmente para custear o evento de encerramento no final de 2026 e a confecção dos troféus físicos para os campeões.\n\n👑 REI DO MÊS (SEM DESEMPATE)\nO título simbólico de \"Rei do Mês\" é concedido ao jogador que somar o maior número de pontos brutos dentro do mês de competência.\n\n⚠️ REGRA DE EMPATE MENSAL:\nPara o Rei do Mês, NÃO existem critérios de desempate.\n• Se dois ou mais jogadores terminarem o mês empatados na liderança, NINGUÉM receberá a coroa ou o título naquele mês.\n• O Rei deve ser, obrigatoriamente, um líder isolado." 
+                t: "2️⃣ PREMIAÇÃO & REI DO MÊS", 
+                c: "🏆 POTE ANUAL\nO valor total arrecadado ao longo da temporada formará o Pote Anual.\nDistribuição:\n🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%\n\n👑 REI DO MÊS (SEM DESEMPATE)\nO título simbólico de \"Rei do Mês\" é concedido ao jogador que somar o maior número de pontos brutos dentro do mês de competência.\n\n⚠️ REGRA DE EMPATE MENSAL:\nPara o Rei do Mês, NÃO existem critérios de desempate.\n• Se dois ou mais jogadores terminarem o mês empatados na liderança, NINGUÉM receberá a coroa ou o título naquele mês.\n• O Rei deve ser, obrigatoriamente, um líder isolado." 
             },
             { 
                 t: "3️⃣ SISTEMA DE PONTUAÇÃO & DATAS", 
@@ -385,15 +371,15 @@ Término oficial: 31 de dezembro de 2026
                 const name = document.getElementById('regName').value.trim(); const user = document.getElementById('regUser').value.trim().toLowerCase(); const pass = document.getElementById('regPass').value;
                 if(!name || !user || pass.length < 6) { alert("Dados inválidos."); return; }
                 if(user.includes(" ")) { alert("Usuário sem espaços."); return; }
-                try { const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); await setDoc(doc(db, "users", res.user.uid), { name, username: user, createdAt: new Date(), isAdmin: false, debts: 0, payments: {}, appVersion: "Web v1.5.6" }); alert("Conta criada!"); closeModal(); } catch(e) { alert("Erro ao criar conta: " + e.message); }
+                try { const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); await setDoc(doc(db, "users", res.user.uid), { name, username: user, createdAt: new Date(), isAdmin: false, debts: 0, payments: {}, appVersion: "Web v1.5.5" }); alert("Conta criada!"); closeModal(); } catch(e) { alert("Erro ao criar conta: " + e.message); }
             };
         };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // ATUALIZANDO VERSÃO PARA 1.5.6
-                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.6" }); } catch(e) {}
+                // ATUALIZANDO VERSÃO PARA 1.5.5
+                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.5" }); } catch(e) {}
                 document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('mainScreens').classList.remove('hidden'); document.getElementById('bottomNav').classList.remove('hidden'); document.getElementById('btnLogout').classList.remove('hidden');
                 showTab('matches'); calculatePot();
             } else {
@@ -582,144 +568,81 @@ Término oficial: 31 de dezembro de 2026
                 finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
                 
                 // =================================================================
-                // 📰 GERADOR DE NOTÍCIAS (LÓGICA BLINDADA IGUAL ANDROID)
+                // 📰 GERADOR DE NOTÍCIAS (HALL DA FAMA E DA LAMA) - LÓGICA ANDROID
+                // =================================================================
+                // =================================================================
+                // 📰 GERADOR DE NOTÍCIAS (LÓGICA IDÊNTICA AO ANDROID)
                 // =================================================================
                 const generateNewsFeed = () => {
-                    let newsSegments = []; 
+                    let newsSegments = []; // Lista temporária para guardar as frases
 
+                    // Função auxiliar para adicionar segmentos com cor
+                    // No Web usamos HTML inline style para garantir a cor exata do Android
                     const addSegment = (text, colorHex) => {
                         newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`);
                     };
 
-                    const C_GOLD = "#FFD700"; const C_BLUE_LIGHT = "#4FC3F7"; const C_GRAY = "#808080"; 
-                    const C_ORANGE = "#FF6D00"; const C_RED = "#FF5252"; const C_ALIEN = "#64DD17"; 
-                    const C_FIRE = "#00E676"; const C_DIAMOND = "#00E5FF"; const C_MAGIC = "#E040FB"; 
-                    const C_WHITE = "#FFFFFF"; const C_SILVER = "#C0C0C0"; const C_BRONZE = "#CD7F32";
+                    // Cores (Hex codes copiados do seu Android)
+                    const C_GOLD = "#FFD700";
+                    const C_BLUE_LIGHT = "#4FC3F7"; // 4º lugar
+                    const C_GRAY = "#808080";      // Meio de tabela / Dorminhoco
+                    const C_ORANGE = "#FF6D00";    // Z-2 Porteiro
+                    const C_RED = "#FF5252";       // Lanterna / Alface
+                    const C_ALIEN = "#64DD17";     // Alien
+                    const C_FIRE = "#00E676";      // On Fire
+                    const C_DIAMOND = "#00E5FF";
+                    const C_MAGIC = "#E040FB";     // Mãe Dinah
+                    const C_WHITE = "#FFFFFF";
+                    const C_SILVER = "#C0C0C0";
+                    const C_BRONZE = "#CD7F32";
 
-                    // 1. IDENTIFICA ZEBRAS (Para critério de desempate)
-                    const zebraMatchIds = [];
-                    if (totalParticipants > 0) {
-                        finished.forEach(m => {
-                            const winnerVotes = guessesData.filter(g => g.matchId === m.id && g.teamSelected === m.winner).length;
-                            if ((winnerVotes / totalParticipants) < 0.20) zebraMatchIds.push(m.id);
-                        });
-                    }
+                    // Prepara dados dos usuários
+                    const users = [];
+                    uSnap.forEach(u => users.push({
+                        id: u.id, 
+                        name: (u.data().name || u.data().username || "Anônimo").split(' ')[0].toUpperCase(),
+                        debts: u.data().debts || 0
+                    }));
 
-                    // 2. CÁLCULO COMPLETO (Pontos + Débitos + Medalhas)
+                    // --- 1. CÁLCULO DE RANKING (NA HORA) ---
+                    // Mapeia, Calcula Pontos e Ordena (Igual ao Kotlin)
                     const rankingSnapshot = users.map(u => {
                         let pts = 0;
-                        let victories = 0;
-                        let finalsWon = 0;
-                        let simStreak = 0;
-                        let userMedals = []; // Guarda as medalhas para desempatar
-
-                        // Filtra palpites do usuário
-                        const userGuesses = guessesData.filter(g => g.userId === u.id);
-
-                        // Loop cronológico para sequências
-                        // finished já está ordenado por data (reverso), então revertemos para cronológico
-                        const matchesChronological = [...finished].reverse();
-
-                        matchesChronological.forEach(m => {
-                            const g = userGuesses.find(ug => ug.matchId === m.id);
-                            const isHit = g && g.teamSelected === m.winner;
-
-                            if (isHit) {
+                        finished.forEach(m => {
+                            const g = guessesData.find(x => x.userId === u.id && x.matchId === m.id);
+                            if (g && g.teamSelected === m.winner) {
                                 pts += (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
-                                victories++;
-                                simStreak++;
-                                if (m.round && m.round.toLowerCase() === 'final') finalsWon++;
-
-                                // Medalhas de Sequência
-                                if (simStreak === 3) userMedals.push("🔥");
-                                if (simStreak === 5) userMedals.push("🎯");
-                                if (simStreak === 10) userMedals.push("👽");
-                                
-                                // Zebra
-                                if (zebraMatchIds.includes(m.id)) userMedals.push("🦓");
-                            } else {
-                                simStreak = 0;
                             }
                         });
+                        pts -= u.debts; // Deduz débitos
+                        return { name: u.name, pts: pts, id: u.id };
+                    }).sort((a,b) => b.pts - a.pts); // Ordena APENAS por pontos (Desempate "natural" do banco)
 
-                        // Diamante (Oitavas)
-                        const oitavasMatches = finished.filter(m => m.round === "Oitavas de final");
-                        const oitavasByComp = {};
-                        oitavasMatches.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); });
-                        
-                        Object.values(oitavasByComp).forEach(matches => {
-                            if (matches.length === 8) {
-                                const hits = matches.filter(m => {
-                                    const g = userGuesses.find(ug => ug.matchId === m.id);
-                                    return g && g.teamSelected === m.winner;
-                                }).length;
-                                if (hits === 8) { pts += 3; userMedals.push("💎"); }
-                            }
-                        });
-
-                        // Outras
-                        if (finalsWon > 0) userMedals.push("🔮");
-                        if (victories >= 50) { const qtd = Math.floor(victories/50); for(let k=0; k<qtd; k++) userMedals.push("🎓"); }
-
-                        pts -= (u.debts || 0);
-
-                        return { 
-                            name: (u.name || "Anônimo").split(' ')[0].toUpperCase(), 
-                            pts: pts, 
-                            debts: u.debts || 0,
-                            medals: userMedals, // Array de strings (ícones)
-                            id: u.id
-                        };
-                    }).sort((a, b) => {
-                        // --- AQUI ESTÁ A CORREÇÃO DO LÍDER ---
-                        if (b.pts !== a.pts) return b.pts - a.pts; // 1. Pontos
-                        if (a.debts !== b.debts) return a.debts - b.debts; // 2. Menos Débitos
-                        
-                        // 3. Hierarquia de Medalhas
-                        const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
-                        for (let icon of hierarchy) {
-                            const countA = a.medals.filter(m => m === icon).length;
-                            const countB = b.medals.filter(m => m === icon).length;
-                            if (countB !== countA) return countB - countA;
-                        }
-                        return 0; // Empate técnico (aqui a ordem do banco decide)
-                    });
-
-                    // GERAÇÃO DAS FRASES
+                    // Se tem jogos finalizados e usuários...
                     if (finished.length > 0 && rankingSnapshot.length > 0) {
                         
                         const lider = rankingSnapshot[0];
                         const lanterna = rankingSnapshot[rankingSnapshot.length - 1];
 
+                        // --- POSIÇÕES DO TOPO ---
                         // 1º Lugar
                         addSegment(`   👑 SEGUE O LÍDER! O ${lider.name} TÁ TRANQUILO COM SEUS ${lider.pts} PTS!   |`, C_GOLD);
-
-                        // 2º Lugar
-                        if (rankingSnapshot.length >= 2) {
-                            const vice = rankingSnapshot[1];
-                            addSegment(`   🥈 O ${vice.name} TÁ NA COLA DO LÍDER! SÓ UM VACILO E ELE ASSUME!   |`, C_SILVER);
-                        }
-
-                        // 3º Lugar
-                        if (rankingSnapshot.length >= 3) {
-                            const terceiro = rankingSnapshot[2];
-                            addSegment(`   🥉 ${terceiro.name} FECHA O PÓDIO! TÁ COMENDO PELAS BEIRADAS!   |`, C_BRONZE);
-                        }
-
+                    
                         // 4º Lugar
                         if (rankingSnapshot.length >= 4) {
-                            const quarto = rankingSnapshot[3];
+                            const quarto = rankingSnapshot[3]; // Índice 3 = 4º lugar
                             addSegment(`   👀 OLHO NO ${quarto.name}! TÁ CHEGANDO NO G3, HEIN?   |`, C_BLUE_LIGHT);
                         }
 
-                        // Meio de Tabela
+                        // Meio de Tabela (Ex: se tiver pelo menos 7 pessoas)
                         if (rankingSnapshot.length >= 7) {
                             const meioIndex = Math.floor(rankingSnapshot.length / 2);
                             const meio = rankingSnapshot[meioIndex];
                             addSegment(`   😐 ${meio.name} TÁ ÁGUA DE SALSICHA... NEM FEDE NEM CHEIRA NA TABELA!   |`, C_GRAY);
                         }
 
-                        // Porteiro do Z-2
+                        // --- POSIÇÕES DO FUNDO ---
+                        // Porteiro do Z-2 (Antepenúltimo)
                         if (rankingSnapshot.length >= 3) {
                             const indexPorteiro = rankingSnapshot.length - 3;
                             if (indexPorteiro >= 0) {
@@ -733,54 +656,66 @@ Término oficial: 31 de dezembro de 2026
                             addSegment(`   🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA NÃO, ARROMBADO?   |`, C_RED);
                         }
 
-                        // --- SEQUÊNCIAS PARA O LETREIRO (Usando a lista de usuários original para iterar) ---
-                        // Precisamos re-analisar para pegar alface/dorminhoco que não contam no desempate positivo
+                        // --- SEQUÊNCIAS (Últimos 10 jogos) ---
+                        // Pega os 10 mais recentes (finished já está ordenado por data decrescente no loadMatches)
                         const recent10 = finished.slice(0, 10);
 
                         users.forEach(u => {
                             let streak = 0;
                             let isNegative = false;
-                            
-                            // Re-calcula streak rápida para frases negativas
+
                             for (let i = 0; i < recent10.length; i++) {
                                 const m = recent10[i];
                                 const g = guessesData.find(x => x.userId === u.id && x.matchId === m.id);
+                                
                                 const vote = g ? g.teamSelected : null;
+
                                 if (vote && vote === m.winner) {
-                                    if (isNegative) break; streak++;
+                                    if (isNegative) break;
+                                    streak++;
                                 } else {
-                                    if (streak > 0 && !isNegative) break; isNegative = true; streak++;
+                                    if (streak > 0 && !isNegative) break;
+                                    isNegative = true;
+                                    streak++;
                                 }
                             }
 
-                            const name = (u.name || "").split(' ')[0].toUpperCase();
-
                             if (!isNegative) {
-                                if (streak >= 10) addSegment(`   👽 CHAMEM A NASA! O ${name} É DE OUTRO MUNDO (${streak} ACERTOS)!   |`, C_ALIEN);
-                                else if (streak >= 5) addSegment(`   🎯 TEM UM MITO ENTRE NÓS! ${name} CRAVOU ${streak} SEGUIDAS!   |`, C_GOLD);
-                                else if (streak >= 3) addSegment(`   🔥 ${name} TÁ CRUEL, DOIDO! (${streak} ACERTOS SEGUIDOS)   |`, C_FIRE);
+                                if (streak >= 10) addSegment(`   👽 CHAMEM A NASA! O ${u.name} É DE OUTRO MUNDO (${streak} ACERTOS)!   |`, C_ALIEN);
+                                else if (streak >= 5) addSegment(`   🎯 TEM UM MITO ENTRE NÓS! ${u.name} CRAVOU ${streak} SEGUIDAS!   |`, C_GOLD);
+                                else if (streak >= 3) addSegment(`   🔥 ${u.name} TÁ CRUEL, DOIDO! (${streak} ACERTOS SEGUIDOS)   |`, C_FIRE);
                             } else {
-                                if (streak >= 3) addSegment(`   🥬 ${name} TÁ COM MÃO DE ALFACE! (${streak} ERROS SEGUIDOS)   |`, C_RED);
+                                // AQUI: LÓGICA DO ALFACE 🥬
+                                if (streak >= 3) addSegment(`   🥬 ${u.name} TÁ COM MÃO DE ALFACE! (${streak} ERROS SEGUIDOS)   |`, C_RED);
                             }
 
-                            // Dorminhoco
+                            // Dorminhoco (Não votou no último jogo)
                             if (finished.length > 0) {
                                 const lastM = finished[0];
                                 const voted = guessesData.some(x => x.userId === u.id && x.matchId === lastM.id);
-                                if (!voted) addSegment(`   💤 O BURRÃO DO ${name} NÃO VOTOU NO ÚLTIMO JOGO!   |`, C_GRAY);
+                                if (!voted) {
+                                    addSegment(`   💤 O BURRÃO DO ${u.name} NÃO VOTOU NO ÚLTIMO JOGO!   |`, C_GRAY);
+                                }
                             }
                         });
 
-                        // Zebra (Frase)
+                        // Zebra (Último jogo)
                         if (finished.length > 0) {
                             const lastM = finished[0];
-                            if (zebraMatchIds.includes(lastM.id)) {
-                                const acertadores = users.filter(u => 
-                                    guessesData.some(g => g.userId === u.id && g.matchId === lastM.id && g.teamSelected === lastM.winner)
-                                ).map(u => (u.name||"").split(' ')[0].toUpperCase());
+                            const totalV = lastM.stats.total || 1;
+                            const winnerV = lastM.stats[lastM.winner] || 0;
+                            
+                            // Se tiver participantes suficientes
+                            if (totalParticipants > 0) {
+                                const pct = winnerV / totalParticipants;
+                                if (pct < 0.30 && totalV > 3) {
+                                    const acertadores = users.filter(u => 
+                                        guessesData.some(g => g.userId === u.id && g.matchId === lastM.id && g.teamSelected === lastM.winner)
+                                    ).map(u => u.name);
 
-                                if (acertadores.length > 0 && acertadores.length <= 4) {
-                                    addSegment(`   🦓 OLHA A ZEBRA! O ${acertadores.join(', ')} ACERTOU ${lastM.teamA} x ${lastM.teamB}!   |`, C_GOLD);
+                                    if (acertadores.length > 0 && acertadores.length <= 4) {
+                                        addSegment(`   🦓 OLHA A ZEBRA! O ${acertadores.join(', ')} ACERTOU ${lastM.teamA} x ${lastM.teamB}!   |`, C_GOLD);
+                                    }
                                 }
                             }
                         }
@@ -794,10 +729,10 @@ Término oficial: 31 de dezembro de 2026
                         { t: "   ⏳ BORA VOTAR MEU FI! O PRÓXIMO JOGO JÁ VAI COMEÇAR...   |", c: C_WHITE },
                         { t: "   💸 QUEM PAGA EM DIA NÃO CRIA BARRIGA! EVITE MULTAS.   |", c: C_GOLD },
                         { t: "   🦖 DIZEM AS LENDAS QUE TEM GENTE AQUI QUE JÁ FOI BOM DE PALPITE...   |", c: C_WHITE },
-                        { t: "   👇 O VEVE É FRACO Ó MAN! 👇   |", c: C_GRAY },
-                        { t: "   🏺 VIVER DE PASSADO É PRA MUSEU! A TORCIDA QUER TÍTULO HOJE!   |", c: C_WHITE },
+                        { t: "   👇 O VEVE É FRACO Ó MAN! 👇   |", c: C_GRAY }
                     ];
 
+                    // Embaralha e pega 4
                     const shuffledExtras = frasesExtras.sort(() => 0.5 - Math.random()).slice(0, 4);
                     shuffledExtras.forEach(item => addSegment(item.t, item.c));
 
@@ -805,18 +740,24 @@ Término oficial: 31 de dezembro de 2026
                         addSegment("   ⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!   |", C_GOLD);
                     }
 
-                    // 3. EMBARALHAR E CONSTRUIR
+                    // =================================================================
+                    // 2. EMBARALHAR E CONSTRUIR O TEXTO FINAL (CORRIGIDO)
+                    // =================================================================
+                    // Função de Shuffle para garantir aleatoriedade na exibição
                     for (let i = newsSegments.length - 1; i > 0; i--) {
                         const j = Math.floor(Math.random() * (i + 1));
                         [newsSegments[i], newsSegments[j]] = [newsSegments[j], newsSegments[i]];
                     }
 
+                    // Junta tudo numa string HTML única
+                    // Duplicamos o conteúdo (join + join) para garantir o loop infinito suave no CSS
                     const finalHTML = newsSegments.join('') + newsSegments.join('');
+                    
                     return finalHTML;
                 };
 
                 const newsHTML = generateNewsFeed();
-              // --- RENDERIZAÇÃO ---
+                // --- RENDERIZAÇÃO ---
                 let html = "";
                 
                 // INSERE O LETREIRO (TICKER) NO TOPO
@@ -1731,7 +1672,7 @@ async function loadAdminMatches() {
         
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.5.6) ---
+        // --- GUIA DO APP ATUALIZADO (v1.5.5) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
@@ -1739,7 +1680,7 @@ async function loadAdminMatches() {
                 <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
-                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.5.6</p>
+                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.5.5</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
@@ -1783,40 +1724,8 @@ async function loadAdminMatches() {
                 </div>
             </div>`; 
         };
-        async function calculatePot() { 
-            try {
-                const snap = await getDocs(collection(db, "users")); 
-                let totalCotas = 0; 
-                snap.forEach(d => { 
-                    const p = d.data().payments; 
-                    if(p) totalCotas += Object.values(p).filter(v => v).length; 
-                }); 
-                
-                // LÓGICA DE DIVISÃO (R$ 10 Prêmio + R$ 5 Festa)
-                const prizePot = totalCotas * 10;
-                const partyPot = totalCotas * 5;
-                const totalArrecadado = prizePot + partyPot;
-
-                const fmt = (v) => v.toLocaleString('pt-br',{style:'currency',currency:'BRL'});
-
-                // Preenche os campos SE eles existirem no DOM
-                const elPot = document.getElementById('potValue');
-                const elParty = document.getElementById('partyValue');
-                const elTotal = document.getElementById('totalValue');
-
-                if(elPot) elPot.innerText = fmt(prizePot);
-                if(elParty) elParty.innerText = fmt(partyPot);
-                if(elTotal) elTotal.innerText = `Total Arrecadado: ${fmt(totalArrecadado)}`;
-            } catch (e) {
-                console.error("Erro ao calcular pote:", e);
-                alert("Erro ao carregar valores do pote.");
-            }
-        }
-        // Isso deve ficar LOGO APÓS a função calculatePot
-        document.getElementById('btnPot').onclick = () => {
-            calculatePot(); // Chama o cálculo
-            document.getElementById('potModal').classList.remove('hidden'); // Abre o modal novo
-        };
+        async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'}); }
+        document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
         window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
         document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
         document.getElementById('btnLogout').onclick = () => signOut(auth);
@@ -2065,14 +1974,6 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
 
 
 
