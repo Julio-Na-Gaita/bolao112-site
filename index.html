@@ -582,81 +582,144 @@ Término oficial: 31 de dezembro de 2026
                 finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
                 
                 // =================================================================
-                // 📰 GERADOR DE NOTÍCIAS (HALL DA FAMA E DA LAMA) - LÓGICA ANDROID
-                // =================================================================
-                // =================================================================
-                // 📰 GERADOR DE NOTÍCIAS (LÓGICA IDÊNTICA AO ANDROID)
+                // 📰 GERADOR DE NOTÍCIAS (LÓGICA BLINDADA IGUAL ANDROID)
                 // =================================================================
                 const generateNewsFeed = () => {
-                    let newsSegments = []; // Lista temporária para guardar as frases
+                    let newsSegments = []; 
 
-                    // Função auxiliar para adicionar segmentos com cor
-                    // No Web usamos HTML inline style para garantir a cor exata do Android
                     const addSegment = (text, colorHex) => {
                         newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`);
                     };
 
-                    // Cores (Hex codes copiados do seu Android)
-                    const C_GOLD = "#FFD700";
-                    const C_BLUE_LIGHT = "#4FC3F7"; // 4º lugar
-                    const C_GRAY = "#808080";      // Meio de tabela / Dorminhoco
-                    const C_ORANGE = "#FF6D00";    // Z-2 Porteiro
-                    const C_RED = "#FF5252";       // Lanterna / Alface
-                    const C_ALIEN = "#64DD17";     // Alien
-                    const C_FIRE = "#00E676";      // On Fire
-                    const C_DIAMOND = "#00E5FF";
-                    const C_MAGIC = "#E040FB";     // Mãe Dinah
-                    const C_WHITE = "#FFFFFF";
-                    const C_SILVER = "#C0C0C0";
-                    const C_BRONZE = "#CD7F32";
+                    const C_GOLD = "#FFD700"; const C_BLUE_LIGHT = "#4FC3F7"; const C_GRAY = "#808080"; 
+                    const C_ORANGE = "#FF6D00"; const C_RED = "#FF5252"; const C_ALIEN = "#64DD17"; 
+                    const C_FIRE = "#00E676"; const C_DIAMOND = "#00E5FF"; const C_MAGIC = "#E040FB"; 
+                    const C_WHITE = "#FFFFFF"; const C_SILVER = "#C0C0C0"; const C_BRONZE = "#CD7F32";
 
-                    // Prepara dados dos usuários
-                    const users = [];
-                    uSnap.forEach(u => users.push({
-                        id: u.id, 
-                        name: (u.data().name || u.data().username || "Anônimo").split(' ')[0].toUpperCase(),
-                        debts: u.data().debts || 0
-                    }));
+                    // 1. IDENTIFICA ZEBRAS (Para critério de desempate)
+                    const zebraMatchIds = [];
+                    if (totalParticipants > 0) {
+                        finished.forEach(m => {
+                            const winnerVotes = guessesData.filter(g => g.matchId === m.id && g.teamSelected === m.winner).length;
+                            if ((winnerVotes / totalParticipants) < 0.20) zebraMatchIds.push(m.id);
+                        });
+                    }
 
-                    // --- 1. CÁLCULO DE RANKING (NA HORA) ---
-                    // Mapeia, Calcula Pontos e Ordena (Igual ao Kotlin)
+                    // 2. CÁLCULO COMPLETO (Pontos + Débitos + Medalhas)
                     const rankingSnapshot = users.map(u => {
                         let pts = 0;
-                        finished.forEach(m => {
-                            const g = guessesData.find(x => x.userId === u.id && x.matchId === m.id);
-                            if (g && g.teamSelected === m.winner) {
+                        let victories = 0;
+                        let finalsWon = 0;
+                        let simStreak = 0;
+                        let userMedals = []; // Guarda as medalhas para desempatar
+
+                        // Filtra palpites do usuário
+                        const userGuesses = guessesData.filter(g => g.userId === u.id);
+
+                        // Loop cronológico para sequências
+                        // finished já está ordenado por data (reverso), então revertemos para cronológico
+                        const matchesChronological = [...finished].reverse();
+
+                        matchesChronological.forEach(m => {
+                            const g = userGuesses.find(ug => ug.matchId === m.id);
+                            const isHit = g && g.teamSelected === m.winner;
+
+                            if (isHit) {
                                 pts += (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
+                                victories++;
+                                simStreak++;
+                                if (m.round && m.round.toLowerCase() === 'final') finalsWon++;
+
+                                // Medalhas de Sequência
+                                if (simStreak === 3) userMedals.push("🔥");
+                                if (simStreak === 5) userMedals.push("🎯");
+                                if (simStreak === 10) userMedals.push("👽");
+                                
+                                // Zebra
+                                if (zebraMatchIds.includes(m.id)) userMedals.push("🦓");
+                            } else {
+                                simStreak = 0;
                             }
                         });
-                        pts -= u.debts; // Deduz débitos
-                        return { name: u.name, pts: pts, id: u.id };
-                    }).sort((a,b) => b.pts - a.pts); // Ordena APENAS por pontos (Desempate "natural" do banco)
 
-                    // Se tem jogos finalizados e usuários...
+                        // Diamante (Oitavas)
+                        const oitavasMatches = finished.filter(m => m.round === "Oitavas de final");
+                        const oitavasByComp = {};
+                        oitavasMatches.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); });
+                        
+                        Object.values(oitavasByComp).forEach(matches => {
+                            if (matches.length === 8) {
+                                const hits = matches.filter(m => {
+                                    const g = userGuesses.find(ug => ug.matchId === m.id);
+                                    return g && g.teamSelected === m.winner;
+                                }).length;
+                                if (hits === 8) { pts += 3; userMedals.push("💎"); }
+                            }
+                        });
+
+                        // Outras
+                        if (finalsWon > 0) userMedals.push("🔮");
+                        if (victories >= 50) { const qtd = Math.floor(victories/50); for(let k=0; k<qtd; k++) userMedals.push("🎓"); }
+
+                        pts -= (u.debts || 0);
+
+                        return { 
+                            name: (u.name || "Anônimo").split(' ')[0].toUpperCase(), 
+                            pts: pts, 
+                            debts: u.debts || 0,
+                            medals: userMedals, // Array de strings (ícones)
+                            id: u.id
+                        };
+                    }).sort((a, b) => {
+                        // --- AQUI ESTÁ A CORREÇÃO DO LÍDER ---
+                        if (b.pts !== a.pts) return b.pts - a.pts; // 1. Pontos
+                        if (a.debts !== b.debts) return a.debts - b.debts; // 2. Menos Débitos
+                        
+                        // 3. Hierarquia de Medalhas
+                        const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
+                        for (let icon of hierarchy) {
+                            const countA = a.medals.filter(m => m === icon).length;
+                            const countB = b.medals.filter(m => m === icon).length;
+                            if (countB !== countA) return countB - countA;
+                        }
+                        return 0; // Empate técnico (aqui a ordem do banco decide)
+                    });
+
+                    // GERAÇÃO DAS FRASES
                     if (finished.length > 0 && rankingSnapshot.length > 0) {
                         
                         const lider = rankingSnapshot[0];
                         const lanterna = rankingSnapshot[rankingSnapshot.length - 1];
 
-                        // --- POSIÇÕES DO TOPO ---
                         // 1º Lugar
                         addSegment(`   👑 SEGUE O LÍDER! O ${lider.name} TÁ TRANQUILO COM SEUS ${lider.pts} PTS!   |`, C_GOLD);
-                    
+
+                        // 2º Lugar
+                        if (rankingSnapshot.length >= 2) {
+                            const vice = rankingSnapshot[1];
+                            addSegment(`   🥈 O ${vice.name} TÁ NA COLA DO LÍDER! SÓ UM VACILO E ELE ASSUME!   |`, C_SILVER);
+                        }
+
+                        // 3º Lugar
+                        if (rankingSnapshot.length >= 3) {
+                            const terceiro = rankingSnapshot[2];
+                            addSegment(`   🥉 ${terceiro.name} FECHA O PÓDIO! TÁ COMENDO PELAS BEIRADAS!   |`, C_BRONZE);
+                        }
+
                         // 4º Lugar
                         if (rankingSnapshot.length >= 4) {
-                            const quarto = rankingSnapshot[3]; // Índice 3 = 4º lugar
+                            const quarto = rankingSnapshot[3];
                             addSegment(`   👀 OLHO NO ${quarto.name}! TÁ CHEGANDO NO G3, HEIN?   |`, C_BLUE_LIGHT);
                         }
 
-                        // Meio de Tabela (Ex: se tiver pelo menos 7 pessoas)
+                        // Meio de Tabela
                         if (rankingSnapshot.length >= 7) {
                             const meioIndex = Math.floor(rankingSnapshot.length / 2);
                             const meio = rankingSnapshot[meioIndex];
                             addSegment(`   😐 ${meio.name} TÁ ÁGUA DE SALSICHA... NEM FEDE NEM CHEIRA NA TABELA!   |`, C_GRAY);
                         }
 
-                        // --- POSIÇÕES DO FUNDO ---
-                        // Porteiro do Z-2 (Antepenúltimo)
+                        // Porteiro do Z-2
                         if (rankingSnapshot.length >= 3) {
                             const indexPorteiro = rankingSnapshot.length - 3;
                             if (indexPorteiro >= 0) {
@@ -670,66 +733,54 @@ Término oficial: 31 de dezembro de 2026
                             addSegment(`   🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA NÃO, ARROMBADO?   |`, C_RED);
                         }
 
-                        // --- SEQUÊNCIAS (Últimos 10 jogos) ---
-                        // Pega os 10 mais recentes (finished já está ordenado por data decrescente no loadMatches)
+                        // --- SEQUÊNCIAS PARA O LETREIRO (Usando a lista de usuários original para iterar) ---
+                        // Precisamos re-analisar para pegar alface/dorminhoco que não contam no desempate positivo
                         const recent10 = finished.slice(0, 10);
 
                         users.forEach(u => {
                             let streak = 0;
                             let isNegative = false;
-
+                            
+                            // Re-calcula streak rápida para frases negativas
                             for (let i = 0; i < recent10.length; i++) {
                                 const m = recent10[i];
                                 const g = guessesData.find(x => x.userId === u.id && x.matchId === m.id);
-                                
                                 const vote = g ? g.teamSelected : null;
-
                                 if (vote && vote === m.winner) {
-                                    if (isNegative) break;
-                                    streak++;
+                                    if (isNegative) break; streak++;
                                 } else {
-                                    if (streak > 0 && !isNegative) break;
-                                    isNegative = true;
-                                    streak++;
+                                    if (streak > 0 && !isNegative) break; isNegative = true; streak++;
                                 }
                             }
 
+                            const name = (u.name || "").split(' ')[0].toUpperCase();
+
                             if (!isNegative) {
-                                if (streak >= 10) addSegment(`   👽 CHAMEM A NASA! O ${u.name} É DE OUTRO MUNDO (${streak} ACERTOS)!   |`, C_ALIEN);
-                                else if (streak >= 5) addSegment(`   🎯 TEM UM MITO ENTRE NÓS! ${u.name} CRAVOU ${streak} SEGUIDAS!   |`, C_GOLD);
-                                else if (streak >= 3) addSegment(`   🔥 ${u.name} TÁ CRUEL, DOIDO! (${streak} ACERTOS SEGUIDOS)   |`, C_FIRE);
+                                if (streak >= 10) addSegment(`   👽 CHAMEM A NASA! O ${name} É DE OUTRO MUNDO (${streak} ACERTOS)!   |`, C_ALIEN);
+                                else if (streak >= 5) addSegment(`   🎯 TEM UM MITO ENTRE NÓS! ${name} CRAVOU ${streak} SEGUIDAS!   |`, C_GOLD);
+                                else if (streak >= 3) addSegment(`   🔥 ${name} TÁ CRUEL, DOIDO! (${streak} ACERTOS SEGUIDOS)   |`, C_FIRE);
                             } else {
-                                // AQUI: LÓGICA DO ALFACE 🥬
-                                if (streak >= 3) addSegment(`   🥬 ${u.name} TÁ COM MÃO DE ALFACE! (${streak} ERROS SEGUIDOS)   |`, C_RED);
+                                if (streak >= 3) addSegment(`   🥬 ${name} TÁ COM MÃO DE ALFACE! (${streak} ERROS SEGUIDOS)   |`, C_RED);
                             }
 
-                            // Dorminhoco (Não votou no último jogo)
+                            // Dorminhoco
                             if (finished.length > 0) {
                                 const lastM = finished[0];
                                 const voted = guessesData.some(x => x.userId === u.id && x.matchId === lastM.id);
-                                if (!voted) {
-                                    addSegment(`   💤 O BURRÃO DO ${u.name} NÃO VOTOU NO ÚLTIMO JOGO!   |`, C_GRAY);
-                                }
+                                if (!voted) addSegment(`   💤 O BURRÃO DO ${name} NÃO VOTOU NO ÚLTIMO JOGO!   |`, C_GRAY);
                             }
                         });
 
-                        // Zebra (Último jogo)
+                        // Zebra (Frase)
                         if (finished.length > 0) {
                             const lastM = finished[0];
-                            const totalV = lastM.stats.total || 1;
-                            const winnerV = lastM.stats[lastM.winner] || 0;
-                            
-                            // Se tiver participantes suficientes
-                            if (totalParticipants > 0) {
-                                const pct = winnerV / totalParticipants;
-                                if (pct < 0.30 && totalV > 3) {
-                                    const acertadores = users.filter(u => 
-                                        guessesData.some(g => g.userId === u.id && g.matchId === lastM.id && g.teamSelected === lastM.winner)
-                                    ).map(u => u.name);
+                            if (zebraMatchIds.includes(lastM.id)) {
+                                const acertadores = users.filter(u => 
+                                    guessesData.some(g => g.userId === u.id && g.matchId === lastM.id && g.teamSelected === lastM.winner)
+                                ).map(u => (u.name||"").split(' ')[0].toUpperCase());
 
-                                    if (acertadores.length > 0 && acertadores.length <= 4) {
-                                        addSegment(`   🦓 OLHA A ZEBRA! O ${acertadores.join(', ')} ACERTOU ${lastM.teamA} x ${lastM.teamB}!   |`, C_GOLD);
-                                    }
+                                if (acertadores.length > 0 && acertadores.length <= 4) {
+                                    addSegment(`   🦓 OLHA A ZEBRA! O ${acertadores.join(', ')} ACERTOU ${lastM.teamA} x ${lastM.teamB}!   |`, C_GOLD);
                                 }
                             }
                         }
@@ -743,10 +794,10 @@ Término oficial: 31 de dezembro de 2026
                         { t: "   ⏳ BORA VOTAR MEU FI! O PRÓXIMO JOGO JÁ VAI COMEÇAR...   |", c: C_WHITE },
                         { t: "   💸 QUEM PAGA EM DIA NÃO CRIA BARRIGA! EVITE MULTAS.   |", c: C_GOLD },
                         { t: "   🦖 DIZEM AS LENDAS QUE TEM GENTE AQUI QUE JÁ FOI BOM DE PALPITE...   |", c: C_WHITE },
-                        { t: "   👇 O VEVE É FRACO Ó MAN! 👇   |", c: C_GRAY }
+                        { t: "   👇 O VEVE É FRACO Ó MAN! 👇   |", c: C_GRAY },
+                        { t: "   🏺 VIVER DE PASSADO É PRA MUSEU! A TORCIDA QUER TÍTULO HOJE!   |", c: C_WHITE },
                     ];
 
-                    // Embaralha e pega 4
                     const shuffledExtras = frasesExtras.sort(() => 0.5 - Math.random()).slice(0, 4);
                     shuffledExtras.forEach(item => addSegment(item.t, item.c));
 
@@ -754,19 +805,13 @@ Término oficial: 31 de dezembro de 2026
                         addSegment("   ⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!   |", C_GOLD);
                     }
 
-                    // =================================================================
-                    // 2. EMBARALHAR E CONSTRUIR O TEXTO FINAL (CORRIGIDO)
-                    // =================================================================
-                    // Função de Shuffle para garantir aleatoriedade na exibição
+                    // 3. EMBARALHAR E CONSTRUIR
                     for (let i = newsSegments.length - 1; i > 0; i--) {
                         const j = Math.floor(Math.random() * (i + 1));
                         [newsSegments[i], newsSegments[j]] = [newsSegments[j], newsSegments[i]];
                     }
 
-                    // Junta tudo numa string HTML única
-                    // Duplicamos o conteúdo (join + join) para garantir o loop infinito suave no CSS
                     const finalHTML = newsSegments.join('') + newsSegments.join('');
-                    
                     return finalHTML;
                 };
 
@@ -2020,6 +2065,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
