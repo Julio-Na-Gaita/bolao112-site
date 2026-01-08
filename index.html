@@ -1738,8 +1738,28 @@ async function loadAdminMatches() {
                 </div>
             </div>`; 
         };
-        async function calculatePot() { const snap = await getDocs(collection(db, "users")); let total = 0; snap.forEach(d => { const p = d.data().payments; if(p) total += Object.values(p).filter(v => v).length * 10; }); document.getElementById('potValue').innerText = total.toLocaleString('pt-br',{style:'currency',currency:'BRL'}); }
-        document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
+        async function calculatePot() { 
+            const snap = await getDocs(collection(db, "users")); 
+            let total = 0; 
+            snap.forEach(d => { 
+                const p = d.data().payments; 
+                // Conta quantos pagamentos 'true' existem no total
+                if(p) total += Object.values(p).filter(v => v).length; 
+            }); 
+            
+            // LÓGICA DE DIVISÃO (R$ 10 Prêmio + R$ 5 Festa)
+            const prizePot = total * 10;
+            const partyPot = total * 5;
+            const totalArrecadado = prizePot + partyPot;
+
+            // Formatação
+            const fmt = (v) => v.toLocaleString('pt-br',{style:'currency',currency:'BRL'});
+
+            // Preenche os 3 campos novos
+            document.getElementById('potValue').innerText = fmt(prizePot);
+            document.getElementById('partyValue').innerText = fmt(partyPot);
+            document.getElementById('totalValue').innerText = `Total Arrecadado: ${fmt(totalArrecadado)}`;
+        }
         window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
         document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
         document.getElementById('btnLogout').onclick = () => signOut(auth);
@@ -1988,6 +2008,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
