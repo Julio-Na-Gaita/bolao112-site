@@ -255,8 +255,8 @@ Término oficial: 31 de dezembro de 2026
 
     <div id="modalOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="closeModal()"><div id="modalContainer" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden" onclick="event.stopPropagation()"></div></div>
     <div id="potModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6" onclick="document.getElementById('potModal').classList.add('hidden')">
-        <div class="card-cut w-full max-w-sm p-8 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('https://cdn.pixabay.com/photo/2017/09/07/08/54/money-2724241_640.jpg'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
-          <i class="fas fa-piggy-bank text-4xl text-[#FFD700] mb-2 drop-shadow-sm"></i>
+        <div class="card-cut w-full max-w-sm p-6 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), url('https://cdn.pixabay.com/photo/2017/09/07/08/54/money-2724241_640.jpg'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
+            <i class="fas fa-piggy-bank text-4xl text-[#FFD700] mb-2 drop-shadow-sm"></i>
             <h2 class="text-lg font-bold text-gray-800 uppercase tracking-widest">Transparência</h2>
             <p class="text-xs text-gray-500 font-bold mb-4">Mensalidade: R$ 15,00</p>
             
@@ -1739,27 +1739,39 @@ async function loadAdminMatches() {
             </div>`; 
         };
         async function calculatePot() { 
-            const snap = await getDocs(collection(db, "users")); 
-            let total = 0; 
-            snap.forEach(d => { 
-                const p = d.data().payments; 
-                // Conta quantos pagamentos 'true' existem no total
-                if(p) total += Object.values(p).filter(v => v).length; 
-            }); 
-            
-            // LÓGICA DE DIVISÃO (R$ 10 Prêmio + R$ 5 Festa)
-            const prizePot = total * 10;
-            const partyPot = total * 5;
-            const totalArrecadado = prizePot + partyPot;
+            try {
+                const snap = await getDocs(collection(db, "users")); 
+                let totalCotas = 0; 
+                snap.forEach(d => { 
+                    const p = d.data().payments; 
+                    if(p) totalCotas += Object.values(p).filter(v => v).length; 
+                }); 
+                
+                // LÓGICA DE DIVISÃO (R$ 10 Prêmio + R$ 5 Festa)
+                const prizePot = totalCotas * 10;
+                const partyPot = totalCotas * 5;
+                const totalArrecadado = prizePot + partyPot;
 
-            // Formatação
-            const fmt = (v) => v.toLocaleString('pt-br',{style:'currency',currency:'BRL'});
+                const fmt = (v) => v.toLocaleString('pt-br',{style:'currency',currency:'BRL'});
 
-            // Preenche os 3 campos novos
-            document.getElementById('potValue').innerText = fmt(prizePot);
-            document.getElementById('partyValue').innerText = fmt(partyPot);
-            document.getElementById('totalValue').innerText = `Total Arrecadado: ${fmt(totalArrecadado)}`;
+                // Preenche os campos SE eles existirem no DOM
+                const elPot = document.getElementById('potValue');
+                const elParty = document.getElementById('partyValue');
+                const elTotal = document.getElementById('totalValue');
+
+                if(elPot) elPot.innerText = fmt(prizePot);
+                if(elParty) elParty.innerText = fmt(partyPot);
+                if(elTotal) elTotal.innerText = `Total Arrecadado: ${fmt(totalArrecadado)}`;
+            } catch (e) {
+                console.error("Erro ao calcular pote:", e);
+                alert("Erro ao carregar valores do pote.");
+            }
         }
+        // Isso deve ficar LOGO APÓS a função calculatePot
+        document.getElementById('btnPot').onclick = () => {
+            calculatePot(); // Chama o cálculo
+            document.getElementById('potModal').classList.remove('hidden'); // Abre o modal novo
+        };
         window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
         document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
         document.getElementById('btnLogout').onclick = () => signOut(auth);
@@ -2008,6 +2020,7 @@ async function loadAdminMatches() {
     </script>
 </body>
 </html>
+
 
 
 
