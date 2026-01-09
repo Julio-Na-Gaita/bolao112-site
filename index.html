@@ -248,7 +248,7 @@ Término oficial: 31 de dezembro de 2026
 
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-4"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
                 
-                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5.6</p>
+                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5.7</p>
             </div>
         </div>
     </main>
@@ -484,7 +484,7 @@ Término oficial: 31 de dezembro de 2026
                         isAdmin: false, 
                         debts: 0, 
                         payments: {}, 
-                        appVersion: "Web v1.5.6",
+                        appVersion: "Web v1.5.7",
                         passwordHint: hint // <--- SALVA AQUI
                     }); 
                     alert("Conta criada!"); closeModal(); 
@@ -494,8 +494,8 @@ Término oficial: 31 de dezembro de 2026
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // ATUALIZANDO VERSÃO PARA 1.5.6
-                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.6" }); } catch(e) {}
+                // ATUALIZANDO VERSÃO PARA 1.5.7
+                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.7" }); } catch(e) {}
                 document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('mainScreens').classList.remove('hidden'); document.getElementById('bottomNav').classList.remove('hidden'); document.getElementById('btnLogout').classList.remove('hidden');
                 showTab('matches'); calculatePot();
             } else {
@@ -888,7 +888,8 @@ Término oficial: 31 de dezembro de 2026
                         { t: "   🎓 QUEM SERÁ O PRIMEIRO VETERANO A COMPLETAR 50 ACERTOS?   |", c: C_WHITE },
                         { t: "   💸 QUEM PAGA EM DIA NÃO CRIA BARRIGA! EVITE MULTAS.   |", c: C_GOLD },
                         { t: "   🦖 DIZEM AS LENDAS QUE TEM GENTE AQUI QUE JÁ FOI BOM DE PALPITE...   |", c: C_WHITE },
-                        { t: "   👇 O VEVE É FRACO Ó MAN! 👇   |", c: C_GRAY },
+                        { t: "   🤡 O VEVE É FRACO Ó MAN! 🤡   |", c: C_GRAY },
+                        { t: "   🧛 DICA DO DIA: NÃO SEJA VAGABUNDO, PANACA, JUVENIL E CHUPA-SANGUE   |", c: C_WHITE },
                         { t: "   🏺 VIVER DE PASSADO É PRA MUSEU! A TORCIDA QUER TÍTULO HOJE!   |", c: C_WHITE }
                     ];
 
@@ -1950,7 +1951,7 @@ async function loadProfile() {
         
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.5.6) ---
+        // --- GUIA DO APP ATUALIZADO (v1.5.7) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
@@ -1958,7 +1959,7 @@ async function loadProfile() {
                 <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
-                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.5.6</p>
+                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.5.7</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
@@ -2285,6 +2286,7 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
 
