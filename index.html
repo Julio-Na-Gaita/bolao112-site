@@ -390,7 +390,7 @@ Término oficial: 31 de dezembro de 2026
                         <h3 class="text-[#006400] font-black uppercase text-lg mb-2">Recuperar Acesso</h3>
                         <p class="text-xs text-gray-500 mb-4">Digite seu usuário para ver a dica cadastrada.</p>
                         
-                        <input type="text" id="recoverUser" placeholder="Ex: joaosilva" class="w-full p-3 bg-gray-50 border rounded-lg mb-4 text-sm outline-none focus:border-[#006400] text-center uppercase font-bold">
+                        <input type="text" id="recoverUser" placeholder="Ex: joaosilva" class="w-full p-3 bg-gray-50 border rounded-lg mb-4 text-sm outline-none focus:border-[#006400] text-center font-bold">
                         
                         <div id="hintResultArea" class="hidden mb-4 p-3 bg-orange-50 border border-orange-200 rounded">
                             <p class="text-[10px] text-orange-600 font-bold uppercase">💡 SUA DICA:</p>
@@ -404,7 +404,7 @@ Término oficial: 31 de dezembro de 2026
             `;
 
             document.getElementById('btnSearchHint').onclick = async () => {
-                const user = document.getElementById('recoverUser').value.trim().toLowerCase();
+                const user = document.getElementById('recoverUser').value.trim();
                 const msg = document.getElementById('recoverMsg');
                 const area = document.getElementById('hintResultArea');
                 
@@ -2285,6 +2285,7 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
 
