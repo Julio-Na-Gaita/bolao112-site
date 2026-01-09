@@ -238,7 +238,7 @@ Término oficial: 31 de dezembro de 2026
                             <p class="font-black text-[#006400] text-lg mt-1">PAGAMENTO PIX</p>
                             <div class="h-4"></div>
                             <p class="text-xs font-bold text-gray-800">Valor da Mensalidade</p>
-                            <p class="text-3xl font-black text-black">R$ 10,00</p>
+                            <p class="text-3xl font-black text-black">R$ 15,00</p>
                         </div>
                         <div class="text-center text-[10px] text-gray-800 mb-2">Beneficiário:<br><b class="text-[#006400] text-sm">MATHEUS FERREIRA ALVES</b></div>
                         <div><button id="btnCopyPix" class="w-full bg-[#32BCAD] text-white py-2 rounded font-bold text-xs shadow btn-press mb-3"><i class="fas fa-copy mr-1"></i> PIX COPIA E COLA</button><label class="text-[10px] text-gray-500 font-bold">Chave Pix Manual</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded shadow-sm"><button onclick="copyKeyOnly()" class="bg-[#006400] text-white px-3 rounded shadow-sm"><i class="fas fa-copy"></i></button></div></div>
@@ -248,7 +248,7 @@ Término oficial: 31 de dezembro de 2026
 
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-4"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
                 
-                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5.5</p>
+                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5.6</p>
             </div>
         </div>
     </main>
@@ -317,11 +317,11 @@ Término oficial: 31 de dezembro de 2026
         const rulesData = [
             { 
                 t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", 
-                c: "💰 Aporte Mensal\nValor: R$ 10,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" 
+                c: "💰 Aporte Mensal\nValor: R$ 15,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" 
             },
             { 
-                t: "2️⃣ PREMIAÇÃO & REI DO MÊS", 
-                c: "🏆 POTE ANUAL\nO valor total arrecadado ao longo da temporada formará o Pote Anual.\nDistribuição:\n🥇 1º Lugar: 60%\n🥈 2º Lugar: 30%\n🥉 3º Lugar: 10%\n\n👑 REI DO MÊS (SEM DESEMPATE)\nO título simbólico de \"Rei do Mês\" é concedido ao jogador que somar o maior número de pontos brutos dentro do mês de competência.\n\n⚠️ REGRA DE EMPATE MENSAL:\nPara o Rei do Mês, NÃO existem critérios de desempate.\n• Se dois ou mais jogadores terminarem o mês empatados na liderança, NINGUÉM receberá a coroa ou o título naquele mês.\n• O Rei deve ser, obrigatoriamente, um líder isolado." 
+                t: "2️⃣ PREMIAÇÃO, FESTA & REI DO MÊS", 
+                c: "💰 DESTINAÇÃO DA MENSALIDADE (R$ 15,00)\nO valor mensal arrecadado de cada participante será dividido da seguinte forma:\n\n💵 R$ 10,00 -> Pote Anual (Premiação em Dinheiro)\n🍻 R$ 5,00 -> Fundo de Confraternização (Festa + Troféus)\n\n🏆 DISTRIBUIÇÃO DO POTE (DINHEIRO)\nO valor acumulado no \"Pote Anual\" (parte de R$ 10) será distribuído aos 3 primeiros colocados da Classificação Geral:\n🥇 1º Lugar: 60% do valor\n🥈 2º Lugar: 30% do valor\n🥉 3º Lugar: 10% do valor\n\n🎉 CONFRATERNIZAÇÃO E TROFÉUS\nO \"Fundo de Confraternização\" (parte de R$ 5) será utilizado integralmente para custear o evento de encerramento no final de 2026 e a confecção dos troféus físicos para os campeões.\n\n👑 REI DO MÊS (SEM DESEMPATE)\nO título simbólico de \"Rei do Mês\" é concedido ao jogador que somar o maior número de pontos brutos dentro do mês de competência.\n\n⚠️ REGRA DE EMPATE MENSAL:\nPara o Rei do Mês, NÃO existem critérios de desempate.\n• Se dois ou mais jogadores terminarem o mês empatados na liderança, NINGUÉM receberá a coroa ou o título naquele mês.\n• O Rei deve ser, obrigatoriamente, um líder isolado." 
             },
             { 
                 t: "3️⃣ SISTEMA DE PONTUAÇÃO & DATAS", 
@@ -385,15 +385,15 @@ Término oficial: 31 de dezembro de 2026
                 const name = document.getElementById('regName').value.trim(); const user = document.getElementById('regUser').value.trim().toLowerCase(); const pass = document.getElementById('regPass').value;
                 if(!name || !user || pass.length < 6) { alert("Dados inválidos."); return; }
                 if(user.includes(" ")) { alert("Usuário sem espaços."); return; }
-                try { const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); await setDoc(doc(db, "users", res.user.uid), { name, username: user, createdAt: new Date(), isAdmin: false, debts: 0, payments: {}, appVersion: "Web v1.5.5" }); alert("Conta criada!"); closeModal(); } catch(e) { alert("Erro ao criar conta: " + e.message); }
+                try { const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); await setDoc(doc(db, "users", res.user.uid), { name, username: user, createdAt: new Date(), isAdmin: false, debts: 0, payments: {}, appVersion: "Web v1.5.6" }); alert("Conta criada!"); closeModal(); } catch(e) { alert("Erro ao criar conta: " + e.message); }
             };
         };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // ATUALIZANDO VERSÃO PARA 1.5.5
-                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.5" }); } catch(e) {}
+                // ATUALIZANDO VERSÃO PARA 1.5.6
+                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.6" }); } catch(e) {}
                 document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('mainScreens').classList.remove('hidden'); document.getElementById('bottomNav').classList.remove('hidden'); document.getElementById('btnLogout').classList.remove('hidden');
                 showTab('matches'); calculatePot();
             } else {
@@ -1722,7 +1722,7 @@ async function loadAdminMatches() {
         
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.5.5) ---
+        // --- GUIA DO APP ATUALIZADO (v1.5.6) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
@@ -1730,7 +1730,7 @@ async function loadAdminMatches() {
                 <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
-                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.5.5</p>
+                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.5.6</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
@@ -2057,6 +2057,7 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
 
