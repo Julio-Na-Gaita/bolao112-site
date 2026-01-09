@@ -415,7 +415,7 @@ Término oficial: 31 de dezembro de 2026
                 
                 try { 
                     const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); 
-                    // Salva a dica no banco
+                    // Salva a dica no banco junto com os outros dados
                     await setDoc(doc(db, "users", res.user.uid), { 
                         name, 
                         username: user, 
@@ -1750,7 +1750,10 @@ async function loadAdminMatches() {
             render();
         };
 
-        window.openFinancialScreen = async () => { const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const usersSnap = await getDocs(collection(db, "users")); const users = []; usersSnap.forEach(d => users.push({id: d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]"><img src="bg_painel_usuarios.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 flex flex-col h-full bg-white/30"><div class="p-4 flex justify-between items-center shrink-0"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-black text-lg">Gestão Financeira</h3><div class="w-6"></div></div><div class="px-4 pb-2 space-y-2"><button class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press">GERENCIAR CONVITES</button><button onclick="checkDelays()" class="w-full bg-red-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-calendar-times"></i> VERIFICAR ATRASOS (MÊS ATUAL)</button></div><div class="flex-1 overflow-y-auto p-4 pt-0">`; users.forEach(u => { 
+        window.openFinancialScreen = async () => { 
+            // ... (código inicial igual) ...
+            
+            users.forEach(u => { 
                 // Ícone de chave se tiver dica
                 const hintIcon = u.passwordHint ? `<i class="fas fa-key text-orange-400 text-xs ml-2 cursor-pointer" onclick="alert('Dica de ${u.name}:\\n\\n${u.passwordHint}')" title="Ver Dica"></i>` : '';
 
@@ -1775,8 +1778,10 @@ async function loadAdminMatches() {
                 }); 
                 html += `</div></div>`; 
             }); 
+            
             html += `</div></div></div>`; 
-            cont.innerHTML = html;
+            cont.innerHTML = html; 
+        };
         window.checkDelays = async () => { const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const now = new Date(); const currMonth = months[now.getMonth()]; const day = now.getDate(); if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; } const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const snap = await getDocs(collection(db, "users")); let late = []; snap.forEach(d => { const u = d.data(); if (!u.payments || !u.payments[currMonth]) { late.push({id: d.id, name: u.name, debts: u.debts || 0}); } }); let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`; if (late.length === 0) { html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`; } else { html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`; late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; }); html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`; } html += `</div>`; cont.innerHTML = html; window.applyBatchPenalty = async () => { if(!confirm("Confirmar aplicação de multa em massa?")) return; const batch = writeBatch(db); late.forEach(l => { const ref = doc(db, "users", l.id); batch.update(ref, { debts: l.debts + 1 }); }); await batch.commit(); alert("Penalidades aplicadas!"); openFinancialScreen(); }; };
 async function loadProfile() { 
             if (!currentUser) return; 
@@ -1792,7 +1797,7 @@ async function loadProfile() {
                 if (u.photoBase64) { 
                     document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`; 
                 } 
-                
+
                 // --- LÓGICA DA DICA ---
                 const myHint = u.passwordHint || "Sem dica cadastrada";
                 // Cria ou atualiza o container da dica (se não existir, cria abaixo dos botões)
@@ -1806,7 +1811,7 @@ async function loadProfile() {
                 }
 
                 hintDiv.innerHTML = `
-                    <div class="mt-4 bg-[#FFF3E0] border border-[#FF9800] rounded p-3 flex justify-between items-center text-left">
+                    <div class="mt-4 bg-[#FFF3E0] border border-[#FF9800] rounded p-3 flex justify-between items-center text-left mx-4 mb-4">
                         <div>
                             <p class="text-[10px] font-bold text-[#EF6C00] uppercase"><i class="fas fa-lightbulb mr-1"></i> Dica de Senha</p>
                             <p class="text-xs font-black text-black mt-1">${myHint}</p>
@@ -1817,11 +1822,10 @@ async function loadProfile() {
                     </div>
                 `;
                 // ---------------------
-
+                
                 const adminBtn = document.getElementById('btnAdminPanel'); 
                 if (u.isAdmin === true) { adminBtn.classList.remove('hidden'); } else { adminBtn.classList.add('hidden'); } 
                 
-                // ... (restante da lógica financeira mantida igual) ...
                 const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
                 const currMonth = months[new Date().getMonth()]; 
                 const payments = u.payments || {}; 
@@ -1853,6 +1857,17 @@ async function loadProfile() {
                 } catch (e) { console.log("Erro ao carregar dados financeiros:", e); } 
             } catch (error) { console.error("Erro crítico no loadProfile:", error); } 
         }
+
+        // Função Global para Editar Dica (ADICIONE ISSO LOGO APÓS A loadProfile)
+        window.editHint = (currentVal) => {
+            const val = currentVal === "Sem dica cadastrada" ? "" : currentVal;
+            const newHint = prompt("Digite uma dica para lembrar sua senha:", val);
+            if (newHint !== null) {
+                updateDoc(doc(db, "users", currentUser.uid), { passwordHint: newHint })
+                    .then(() => { alert("Dica salva!"); loadProfile(); })
+                    .catch(e => alert("Erro ao salvar dica."));
+            }
+        };
 
         // Função Global para Editar Dica
         window.editHint = (currentVal) => {
@@ -2209,6 +2224,7 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
 
