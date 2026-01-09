@@ -257,7 +257,7 @@ Término oficial: 31 de dezembro de 2026
   <div id="potModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6" onclick="document.getElementById('potModal').classList.add('hidden')">
         <div class="card-cut w-full max-w-sm p-6 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), url('https://cdn.pixabay.com/photo/2017/09/07/08/54/money-2724241_640.jpg'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
             <i class="fas fa-piggy-bank text-4xl text-[#FFD700] mb-2 drop-shadow-sm"></i>
-            <h2 class="text-lg font-bold text-gray-800 uppercase tracking-widest">Transparência</h2>
+            <h2 class="text-lg font-bold text-gray-800 uppercase tracking-widest">ACUMULADO!</h2>
             <p class="text-xs text-gray-500 font-bold mb-4">Mensalidade: R$ 15,00</p>
             
             <div class="space-y-3 mb-6">
@@ -1822,6 +1822,11 @@ async function calculatePot() {
                 alert("Erro ao carregar valores do pote.");
             }
         }
+        // Isso deve ficar LOGO APÓS a função calculatePot
+        document.getElementById('btnPot').onclick = () => {
+            calculatePot(); // Chama o cálculo
+            document.getElementById('potModal').classList.remove('hidden'); // Abre o modal novo
+        };
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
         window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
         document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
@@ -2071,6 +2076,7 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
 
