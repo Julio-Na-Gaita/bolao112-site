@@ -494,9 +494,6 @@ Término oficial: 31 de dezembro de 2026
             }
         };
         
-        // --- FUNÇÃO LOADMATCHES (SEM O ALERT CHATO) ---
-        // --- FUNÇÃO LOADMATCHES COM HALL DA FAMA E DA LAMA ---
-        // --- FUNÇÃO LOADMATCHES COMPLETA (WEB) ---
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
@@ -582,13 +579,7 @@ Término oficial: 31 de dezembro de 2026
                 finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
                 
                 // =================================================================
-                // 📰 GERADOR DE NOTÍCIAS (HALL DA FAMA E DA LAMA) - LÓGICA ANDROID
-                // =================================================================
-                // =================================================================
-                // 📰 GERADOR DE NOTÍCIAS (LÓGICA IDÊNTICA AO ANDROID)
-                // =================================================================
-               // =================================================================
-                // 📰 GERADOR DE NOTÍCIAS (LÓGICA BLINDADA IGUAL ANDROID)
+                // 📰 GERADOR DE NOTÍCIAS (LÓGICA BLINDADA DO ANDROID)
                 // =================================================================
                 const generateNewsFeed = () => {
                     let newsSegments = []; 
@@ -602,6 +593,14 @@ Término oficial: 31 de dezembro de 2026
                     const C_FIRE = "#00E676"; const C_DIAMOND = "#00E5FF"; const C_MAGIC = "#E040FB"; 
                     const C_WHITE = "#FFFFFF"; const C_SILVER = "#C0C0C0"; const C_BRONZE = "#CD7F32";
 
+                    // Prepara dados base dos usuários
+                    const baseUsers = [];
+                    uSnap.forEach(u => baseUsers.push({
+                        id: u.id, 
+                        name: u.data().name || u.data().username || "Anônimo",
+                        debts: u.data().debts || 0
+                    }));
+
                     // 1. IDENTIFICA ZEBRAS (Para critério de desempate)
                     const zebraMatchIds = [];
                     if (totalParticipants > 0) {
@@ -611,19 +610,17 @@ Término oficial: 31 de dezembro de 2026
                         });
                     }
 
-                    // 2. CÁLCULO COMPLETO (Pontos + Débitos + Medalhas)
-                    const rankingSnapshot = users.map(u => {
+                    // 2. CÁLCULO COMPLETO (Pontos + Débitos + Medalhas para o Ranking Correto)
+                    const rankingSnapshot = baseUsers.map(u => {
                         let pts = 0;
                         let victories = 0;
                         let finalsWon = 0;
                         let simStreak = 0;
-                        let userMedals = []; // Guarda as medalhas para desempatar
+                        let userMedals = []; 
 
-                        // Filtra palpites do usuário
                         const userGuesses = guessesData.filter(g => g.userId === u.id);
-
-                        // Loop cronológico para sequências
-                        // finished já está ordenado por data (reverso), então revertemos para cronológico
+                        
+                        // Ordem cronológica para sequências
                         const matchesChronological = [...finished].reverse();
 
                         matchesChronological.forEach(m => {
@@ -636,23 +633,19 @@ Término oficial: 31 de dezembro de 2026
                                 simStreak++;
                                 if (m.round && m.round.toLowerCase() === 'final') finalsWon++;
 
-                                // Medalhas de Sequência
                                 if (simStreak === 3) userMedals.push("🔥");
                                 if (simStreak === 5) userMedals.push("🎯");
                                 if (simStreak === 10) userMedals.push("👽");
-                                
-                                // Zebra
                                 if (zebraMatchIds.includes(m.id)) userMedals.push("🦓");
                             } else {
                                 simStreak = 0;
                             }
                         });
 
-                        // Diamante (Oitavas)
+                        // Diamante
                         const oitavasMatches = finished.filter(m => m.round === "Oitavas de final");
                         const oitavasByComp = {};
                         oitavasMatches.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); });
-                        
                         Object.values(oitavasByComp).forEach(matches => {
                             if (matches.length === 8) {
                                 const hits = matches.filter(m => {
@@ -663,32 +656,29 @@ Término oficial: 31 de dezembro de 2026
                             }
                         });
 
-                        // Outras
                         if (finalsWon > 0) userMedals.push("🔮");
                         if (victories >= 50) { const qtd = Math.floor(victories/50); for(let k=0; k<qtd; k++) userMedals.push("🎓"); }
 
-                        pts -= (u.debts || 0);
+                        pts -= u.debts;
 
                         return { 
-                            name: (u.name || "Anônimo").split(' ')[0].toUpperCase(), 
+                            name: u.name.split(' ')[0].toUpperCase(), 
                             pts: pts, 
-                            debts: u.debts || 0,
-                            medals: userMedals, // Array de strings (ícones)
+                            debts: u.debts,
+                            medals: userMedals,
                             id: u.id
                         };
                     }).sort((a, b) => {
-                        // --- AQUI ESTÁ A CORREÇÃO DO LÍDER ---
-                        if (b.pts !== a.pts) return b.pts - a.pts; // 1. Pontos
-                        if (a.debts !== b.debts) return a.debts - b.debts; // 2. Menos Débitos
-                        
-                        // 3. Hierarquia de Medalhas
+                        // --- CRITÉRIO DE DESEMPATE COMPLETO (Líder Verdadeiro) ---
+                        if (b.pts !== a.pts) return b.pts - a.pts;
+                        if (a.debts !== b.debts) return a.debts - b.debts;
                         const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
                         for (let icon of hierarchy) {
                             const countA = a.medals.filter(m => m === icon).length;
                             const countB = b.medals.filter(m => m === icon).length;
                             if (countB !== countA) return countB - countA;
                         }
-                        return 0; // Empate técnico (aqui a ordem do banco decide)
+                        return 0;
                     });
 
                     // GERAÇÃO DAS FRASES
@@ -709,7 +699,7 @@ Término oficial: 31 de dezembro de 2026
                         // 3º Lugar
                         if (rankingSnapshot.length >= 3) {
                             const terceiro = rankingSnapshot[2];
-                            addSegment(`   🥉 ${terceiro.name} FECHA O PÓDIO! COMENDO PELAS BEIRADAS!   |`, C_BRONZE);
+                            addSegment(`   🥉 ${terceiro.name} FECHA O PÓDIO! JÁ TÁ GARANTINDO O DA MERENDA!   |`, C_BRONZE);
                         }
 
                         // 4º Lugar
@@ -739,15 +729,12 @@ Término oficial: 31 de dezembro de 2026
                             addSegment(`   🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA NÃO, ARROMBADO?   |`, C_RED);
                         }
 
-                        // --- SEQUÊNCIAS PARA O LETREIRO (Usando a lista de usuários original para iterar) ---
-                        // Precisamos re-analisar para pegar alface/dorminhoco que não contam no desempate positivo
+                        // --- SEQUÊNCIAS ---
                         const recent10 = finished.slice(0, 10);
-
-                        users.forEach(u => {
+                        baseUsers.forEach(u => {
                             let streak = 0;
                             let isNegative = false;
                             
-                            // Re-calcula streak rápida para frases negativas
                             for (let i = 0; i < recent10.length; i++) {
                                 const m = recent10[i];
                                 const g = guessesData.find(x => x.userId === u.id && x.matchId === m.id);
@@ -759,7 +746,7 @@ Término oficial: 31 de dezembro de 2026
                                 }
                             }
 
-                            const name = (u.name || "").split(' ')[0].toUpperCase();
+                            const name = u.name.split(' ')[0].toUpperCase();
 
                             if (!isNegative) {
                                 if (streak >= 10) addSegment(`   👽 CHAMEM A NASA! O ${name} É DE OUTRO MUNDO (${streak} ACERTOS)!   |`, C_ALIEN);
@@ -781,9 +768,9 @@ Término oficial: 31 de dezembro de 2026
                         if (finished.length > 0) {
                             const lastM = finished[0];
                             if (zebraMatchIds.includes(lastM.id)) {
-                                const acertadores = users.filter(u => 
+                                const acertadores = baseUsers.filter(u => 
                                     guessesData.some(g => g.userId === u.id && g.matchId === lastM.id && g.teamSelected === lastM.winner)
-                                ).map(u => (u.name||"").split(' ')[0].toUpperCase());
+                                ).map(u => u.name.split(' ')[0].toUpperCase());
 
                                 if (acertadores.length > 0 && acertadores.length <= 4) {
                                     addSegment(`   🦓 OLHA A ZEBRA! O ${acertadores.join(', ')} ACERTOU ${lastM.teamA} x ${lastM.teamB}!   |`, C_GOLD);
@@ -797,7 +784,6 @@ Término oficial: 31 de dezembro de 2026
                         { t: "   💎 QUEM VAI GABARITAR AS OITAVAS E LEVAR O DIAMANTE?   |", c: C_DIAMOND },
                         { t: "   🔮 MÃE DINAH: ACERTE O CAMPEÃO E DOBRE SEUS PONTOS NA FINAL!   |", c: C_MAGIC },
                         { t: "   🎓 QUEM SERÁ O PRIMEIRO VETERANO A COMPLETAR 50 ACERTOS?   |", c: C_WHITE },
-                        { t: "   ⏳ BORA VOTAR MEU FI! O PRÓXIMO JOGO JÁ VAI COMEÇAR...   |", c: C_WHITE },
                         { t: "   💸 QUEM PAGA EM DIA NÃO CRIA BARRIGA! EVITE MULTAS.   |", c: C_GOLD },
                         { t: "   🦖 DIZEM AS LENDAS QUE TEM GENTE AQUI QUE JÁ FOI BOM DE PALPITE...   |", c: C_WHITE },
                         { t: "   👇 O VEVE É FRACO Ó MAN! 👇   |", c: C_GRAY },
@@ -821,14 +807,11 @@ Término oficial: 31 de dezembro de 2026
                     return finalHTML;
                 };
 
-                // --- COLE ISTO LOGO APÓS O FECHAMENTO DA FUNÇÃO generateNewsFeed ---
-
                 const newsHTML = generateNewsFeed();
 
-                // --- RENDERIZAÇÃO DA TELA ---
+                // --- RENDERIZAÇÃO DA TELA (VOLTOU!) ---
                 let html = "";
                 
-                // 1. INSERE O LETREIRO (TICKER) NO TOPO
                 html += `
                     <div class="card-container mb-4">
                         <div class="ticker-container shadow-lg">
@@ -841,7 +824,7 @@ Término oficial: 31 de dezembro de 2026
                     </div>
                 `;
                 
-                // 2. SEÇÃO DE JOGOS ABERTOS
+                // 1. Abertos
                 const pulseOpen = unreadInOpen ? '<span class="pulse-dot"></span>' : '';
                 html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press">
                             <div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
@@ -853,7 +836,7 @@ Término oficial: 31 de dezembro de 2026
                             ${open.length > 0 ? await renderMatchList(open, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}
                          </div>`;
                 
-                // 3. SEÇÃO DE JOGOS AGUARDANDO
+                // 2. Aguardando
                 const pulseWait = unreadInWaiting ? '<span class="pulse-dot"></span>' : '';
                 html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${waiting.length}) AGUARDANDO ⏳${pulseWait}</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">
                     ${waiting.length 
@@ -861,18 +844,16 @@ Término oficial: 31 de dezembro de 2026
                         : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando.</div>`
                     }</div>`;
                 
-                // 4. SEÇÃO DE JOGOS FINALIZADOS
+                // 3. Finalizados
                 if(finished.length) {
                     const pulseFin = unreadInFinished ? '<span class="pulse-dot"></span>' : '';
                     html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`;
                 }
                 
-                // INJETA O HTML NA TELA
                 container.innerHTML = html;
 
                 window.updateBadges(); 
 
-                // Atualiza Badge de Votos Pendentes na Barra de Navegação
                 let pendingCount = 0;
                 const myVotesSet = new Set();
                 guessesSnap.forEach(d => { if(d.data().userId === currentUser.uid) myVotesSet.add(d.data().matchId); });
@@ -2076,6 +2057,7 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
 
