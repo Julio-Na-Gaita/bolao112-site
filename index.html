@@ -378,17 +378,58 @@ Término oficial: 31 de dezembro de 2026
         document.getElementById('btnLoginAction').onclick = async () => { const user = document.getElementById('userInput').value.trim().toLowerCase(); const pass = document.getElementById('passInput').value; try { await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); } catch (e) { alert("Dados incorretos."); } };
         document.getElementById('btnForgotPass').onclick = () => alert("Utilizamos um sistema de login simplificado.\n\nPor favor, entre em contato com o Admin (Júlio) para resetar sua senha.");
         
-        document.getElementById('btnOpenRegister').onclick = () => {
-            const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
-            cont.innerHTML = `<div class="bg-white p-6 relative"><button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400 p-2"><i class="fas fa-times text-xl"></i></button><h3 class="text-[#006400] font-black uppercase text-center mb-6 text-lg">Criar Nova Conta</h3><label class="block text-xs font-bold text-gray-500 mb-1">Nome Completo</label><input type="text" id="regName" placeholder="Ex: João da Silva" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]"><label class="block text-xs font-bold text-gray-500 mb-1">Usuário (Login)</label><input type="text" id="regUser" placeholder="Ex: joaosilva (sem espaços)" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]"><label class="block text-xs font-bold text-gray-500 mb-1">Senha</label><input type="password" id="regPass" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnDoRegister" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CADASTRAR</button></div>`;
+       document.getElementById('btnOpenRegister').onclick = () => {
+            const modal = document.getElementById('modalOverlay'); 
+            const cont = document.getElementById('modalContainer'); 
+            modal.classList.remove('hidden');
+            
+            // ADICIONADO CAMPO DE DICA (passwordHint)
+            cont.innerHTML = `
+            <div class="bg-white p-6 relative">
+                <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400 p-2"><i class="fas fa-times text-xl"></i></button>
+                <h3 class="text-[#006400] font-black uppercase text-center mb-6 text-lg">Criar Nova Conta</h3>
+                
+                <label class="block text-xs font-bold text-gray-500 mb-1">Nome Completo</label>
+                <input type="text" id="regName" placeholder="Ex: João da Silva" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
+                
+                <label class="block text-xs font-bold text-gray-500 mb-1">Usuário (Login)</label>
+                <input type="text" id="regUser" placeholder="Ex: joaosilva (sem espaços)" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
+                
+                <label class="block text-xs font-bold text-gray-500 mb-1">Dica de Senha (Opcional)</label>
+                <input type="text" id="regHint" placeholder="Ex: Nome do meu cachorro" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
+                
+                <label class="block text-xs font-bold text-gray-500 mb-1">Senha</label>
+                <input type="password" id="regPass" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]">
+                
+                <button id="btnDoRegister" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CADASTRAR</button>
+            </div>`;
+            
             document.getElementById('btnDoRegister').onclick = async () => {
-                const name = document.getElementById('regName').value.trim(); const user = document.getElementById('regUser').value.trim().toLowerCase(); const pass = document.getElementById('regPass').value;
+                const name = document.getElementById('regName').value.trim(); 
+                const user = document.getElementById('regUser').value.trim().toLowerCase(); 
+                const pass = document.getElementById('regPass').value;
+                const hint = document.getElementById('regHint').value.trim(); // Pega a dica
+
                 if(!name || !user || pass.length < 6) { alert("Dados inválidos."); return; }
                 if(user.includes(" ")) { alert("Usuário sem espaços."); return; }
-                try { const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); await setDoc(doc(db, "users", res.user.uid), { name, username: user, createdAt: new Date(), isAdmin: false, debts: 0, payments: {}, appVersion: "Web v1.5.6" }); alert("Conta criada!"); closeModal(); } catch(e) { alert("Erro ao criar conta: " + e.message); }
+                
+                try { 
+                    const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); 
+                    // Salva a dica no banco
+                    await setDoc(doc(db, "users", res.user.uid), { 
+                        name, 
+                        username: user, 
+                        createdAt: new Date(), 
+                        isAdmin: false, 
+                        debts: 0, 
+                        payments: {}, 
+                        appVersion: "Web v1.5.6",
+                        passwordHint: hint // <--- SALVA AQUI
+                    }); 
+                    alert("Conta criada!"); closeModal(); 
+                } catch(e) { alert("Erro ao criar conta: " + e.message); }
             };
         };
-
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
@@ -1709,9 +1750,120 @@ async function loadAdminMatches() {
             render();
         };
 
-        window.openFinancialScreen = async () => { const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const usersSnap = await getDocs(collection(db, "users")); const users = []; usersSnap.forEach(d => users.push({id: d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]"><img src="bg_painel_usuarios.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 flex flex-col h-full bg-white/30"><div class="p-4 flex justify-between items-center shrink-0"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-black text-lg">Gestão Financeira</h3><div class="w-6"></div></div><div class="px-4 pb-2 space-y-2"><button class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press">GERENCIAR CONVITES</button><button onclick="checkDelays()" class="w-full bg-red-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-calendar-times"></i> VERIFICAR ATRASOS (MÊS ATUAL)</button></div><div class="flex-1 overflow-y-auto p-4 pt-0">`; users.forEach(u => { html += `<div class="bg-white border rounded p-2 mb-2 shadow-sm"><div class="flex justify-between items-center mb-2"><span class="font-bold text-xs text-gray-800">${u.name}</span><div class="flex items-center gap-2"><button onclick="changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus-circle"></i></button><span class="text-red-600 font-black text-xs min-w-[30px] text-center">${u.debts||0}</span><button onclick="changeDebt('${u.id}', 1)" class="text-red-500 bg-red-50 p-1 rounded"><i class="fas fa-plus-circle"></i></button></div></div><div class="grid grid-cols-6 gap-1">`; const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; months.forEach(m => { const isPaid = u.payments && u.payments[m]; const bg = isPaid ? "bg-green-600 text-white border-green-600 shadow-md" : "bg-gray-100 text-gray-400 border-gray-200"; html += `<div onclick="togglePay('${u.id}', '${m}', ${!isPaid})" class="${bg} border text-[8px] font-bold py-1 rounded text-center cursor-pointer transition-colors">${m}</div>`; }); html += `</div></div>`; }); html += `</div></div></div>`; cont.innerHTML = html; };
+        window.openFinancialScreen = async () => { const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const usersSnap = await getDocs(collection(db, "users")); const users = []; usersSnap.forEach(d => users.push({id: d.id, ...d.data()})); users.sort((a,b) => (a.name||"").localeCompare(b.name||"")); let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]"><img src="bg_painel_usuarios.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 flex flex-col h-full bg-white/30"><div class="p-4 flex justify-between items-center shrink-0"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-black text-lg">Gestão Financeira</h3><div class="w-6"></div></div><div class="px-4 pb-2 space-y-2"><button class="w-full bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press">GERENCIAR CONVITES</button><button onclick="checkDelays()" class="w-full bg-red-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-calendar-times"></i> VERIFICAR ATRASOS (MÊS ATUAL)</button></div><div class="flex-1 overflow-y-auto p-4 pt-0">`; users.forEach(u => { 
+                // Ícone de chave se tiver dica
+                const hintIcon = u.passwordHint ? `<i class="fas fa-key text-orange-400 text-xs ml-2 cursor-pointer" onclick="alert('Dica de ${u.name}:\\n\\n${u.passwordHint}')" title="Ver Dica"></i>` : '';
+
+                html += `<div class="bg-white border rounded p-2 mb-2 shadow-sm">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-xs text-gray-800 flex items-center">
+                            ${u.name} ${hintIcon}
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus-circle"></i></button>
+                            <span class="text-red-600 font-black text-xs min-w-[30px] text-center">${u.debts||0}</span>
+                            <button onclick="changeDebt('${u.id}', 1)" class="text-red-500 bg-red-50 p-1 rounded"><i class="fas fa-plus-circle"></i></button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-6 gap-1">`; 
+                    
+                const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
+                months.forEach(m => { 
+                    const isPaid = u.payments && u.payments[m]; 
+                    const bg = isPaid ? "bg-green-600 text-white border-green-600 shadow-md" : "bg-gray-100 text-gray-400 border-gray-200"; 
+                    html += `<div onclick="togglePay('${u.id}', '${m}', ${!isPaid})" class="${bg} border text-[8px] font-bold py-1 rounded text-center cursor-pointer transition-colors">${m}</div>`; 
+                }); 
+                html += `</div></div>`; 
+            }); 
+            html += `</div></div></div>`; 
+            cont.innerHTML = html;
         window.checkDelays = async () => { const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const now = new Date(); const currMonth = months[now.getMonth()]; const day = now.getDate(); if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; } const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const snap = await getDocs(collection(db, "users")); let late = []; snap.forEach(d => { const u = d.data(); if (!u.payments || !u.payments[currMonth]) { late.push({id: d.id, name: u.name, debts: u.debts || 0}); } }); let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`; if (late.length === 0) { html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`; } else { html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`; late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; }); html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`; } html += `</div>`; cont.innerHTML = html; window.applyBatchPenalty = async () => { if(!confirm("Confirmar aplicação de multa em massa?")) return; const batch = writeBatch(db); late.forEach(l => { const ref = doc(db, "users", l.id); batch.update(ref, { debts: l.debts + 1 }); }); await batch.commit(); alert("Penalidades aplicadas!"); openFinancialScreen(); }; };
-        async function loadProfile() { if (!currentUser) return; try { const docRef = doc(db, "users", currentUser.uid); const snap = await getDoc(docRef); if (!snap.exists()) return; const u = snap.data(); document.getElementById('profileName').innerText = u.name || "MEMBRO"; document.getElementById('profileUser').innerText = `@${u.username || 'user'}`; if (u.photoBase64) { document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`; } const adminBtn = document.getElementById('btnAdminPanel'); if (u.isAdmin === true) { adminBtn.classList.remove('hidden'); } else { adminBtn.classList.add('hidden'); } const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const currMonth = months[new Date().getMonth()]; const payments = u.payments || {}; const isPaid = payments[currMonth] === true; const stCard = document.getElementById('financialCard'); const stText = document.getElementById('financialStatusText'); const stIcon = document.getElementById('financialIcon'); if (isPaid || new Date().getFullYear() < 2026) { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800 shadow-sm"; stText.innerText = "MENSALIDADE EM DIA"; stIcon.className = "fas fa-check-circle text-2xl"; } else { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800 shadow-sm"; stText.innerText = "PAGAMENTO PENDENTE"; stIcon.className = "fas fa-exclamation-circle text-2xl"; } try { const finSnap = await getDoc(doc(db, "settings", "financial")); if (finSnap.exists()) { const fin = finSnap.data(); document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com"; document.getElementById('btnSendProof').onclick = () => { const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112."); window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank'); }; } } catch (e) { console.log("Erro ao carregar dados financeiros:", e); } } catch (error) { console.error("Erro crítico no loadProfile:", error); } }
+async function loadProfile() { 
+            if (!currentUser) return; 
+            try { 
+                const docRef = doc(db, "users", currentUser.uid); 
+                const snap = await getDoc(docRef); 
+                if (!snap.exists()) return; 
+                
+                const u = snap.data(); 
+                document.getElementById('profileName').innerText = u.name || "MEMBRO"; 
+                document.getElementById('profileUser').innerText = `@${u.username || 'user'}`; 
+                
+                if (u.photoBase64) { 
+                    document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`; 
+                } 
+                
+                // --- LÓGICA DA DICA ---
+                const myHint = u.passwordHint || "Sem dica cadastrada";
+                // Cria ou atualiza o container da dica (se não existir, cria abaixo dos botões)
+                let hintDiv = document.getElementById('hintContainer');
+                if (!hintDiv) {
+                    hintDiv = document.createElement('div');
+                    hintDiv.id = 'hintContainer';
+                    // Insere logo após o container dos botões de senha/guia
+                    const btnContainer = document.querySelector('#profileScreen .card-cut .flex.justify-center.gap-4');
+                    btnContainer.insertAdjacentElement('afterend', hintDiv);
+                }
+
+                hintDiv.innerHTML = `
+                    <div class="mt-4 bg-[#FFF3E0] border border-[#FF9800] rounded p-3 flex justify-between items-center text-left">
+                        <div>
+                            <p class="text-[10px] font-bold text-[#EF6C00] uppercase"><i class="fas fa-lightbulb mr-1"></i> Dica de Senha</p>
+                            <p class="text-xs font-black text-black mt-1">${myHint}</p>
+                        </div>
+                        <button onclick="editHint('${myHint.replace(/'/g, "\\'")}')" class="bg-white border border-[#EF6C00] text-[#EF6C00] w-8 h-8 rounded-full flex items-center justify-center shadow-sm btn-press">
+                            <i class="fas fa-pen text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                // ---------------------
+
+                const adminBtn = document.getElementById('btnAdminPanel'); 
+                if (u.isAdmin === true) { adminBtn.classList.remove('hidden'); } else { adminBtn.classList.add('hidden'); } 
+                
+                // ... (restante da lógica financeira mantida igual) ...
+                const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
+                const currMonth = months[new Date().getMonth()]; 
+                const payments = u.payments || {}; 
+                const isPaid = payments[currMonth] === true; 
+                const stCard = document.getElementById('financialCard'); 
+                const stText = document.getElementById('financialStatusText'); 
+                const stIcon = document.getElementById('financialIcon'); 
+                
+                if (isPaid || new Date().getFullYear() < 2026) { 
+                    stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800 shadow-sm"; 
+                    stText.innerText = "MENSALIDADE EM DIA"; 
+                    stIcon.className = "fas fa-check-circle text-2xl"; 
+                } else { 
+                    stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800 shadow-sm"; 
+                    stText.innerText = "PAGAMENTO PENDENTE"; 
+                    stIcon.className = "fas fa-exclamation-circle text-2xl"; 
+                } 
+                
+                try { 
+                    const finSnap = await getDoc(doc(db, "settings", "financial")); 
+                    if (finSnap.exists()) { 
+                        const fin = finSnap.data(); 
+                        document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com"; 
+                        document.getElementById('btnSendProof').onclick = () => { 
+                            const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112."); 
+                            window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank'); 
+                        }; 
+                    } 
+                } catch (e) { console.log("Erro ao carregar dados financeiros:", e); } 
+            } catch (error) { console.error("Erro crítico no loadProfile:", error); } 
+        }
+
+        // Função Global para Editar Dica
+        window.editHint = (currentVal) => {
+            const val = currentVal === "Sem dica cadastrada" ? "" : currentVal;
+            const newHint = prompt("Digite uma dica para lembrar sua senha:", val);
+            if (newHint !== null) {
+                updateDoc(doc(db, "users", currentUser.uid), { passwordHint: newHint })
+                    .then(() => { alert("Dica salva!"); loadProfile(); })
+                    .catch(e => alert("Erro ao salvar dica."));
+            }
+        };
         document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { compressImage(file).then(async (base64) => { await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }).catch(err => { alert("Erro ao processar imagem."); console.error(err); }); } };
         window.togglePay = async (uid, month, status) => { const ref = doc(db, "users", uid); const u = await getDoc(ref); const payments = u.data().payments || {}; payments[month] = status; await updateDoc(ref, { payments: payments }); calculatePot(); openFinancialScreen(); };
         window.changeDebt = async (uid, delta) => { const ref = doc(db, "users", uid); const u = await getDoc(ref); let debts = u.data().debts || 0; debts += delta; if(debts < 0) debts = 0; await updateDoc(ref, { debts: debts }); openFinancialScreen(); };
@@ -2057,6 +2209,7 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
 
