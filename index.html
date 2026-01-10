@@ -133,8 +133,8 @@
     
     <div id="bgLayer" class="fixed inset-0 z-[-1] bg-cover bg-center transition-all duration-300" style="background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg');"></div>
 
-    <nav class="bg-[#006400] text-white pt-safe sticky top-0 z-50 shadow-md w-full">
-        <div class="p-4 flex justify-between items-center">
+<nav id="mainHeader" class="hidden bg-[#006400] text-white pt-safe sticky top-0 z-50 shadow-md w-full">
+    <div class="p-4 flex justify-between items-center">
             <h1 class="text-lg font-bold tracking-tighter uppercase">Bolão 112 F.C</h1>
             <div class="flex gap-4">
                 <button id="btnPot" class="btn-press text-[#FFD700]"><i class="fas fa-piggy-bank text-xl drop-shadow-md"></i></button>
@@ -159,6 +159,12 @@
             <div class="text-white text-center md:text-left space-y-6 animate-fade-in-up">
                 <div>
                     <span class="bg-[#FFD700] text-black text-xs font-black px-3 py-1 rounded uppercase tracking-widest mb-2 inline-block">Temporada 2026</span>
+                    
+                    <div class="flex items-center justify-center md:justify-start gap-2 mt-2 mb-1">
+                        <i class="fas fa-calendar-alt text-[#FFD700]"></i>
+                        <span class="text-sm font-bold text-yellow-300 uppercase tracking-wider">Início Oficial: 01/02/2026</span>
+                    </div>
+
                     <h1 class="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-tight text-white drop-shadow-lg">
                         Bolão 112 <span class="text-[#FFD700]">F.C</span>
                     </h1>
@@ -168,19 +174,20 @@
                 </div>
 
                 <div class="bg-black/30 backdrop-blur-sm p-4 rounded-xl border border-white/10 text-sm text-gray-100 space-y-2">
-                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Palpites em Champions, Brasileirão e Copas.</p>
+                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Palpites na Champions, Copa do Brasil, Copa do Mundo, Libertadores entre outras.</p>
                     <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Ranking ao vivo e estatísticas detalhadas.</p>
-                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Premiação em dinheiro e Troféus.</p>
+                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Premiação em dinheiro e Troféus, para os 3 primeiros colocados.</p>
+                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Confraternização no fim do ano entre todos os participantes (já incluso na mensalidade).</p>
                 </div>
 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-4">
-                    <a href="https://wa.me/5585988837389?text=Olá%20Júlio!%20Vi%20o%20site%20do%20Bolao%20e%20quero%20participar!" target="_blank" 
+                    <a href="https://wa.me/5585988837389?text=Olá%20Júlio!%20Vi%20o%20site%20do%20Bolão%20e%20quero%20participar!" target="_blank" 
                        class="bg-[#25D366] hover:bg-[#128C7E] text-white px-6 py-3 rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 transition-transform hover:scale-105">
                         <i class="fab fa-whatsapp text-xl"></i>
                         QUERO PARTICIPAR
                     </a>
                     
-                    <button onclick="alert('Link de download do Android em breve!')" 
+                    <button onclick="alert('Link de download do Android em breve! Fale com o admin.')" 
                             class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-6 py-3 rounded-lg font-bold backdrop-blur-md flex items-center justify-center gap-2 transition-all">
                         <i class="fab fa-android text-green-400 text-xl"></i>
                         BAIXAR APP
@@ -206,19 +213,19 @@
                         <div class="flex justify-between items-center mb-6">
                             <label class="flex items-center text-xs text-gray-500 font-bold cursor-pointer">
                                 <input type="checkbox" id="rememberMe" checked class="mr-2 accent-[#006400]">
-                                Lembrar-me
+                                Manter conectado
                             </label>
                             <button type="button" id="btnForgotPass" class="text-xs text-gray-500 font-bold hover:text-[#006400]">Esqueci a senha</button>
                         </div>
 
                         <button type="submit" id="btnLoginAction" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg btn-press shadow-lg mb-4 flex justify-center items-center gap-2">
-                            <span>ENTRAR</span> <i class="fas fa-sign-in-alt"></i>
+                            <span>ACESSAR</span> <i class="fas fa-sign-in-alt"></i>
                         </button>
                     </form>
                     
                     <div class="border-t pt-4 text-center">
                          <p class="text-[10px] text-gray-400 mb-2 font-bold">Já tem convite?</p>
-                        <button type="button" id="btnOpenRegister" class="text-[#006400] font-black text-xs uppercase hover:underline">ATIVAR MINHA CONTA</button>
+                        <button type="button" id="btnOpenRegister" class="text-[#006400] font-black text-xs uppercase hover:underline">CRIAR CONTA</button>
                     </div>
                 </div>
                 
@@ -468,6 +475,7 @@ Término oficial: 31 de dezembro de 2026
                 // Configura se deve manter logado (Local) ou só na sessão (Session)
                 const mode = remember ? browserLocalPersistence : browserSessionPersistence;
                 await setPersistence(auth, mode);
+                document.getElementById('mainHeader').classList.remove('hidden');
 
                 // Faz o login
                 await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass);
@@ -1657,13 +1665,20 @@ window.showKingModal = () => {
                             <p class="text-[9px] text-gray-500 mt-1 font-bold">(Toque na medalha para ver detalhes)</p>
                         </div>
                         <div id="medalToast" class="medal-toast"></div>
-                        <div class="w-full space-y-2 mt-2">
-                        <button id="btnInstaAction" onclick="window.generateWebCard()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
-    <i class="fab fa-instagram text-lg"></i> GERAR CARD STORIES
-</button>
-                            <button id="btnStatsAction" class="w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press"><i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO</button>
-                            <button id="btnCompareAction" class="${compareBtnClass} w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press flex items-center justify-center gap-2"><i class="fas fa-exchange-alt"></i> COMPARAR PALPITES</button>
-                            <button onclick="closeModal()" class="w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press">FECHAR</button>
+                        <div class="w-full space-y-2 mt-4">
+                            <button id="btnInstaAction" onclick="window.generateWebCard()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
+                                <i class="fab fa-instagram text-xl"></i> GERAR CARD STORIES
+                            </button>
+                            
+                            <button id="btnStatsAction" class="w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
+                                <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
+                            </button>
+                            
+                            <button id="btnCompareAction" class="${compareBtnClass} w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press flex items-center justify-center gap-2">
+                                <i class="fas fa-exchange-alt"></i> COMPARAR PALPITES
+                            </button>
+                            
+                            <button onclick="closeModal()" class="w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press uppercase text-xs mt-2">FECHAR</button>
                         </div>
                     </div>
                 </div>`;
@@ -2155,8 +2170,10 @@ async function calculatePot() {
         document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
         window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
         document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
-        document.getElementById('btnLogout').onclick = () => signOut(auth);
-
+document.getElementById('btnLogout').onclick = () => {
+    document.getElementById('mainHeader').classList.add('hidden'); // Esconde menu
+    signOut(auth);
+};
        // --- RESENHA (CHAT) COM ATUALIZAÇÃO IMEDIATA DE LEITURA ---
         window.openMatchComments = async (mid, ta, tb, winner) => {
             // 1. Marca como lido IMEDIATAMENTE ao abrir
@@ -2520,6 +2537,7 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
 
