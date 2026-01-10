@@ -151,102 +151,99 @@
 
     <main id="appContent" class="flex-1 w-full h-full overflow-y-auto overflow-x-hidden pb-32 relative z-10">
         
-        <section id="loginScreen" class="flex flex-col items-center justify-center min-h-screen p-4 relative overflow-hidden">
-        <div class="absolute inset-0 bg-black/40 z-0"></div>
+        <section id="loginScreen" class="flex flex-col h-screen w-full relative bg-gray-900 overflow-hidden">
         
-        <div class="container mx-auto max-w-6xl z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            
-            <div class="text-white text-center md:text-left space-y-6 animate-fade-in-up flex flex-col md:flex-row items-center gap-6">
+        <div class="absolute inset-0 z-0">
+            <img src="bg_jogos.jpeg" class="w-full h-full object-cover opacity-40">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/80"></div>
+        </div>
+
+        <div class="relative z-20 w-full bg-white/95 backdrop-blur-md border-b-4 border-[#006400] shadow-xl">
+            <div class="container mx-auto px-4 py-3">
                 
-                <div class="flex-1 space-y-4">
-                    <div>
-                        <span class="bg-[#FFD700] text-black text-xs font-black px-3 py-1 rounded uppercase tracking-widest mb-2 inline-block shadow-lg shadow-yellow-500/20">Temporada 2026</span>
-                        
-                        <div class="flex items-center justify-center md:justify-start gap-2 mt-1 mb-1">
-                            <i class="fas fa-calendar-alt text-[#FFD700]"></i>
-                            <span class="text-sm font-bold text-yellow-300 uppercase tracking-wider">Início: 01/02/2026</span>
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-[#006400] rounded-full flex items-center justify-center text-[#FFD700] border-2 border-[#FFD700] shadow">
+                            <i class="fas fa-trophy text-lg"></i>
                         </div>
-
-                        <h1 class="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-tight text-white drop-shadow-lg">
-                            Bolão 112 <span class="text-[#FFD700]">F.C</span>
-                        </h1>
-                        <p class="text-base text-gray-200 mt-2 font-serif italic">
-                            "A rivalidade é lei. A resenha é garantida."
-                        </p>
+                        <div>
+                            <h1 class="font-black text-[#006400] text-xl leading-none tracking-tighter uppercase">BOLÃO 112 F.C</h1>
+                            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Temporada 2026</p>
+                        </div>
                     </div>
 
-                    <div class="hidden md:block bg-black/30 backdrop-blur-md p-4 rounded-xl border border-white/10 text-xs text-gray-100 space-y-2 shadow-xl">
-                        <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Champions, Brasileirão e Copas.</p>
-                        <p><i class="fas fa-chart-line text-green-400 mr-2"></i> Ranking ao vivo e stats.</p>
-                        <p><i class="fas fa-trophy text-green-400 mr-2"></i> Premiação e Troféus.</p>
+                    <div class="w-full md:w-auto">
+                        <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();" class="flex flex-col md:flex-row items-center gap-2">
+                            
+                            <div class="flex gap-2 w-full md:w-auto">
+                                <div class="relative w-full md:w-40">
+                                    <i class="fas fa-user absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                                    <input type="text" id="userInput" name="username" autocomplete="username" placeholder="Usuário" 
+                                           class="w-full pl-8 p-2 bg-gray-100 border border-gray-300 rounded text-xs font-bold outline-none focus:border-[#006400] h-9">
+                                </div>
+                                
+                                <div class="relative w-full md:w-40">
+                                    <i class="fas fa-lock absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                                    <input type="password" id="passInput" name="password" autocomplete="current-password" placeholder="Senha" 
+                                           class="w-full pl-8 p-2 bg-gray-100 border border-gray-300 rounded text-xs font-bold outline-none focus:border-[#006400] h-9">
+                                </div>
+                            </div>
+
+                            <button type="submit" id="btnLoginAction" class="w-full md:w-auto bg-[#006400] hover:bg-green-900 text-white px-6 py-2 rounded text-xs font-black uppercase shadow btn-press h-9 flex items-center justify-center gap-2 transition-colors">
+                                <span>ENTRAR</span> <i class="fas fa-sign-in-alt"></i>
+                            </button>
+                        </form>
+
+                        <div class="flex justify-between md:justify-end items-center gap-4 mt-2 px-1">
+                            <label class="flex items-center text-[10px] text-gray-600 font-bold cursor-pointer hover:text-black">
+                                <input type="checkbox" id="rememberMe" checked class="mr-1 accent-[#006400]">
+                                Lembrar-me
+                            </label>
+                            
+                            <div class="flex gap-3 text-[10px] font-bold">
+                                <button type="button" id="btnForgotPass" class="text-gray-500 hover:text-[#006400] hover:underline">Esqueci a senha</button>
+                                <span class="text-gray-300">|</span>
+                                <button type="button" id="btnOpenRegister" class="text-[#006400] hover:text-black uppercase">CRIAR NOVA CONTA</button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row gap-3 justify-center md:justify-start pt-2">
-                        <a href="https://wa.me/5585988837389?text=Quero%20participar%20do%20Bolao!" target="_blank" 
-                           class="bg-[#25D366] hover:bg-[#128C7E] text-white px-5 py-3 rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 transition-transform hover:scale-105 text-xs uppercase tracking-wider">
-                            <i class="fab fa-whatsapp text-lg"></i> Quero Participar
-                        </a>
-                        <button onclick="alert('Fale com o admin para baixar o APK!')" 
-                                class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-5 py-3 rounded-lg font-bold backdrop-blur-md flex items-center justify-center gap-2 transition-all text-xs uppercase tracking-wider">
-                            <i class="fab fa-android text-green-400 text-lg"></i> Baixar App
-                        </button>
-                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative z-10 flex-1 flex flex-col items-center justify-center text-center p-6 pb-20">
+            
+            <div class="animate-fade-in-up">
+                <div class="inline-flex items-center gap-2 bg-black/50 backdrop-blur-md border border-[#FFD700] rounded-full px-4 py-1 mb-6">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <span class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest">Inscrições Abertas</span>
                 </div>
 
-                <div class="hidden md:block w-[240px] shrink-0 transform rotate-[-3deg] hover:rotate-0 transition-transform duration-500">
-                    <div class="relative mx-auto border-gray-900 bg-gray-900 border-[8px] rounded-[2rem] h-[480px] w-[240px] shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/20">
-                        <div class="h-[32px] w-[3px] bg-gray-800 absolute -left-[8px] top-[72px] rounded-l-lg border-l border-gray-600"></div>
-                        <div class="h-[46px] w-[3px] bg-gray-800 absolute -left-[8px] top-[124px] rounded-l-lg border-l border-gray-600"></div>
-                        <div class="h-[64px] w-[3px] bg-gray-800 absolute -right-[8px] top-[142px] rounded-r-lg border-r border-gray-600"></div>
-                        
-                        <div class="rounded-[1.5rem] overflow-hidden w-full h-full bg-white relative">
-                            <img id="showcaseImg" src="bg_ranking.jpeg" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000">
-                            <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"></div>
-                        </div>
-                    </div>
-                    <div class="w-[180px] h-4 bg-black/50 blur-xl rounded-[100%] mx-auto mt-4"></div>
+                <h2 class="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-2xl mb-2">
+                    A Rivalidade <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] to-[#FFA000]">Começa Aqui</span>
+                </h2>
+                
+                <p class="text-gray-300 text-sm md:text-base font-serif italic max-w-lg mx-auto mb-8">
+                    Participe do bolão mais disputado da temporada. Palpites, resenha e prêmios em dinheiro.
+                </p>
+
+                <div class="flex justify-center gap-4">
+                    <a href="https://wa.me/5585988837389?text=Quero%20entrar%20no%20Bolao!" target="_blank" class="bg-[#25D366] hover:bg-[#1eab52] text-white px-5 py-2 rounded-full font-bold text-xs shadow-lg flex items-center gap-2 transition-transform hover:scale-105">
+                        <i class="fab fa-whatsapp text-base"></i> Falar no Zap
+                    </a>
+                    <button onclick="alert('App Android disponível com o Admin!')" class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-5 py-2 rounded-full font-bold text-xs backdrop-blur-sm flex items-center gap-2 transition-all">
+                        <i class="fab fa-android text-base"></i> App Android
+                    </button>
                 </div>
             </div>
 
-            <div class="w-full max-w-sm mx-auto md:ml-auto">
-                <div class="card-cut bg-white p-8 border-t-4 border-[#006400] shadow-2xl relative z-20">
-                    <h2 class="text-xl font-black text-center text-[#006400] mb-6 uppercase tracking-widest">Área de Membros</h2>
-                    
-                    <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
-                        <div class="relative mb-4">
-                            <i class="fas fa-user absolute left-4 top-3.5 text-gray-400"></i>
-                            <input type="text" id="userInput" name="username" autocomplete="username" placeholder="Usuário" class="w-full pl-10 p-3 bg-gray-50 border rounded-lg outline-none focus:ring-2 focus:ring-green-700 transition-all text-sm font-bold">
-                        </div>
-                        
-                        <div class="relative mb-2">
-                            <i class="fas fa-lock absolute left-4 top-3.5 text-gray-400"></i>
-                            <input type="password" id="passInput" name="password" autocomplete="current-password" placeholder="Senha" class="w-full pl-10 p-3 bg-gray-50 border rounded-lg outline-none focus:ring-2 focus:ring-green-700 transition-all text-sm font-bold">
-                        </div>
-                        
-                        <div class="flex justify-between items-center mb-6">
-                            <label class="flex items-center text-xs text-gray-500 font-bold cursor-pointer">
-                                <input type="checkbox" id="rememberMe" checked class="mr-2 accent-[#006400]">
-                                Lembrar-me
-                            </label>
-                            <button type="button" id="btnForgotPass" class="text-xs text-gray-500 font-bold hover:text-[#006400]">Esqueci a senha</button>
-                        </div>
-
-                        <button type="submit" id="btnLoginAction" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg btn-press shadow-lg mb-4 flex justify-center items-center gap-2">
-                            <span>ACESSAR</span> <i class="fas fa-sign-in-alt"></i>
-                        </button>
-                    </form>
-                    
-                    <div class="border-t pt-4 text-center">
-                         <p class="text-[10px] text-gray-400 mb-2 font-bold">Já tem convite?</p>
-                        <button type="button" id="btnOpenRegister" class="text-[#006400] font-black text-xs uppercase hover:underline">CRIAR CONTA</button>
-                    </div>
-                </div>
-                
-                <p class="text-center text-white/50 text-[10px] mt-4 font-bold">© 2026 Bolão 112 F.C - Todos os direitos reservados.</p>
+            <div class="absolute bottom-4 text-white/30 text-[9px] font-bold uppercase tracking-widest">
+                © 2026 Bolão 112 F.C • Todos os direitos reservados
             </div>
         </div>
     </section>
-
         <div id="mainScreens" class="hidden p-4 space-y-4">
             
             <div id="matchesScreen" class="hidden space-y-6"></div>
@@ -2593,6 +2590,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
