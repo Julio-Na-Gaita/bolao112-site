@@ -610,10 +610,26 @@ Término oficial: 31 de dezembro de 2026
                 currentUser = user;
                 // ATUALIZANDO VERSÃO PARA 1.5.7
                 try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.7" }); } catch(e) {}
-                document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('mainScreens').classList.remove('hidden'); document.getElementById('bottomNav').classList.remove('hidden'); document.getElementById('btnLogout').classList.remove('hidden');
-                showTab('matches'); calculatePot();
+                
+                // --- CORREÇÃO: MOSTRAR O HEADER AO CARREGAR PÁGINA LOGADO ---
+                document.getElementById('mainHeader').classList.remove('hidden'); 
+                // -------------------------------------------------------------
+
+                document.getElementById('loginScreen').classList.add('hidden'); 
+                document.getElementById('mainScreens').classList.remove('hidden'); 
+                document.getElementById('bottomNav').classList.remove('hidden'); 
+                document.getElementById('btnLogout').classList.remove('hidden');
+                
+                showTab('matches'); 
+                calculatePot();
             } else {
-                document.getElementById('loginScreen').classList.remove('hidden'); document.getElementById('mainScreens').classList.add('hidden'); document.getElementById('bottomNav').classList.add('hidden');
+                // --- CORREÇÃO: GARANTIR QUE ESCONDE SE SAIR ---
+                document.getElementById('mainHeader').classList.add('hidden');
+                // ----------------------------------------------
+
+                document.getElementById('loginScreen').classList.remove('hidden'); 
+                document.getElementById('mainScreens').classList.add('hidden'); 
+                document.getElementById('bottomNav').classList.add('hidden');
             }
         });
 
@@ -2126,7 +2142,7 @@ async function calculatePot() {
                     </div>
 
                     <div style="position: relative; z-index: 10; color: rgba(255,255,255,0.4); font-size: 9px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">
-                        www.bolao112.com.br
+                        https://bolao112-site.vercel.app/
                     </div>
                 </div>
             `;
@@ -2537,6 +2553,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
