@@ -151,67 +151,100 @@
 
     <main id="appContent" class="flex-1 w-full h-full overflow-y-auto overflow-x-hidden pb-32 relative z-10">
         
-        <section id="loginScreen" class="flex flex-col items-center justify-center min-h-screen p-4 md:p-10 relative overflow-hidden">
+        <section id="loginScreen" class="flex flex-col items-center justify-center min-h-screen p-4 relative overflow-hidden">
         <div class="absolute inset-0 bg-black/40 z-0"></div>
         
-        <div class="container mx-auto max-w-5xl z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+        <div class="container mx-auto max-w-6xl z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             
-            <div class="text-white text-center md:text-left space-y-6 animate-fade-in-up flex flex-col md:flex-row items-center gap-8">
+            <div class="text-white text-center md:text-left space-y-6 animate-fade-in-up flex flex-col md:flex-row items-center gap-6">
                 
-                <div class="flex-1 space-y-6">
+                <div class="flex-1 space-y-4">
                     <div>
                         <span class="bg-[#FFD700] text-black text-xs font-black px-3 py-1 rounded uppercase tracking-widest mb-2 inline-block shadow-lg shadow-yellow-500/20">Temporada 2026</span>
-                        <div class="flex items-center justify-center md:justify-start gap-2 mt-2 mb-1">
+                        
+                        <div class="flex items-center justify-center md:justify-start gap-2 mt-1 mb-1">
                             <i class="fas fa-calendar-alt text-[#FFD700]"></i>
                             <span class="text-sm font-bold text-yellow-300 uppercase tracking-wider">Início: 01/02/2026</span>
                         </div>
-                        <h1 class="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-tight text-white drop-shadow-lg">
+
+                        <h1 class="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-tight text-white drop-shadow-lg">
                             Bolão 112 <span class="text-[#FFD700]">F.C</span>
                         </h1>
-                        <p class="text-lg text-gray-200 mt-2 font-serif italic">
+                        <p class="text-base text-gray-200 mt-2 font-serif italic">
                             "A rivalidade é lei. A resenha é garantida."
                         </p>
                     </div>
 
-                    <div class="bg-black/30 backdrop-blur-sm p-4 rounded-xl border border-white/10 text-sm text-gray-100 space-y-2">
-                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Palpites na Champions, Copa do Brasil, Copa do Mundo, Libertadores entre outras.</p>
-                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Ranking ao vivo e estatísticas detalhadas.</p>
-                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Premiação em dinheiro e Troféus, para os 3 primeiros colocados.</p>
-                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Confraternização no fim do ano entre todos os participantes (já incluso na mensalidade).</p>
-                </div>
-
+                    <div class="hidden md:block bg-black/30 backdrop-blur-md p-4 rounded-xl border border-white/10 text-xs text-gray-100 space-y-2 shadow-xl">
+                        <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Champions, Brasileirão e Copas.</p>
+                        <p><i class="fas fa-chart-line text-green-400 mr-2"></i> Ranking ao vivo e stats.</p>
+                        <p><i class="fas fa-trophy text-green-400 mr-2"></i> Premiação e Troféus.</p>
+                    </div>
 
                     <div class="flex flex-col sm:flex-row gap-3 justify-center md:justify-start pt-2">
-                        <a href="https://wa.me/5585988837389?text=Quero%20participar%20do%20Bolão!" target="_blank" 
-                           class="bg-[#25D366] hover:bg-[#128C7E] text-white px-5 py-3 rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 transition-transform hover:scale-105 text-sm">
-                            <i class="fab fa-whatsapp text-lg"></i> PARTICIPAR
+                        <a href="https://wa.me/5585988837389?text=Quero%20participar%20do%20Bolao!" target="_blank" 
+                           class="bg-[#25D366] hover:bg-[#128C7E] text-white px-5 py-3 rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 transition-transform hover:scale-105 text-xs uppercase tracking-wider">
+                            <i class="fab fa-whatsapp text-lg"></i> Quero Participar
                         </a>
                         <button onclick="alert('Fale com o admin para baixar o APK!')" 
-                                class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-5 py-3 rounded-lg font-bold backdrop-blur-md flex items-center justify-center gap-2 transition-all text-sm">
-                            <i class="fab fa-android text-green-400 text-lg"></i> APP ANDROID
+                                class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-5 py-3 rounded-lg font-bold backdrop-blur-md flex items-center justify-center gap-2 transition-all text-xs uppercase tracking-wider">
+                            <i class="fab fa-android text-green-400 text-lg"></i> Baixar App
                         </button>
                     </div>
                 </div>
 
-                <div class="hidden md:block w-[260px] shrink-0 transform rotate-[-3deg] hover:rotate-0 transition-transform duration-500">
-                    <div class="relative mx-auto border-gray-900 bg-gray-900 border-[10px] rounded-[2.5rem] h-[500px] w-[260px] shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/20">
+                <div class="hidden md:block w-[240px] shrink-0 transform rotate-[-3deg] hover:rotate-0 transition-transform duration-500">
+                    <div class="relative mx-auto border-gray-900 bg-gray-900 border-[8px] rounded-[2rem] h-[480px] w-[240px] shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/20">
+                        <div class="h-[32px] w-[3px] bg-gray-800 absolute -left-[8px] top-[72px] rounded-l-lg border-l border-gray-600"></div>
+                        <div class="h-[46px] w-[3px] bg-gray-800 absolute -left-[8px] top-[124px] rounded-l-lg border-l border-gray-600"></div>
+                        <div class="h-[64px] w-[3px] bg-gray-800 absolute -right-[8px] top-[142px] rounded-r-lg border-r border-gray-600"></div>
                         
-                        <div class="h-[32px] w-[3px] bg-gray-800 absolute -left-[10px] top-[72px] rounded-l-lg border-l border-gray-600"></div>
-                        <div class="h-[46px] w-[3px] bg-gray-800 absolute -left-[10px] top-[124px] rounded-l-lg border-l border-gray-600"></div>
-                        <div class="h-[46px] w-[3px] bg-gray-800 absolute -left-[10px] top-[178px] rounded-l-lg border-l border-gray-600"></div>
-                        <div class="h-[64px] w-[3px] bg-gray-800 absolute -right-[10px] top-[142px] rounded-r-lg border-r border-gray-600"></div>
-                        
-                        <div class="rounded-[2rem] overflow-hidden w-full h-full bg-white relative">
-                            
-                            <img id="showcaseImg" src="https://via.placeholder.com/260x500/006400/FFFFFF?text=RANKING" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000">
-                            
+                        <div class="rounded-[1.5rem] overflow-hidden w-full h-full bg-white relative">
+                            <img id="showcaseImg" src="bg_ranking.jpeg" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000">
                             <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"></div>
                         </div>
                     </div>
-                    <div class="w-[200px] h-4 bg-black/50 blur-xl rounded-[100%] mx-auto mt-4"></div>
+                    <div class="w-[180px] h-4 bg-black/50 blur-xl rounded-[100%] mx-auto mt-4"></div>
                 </div>
-
             </div>
+
+            <div class="w-full max-w-sm mx-auto md:ml-auto">
+                <div class="card-cut bg-white p-8 border-t-4 border-[#006400] shadow-2xl relative z-20">
+                    <h2 class="text-xl font-black text-center text-[#006400] mb-6 uppercase tracking-widest">Área de Membros</h2>
+                    
+                    <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
+                        <div class="relative mb-4">
+                            <i class="fas fa-user absolute left-4 top-3.5 text-gray-400"></i>
+                            <input type="text" id="userInput" name="username" autocomplete="username" placeholder="Usuário" class="w-full pl-10 p-3 bg-gray-50 border rounded-lg outline-none focus:ring-2 focus:ring-green-700 transition-all text-sm font-bold">
+                        </div>
+                        
+                        <div class="relative mb-2">
+                            <i class="fas fa-lock absolute left-4 top-3.5 text-gray-400"></i>
+                            <input type="password" id="passInput" name="password" autocomplete="current-password" placeholder="Senha" class="w-full pl-10 p-3 bg-gray-50 border rounded-lg outline-none focus:ring-2 focus:ring-green-700 transition-all text-sm font-bold">
+                        </div>
+                        
+                        <div class="flex justify-between items-center mb-6">
+                            <label class="flex items-center text-xs text-gray-500 font-bold cursor-pointer">
+                                <input type="checkbox" id="rememberMe" checked class="mr-2 accent-[#006400]">
+                                Lembrar-me
+                            </label>
+                            <button type="button" id="btnForgotPass" class="text-xs text-gray-500 font-bold hover:text-[#006400]">Esqueci a senha</button>
+                        </div>
+
+                        <button type="submit" id="btnLoginAction" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg btn-press shadow-lg mb-4 flex justify-center items-center gap-2">
+                            <span>ACESSAR</span> <i class="fas fa-sign-in-alt"></i>
+                        </button>
+                    </form>
+                    
+                    <div class="border-t pt-4 text-center">
+                         <p class="text-[10px] text-gray-400 mb-2 font-bold">Já tem convite?</p>
+                        <button type="button" id="btnOpenRegister" class="text-[#006400] font-black text-xs uppercase hover:underline">CRIAR CONTA</button>
+                    </div>
+                </div>
+                
+                <p class="text-center text-white/50 text-[10px] mt-4 font-bold">© 2026 Bolão 112 F.C - Todos os direitos reservados.</p>
+            </div>
+        </div>
     </section>
 
         <div id="mainScreens" class="hidden p-4 space-y-4">
@@ -2560,6 +2593,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
