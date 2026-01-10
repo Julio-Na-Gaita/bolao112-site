@@ -675,15 +675,16 @@ Término oficial: 31 de dezembro de 2026
                 finished.sort((a,b)=>b.deadlineDate-a.deadlineDate); 
                 
                 // =================================================================
-                // 📰 GERADOR DE LETREIRO (LÓGICA DO ANDROID REPLICADA)
+                // 📰 GERADOR DE LETREIRO (LÓGICA BLINDADA IGUAL AO ANDROID)
                 // =================================================================
                 const generateNewsFeed = () => {
                     let newsSegments = []; 
                     const addSegment = (text, colorHex) => { newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`); };
                     
                     // Cores Hex Web
-                    const C_GOLD = "#FFD700"; const C_BLUE_LIGHT = "#4FC3F7"; const C_GRAY = "#808080"; const C_ORANGE = "#FF6D00"; const C_RED = "#FF5252"; 
-                    const C_ALIEN = "#64DD17"; const C_FIRE = "#00E676"; const C_DIAMOND = "#00E5FF"; const C_MAGIC = "#E040FB"; 
+                    const C_GOLD = "#FFD700"; const C_BLUE_LIGHT = "#4FC3F7"; const C_GRAY = "#808080"; 
+                    const C_ORANGE = "#FF6D00"; const C_RED = "#FF5252"; const C_ALIEN = "#64DD17"; 
+                    const C_FIRE = "#00E676"; const C_DIAMOND = "#00E5FF"; const C_MAGIC = "#E040FB"; 
                     const C_WHITE = "#FFFFFF"; const C_SILVER = "#C0C0C0"; const C_BRONZE = "#CD7F32";
 
                     // 1. ZEBRA (<20%)
@@ -713,7 +714,12 @@ Término oficial: 31 de dezembro de 2026
                             if (isHit) {
                                 pts += (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
                                 victories++; simStreak++; if (m.round && m.round.toLowerCase() === 'final') finalsWon++;
-                                if (simStreak === 3) userMedals.push("🔥"); if (simStreak === 5) userMedals.push("🎯"); if (simStreak === 10) userMedals.push("👽");
+                                
+                                // Medalhas Acumulativas
+                                if (simStreak === 3) userMedals.push("🔥"); 
+                                if (simStreak === 5) userMedals.push("🎯"); 
+                                if (simStreak === 10) userMedals.push("👽");
+                                
                                 if (zebraMatchIds.includes(m.id)) userMedals.push("🦓");
                             } else { simStreak = 0; }
                         });
@@ -751,6 +757,7 @@ Término oficial: 31 de dezembro de 2026
                     if (finished.length > 0 && rankingSnapshot.length > 0) {
                         const lider = rankingSnapshot[0];
                         const lanterna = rankingSnapshot[rankingSnapshot.length - 1];
+                        
                         addSegment(`   👑 SEGUE O LÍDER! O ${lider.name} TÁ TRANQUILO COM SEUS ${lider.pts} PTS!   |`, C_GOLD);
                         
                         if (rankingSnapshot.length >= 2) addSegment(`   🥈 O ${rankingSnapshot[1].name} TÁ NA COLA DO LÍDER!   |`, C_SILVER);
@@ -784,13 +791,14 @@ Término oficial: 31 de dezembro de 2026
                             } else {
                                 if (streak >= 3) addSegment(`   🥬 ${name} TÁ COM MÃO DE ALFACE! (${streak} ERROS SEGUIDOS)   |`, C_RED);
                             }
+                            // Dorminhoco
                             if (finished.length > 0) {
                                 const lastM = finished[0];
                                 const voted = guessesData.some(x => x.userId === u.id && x.matchId === lastM.id);
                                 if (!voted) addSegment(`   💤 O BURRÃO DO ${name} NÃO VOTOU NO ÚLTIMO JOGO!   |`, C_GRAY);
                             }
                         });
-                        
+
                         // Zebra do último jogo
                         if (zebraMatchIds.isNotEmpty() && finished.length > 0) {
                             const lastM = finished[0];
@@ -801,6 +809,7 @@ Término oficial: 31 de dezembro de 2026
                                         const user = baseUsers.find(u => u.id === g.userId);
                                         return user ? user.name.split(' ')[0].toUpperCase() : null;
                                     }).filter(n => n);
+                                    
                                 if (winners.length > 0 && winners.length <= 4) {
                                     addSegment(`   🦓 OLHA A ZEBRA! O ${winners.join(', ')} ACERTOU ${lastM.teamA} x ${lastM.teamB}!   |`, C_GOLD);
                                 }
@@ -808,8 +817,7 @@ Término oficial: 31 de dezembro de 2026
                         }
                     }
 
-                    // --- 4. CARREGA FRASES DO ADMIN (MANUAIS DO FIREBASE) ---
-                    // Esta parte lê o que você cadastrou pelo Android
+                    // --- 4. CARREGA FRASES DO ADMIN (Letreiro Manual Colorido) ---
                     if (newsSnap.exists()) {
                         const rawItems = newsSnap.data().items || [];
                         rawItems.forEach(item => {
@@ -820,7 +828,7 @@ Término oficial: 31 de dezembro de 2026
                                 if(hex.length === 8) hex = hex.substring(2);
                                 addSegment(`   ${item.text}   |`, `#${hex}`);
                             } else {
-                                // Formato ANTIGO: String pura
+                                // Formato ANTIGO (Legado): String pura
                                 addSegment(`   ${item}   |`, "#EF6C00");
                             }
                         });
@@ -875,6 +883,7 @@ Término oficial: 31 de dezembro de 2026
                 container.innerHTML = html;
                 window.updateBadges(); 
 
+                // Badge de Pendências
                 let pendingCount = 0; const myVotesSet = new Set(); guessesSnap.forEach(d => { if(d.data().userId === currentUser.uid) myVotesSet.add(d.data().matchId); }); open.forEach(m => { if (!myVotesSet.has(m.id)) pendingCount++; });
                 const navBtn = document.getElementById('nav-matches'); const oldBadge = document.getElementById('matches-badge'); if(oldBadge) oldBadge.remove(); if (pendingCount > 0) { navBtn.style.position = 'relative'; navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`; }
 
@@ -2193,3 +2202,4 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
