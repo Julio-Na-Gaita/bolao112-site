@@ -601,8 +601,7 @@ Término oficial: 31 de dezembro de 2026
             document.getElementById('progressBar').classList.remove('hidden');
             
             try {
-                // 1. Buscamos TUDO de uma vez (Igual ao Android: users, matches, guesses...)
-                // ADICIONEI: getDoc(doc(db, "settings", "news")) para ler as frases manuais
+                // 1. Buscamos TUDO de uma vez
                 const [setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap, newsSnap] = await Promise.all([
                     getDoc(doc(db, "settings", "competitions")),
                     getDocs(collection(db, "matches")),
@@ -616,7 +615,7 @@ Término oficial: 31 de dezembro de 2026
 
                 if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
 
-                // Mapas de Estatísticas
+                // Mapas de Estatísticas e Votos
                 const statsMap = {};
                 const guessesData = []; 
                 guessesSnap.forEach(d => {
@@ -646,7 +645,7 @@ Término oficial: 31 de dezembro de 2026
                     }
                 });
 
-                // Ordenação Mestra (Igual Android: Data -> ID)
+                // Ordenação Mestra
                 allMatchesList.sort((a,b) => {
                     const timeDiff = a.deadlineDate - b.deadlineDate;
                     if (timeDiff !== 0) return timeDiff;
@@ -671,17 +670,15 @@ Término oficial: 31 de dezembro de 2026
                 });
 
                 waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
-                // Finished: Decrescente (Mais novo primeiro)
                 finished.sort((a,b)=>b.deadlineDate-a.deadlineDate); 
                 
                 // =================================================================
-                // 📰 GERADOR DE LETREIRO (LÓGICA BLINDADA IGUAL AO ANDROID)
+                // 📰 GERADOR DE LETREIRO (LÓGICA CORRIGIDA)
                 // =================================================================
                 const generateNewsFeed = () => {
                     let newsSegments = []; 
                     const addSegment = (text, colorHex) => { newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`); };
                     
-                    // Cores Hex Web
                     const C_GOLD = "#FFD700"; const C_BLUE_LIGHT = "#4FC3F7"; const C_GRAY = "#808080"; 
                     const C_ORANGE = "#FF6D00"; const C_RED = "#FF5252"; const C_ALIEN = "#64DD17"; 
                     const C_FIRE = "#00E676"; const C_DIAMOND = "#00E5FF"; const C_MAGIC = "#E040FB"; 
@@ -700,12 +697,10 @@ Término oficial: 31 de dezembro de 2026
                     const baseUsers = [];
                     uSnap.forEach(u => baseUsers.push({ id: u.id, name: u.data().name || u.data().username || "Anônimo", debts: u.data().debts || 0 }));
 
-                    // 3. Ranking Snapshot (Cálculo Completo)
+                    // 3. Ranking Snapshot
                     const rankingSnapshot = baseUsers.map(u => {
                         let pts = 0; let victories = 0; let finalsWon = 0; let simStreak = 0; let userMedals = []; 
                         const userGuesses = guessesData.filter(g => g.userId === u.id);
-                        
-                        // Ordem Cronológica (Antigo -> Novo) para sequências
                         const matchesChronological = [...finished].reverse();
 
                         matchesChronological.forEach(m => {
@@ -714,17 +709,11 @@ Término oficial: 31 de dezembro de 2026
                             if (isHit) {
                                 pts += (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
                                 victories++; simStreak++; if (m.round && m.round.toLowerCase() === 'final') finalsWon++;
-                                
-                                // Medalhas Acumulativas
-                                if (simStreak === 3) userMedals.push("🔥"); 
-                                if (simStreak === 5) userMedals.push("🎯"); 
-                                if (simStreak === 10) userMedals.push("👽");
-                                
+                                if (simStreak === 3) userMedals.push("🔥"); if (simStreak === 5) userMedals.push("🎯"); if (simStreak === 10) userMedals.push("👽");
                                 if (zebraMatchIds.includes(m.id)) userMedals.push("🦓");
                             } else { simStreak = 0; }
                         });
 
-                        // Diamante
                         const oitavasMatches = finished.filter(m => m.round === "Oitavas de final");
                         const oitavasByComp = {}; oitavasMatches.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); });
                         Object.values(oitavasByComp).forEach(matches => { 
@@ -736,46 +725,36 @@ Término oficial: 31 de dezembro de 2026
 
                         if (finalsWon > 0) userMedals.push("🔮");
                         if (victories >= 50) { const qtd = Math.floor(victories/50); for(let k=0; k<qtd; k++) userMedals.push("🎓"); }
-                        
                         pts -= u.debts;
 
                         return { name: u.name.split(' ')[0].toUpperCase(), pts: pts, debts: u.debts, medals: userMedals, id: u.id };
                     }).sort((a, b) => {
-                        // CRITÉRIO DE DESEMPATE OFICIAL
-                        if (b.pts !== a.pts) return b.pts - a.pts; // 1. Pontos
-                        if (a.debts !== b.debts) return a.debts - b.debts; // 2. Débitos
+                        if (b.pts !== a.pts) return b.pts - a.pts;
+                        if (a.debts !== b.debts) return a.debts - b.debts;
                         const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
                         for (let icon of hierarchy) {
                             const countA = a.medals.filter(m => m === icon).length;
                             const countB = b.medals.filter(m => m === icon).length;
-                            if (countB !== countA) return countB - countA; // 3. Hierarquia Medalhas
+                            if (countB !== countA) return countB - countA;
                         }
                         return 0;
                     });
 
-                    // --- STRINGS AUTOMÁTICAS (RANKING) ---
+                    // Strings Automáticas
                     if (finished.length > 0 && rankingSnapshot.length > 0) {
                         const lider = rankingSnapshot[0];
                         const lanterna = rankingSnapshot[rankingSnapshot.length - 1];
-                        
                         addSegment(`   👑 SEGUE O LÍDER! O ${lider.name} TÁ TRANQUILO COM SEUS ${lider.pts} PTS!   |`, C_GOLD);
-                        
                         if (rankingSnapshot.length >= 2) addSegment(`   🥈 O ${rankingSnapshot[1].name} TÁ NA COLA DO LÍDER!   |`, C_SILVER);
                         if (rankingSnapshot.length >= 3) addSegment(`   🥉 ${rankingSnapshot[2].name} FECHA O PÓDIO!   |`, C_BRONZE);
                         if (rankingSnapshot.length >= 4) addSegment(`   👀 OLHO NO ${rankingSnapshot[3].name}! TÁ CHEGANDO NO G3!   |`, C_BLUE_LIGHT);
                         if (rankingSnapshot.length >= 7) addSegment(`   😐 ${rankingSnapshot[Math.floor(rankingSnapshot.length/2)].name} TÁ NO MARASMO...   |`, C_GRAY);
-                        
-                        // Z-2
                         if (rankingSnapshot.length >= 3) {
                             const porteiro = rankingSnapshot[rankingSnapshot.length-3];
                             addSegment(`   ⚓ CUIDADO ${porteiro.name}! O Z-2 TÁ TE PUXANDO!   |`, C_ORANGE);
                         }
-                        // Lanterna
-                        if (rankingSnapshot.length > 1) {
-                            addSegment(`   🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA?   |`, C_RED);
-                        }
+                        if (rankingSnapshot.length > 1) addSegment(`   🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA?   |`, C_RED);
 
-                        // Sequências (Status Atual)
                         const recent10 = finished.slice(0, 10);
                         baseUsers.forEach(u => {
                             let streak = 0; let isNegative = false;
@@ -791,25 +770,18 @@ Término oficial: 31 de dezembro de 2026
                             } else {
                                 if (streak >= 3) addSegment(`   🥬 ${name} TÁ COM MÃO DE ALFACE! (${streak} ERROS SEGUIDOS)   |`, C_RED);
                             }
-                            // Dorminhoco
                             if (finished.length > 0) {
                                 const lastM = finished[0];
                                 const voted = guessesData.some(x => x.userId === u.id && x.matchId === lastM.id);
                                 if (!voted) addSegment(`   💤 O BURRÃO DO ${name} NÃO VOTOU NO ÚLTIMO JOGO!   |`, C_GRAY);
                             }
                         });
-
-                        // Zebra do último jogo
-                        if (zebraMatchIds.isNotEmpty() && finished.length > 0) {
+                        
+                        if (zebraMatchIds.isNotEmpty && finished.length > 0) {
                             const lastM = finished[0];
                             if (zebraMatchIds.includes(lastM.id)) {
                                 const matchGuesses = guessesData.filter(g => g.matchId === lastM.id);
-                                const winners = matchGuesses.filter(g => g.teamSelected === lastM.winner)
-                                    .map(g => {
-                                        const user = baseUsers.find(u => u.id === g.userId);
-                                        return user ? user.name.split(' ')[0].toUpperCase() : null;
-                                    }).filter(n => n);
-                                    
+                                const winners = matchGuesses.filter(g => g.teamSelected === lastM.winner).map(g => { const user = baseUsers.find(u => u.id === g.userId); return user ? user.name.split(' ')[0].toUpperCase() : null; }).filter(n => n);
                                 if (winners.length > 0 && winners.length <= 4) {
                                     addSegment(`   🦓 OLHA A ZEBRA! O ${winners.join(', ')} ACERTOU ${lastM.teamA} x ${lastM.teamB}!   |`, C_GOLD);
                                 }
@@ -817,41 +789,39 @@ Término oficial: 31 de dezembro de 2026
                         }
                     }
 
-                    // --- 4. CARREGA FRASES DO ADMIN (Letreiro Manual Colorido) ---
+                    // --- 4. CARREGA FRASES DO ADMIN ---
                     if (newsSnap.exists()) {
                         const rawItems = newsSnap.data().items || [];
                         rawItems.forEach(item => {
                             if (typeof item === 'object' && item !== null) {
                                 // Formato NOVO: {text: "...", color: "FF..."}
                                 let hex = item.color || "FFEF6C00";
-                                // Remove o FF do alfa se vier do Android
                                 if(hex.length === 8) hex = hex.substring(2);
                                 addSegment(`   ${item.text}   |`, `#${hex}`);
                             } else {
-                                // Formato ANTIGO (Legado): String pura
+                                // Formato ANTIGO
                                 addSegment(`   ${item}   |`, "#EF6C00");
                             }
                         });
                     }
 
-                    // 5. Frases Aleatórias do Sistema (Apenas 3)
+                    // 5. Frases Aleatórias (CORRIGIDO: O ERRO ESTAVA AQUI NO SHUFFLE)
                     const frasesPadrao = [
                         { t: "   💎 QUEM VAI GABARITAR AS OITAVAS E LEVAR O DIAMANTE?   |", c: C_DIAMOND },
                         { t: "   🔮 MÃE DINAH: ACERTE O CAMPEÃO E DOBRE SEUS PONTOS NA FINAL!   |", c: C_MAGIC },
                         { t: "   🚀 FOGUETE NÃO TEM RÉ! QUEM VAI DISPARAR NA PRÓXIMA RODADA?   |", c: C_WHITE }
                     ];
-                    frasesPadrao.shuffled().take(3).forEach(item => addSegment(item.t, item.c));
+                    // Shuffle manual (JavaScript não tem .shuffled())
+                    const shuffledExtras = frasesPadrao.sort(() => 0.5 - Math.random()).slice(0, 3);
+                    shuffledExtras.forEach(item => addSegment(item.t, item.c));
 
                     if (newsSegments.length === 0) {
                         addSegment("   ⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!   |", C_GOLD);
                     }
 
                     // Embaralha tudo
-                    for (let i = newsSegments.length - 1; i > 0; i--) { 
-                        const j = Math.floor(Math.random() * (i + 1)); 
-                        [newsSegments[i], newsSegments[j]] = [newsSegments[j], newsSegments[i]]; 
-                    }
-                    return newsSegments.join('') + newsSegments.join(''); // Duplica para efeito infinito
+                    for (let i = newsSegments.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [newsSegments[i], newsSegments[j]] = [newsSegments[j], newsSegments[i]]; }
+                    return newsSegments.join('') + newsSegments.join('');
                 };
 
                 const newsHTML = generateNewsFeed();
@@ -883,7 +853,6 @@ Término oficial: 31 de dezembro de 2026
                 container.innerHTML = html;
                 window.updateBadges(); 
 
-                // Badge de Pendências
                 let pendingCount = 0; const myVotesSet = new Set(); guessesSnap.forEach(d => { if(d.data().userId === currentUser.uid) myVotesSet.add(d.data().matchId); }); open.forEach(m => { if (!myVotesSet.has(m.id)) pendingCount++; });
                 const navBtn = document.getElementById('nav-matches'); const oldBadge = document.getElementById('matches-badge'); if(oldBadge) oldBadge.remove(); if (pendingCount > 0) { navBtn.style.position = 'relative'; navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`; }
 
@@ -2202,4 +2171,5 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
