@@ -481,8 +481,10 @@ Término oficial: 31 de dezembro de 2026
                 };
             });
         };
-// --- CARROSSEL DE IMAGENS DO CELULAR ---
-        // Coloque aqui as URLs das suas imagens (Prints do App)
+// --- ANIMAÇÃO DO IPHONE NA TELA DE LOGIN ---
+        
+        // ⚠️ IMPORTANTE: Coloque aqui os nomes EXATOS das imagens que você fez upload na pasta do site.
+        // Se a imagem não existir, o iPhone ficará branco.
         const appScreenshots = [
             "print1.jpeg", // Exemplo: Substitua por print_ranking.jpg
             "print2.jpeg",   // Exemplo: Substitua por print_jogos.jpg
@@ -492,22 +494,32 @@ Término oficial: 31 de dezembro de 2026
         let currentImgIdx = 0;
         const imgEl = document.getElementById('showcaseImg');
 
+        // Só roda se o elemento existir (ou seja, na tela de login)
         if (imgEl && appScreenshots.length > 0) {
-            // Define a primeira imagem
-            imgEl.src = appScreenshots[0];
+            
+            // Define a primeira imagem para garantir que não comece vazio
+            // Se a imagem 'bg_ranking.jpeg' não existir, mude abaixo para 'bg_jogos.jpeg' temporariamente
+            imgEl.src = appScreenshots[0]; 
 
+            // Função que troca a imagem
             setInterval(() => {
-                // Efeito de Fade Out
+                // 1. Fade Out (Fica transparente)
                 imgEl.style.opacity = 0;
                 
                 setTimeout(() => {
+                    // 2. Troca o arquivo da imagem (src)
                     currentImgIdx = (currentImgIdx + 1) % appScreenshots.length;
                     imgEl.src = appScreenshots[currentImgIdx];
-                    // Efeito de Fade In
-                    imgEl.style.opacity = 1;
-                }, 500); // Troca a imagem após 0.5s (metade da transição)
+                    
+                    // 3. Fade In (Aparece de novo suavemente)
+                    // Pequeno delay para dar tempo do navegador carregar a nova imagem
+                    imgEl.onload = () => { imgEl.style.opacity = 1; };
+                    // Fallback caso o onload falhe ou seja muito rápido (cache)
+                    setTimeout(() => { imgEl.style.opacity = 1; }, 100);
+                    
+                }, 700); // Espera 0.7s (tempo do fade out) para trocar
                 
-            }, 4000); // Muda a cada 4 segundos
+            }, 4000); // Repete a cada 4 segundos
         }
         // Handlers
         // --- LOGIN OTIMIZADO PARA BIOMETRIA WEB ---
@@ -2639,6 +2651,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
