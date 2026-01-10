@@ -254,7 +254,7 @@ Término oficial: 31 de dezembro de 2026
 
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-4"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
                 
-                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5.7</p>
+                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5.8</p>
             </div>
         </div>
     </main>
@@ -504,7 +504,7 @@ Término oficial: 31 de dezembro de 2026
                         isAdmin: false, 
                         debts: 0, 
                         payments: {}, 
-                        appVersion: "Web v1.5.7",
+                        appVersion: "Web v1.5.8",
                         passwordHint: hint 
                     }); 
                     alert("Conta criada!"); closeModal(); 
@@ -514,7 +514,7 @@ Término oficial: 31 de dezembro de 2026
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.7" }); } catch(e) {}
+                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.8" }); } catch(e) {}
                 
                 document.getElementById('mainHeader').classList.remove('hidden'); 
 
@@ -1419,3 +1419,4 @@ Término oficial: 31 de dezembro de 2026
     </script>
 </body>
 </html>
+
