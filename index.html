@@ -11,6 +11,7 @@
     <link rel="apple-touch-icon" href="favicon.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
@@ -150,20 +151,45 @@
     <main id="appContent" class="flex-1 w-full h-full overflow-y-auto overflow-x-hidden pb-32 relative z-10">
         
         <section id="loginScreen" class="flex flex-col items-center justify-center min-h-[70vh] p-6">
-            <div class="card-cut w-full max-w-sm p-8 border-t-4 border-[#006400]">
+          <div class="card-cut w-full max-w-sm p-8 border-t-4 border-[#006400]">
                 <h2 class="text-xl font-black text-center text-[#006400] mb-8 uppercase tracking-widest">Acesso Membros</h2>
-                <input type="text" id="userInput" placeholder="Usuário" class="w-full p-4 bg-gray-50 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-green-700">
-                <input type="password" id="passInput" placeholder="Senha" class="w-full p-4 bg-gray-50 border rounded-lg mb-2 outline-none focus:ring-2 focus:ring-green-700">
                 
-                <div class="flex justify-end mb-6">
-                    <button id="btnForgotPass" class="text-xs text-gray-500 font-bold hover:text-[#006400] transition-colors">Esqueci a senha</button>
-                </div>
+                <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
+                    
+                    <input 
+                        type="text" 
+                        id="userInput" 
+                        name="username" 
+                        autocomplete="username" 
+                        placeholder="Usuário" 
+                        class="w-full p-4 bg-gray-50 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-green-700 transition-all"
+                    >
+                    
+                    <input 
+                        type="password" 
+                        id="passInput" 
+                        name="password" 
+                        autocomplete="current-password" 
+                        placeholder="Senha" 
+                        class="w-full p-4 bg-gray-50 border rounded-lg mb-2 outline-none focus:ring-2 focus:ring-green-700 transition-all"
+                    >
+                    
+                    <div class="flex justify-between items-center mb-6">
+                        <label class="flex items-center text-xs text-gray-500 font-bold cursor-pointer">
+                            <input type="checkbox" id="rememberMe" checked class="mr-2 accent-[#006400]">
+                            Manter conectado
+                        </label>
+                        <button type="button" id="btnForgotPass" class="text-xs text-gray-500 font-bold hover:text-[#006400] transition-colors">Esqueci a senha</button>
+                    </div>
 
-                <button id="btnLoginAction" class="w-full bg-[#006400] text-white py-4 font-bold rounded-lg btn-press shadow-lg mb-6">ACESSAR</button>
+                    <button type="submit" id="btnLoginAction" class="w-full bg-[#006400] text-white py-4 font-bold rounded-lg btn-press shadow-lg mb-6 flex justify-center items-center gap-2">
+                        <span>ACESSAR</span>
+                        <i class="fas fa-fingerprint opacity-50"></i> </button>
+                </form>
                 
                 <div class="border-t pt-6 text-center">
                     <p class="text-xs text-gray-400 mb-2 font-bold">Ainda não tem cadastro?</p>
-                    <button id="btnOpenRegister" class="text-[#006400] font-black text-sm uppercase btn-press border border-[#006400] px-6 py-2 rounded-full hover:bg-green-50">CRIAR CONTA</button>
+                    <button type="button" id="btnOpenRegister" class="text-[#006400] font-black text-sm uppercase btn-press border border-[#006400] px-6 py-2 rounded-full hover:bg-green-50">CRIAR CONTA</button>
                 </div>
             </div>
         </section>
@@ -289,7 +315,7 @@ Término oficial: 31 de dezembro de 2026
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         // ADICIONADO: enableIndexedDbPersistence
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -388,7 +414,41 @@ Término oficial: 31 de dezembro de 2026
         };
 
         // Handlers
-        document.getElementById('btnLoginAction').onclick = async () => { const user = document.getElementById('userInput').value.trim().toLowerCase(); const pass = document.getElementById('passInput').value; try { await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); } catch (e) { alert("Dados incorretos."); } };
+        // --- LOGIN OTIMIZADO PARA BIOMETRIA WEB ---
+        window.handleLogin = async () => {
+            const btn = document.getElementById('btnLoginAction');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i>`;
+            btn.disabled = true;
+
+            const user = document.getElementById('userInput').value.trim().toLowerCase();
+            const pass = document.getElementById('passInput').value;
+            const remember = document.getElementById('rememberMe').checked;
+
+            if (!user || !pass) {
+                alert("Preencha todos os campos.");
+                btn.innerHTML = originalText; btn.disabled = false;
+                return;
+            }
+
+            try {
+                // Configura se deve manter logado (Local) ou só na sessão (Session)
+                const mode = remember ? browserLocalPersistence : browserSessionPersistence;
+                await setPersistence(auth, mode);
+
+                // Faz o login
+                await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass);
+                
+                // O navegador vai perguntar "Salvar Senha?" aqui. 
+                // Se o usuário salvar, na próxima vez o FaceID/Digital aparecerá automaticamente ao tocar no campo.
+                
+            } catch (e) {
+                console.error(e);
+                alert("Dados incorretos ou erro de conexão.");
+                btn.innerHTML = originalText; 
+                btn.disabled = false;
+            }
+        };
 // --- RECUPERAÇÃO DE SENHA (WEB) ---
         document.getElementById('btnForgotPass').onclick = () => {
             const modal = document.getElementById('modalOverlay'); 
@@ -2031,70 +2091,113 @@ async function calculatePot() {
                 document.getElementById('commentInput').focus();
             };
         };
-        // --- NOVO: SCOUT DO PALPITEIRO (ESTILO FIFA) ---
+       // --- NOVO: SCOUT COM GRÁFICO DE EVOLUÇÃO (CHART.JS) ---
         window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
             const cont = document.getElementById('modalContainer');
             // Mostra carregando
             document.getElementById('modalOverlay').classList.remove('hidden');
-            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i><p class="text-xs mt-2 font-bold text-gray-500">Gerando Scout...</p></div>`;
+            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i><p class="text-xs mt-2 font-bold text-gray-500">Calculando trajetória...</p></div>`;
 
             try {
-                // 1. Buscamos todos os jogos finalizados e os palpites desse usuário
-                const [mSnap, gSnap] = await Promise.all([
+                // 1. Buscamos TUDO (Matches, Guesses e Users) para calcular o Ranking Real
+                const [mSnap, gSnap, uSnap] = await Promise.all([
                     getDocs(collection(db, "matches")),
-                    getDocs(query(collection(db, "guesses"), where("userId", "==", targetUid)))
+                    getDocs(collection(db, "guesses")),
+                    getDocs(collection(db, "users"))
                 ]);
 
-                // Organiza palpites num mapa: { matchId: "Time Apostado" }
-                const userGuesses = {};
-                gSnap.forEach(d => userGuesses[d.data().matchId] = d.data().teamSelected);
+                // --- PREPARAÇÃO DOS DADOS ---
+                
+                // Lista de todos os usuários (para o leaderboard)
+                const allUsersIds = [];
+                uSnap.forEach(d => allUsersIds.push(d.id));
+                const totalParticipants = allUsersIds.length;
 
-                // Filtra e ordena jogos finalizados (do mais recente para o antigo)
+                // Mapa de Palpites: { "matchId_userId": "TimeApostado" } (Acesso O(1) rápido)
+                const guessesMap = {};
+                gSnap.forEach(d => {
+                    const g = d.data();
+                    guessesMap[`${g.matchId}_${g.userId}`] = g.teamSelected;
+                });
+
+                // Lista de Jogos Finalizados (Ordenados por Data: Antigo -> Novo)
                 const matches = [];
                 mSnap.forEach(d => {
                     const m = d.data();
                     if (m.winner) matches.push({ id: d.id, ...m, deadlineDate: m.deadline.toDate() });
                 });
-                matches.sort((a, b) => b.deadlineDate - a.deadlineDate); // Decrescente
+                matches.sort((a, b) => a.deadlineDate - b.deadlineDate); // Ascendente para o gráfico
 
-                // 2. Cálculos Estatísticos
+                // --- CÁLCULO DA TRAJETÓRIA (REPLAY DO CAMPEONATO) ---
+                
+                // Leaderboard volátil { uid: pontos }
+                let currentScores = {}; 
+                allUsersIds.forEach(uid => currentScores[uid] = 0);
+
+                let rankHistory = []; // [Posição Jogo 1, Posição Jogo 2...]
+                
+                // Estatísticas Individuais (Acumuladas)
                 let totalGuesses = 0;
                 let totalHits = 0;
                 let currentStreak = 0;
                 let streakBroken = false;
-                const compStats = {}; // { 'Champions': {hits:0, total:0} }
+                const compStats = {}; 
 
-                for (let m of matches) {
-                    const vote = userGuesses[m.id];
-                    if (!vote) continue; // Pula se não votou
-
-                    totalGuesses++;
-                    const isHit = vote === m.winner;
-                    if (isHit) totalHits++;
-
-                    // Estatísticas por competições
-                    if (!compStats[m.competition]) compStats[m.competition] = { hits: 0, total: 0 };
-                    compStats[m.competition].total++;
-                    if (isHit) compStats[m.competition].hits++;
-
-                    // Sequência Atual (Streak)
-                    if (!streakBroken) {
-                        if (currentStreak === 0) {
-                            currentStreak = isHit ? 1 : -1; // Começa a contagem
-                        } else if (currentStreak > 0 && isHit) {
-                            currentStreak++; // Aumenta sequência de vitórias
-                        } else if (currentStreak < 0 && !isHit) {
-                            currentStreak--; // Aumenta sequência de derrotas
-                        } else {
-                            streakBroken = true; // Quebrou a sequência
+                // Loop Jogo a Jogo
+                matches.forEach((m, index) => {
+                    // 1. Atualiza pontuação de TODOS os participantes neste jogo
+                    allUsersIds.forEach(uid => {
+                        const vote = guessesMap[`${m.id}_${uid}`];
+                        if (vote && vote === m.winner) {
+                            const pts = (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
+                            currentScores[uid] = (currentScores[uid] || 0) + pts;
                         }
-                    }
-                }
+                    });
 
-                // 3. Define Especialidade e Ponto Fraco (Mínimo 3 jogos)
+                    // 2. Descobre a posição do alvo AGORA
+                    // Ordena leaderboard (Maior pontuação -> Menor)
+                    const sortedLeaderboard = Object.entries(currentScores).sort((a, b) => b[1] - a[1]);
+                    // Acha índice (+1 para ser 1º, 2º...)
+                    const myRank = sortedLeaderboard.findIndex(item => item[0] === targetUid) + 1;
+                    rankHistory.push(myRank);
+
+                    // 3. Calcula Scout Individual (apenas do usuário alvo)
+                    const myVote = guessesMap[`${m.id}_${targetUid}`];
+                    if (myVote) {
+                        totalGuesses++;
+                        const isHit = myVote === m.winner;
+                        if (isHit) totalHits++;
+
+                        // Stats Competição
+                        if (!compStats[m.competition]) compStats[m.competition] = { hits: 0, total: 0 };
+                        compStats[m.competition].total++;
+                        if (isHit) compStats[m.competition].hits++;
+                    }
+
+                    // 4. Streak (Calculado de trás pra frente geralmente, mas aqui vamos manter simples no loop reverso depois ou acumular)
+                    // Para simplificar e bater com o Android, vamos recalcular o Streak APENAS no final usando a ordem inversa
+                });
+
+                // Recálculo do Streak (Recente -> Antigo) para ser preciso
+                const matchesDesc = [...matches].reverse();
+                streakBroken = false;
+                currentStreak = 0;
+                matchesDesc.forEach(m => {
+                    const myVote = guessesMap[`${m.id}_${targetUid}`];
+                    if (myVote) {
+                        const hit = myVote === m.winner;
+                        if (!streakBroken) {
+                            if (currentStreak === 0) currentStreak = hit ? 1 : -1;
+                            else if (currentStreak > 0 && hit) currentStreak++;
+                            else if (currentStreak < 0 && !hit) currentStreak--;
+                            else streakBroken = true;
+                        }
+                    } else streakBroken = true;
+                });
+
+                // Especialidade / Ponto Fraco
                 let bestComp = "---"; let bestPct = -1;
                 let worstComp = "---"; let worstPct = 101;
-
                 for (const [comp, stat] of Object.entries(compStats)) {
                     const pct = (stat.hits / stat.total) * 100;
                     if (stat.total >= 3) {
@@ -2102,20 +2205,19 @@ async function calculatePot() {
                         if (pct < worstPct) { worstPct = pct; worstComp = comp; }
                     }
                 }
-
                 const acc = totalGuesses > 0 ? Math.round((totalHits / totalGuesses) * 100) : 0;
-                
-                // Formata a sequência para exibição
+
+                // Streak Display HTML
                 let streakDisplay = "";
                 if(currentStreak > 0) streakDisplay = `<div class="text-green-600"><i class="fas fa-fire"></i> +${currentStreak}</div><div class="text-[8px] text-gray-400">VITÓRIAS SEGUIDAS</div>`;
                 else if(currentStreak < 0) streakDisplay = `<div class="text-red-600"><i class="fas fa-snowflake"></i> ${currentStreak}</div><div class="text-[8px] text-gray-400">ERROS SEGUIDOS</div>`;
                 else streakDisplay = `<div class="text-gray-400">-</div><div class="text-[8px] text-gray-400">NEUTRO</div>`;
 
-                // 4. Monta o Card (HTML) - ATUALIZADO
+                // --- RENDERIZAÇÃO DO MODAL ---
                 const html = `
-                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 90vh; overflow-y: auto;">
                     <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-[#006400] to-black opacity-90"></div>
-                    <img src="bg_ranking.png" class="absolute inset-0 w-full h-full object-cover opacity-10 mix-blend-overlay">
+                    <img src="bg_ranking.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-10 mix-blend-overlay">
                     
                     <div class="relative z-10 p-5 text-white">
                         <div class="flex justify-between items-start mb-2">
@@ -2143,11 +2245,18 @@ async function calculatePot() {
                             </div>
                         </div>
 
+                        <div class="bg-white rounded-lg p-2 mb-4 shadow-lg">
+                            <p class="text-[10px] text-gray-500 font-bold mb-2 text-center uppercase">Trajetória no Ranking</p>
+                            <div class="h-40 w-full">
+                                <canvas id="scoutChart"></canvas>
+                            </div>
+                        </div>
+
                         <div class="space-y-2">
                             <div class="bg-gradient-to-r from-green-900/50 to-transparent p-2 rounded border-l-4 border-green-500 flex justify-between items-center">
                                 <div class="text-xs">
                                     <p class="text-gray-400 text-[9px] uppercase font-bold">Especialidade</p>
-                                    <p class="font-bold text-white text-sm">${bestComp}</p>
+                                    <p class="font-bold text-white text-sm">${bestComp} (${Math.round(bestPct)}%)</p>
                                 </div>
                                 <i class="fas fa-star text-green-400 text-xl opacity-50"></i>
                             </div>
@@ -2155,7 +2264,7 @@ async function calculatePot() {
                             <div class="bg-gradient-to-r from-red-900/50 to-transparent p-2 rounded border-l-4 border-red-500 flex justify-between items-center">
                                 <div class="text-xs">
                                     <p class="text-gray-400 text-[9px] uppercase font-bold">Ponto Fraco</p>
-                                    <p class="font-bold text-white text-sm">${worstComp}</p>
+                                    <p class="font-bold text-white text-sm">${worstComp} (${Math.round(worstPct)}%)</p>
                                 </div>
                                 <i class="fas fa-skull text-red-400 text-xl opacity-50"></i>
                             </div>
@@ -2177,14 +2286,85 @@ async function calculatePot() {
                 </div>
                 `;
                 cont.innerHTML = html;
+
+                // --- INICIALIZAÇÃO DO CHART.JS ---
+                // Destroi gráfico anterior se existir
+                if (window.myScoutChart) { window.myScoutChart.destroy(); }
+
+                const ctx = document.getElementById('scoutChart').getContext('2d');
+                
+                // Gradiente Verde para o Fundo
+                const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+                gradient.addColorStop(0, 'rgba(0, 100, 0, 0.5)'); // Verde escuro
+                gradient.addColorStop(1, 'rgba(0, 100, 0, 0.0)'); // Transparente
+
+                // Labels do Eixo X (Jogos 1, 2, 3...)
+                const labels = rankHistory.map((_, i) => (i + 1).toString());
+
+                window.myScoutChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Posição',
+                            data: rankHistory,
+                            borderColor: '#006400', // Linha Verde Escura
+                            backgroundColor: gradient,
+                            borderWidth: 2,
+                            pointBackgroundColor: '#FFD700', // Pontos Dourados
+                            pointRadius: 3,
+                            fill: true,
+                            tension: 0.3 // Suavização da linha
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Posição: ${context.parsed.y}º`;
+                                    },
+                                    title: function(context) {
+                                        return `Jogo #${context[0].label}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                reverse: true, // INVERTE O EIXO: 1º LUGAR NO TOPO
+                                beginAtZero: false,
+                                min: 1, // Começa em 1º
+                                // Sugere o máximo dinamicamente ou fixo
+                                suggestedMax: totalParticipants, 
+                                grid: { color: '#f3f4f6' },
+                                ticks: { 
+                                    stepSize: 1,
+                                    callback: function(value) { return value + 'º'; } 
+                                }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    maxTicksLimit: 6 // Não lotar o eixo X
+                                }
+                            }
+                        }
+                    }
+                });
+
             } catch (e) {
                 console.error(e);
-                cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro ao carregar scout.</div>`;
+                cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro ao carregar scout.<br><span class="text-xs font-normal text-black">${e.message}</span></div>`;
             }
         };
     </script>
 </body>
 </html>
+
 
 
 
