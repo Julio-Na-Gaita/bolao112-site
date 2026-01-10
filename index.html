@@ -297,6 +297,19 @@ Término oficial: 31 de dezembro de 2026
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
+        const getAvatarUrl = (base64, name) => {
+            // 1. Se tem foto real, usa ela
+            if (base64 && base64.trim() !== "") {
+                return `data:image/jpeg;base64,${base64}`;
+            }
+            // 2. Se não tem, gera o DiceBear
+            const seed = (name || "user").trim();
+            // Cores de fundo suaves (azul, roxo, verde, laranja)
+            const bgColors = ["b6e3f4", "c0aede", "d1d4f9", "ffdfbf", "fdcdc5"]; 
+            const bg = bgColors[seed.length % bgColors.length]; // Escolhe cor baseada no tamanho do nome
+            return `https://api.dicebear.com/7.x/adventurer/png?seed=${seed}&backgroundColor=${bg}`;
+        };
 
         // --- OTIMIZAÇÃO: ATIVAR CACHE OFFLINE ---
         // Isso faz o site carregar instantaneamente na 2ª visita
@@ -1087,7 +1100,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                         listHtml += `
                         <div class="flex items-center justify-between p-2 mb-1 rounded border-b border-gray-100 ${bgClass}">
                             <div class="flex items-center gap-2 overflow-hidden">
-                                ${v.photo ? `<img src="data:image/jpeg;base64,${v.photo}" class="w-8 h-8 rounded-full border border-gray-300 object-cover">` : `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-400"><i class="fas fa-user"></i></div>`}
+                                <img src="${getAvatarUrl(v.photo, v.name)}" class="w-8 h-8 rounded-full border border-gray-300 object-cover">
                                 
                                 <span class="text-sm font-bold text-gray-800 truncate max-w-[130px]" title="${v.name}">${v.name}</span>
                             </div>
@@ -1401,7 +1414,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                 window.currentMonthlyRanking = monthlyData; currentRankingData = users; 
                 
                 let html = `<div class="bg-[#006400] rounded-t-xl p-3 flex justify-between items-center shadow-md"><div><h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3><p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p></div><div class="flex gap-2"><button onclick="window.showKingModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg shadow border border-white/20">🏆</button><button onclick="loadRanking()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-[#FFD700] shadow border border-white/20"><i class="fas fa-sync-alt text-xs"></i></button></div></div><div class="bg-[#005000] flex text-white/70 text-[9px] font-bold py-1 px-2 uppercase border-b border-white/10"><div class="w-[35px] text-center">Pos</div><div class="flex-1 pl-2">Participante</div><div class="w-[28px] text-center">D</div><div class="w-[40px] text-center text-white">Pts</div></div><div class="bg-white rounded-b-xl overflow-hidden shadow-sm">`;
-                html += users.map((u, i) => { const pos = i+1; const isRelegation = (i >= users.length - 2) && (users.length > 2); let bgColor = 'bg-white'; let borderColor = 'border-transparent'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; let nameColorClass = "text-gray-800"; let anchorIcon = ""; if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; } else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; anchorIcon = `<i class="fas fa-anchor text-[#8B0000] ml-1 text-[10px]" title="Zona de Rebaixamento"></i>`; } let diffHtml = ''; if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2 ${i<3 ? 'border-l-4' : ''}" style="${i<3 ? `border-left-color: ${borderColor.replace('border-[','').replace(']','')}` : ''}"><div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div><div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})"><div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">${u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="w-full h-full object-cover">` : `<i class="fas fa-user text-gray-300"></i>`}</div><div class="flex flex-col overflow-hidden"><div class="flex items-center"><span class="text-xs font-bold ${nameColorClass} truncate pl-2">${u.name}</span>${anchorIcon}</div>${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}</div></div><div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div><div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div></div>`; }).join(''); html += `</div>`; listContainer.innerHTML = html;
+                html += users.map((u, i) => { const pos = i+1; const isRelegation = (i >= users.length - 2) && (users.length > 2); let bgColor = 'bg-white'; let borderColor = 'border-transparent'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; let nameColorClass = "text-gray-800"; let anchorIcon = ""; if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; } else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; anchorIcon = `<i class="fas fa-anchor text-[#8B0000] ml-1 text-[10px]" title="Zona de Rebaixamento"></i>`; } let diffHtml = ''; if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2 ${i<3 ? 'border-l-4' : ''}" style="${i<3 ? `border-left-color: ${borderColor.replace('border-[','').replace(']','')}` : ''}"><div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div><div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})"><div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0"><img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-cover"></div><div class="flex flex-col overflow-hidden"><div class="flex items-center"><span class="text-xs font-bold ${nameColorClass} truncate pl-2">${u.name}</span>${anchorIcon}</div>${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}</div></div><div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div><div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div></div>`; }).join(''); html += `</div>`; listContainer.innerHTML = html;
             } catch (e) { console.error(e); listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro.</div>`; }
         }
 window.showKingModal = () => {
@@ -1473,7 +1486,8 @@ window.showKingModal = () => {
             const u = currentRankingData[idx]; 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             
-            let imageContent = u.photo ? `<img src="data:image/jpeg;base64,${u.photo}" class="max-w-full max-h-full object-contain">` : `<div class="w-full h-full bg-gray-200 flex items-center justify-center"><i class="fas fa-user text-6xl text-gray-400"></i></div>`;
+            // Agora sempre mostra imagem (Real ou DiceBear) 
+           let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-cover">`;
 
             // --- LÓGICA DE STACKING E ORDENAÇÃO DE MEDALHAS ---
             let medalsHtml = "";
@@ -1742,9 +1756,8 @@ async function loadProfile() {
                 document.getElementById('profileName').innerText = u.name || "MEMBRO"; 
                 document.getElementById('profileUser').innerText = `@${u.username || 'user'}`; 
                 
-                if (u.photoBase64) { 
-                    document.getElementById('profileAvatar').innerHTML = `<img src="data:image/jpeg;base64,${u.photoBase64}" class="w-full h-full object-cover">`; 
-                } 
+                // Sempre renderiza a imagem (mesmo que seja a gerada)
+document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u.photoBase64, u.name || u.username)}" class="w-full h-full object-cover">`;
 
                 // --- LÓGICA DA DICA ---
                 const myHint = u.passwordHint || "Sem dica cadastrada";
@@ -2112,7 +2125,7 @@ async function calculatePot() {
 
                         <div class="flex items-center gap-4 mb-6">
                             <div class="w-20 h-20 rounded-full border-4 border-[#FFD700] overflow-hidden bg-black shadow-lg shrink-0">
-                                ${targetPhoto ? `<img src="data:image/jpeg;base64,${targetPhoto}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gray-700 flex items-center justify-center"><i class="fas fa-user text-2xl"></i></div>`}
+                                <img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-full h-full object-cover">
                             </div>
                             <div>
                                 <h2 class="font-black text-2xl uppercase leading-none mb-1">${targetName}</h2>
@@ -2172,6 +2185,7 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
 
