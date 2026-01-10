@@ -789,13 +789,14 @@ Término oficial: 31 de dezembro de 2026
                         }
                     }
 
-                    // --- 4. CARREGA FRASES DO ADMIN ---
+                   // --- 4. CARREGA FRASES DO ADMIN ---
                     if (newsSnap.exists()) {
                         const rawItems = newsSnap.data().items || [];
                         rawItems.forEach(item => {
                             if (typeof item === 'object' && item !== null) {
                                 // Formato NOVO: {text: "...", color: "FF..."}
                                 let hex = item.color || "FFEF6C00";
+                                // Remove o FF do alfa se vier do Android para ficar #RRGGBB
                                 if(hex.length === 8) hex = hex.substring(2);
                                 addSegment(`   ${item.text}   |`, `#${hex}`);
                             } else {
@@ -2171,5 +2172,6 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
