@@ -596,43 +596,47 @@ Término oficial: 31 de dezembro de 2026
             }
         };
         
+        // --- FUNÇÃO PRINCIPAL DE CARREGAMENTO DE DADOS (BASEADA NO ANDROID) ---
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
+            
             try {
-                // 1. Buscamos TUDO de uma vez
-                const [setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap] = await Promise.all([
+                // 1. Buscamos TUDO de uma vez (Paralelismo para performance)
+                const [setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap, newsSnap] = await Promise.all([
                     getDoc(doc(db, "settings", "competitions")),
                     getDocs(collection(db, "matches")),
                     getDocs(collection(db, "guesses")),
                     getDocs(collection(db, "users")),
-                    getDocs(collection(db, "match_comments"))
+                    getDocs(collection(db, "match_comments")),
+                    getDoc(doc(db, "settings", "news")) // Carrega as notícias
                 ]);
 
+                // --- PROCESSAMENTO DE DADOS ---
+                
                 const totalParticipants = uSnap.size || 1; 
 
+                // Mapeia Competições
                 if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
 
-                // Mapa de Votos (Termômetro)
+                // Processa Palpites para Termômetro e Estatísticas
                 const statsMap = {};
                 const guessesData = []; 
                 guessesSnap.forEach(d => {
                     const g = d.data();
-                    guessesData.push(g); // Salva para o Hall da Fama
+                    guessesData.push(g);
                     if (!statsMap[g.matchId]) statsMap[g.matchId] = { teamA: 0, teamB: 0, total: 0 };
                     if (!statsMap[g.matchId][g.teamSelected]) statsMap[g.matchId][g.teamSelected] = 0;
                     statsMap[g.matchId][g.teamSelected]++;
                     statsMap[g.matchId].total++;
                 });
 
-                // Mapa de Comentários
+                // Contagem de Comentários (Sino)
                 const serverCounts = {};
-                commentsSnap.forEach(doc => {
-                    const mid = doc.data().matchId;
-                    serverCounts[mid] = (serverCounts[mid] || 0) + 1;
-                });
+                commentsSnap.forEach(doc => { const mid = doc.data().matchId; serverCounts[mid] = (serverCounts[mid] || 0) + 1; });
                 globalServerCounts = serverCounts;
                 
+                // Processa Jogos
                 const now = new Date();
                 let allMatchesList = [];
 
@@ -647,7 +651,7 @@ Término oficial: 31 de dezembro de 2026
                     }
                 });
 
-                // Ordenação Mestra
+                // Ordenação Mestra dos Jogos
                 allMatchesList.sort((a,b) => {
                     const timeDiff = a.deadlineDate - b.deadlineDate;
                     if (timeDiff !== 0) return timeDiff;
@@ -656,54 +660,40 @@ Término oficial: 31 de dezembro de 2026
 
                 window.cachedMatches = allMatchesList; 
 
+                // Separação por Status
                 let open = [], waiting = [], finished = [];
                 let totalUnread = 0;
                 let unreadInOpen = false, unreadInWaiting = false, unreadInFinished = false;
 
                 allMatchesList.forEach((m, index) => {
                     m.matchNumber = index + 1;
-                    
                     const sCount = serverCounts[m.id] || 0;
                     const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
                     if (sCount > lCount) {
                         totalUnread++;
-                        if (m.winner) unreadInFinished = true;
-                        else if (m.expired) unreadInWaiting = true;
-                        else unreadInOpen = true;
+                        if (m.winner) unreadInFinished = true; else if (m.expired) unreadInWaiting = true; else unreadInOpen = true;
                     }
-
-                    if(m.winner) finished.push(m);
-                    else if(m.expired) waiting.push(m);
-                    else open.push(m);
+                    if(m.winner) finished.push(m); else if(m.expired) waiting.push(m); else open.push(m);
                 });
 
+                // Ordenação Visual das Listas
                 waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
-                finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
-                
+                finished.sort((a,b)=>b.deadlineDate-a.deadlineDate); // Do mais recente para o antigo
+
                 // =================================================================
-                // 📰 GERADOR DE NOTÍCIAS (LÓGICA BLINDADA DO ANDROID)
+                // 📰 GERADOR DE LETREIRO (LÓGICA BLINDADA IGUAL AO ANDROID)
                 // =================================================================
                 const generateNewsFeed = () => {
                     let newsSegments = []; 
-
-                    const addSegment = (text, colorHex) => {
-                        newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`);
-                    };
-
+                    const addSegment = (text, colorHex) => { newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`); };
+                    
+                    // Cores (Hex Web)
                     const C_GOLD = "#FFD700"; const C_BLUE_LIGHT = "#4FC3F7"; const C_GRAY = "#808080"; 
                     const C_ORANGE = "#FF6D00"; const C_RED = "#FF5252"; const C_ALIEN = "#64DD17"; 
                     const C_FIRE = "#00E676"; const C_DIAMOND = "#00E5FF"; const C_MAGIC = "#E040FB"; 
                     const C_WHITE = "#FFFFFF"; const C_SILVER = "#C0C0C0"; const C_BRONZE = "#CD7F32";
 
-                    // Prepara dados base dos usuários
-                    const baseUsers = [];
-                    uSnap.forEach(u => baseUsers.push({
-                        id: u.id, 
-                        name: u.data().name || u.data().username || "Anônimo",
-                        debts: u.data().debts || 0
-                    }));
-
-                    // 1. IDENTIFICA ZEBRAS (Para critério de desempate)
+                    // 1. Identifica Zebras (Para desempate e medalhas)
                     const zebraMatchIds = [];
                     if (totalParticipants > 0) {
                         finished.forEach(m => {
@@ -712,144 +702,91 @@ Término oficial: 31 de dezembro de 2026
                         });
                     }
 
-                    // 2. CÁLCULO COMPLETO (Pontos + Débitos + Medalhas para o Ranking Correto)
-                    const rankingSnapshot = baseUsers.map(u => {
-                        let pts = 0;
-                        let victories = 0;
-                        let finalsWon = 0;
-                        let simStreak = 0;
-                        let userMedals = []; 
+                    // 2. Dados Básicos dos Usuários
+                    const baseUsers = [];
+                    uSnap.forEach(u => baseUsers.push({ id: u.id, name: u.data().name || u.data().username || "Anônimo", debts: u.data().debts || 0 }));
 
+                    // 3. Cálculo Completo do Ranking (Snapshot para o Letreiro)
+                    const rankingSnapshot = baseUsers.map(u => {
+                        let pts = 0; let victories = 0; let finalsWon = 0; let simStreak = 0; let userMedals = []; 
                         const userGuesses = guessesData.filter(g => g.userId === u.id);
                         
-                        // Ordem cronológica para sequências
+                        // Ordem Cronológica (Antigo -> Novo) para calcular sequências
                         const matchesChronological = [...finished].reverse();
 
                         matchesChronological.forEach(m => {
                             const g = userGuesses.find(ug => ug.matchId === m.id);
                             const isHit = g && g.teamSelected === m.winner;
-
                             if (isHit) {
                                 pts += (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
-                                victories++;
-                                simStreak++;
-                                if (m.round && m.round.toLowerCase() === 'final') finalsWon++;
-
-                                if (simStreak === 3) userMedals.push("🔥");
-                                if (simStreak === 5) userMedals.push("🎯");
+                                victories++; simStreak++; if (m.round && m.round.toLowerCase() === 'final') finalsWon++;
+                                
+                                // Medalhas Acumulativas
+                                if (simStreak === 3) userMedals.push("🔥"); 
+                                if (simStreak === 5) userMedals.push("🎯"); 
                                 if (simStreak === 10) userMedals.push("👽");
+                                
                                 if (zebraMatchIds.includes(m.id)) userMedals.push("🦓");
-                            } else {
-                                simStreak = 0;
-                            }
+                            } else { simStreak = 0; }
                         });
 
-                        // Diamante
+                        // Diamante (Oitavas)
                         const oitavasMatches = finished.filter(m => m.round === "Oitavas de final");
-                        const oitavasByComp = {};
-                        oitavasMatches.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); });
-                        Object.values(oitavasByComp).forEach(matches => {
-                            if (matches.length === 8) {
-                                const hits = matches.filter(m => {
-                                    const g = userGuesses.find(ug => ug.matchId === m.id);
-                                    return g && g.teamSelected === m.winner;
-                                }).length;
-                                if (hits === 8) { pts += 3; userMedals.push("💎"); }
-                            }
+                        const oitavasByComp = {}; oitavasMatches.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); });
+                        Object.values(oitavasByComp).forEach(matches => { 
+                            if (matches.length === 8) { 
+                                const hits = matches.filter(m => { const g = userGuesses.find(ug => ug.matchId === m.id); return g && g.teamSelected === m.winner; }).length; 
+                                if (hits === 8) { pts += 3; userMedals.push("💎"); } 
+                            } 
                         });
 
                         if (finalsWon > 0) userMedals.push("🔮");
                         if (victories >= 50) { const qtd = Math.floor(victories/50); for(let k=0; k<qtd; k++) userMedals.push("🎓"); }
+                        
+                        pts -= u.debts; // Penalidade
 
-                        pts -= u.debts;
-
-                        return { 
-                            name: u.name.split(' ')[0].toUpperCase(), 
-                            pts: pts, 
-                            debts: u.debts,
-                            medals: userMedals,
-                            id: u.id
-                        };
+                        return { name: u.name.split(' ')[0].toUpperCase(), pts: pts, debts: u.debts, medals: userMedals, id: u.id };
                     }).sort((a, b) => {
-                        // --- CRITÉRIO DE DESEMPATE COMPLETO (Líder Verdadeiro) ---
-                        if (b.pts !== a.pts) return b.pts - a.pts;
-                        if (a.debts !== b.debts) return a.debts - b.debts;
+                        // CRITÉRIO DE DESEMPATE OFICIAL (IGUAL AO ANDROID)
+                        if (b.pts !== a.pts) return b.pts - a.pts; // 1. Pontos
+                        if (a.debts !== b.debts) return a.debts - b.debts; // 2. Menos Débitos
                         const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
                         for (let icon of hierarchy) {
                             const countA = a.medals.filter(m => m === icon).length;
                             const countB = b.medals.filter(m => m === icon).length;
-                            if (countB !== countA) return countB - countA;
+                            if (countB !== countA) return countB - countA; // 3. Hierarquia Medalhas
                         }
                         return 0;
                     });
 
-                    // GERAÇÃO DAS FRASES
+                    // --- STRINGS AUTOMÁTICAS DO SISTEMA ---
                     if (finished.length > 0 && rankingSnapshot.length > 0) {
-                        
                         const lider = rankingSnapshot[0];
                         const lanterna = rankingSnapshot[rankingSnapshot.length - 1];
-
-                        // 1º Lugar
+                        
                         addSegment(`   👑 SEGUE O LÍDER! O ${lider.name} TÁ TRANQUILO COM SEUS ${lider.pts} PTS!   |`, C_GOLD);
-
-                        // 2º Lugar
-                        if (rankingSnapshot.length >= 2) {
-                            const vice = rankingSnapshot[1];
-                            addSegment(`   🥈 O ${vice.name} TÁ NA COLA DO LÍDER! SÓ UM VACILO E ELE ASSUME!   |`, C_SILVER);
-                        }
-
-                        // 3º Lugar
+                        
+                        if (rankingSnapshot.length >= 2) addSegment(`   🥈 O ${rankingSnapshot[1].name} TÁ NA COLA DO LÍDER!   |`, C_SILVER);
+                        if (rankingSnapshot.length >= 3) addSegment(`   🥉 ${rankingSnapshot[2].name} FECHA O PÓDIO!   |`, C_BRONZE);
+                        if (rankingSnapshot.length >= 4) addSegment(`   👀 OLHO NO ${rankingSnapshot[3].name}! TÁ CHEGANDO NO G3!   |`, C_BLUE_LIGHT);
+                        if (rankingSnapshot.length >= 7) addSegment(`   😐 ${rankingSnapshot[Math.floor(rankingSnapshot.length/2)].name} TÁ NO MARASMO...   |`, C_GRAY);
+                        
+                        // Z-2 e Lanterna
                         if (rankingSnapshot.length >= 3) {
-                            const terceiro = rankingSnapshot[2];
-                            addSegment(`   🥉 ${terceiro.name} FECHA O PÓDIO! JÁ TÁ GARANTINDO O DA MERENDA!   |`, C_BRONZE);
+                            const porteiro = rankingSnapshot[rankingSnapshot.length-3];
+                            addSegment(`   ⚓ CUIDADO ${porteiro.name}! O Z-2 TÁ TE PUXANDO!   |`, C_ORANGE);
                         }
+                        if (rankingSnapshot.length > 1) addSegment(`   🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA?   |`, C_RED);
 
-                        // 4º Lugar
-                        if (rankingSnapshot.length >= 4) {
-                            const quarto = rankingSnapshot[3];
-                            addSegment(`   👀 OLHO NO ${quarto.name}! TÁ CHEGANDO NO G3, HEIN?   |`, C_BLUE_LIGHT);
-                        }
-
-                        // Meio de Tabela
-                        if (rankingSnapshot.length >= 7) {
-                            const meioIndex = Math.floor(rankingSnapshot.length / 2);
-                            const meio = rankingSnapshot[meioIndex];
-                            addSegment(`   😐 ${meio.name} TÁ ÁGUA DE SALSICHA... NEM FEDE NEM CHEIRA NA TABELA!   |`, C_GRAY);
-                        }
-
-                        // Porteiro do Z-2
-                        if (rankingSnapshot.length >= 3) {
-                            const indexPorteiro = rankingSnapshot.length - 3;
-                            if (indexPorteiro >= 0) {
-                                const porteiro = rankingSnapshot[indexPorteiro];
-                                addSegment(`   ⚓ CUIDADO ${porteiro.name}! O Z-2 TÁ TE PUXANDO, TONTEIRA!   |`, C_ORANGE);
-                            }
-                        }
-
-                        // Lanterna
-                        if (rankingSnapshot.length > 1) {
-                            addSegment(`   🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA NÃO, ARROMBADO?   |`, C_RED);
-                        }
-
-                        // --- SEQUÊNCIAS ---
+                        // Sequências Atuais (Status)
                         const recent10 = finished.slice(0, 10);
                         baseUsers.forEach(u => {
-                            let streak = 0;
-                            let isNegative = false;
-                            
+                            let streak = 0; let isNegative = false;
                             for (let i = 0; i < recent10.length; i++) {
-                                const m = recent10[i];
-                                const g = guessesData.find(x => x.userId === u.id && x.matchId === m.id);
-                                const vote = g ? g.teamSelected : null;
-                                if (vote && vote === m.winner) {
-                                    if (isNegative) break; streak++;
-                                } else {
-                                    if (streak > 0 && !isNegative) break; isNegative = true; streak++;
-                                }
+                                const m = recent10[i]; const g = guessesData.find(x => x.userId === u.id && x.matchId === m.id); const vote = g ? g.teamSelected : null;
+                                if (vote && vote === m.winner) { if (isNegative) break; streak++; } else { if (streak > 0 && !isNegative) break; isNegative = true; streak++; }
                             }
-
                             const name = u.name.split(' ')[0].toUpperCase();
-
                             if (!isNegative) {
                                 if (streak >= 10) addSegment(`   👽 CHAMEM A NASA! O ${name} É DE OUTRO MUNDO (${streak} ACERTOS)!   |`, C_ALIEN);
                                 else if (streak >= 5) addSegment(`   🎯 TEM UM MITO ENTRE NÓS! ${name} CRAVOU ${streak} SEGUIDAS!   |`, C_GOLD);
@@ -857,7 +794,6 @@ Término oficial: 31 de dezembro de 2026
                             } else {
                                 if (streak >= 3) addSegment(`   🥬 ${name} TÁ COM MÃO DE ALFACE! (${streak} ERROS SEGUIDOS)   |`, C_RED);
                             }
-
                             // Dorminhoco
                             if (finished.length > 0) {
                                 const lastM = finished[0];
@@ -866,56 +802,54 @@ Término oficial: 31 de dezembro de 2026
                             }
                         });
 
-                        // Zebra (Frase)
-                        if (finished.length > 0) {
+                        // Zebra do último jogo
+                        if (zebraMatchIds.isNotEmpty() && finished.length > 0) {
                             const lastM = finished[0];
                             if (zebraMatchIds.includes(lastM.id)) {
-                                const acertadores = baseUsers.filter(u => 
-                                    guessesData.some(g => g.userId === u.id && g.matchId === lastM.id && g.teamSelected === lastM.winner)
-                                ).map(u => u.name.split(' ')[0].toUpperCase());
-
-                                if (acertadores.length > 0 && acertadores.length <= 4) {
-                                    addSegment(`   🦓 OLHA A ZEBRA! O ${acertadores.join(', ')} ACERTOU ${lastM.teamA} x ${lastM.teamB}!   |`, C_GOLD);
+                                const matchGuesses = guessesData.filter(g => g.matchId === lastM.id);
+                                const winners = matchGuesses.filter(g => g.teamSelected === lastM.winner)
+                                    .map(g => {
+                                        const user = baseUsers.find(u => u.id === g.userId);
+                                        return user ? user.name.split(' ')[0].toUpperCase() : null;
+                                    }).filter(n => n);
+                                    
+                                if (winners.length > 0 && winners.length <= 4) {
+                                    addSegment(`   🦓 OLHA A ZEBRA! O ${winners.join(', ')} ACERTOU ${lastM.teamA} x ${lastM.teamB}!   |`, C_GOLD);
                                 }
                             }
                         }
                     }
 
-                    // --- FRASES ALEATÓRIAS ---
-                    const frasesExtras = [
-                        { t: "   💎 QUEM VAI GABARITAR AS OITAVAS E LEVAR O DIAMANTE?   |", c: C_DIAMOND },
-                        { t: "   🔮 MÃE DINAH: ACERTE O CAMPEÃO E DOBRE SEUS PONTOS NA FINAL!   |", c: C_MAGIC },
-                        { t: "   🎓 QUEM SERÁ O PRIMEIRO VETERANO A COMPLETAR 50 ACERTOS?   |", c: C_WHITE },
-                        { t: "   💸 QUEM PAGA EM DIA NÃO CRIA BARRIGA! EVITE MULTAS.   |", c: C_GOLD },
-                        { t: "   🦖 DIZEM AS LENDAS QUE TEM GENTE AQUI QUE JÁ FOI BOM DE PALPITE...   |", c: C_WHITE },
-                        { t: "   🤡 O VEVE É FRACO Ó MAN! 🤡   |", c: C_GRAY },
-                        { t: "   🧛 DICA DO DIA: NÃO SEJA VAGABUNDO, PANACA, JUVENIL E CHUPA-SANGUE   |", c: C_WHITE },
-                        { t: "   🏺 VIVER DE PASSADO É PRA MUSEU! A TORCIDA QUER TÍTULO HOJE!   |", c: C_WHITE }
-                    ];
-
-                    const shuffledExtras = frasesExtras.sort(() => 0.5 - Math.random()).slice(0, 4);
-                    shuffledExtras.forEach(item => addSegment(item.t, item.c));
+                    // --- 4. CARREGA FRASES DO ADMIN (Letreiro Manual Colorido) ---
+                    // Agora processamos o snapshot 'newsSnap' que baixamos no início
+                    if (newsSnap.exists()) {
+                        const rawItems = newsSnap.data().items || [];
+                        rawItems.forEach(item => {
+                            if (typeof item === 'object' && item !== null) {
+                                // Formato NOVO: {text: "XXX", color: "FF123456"}
+                                // Convertemos cor Android (FF...) para Web (#...) removendo o FF inicial se tiver 8 chars
+                                let hex = item.color || "FFEF6C00";
+                                if(hex.length === 8) hex = hex.substring(2);
+                                addSegment(`   ${item.text}   |`, `#${hex}`);
+                            } else {
+                                // Formato ANTIGO (Legado): String pura
+                                addSegment(`   ${item}   |`, "#EF6C00");
+                            }
+                        });
+                    }
 
                     if (newsSegments.length === 0) {
                         addSegment("   ⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!   |", C_GOLD);
                     }
 
-                    // 3. EMBARALHAR E CONSTRUIR
-                    for (let i = newsSegments.length - 1; i > 0; i--) {
-                        const j = Math.floor(Math.random() * (i + 1));
-                        [newsSegments[i], newsSegments[j]] = [newsSegments[j], newsSegments[i]];
-                    }
-
-                    const finalHTML = newsSegments.join('') + newsSegments.join('');
-                    return finalHTML;
+                    // Embaralha tudo
+                    for (let i = newsSegments.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [newsSegments[i], newsSegments[j]] = [newsSegments[j], newsSegments[i]]; }
+                    return newsSegments.join('') + newsSegments.join(''); // Duplica para efeito infinito
                 };
 
                 const newsHTML = generateNewsFeed();
 
-                // --- RENDERIZAÇÃO DA TELA (VOLTOU!) ---
-                let html = "";
-                
-                html += `
+                let html = `
                     <div class="card-container mb-4">
                         <div class="ticker-container shadow-lg">
                             <div class="ticker-wrapper">
@@ -927,51 +861,26 @@ Término oficial: 31 de dezembro de 2026
                     </div>
                 `;
                 
-                // 1. Abertos
+                // --- RENDERIZAÇÃO DAS LISTAS ---
                 const pulseOpen = unreadInOpen ? '<span class="pulse-dot"></span>' : '';
-                html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press">
-                            <div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4">
-                                <h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ (${open.length}) DISPONÍVEIS ✅${pulseOpen}</h4>
-                                <i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i>
-                            </div>
-                         </div>
-                         <div id="openContainer">
-                            ${open.length > 0 ? await renderMatchList(open, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}
-                         </div>`;
+                html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ (${open.length}) DISPONÍVEIS ✅${pulseOpen}</h4><i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i></div></div><div id="openContainer">${open.length > 0 ? await renderMatchList(open, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}</div>`;
                 
-                // 2. Aguardando
                 const pulseWait = unreadInWaiting ? '<span class="pulse-dot"></span>' : '';
-                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${waiting.length}) AGUARDANDO ⏳${pulseWait}</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">
-                    ${waiting.length 
-                        ? await renderMatchList(waiting, totalParticipants, serverCounts) 
-                        : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando.</div>`
-                    }</div>`;
+                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${waiting.length}) AGUARDANDO ⏳${pulseWait}</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${waiting.length ? await renderMatchList(waiting, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando.</div>`}</div>`;
                 
-                // 3. Finalizados
                 if(finished.length) {
                     const pulseFin = unreadInFinished ? '<span class="pulse-dot"></span>' : '';
                     html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`;
                 }
                 
                 container.innerHTML = html;
-
                 window.updateBadges(); 
 
-                let pendingCount = 0;
-                const myVotesSet = new Set();
-                guessesSnap.forEach(d => { if(d.data().userId === currentUser.uid) myVotesSet.add(d.data().matchId); });
-                open.forEach(m => { if (!myVotesSet.has(m.id)) pendingCount++; });
-                
-                const navBtn = document.getElementById('nav-matches');
-                const oldBadge = document.getElementById('matches-badge'); if(oldBadge) oldBadge.remove();
-                if (pendingCount > 0) {
-                    navBtn.style.position = 'relative';
-                    navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`;
-                }
+                // Badge de Pendências
+                let pendingCount = 0; const myVotesSet = new Set(); guessesSnap.forEach(d => { if(d.data().userId === currentUser.uid) myVotesSet.add(d.data().matchId); }); open.forEach(m => { if (!myVotesSet.has(m.id)) pendingCount++; });
+                const navBtn = document.getElementById('nav-matches'); const oldBadge = document.getElementById('matches-badge'); if(oldBadge) oldBadge.remove(); if (pendingCount > 0) { navBtn.style.position = 'relative'; navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`; }
 
-            } catch(e) {
-                console.error("Erro loadMatches:", e);
-            }
+            } catch(e) { console.error("Erro loadMatches:", e); }
             document.getElementById('progressBar').classList.add('hidden');
         }
 window.toggleOpen = () => { document.getElementById('openContainer').classList.toggle('hidden'); document.getElementById('iconOpen').classList.toggle('fa-chevron-up'); document.getElementById('iconOpen').classList.toggle('fa-chevron-down'); };
@@ -1753,11 +1662,205 @@ window.showKingModal = () => {
         
         // --- LEGENDA MEDALHAS ATUALIZADA (MITO, DIAMANTE...) ---
 
-        window.openAdminMenu = () => {
-            const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
-            cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 h-full flex flex-col bg-white/30 p-4"><div class="flex justify-between items-center mb-6"><button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3><div class="w-6"></div></div><div class="space-y-3"><button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button><button onclick="openTrashBin()" class="w-full bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trash-restore"></i> LIXEIRA (RESTAURAR)</button><div class="grid grid-cols-2 gap-2"><button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-plus-circle"></i> NOVO JOGO</button><button onclick="openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-trophy"></i> COMPETIÇÕES</button></div></div><hr class="border-black/20 my-4"><h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4><div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">Carregando lista...</div></div></div>`;
+       window.openAdminMenu = () => {
+            const modal = document.getElementById('modalOverlay'); 
+            const cont = document.getElementById('modalContainer'); 
+            modal.classList.remove('hidden');
+            
+            cont.innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                <img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                <div class="relative z-10 h-full flex flex-col bg-white/30 p-4">
+                    <div class="flex justify-between items-center mb-6">
+                        <button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button>
+                        <h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3>
+                        <div class="w-6"></div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2">
+                            <i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS
+                        </button>
+                        
+                        <div class="flex gap-2">
+                            <button onclick="openNewsManager()" class="flex-1 bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2">
+                                <i class="fas fa-edit"></i> LETREIRO
+                            </button>
+                            <button onclick="openTrashBin()" class="flex-1 bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2">
+                                <i class="fas fa-trash-restore"></i> LIXEIRA
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press">
+                                <i class="fas fa-plus-circle"></i> NOVO JOGO
+                            </button>
+                            <button onclick="openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press">
+                                <i class="fas fa-trophy"></i> COMPETIÇÕES
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <hr class="border-black/20 my-4">
+                    <h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4>
+                    <div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">
+                        Carregando lista...
+                    </div>
+                </div>
+            </div>`;
             loadAdminMatches();
         };
+// --- GERENCIADOR DE LETREIRO / NOTÍCIAS ---
+        window.openNewsManager = async () => {
+            const cont = document.getElementById('modalContainer');
+            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
+            
+            // Paleta de cores (Mesma do Android)
+            const colors = [
+                "FFEF6C00", "FFFF5722", "FFD32F2F", "FFC2185B", "FF7B1FA2",
+                "FF512DA8", "FF303F9F", "FF1976D2", "FF0288D1", "FF0097A7",
+                "FF00796B", "FF388E3C", "FF689F38", "FFAFB42B", "FFFBC02D",
+                "FFFFA000", "FFF57C00", "FF5D4037", "FF616161", "FF455A64"
+            ];
+            
+            let currentNewsList = [];
+            let editingIndex = -1;
+            let selectedColor = "FFEF6C00"; // Cor padrão
+
+            const docRef = doc(db, "settings", "news");
+
+            const renderUI = () => {
+                // Converter cor Android (FF...) para Web (#...)
+                const toWebColor = (hex) => "#" + hex.substring(2);
+                
+                let listHtml = "";
+                if (currentNewsList.length === 0) {
+                    listHtml = `<p class="text-xs text-gray-400 italic text-center p-4">Nenhuma frase customizada.</p>`;
+                } else {
+                    listHtml = currentNewsList.map((item, idx) => `
+                        <div class="bg-gray-50 p-2 mb-2 rounded border flex justify-between items-center">
+                            <span class="text-xs font-bold flex-1" style="color: ${toWebColor(item.color)}">${item.text}</span>
+                            <div class="flex gap-2">
+                                <button onclick="window.editNewsItem(${idx})" class="text-blue-500"><i class="fas fa-edit"></i></button>
+                                <button onclick="window.deleteNewsItem(${idx})" class="text-red-500"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                const colorGrid = colors.map(c => `
+                    <div onclick="window.selectNewsColor('${c}')" 
+                         class="w-6 h-6 rounded-full cursor-pointer border-2 ${selectedColor === c ? 'border-black scale-110' : 'border-transparent'}" 
+                         style="background-color: ${toWebColor(c)}">
+                    </div>
+                `).join('');
+
+                const btnText = editingIndex >= 0 ? "SALVAR ALTERAÇÃO" : "ADICIONAR FRASE";
+                const btnColor = toWebColor(selectedColor);
+
+                cont.innerHTML = `
+                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh] flex flex-col">
+                    <div class="bg-gray-100 p-4 border-b flex justify-between items-center">
+                        <button onclick="openAdminMenu()"><i class="fas fa-arrow-left"></i></button>
+                        <h3 class="font-bold text-gray-800 text-sm">GERENCIAR LETREIRO</h3>
+                        <div class="w-4"></div>
+                    </div>
+                    
+                    <div class="p-4 bg-white border-b">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Frase</label>
+                        <input type="text" id="newsInput" class="w-full p-2 border rounded text-xs font-bold mb-3 outline-none" 
+                               style="color: ${btnColor}; border-color: ${btnColor}" placeholder="Digite a frase...">
+                        
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Cor do Texto</label>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            ${colorGrid}
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            ${editingIndex >= 0 ? `<button onclick="window.cancelNewsEdit()" class="flex-1 bg-gray-300 text-gray-700 py-2 rounded font-bold text-xs">CANCELAR</button>` : ''}
+                            <button onclick="window.saveNewsItem()" class="flex-[2] text-white py-2 rounded font-bold text-xs shadow-md btn-press" 
+                                    style="background-color: ${btnColor}">${btnText}</button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto p-4 bg-white">
+                        <h4 class="text-[10px] font-bold text-gray-400 uppercase mb-2">Frases Ativas</h4>
+                        ${listHtml}
+                    </div>
+                </div>`;
+                
+                // Restaura o texto se estiver editando (precisa ser depois do innerHTML)
+                if(document.getElementById('newsInput') && window.tempInputValue) {
+                     document.getElementById('newsInput').value = window.tempInputValue;
+                }
+            };
+
+            // Helpers Globais para funcionar no HTML injetado
+            window.selectNewsColor = (c) => { 
+                selectedColor = c; 
+                window.tempInputValue = document.getElementById('newsInput').value; // Mantém o texto ao re-renderizar
+                renderUI(); 
+            };
+            
+            window.saveNewsItem = async () => {
+                const txt = document.getElementById('newsInput').value.trim().toUpperCase();
+                if(!txt) return alert("Digite uma frase.");
+                
+                const newItem = { text: txt, color: selectedColor };
+                
+                if (editingIndex >= 0) {
+                    currentNewsList[editingIndex] = newItem;
+                    editingIndex = -1;
+                } else {
+                    currentNewsList.push(newItem);
+                }
+                
+                await setDoc(docRef, { items: currentNewsList });
+                window.tempInputValue = ""; // Limpa input
+                selectedColor = "FFEF6C00"; // Reseta cor
+                renderUI();
+            };
+
+            window.deleteNewsItem = async (idx) => {
+                if(!confirm("Remover frase?")) return;
+                currentNewsList.splice(idx, 1);
+                await setDoc(docRef, { items: currentNewsList });
+                renderUI();
+            };
+
+            window.editNewsItem = (idx) => {
+                const item = currentNewsList[idx];
+                editingIndex = idx;
+                selectedColor = item.color || "FFEF6C00";
+                window.tempInputValue = item.text; // Seta o valor para o input
+                renderUI();
+            };
+            
+            window.cancelNewsEdit = () => {
+                editingIndex = -1;
+                selectedColor = "FFEF6C00";
+                window.tempInputValue = "";
+                renderUI();
+            };
+
+            // Carregamento Inicial
+            try {
+                const snap = await getDoc(docRef);
+                if (snap.exists()) {
+                    const raw = snap.data().items || [];
+                    // Normaliza dados antigos (String -> Objeto)
+                    currentNewsList = raw.map(item => {
+                        if (typeof item === 'string') return { text: item, color: "FFEF6C00" };
+                        return item;
+                    });
+                }
+                renderUI();
+            } catch(e) {
+                alert("Erro ao carregar notícias.");
+                closeModal();
+            }
+        };
+        
 async function loadAdminMatches() { 
             const snap = await getDocs(collection(db, "matches")); 
             const listDiv = document.getElementById('adminMatchList'); 
@@ -2286,6 +2389,7 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
 
