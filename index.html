@@ -12,6 +12,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
@@ -150,49 +151,81 @@
 
     <main id="appContent" class="flex-1 w-full h-full overflow-y-auto overflow-x-hidden pb-32 relative z-10">
         
-        <section id="loginScreen" class="flex flex-col items-center justify-center min-h-[70vh] p-6">
-          <div class="card-cut w-full max-w-sm p-8 border-t-4 border-[#006400]">
-                <h2 class="text-xl font-black text-center text-[#006400] mb-8 uppercase tracking-widest">Acesso Membros</h2>
-                
-                <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
-                    
-                    <input 
-                        type="text" 
-                        id="userInput" 
-                        name="username" 
-                        autocomplete="username" 
-                        placeholder="Usuário" 
-                        class="w-full p-4 bg-gray-50 border rounded-lg mb-4 outline-none focus:ring-2 focus:ring-green-700 transition-all"
-                    >
-                    
-                    <input 
-                        type="password" 
-                        id="passInput" 
-                        name="password" 
-                        autocomplete="current-password" 
-                        placeholder="Senha" 
-                        class="w-full p-4 bg-gray-50 border rounded-lg mb-2 outline-none focus:ring-2 focus:ring-green-700 transition-all"
-                    >
-                    
-                    <div class="flex justify-between items-center mb-6">
-                        <label class="flex items-center text-xs text-gray-500 font-bold cursor-pointer">
-                            <input type="checkbox" id="rememberMe" checked class="mr-2 accent-[#006400]">
-                            Manter conectado
-                        </label>
-                        <button type="button" id="btnForgotPass" class="text-xs text-gray-500 font-bold hover:text-[#006400] transition-colors">Esqueci a senha</button>
-                    </div>
+        <section id="loginScreen" class="flex flex-col items-center justify-center min-h-screen p-4 md:p-10 relative overflow-hidden">
+        <div class="absolute inset-0 bg-black/40 z-0"></div>
+        
+        <div class="container mx-auto max-w-5xl z-10 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            
+            <div class="text-white text-center md:text-left space-y-6 animate-fade-in-up">
+                <div>
+                    <span class="bg-[#FFD700] text-black text-xs font-black px-3 py-1 rounded uppercase tracking-widest mb-2 inline-block">Temporada 2026</span>
+                    <h1 class="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-tight text-white drop-shadow-lg">
+                        Bolão 112 <span class="text-[#FFD700]">F.C</span>
+                    </h1>
+                    <p class="text-lg md:text-xl text-gray-200 mt-2 font-serif italic">
+                        "Onde a resenha é garantida e a rivalidade é lei."
+                    </p>
+                </div>
 
-                    <button type="submit" id="btnLoginAction" class="w-full bg-[#006400] text-white py-4 font-bold rounded-lg btn-press shadow-lg mb-6 flex justify-center items-center gap-2">
-                        <span>ACESSAR</span>
-                        <i class="fas fa-fingerprint opacity-50"></i> </button>
-                </form>
-                
-                <div class="border-t pt-6 text-center">
-                    <p class="text-xs text-gray-400 mb-2 font-bold">Ainda não tem cadastro?</p>
-                    <button type="button" id="btnOpenRegister" class="text-[#006400] font-black text-sm uppercase btn-press border border-[#006400] px-6 py-2 rounded-full hover:bg-green-50">CRIAR CONTA</button>
+                <div class="bg-black/30 backdrop-blur-sm p-4 rounded-xl border border-white/10 text-sm text-gray-100 space-y-2">
+                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Palpites em Champions, Brasileirão e Copas.</p>
+                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Ranking ao vivo e estatísticas detalhadas.</p>
+                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i> Premiação em dinheiro e Troféus.</p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-4">
+                    <a href="https://wa.me/5585988837389?text=Olá%20Júlio!%20Vi%20o%20site%20do%20Bolao%20e%20quero%20participar!" target="_blank" 
+                       class="bg-[#25D366] hover:bg-[#128C7E] text-white px-6 py-3 rounded-lg font-bold shadow-lg flex items-center justify-center gap-2 transition-transform hover:scale-105">
+                        <i class="fab fa-whatsapp text-xl"></i>
+                        QUERO PARTICIPAR
+                    </a>
+                    
+                    <button onclick="alert('Link de download do Android em breve!')" 
+                            class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-6 py-3 rounded-lg font-bold backdrop-blur-md flex items-center justify-center gap-2 transition-all">
+                        <i class="fab fa-android text-green-400 text-xl"></i>
+                        BAIXAR APP
+                    </button>
                 </div>
             </div>
-        </section>
+
+            <div class="w-full max-w-sm mx-auto md:ml-auto">
+                <div class="card-cut bg-white p-8 border-t-4 border-[#006400] shadow-2xl">
+                    <h2 class="text-xl font-black text-center text-[#006400] mb-6 uppercase tracking-widest">Área de Membros</h2>
+                    
+                    <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
+                        <div class="relative mb-4">
+                            <i class="fas fa-user absolute left-4 top-4 text-gray-400"></i>
+                            <input type="text" id="userInput" name="username" autocomplete="username" placeholder="Usuário" class="w-full pl-10 p-3 bg-gray-50 border rounded-lg outline-none focus:ring-2 focus:ring-green-700 transition-all text-sm font-bold">
+                        </div>
+                        
+                        <div class="relative mb-2">
+                            <i class="fas fa-lock absolute left-4 top-4 text-gray-400"></i>
+                            <input type="password" id="passInput" name="password" autocomplete="current-password" placeholder="Senha" class="w-full pl-10 p-3 bg-gray-50 border rounded-lg outline-none focus:ring-2 focus:ring-green-700 transition-all text-sm font-bold">
+                        </div>
+                        
+                        <div class="flex justify-between items-center mb-6">
+                            <label class="flex items-center text-xs text-gray-500 font-bold cursor-pointer">
+                                <input type="checkbox" id="rememberMe" checked class="mr-2 accent-[#006400]">
+                                Lembrar-me
+                            </label>
+                            <button type="button" id="btnForgotPass" class="text-xs text-gray-500 font-bold hover:text-[#006400]">Esqueci a senha</button>
+                        </div>
+
+                        <button type="submit" id="btnLoginAction" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg btn-press shadow-lg mb-4 flex justify-center items-center gap-2">
+                            <span>ENTRAR</span> <i class="fas fa-sign-in-alt"></i>
+                        </button>
+                    </form>
+                    
+                    <div class="border-t pt-4 text-center">
+                         <p class="text-[10px] text-gray-400 mb-2 font-bold">Já tem convite?</p>
+                        <button type="button" id="btnOpenRegister" class="text-[#006400] font-black text-xs uppercase hover:underline">ATIVAR MINHA CONTA</button>
+                    </div>
+                </div>
+                
+                <p class="text-center text-white/50 text-[10px] mt-4 font-bold">© 2026 Bolão 112 F.C - Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </section>
 
         <div id="mainScreens" class="hidden p-4 space-y-4">
             
@@ -315,7 +348,7 @@ Término oficial: 31 de dezembro de 2026
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         // ADICIONADO: enableIndexedDbPersistence
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -1625,6 +1658,9 @@ window.showKingModal = () => {
                         </div>
                         <div id="medalToast" class="medal-toast"></div>
                         <div class="w-full space-y-2 mt-2">
+                        <button id="btnInstaAction" onclick="window.generateWebCard()" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
+    <i class="fab fa-instagram text-lg"></i> GERAR CARD STORIES
+</button>
                             <button id="btnStatsAction" class="w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press"><i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO</button>
                             <button id="btnCompareAction" class="${compareBtnClass} w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press flex items-center justify-center gap-2"><i class="fas fa-exchange-alt"></i> COMPARAR PALPITES</button>
                             <button onclick="closeModal()" class="w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press">FECHAR</button>
@@ -1991,6 +2027,126 @@ async function calculatePot() {
                 alert("Erro ao carregar valores do pote.");
             }
         }
+// --- GERADOR DE CARD INSTAGRAM (WEB) ---
+        window.generateWebCard = async () => {
+            // 1. Pega os dados do usuário atual do modal aberto
+            const modalEl = document.getElementById('profileModal');
+            if(!modalEl) return;
+            const uid = modalEl.getAttribute('data-uid');
+            
+            // Busca na lista global de ranking (precisa ter aberto o ranking antes)
+            // Se não tiver, tenta buscar no user atual
+            let user = null;
+            if (currentRankingData && currentRankingData.length > 0) {
+                user = currentRankingData.find(u => u.uid === uid);
+            }
+            
+            // Fallback se não achou na lista (ex: abriu o próprio perfil sem ir no ranking)
+            if (!user && uid === currentUser.uid) {
+               // Monta um objeto user básico com o que temos na sessão
+               // Nota: para dados completos de pontos, o ideal é ter carregado o ranking.
+               // Aqui faremos um alerta se não tiver dados.
+               alert("Para gerar o card com estatísticas completas, por favor abra a aba 'Ranking' primeiro para carregarmos seus dados.");
+               return;
+            }
+            
+            if(!user) return;
+
+            // 2. Muda o botão para "Gerando..."
+            const btn = document.getElementById('btnInstaAction');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> GERANDO...`;
+            btn.disabled = true;
+
+            // 3. Prepara o Container do Card (Invisível na tela, mas renderizado)
+            const cardContainer = document.createElement('div');
+            cardContainer.id = "instaCardCapture";
+            cardContainer.style.position = "fixed";
+            // Coloca fora da tela mas visível pro navegador renderizar
+            cardContainer.style.top = "0"; 
+            cardContainer.style.left = "0";
+            cardContainer.style.zIndex = "-9999"; 
+            cardContainer.style.width = "320px";
+            cardContainer.style.height = "500px";
+            
+            document.body.appendChild(cardContainer);
+
+            // HTML do Card (Tailwind + CSS Inline para garantir renderização)
+            // Usamos getAvatarUrl que criamos antes
+            const avatarUrl = getAvatarUrl(user.photo, user.name);
+            
+            cardContainer.innerHTML = `
+                <div style="width: 320px; height: 500px; display: flex; flex-direction: column; justify-content: space-between; padding: 24px; background: linear-gradient(180deg, #006400 0%, #004D40 50%, #000000 100%); font-family: serif; text-align: center; position: relative; overflow: hidden;">
+                    
+                    <div style="position: relative; z-index: 10;">
+                        <h1 style="color: #FFD700; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin: 0;">BOLÃO 112 F.C</h1>
+                        <p style="color: white; font-size: 10px; font-weight: bold; letter-spacing: 4px; margin-top: 5px;">TEMPORADA 2026</p>
+                    </div>
+
+                    <div style="position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center;">
+                        <div style="width: 140px; height: 140px; border-radius: 50%; border: 6px solid #FFD700; overflow: hidden; background: black; box-shadow: 0 10px 15px rgba(0,0,0,0.5); margin-bottom: 15px;">
+                            <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <h2 style="color: white; font-weight: 900; font-size: 28px; text-transform: uppercase; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin: 0 0 10px 0;">${user.name}</h2>
+                        <div style="background: #FFD700; color: black; padding: 5px 15px; border-radius: 50px; font-weight: 900; font-size: 14px; text-transform: uppercase; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3);">
+                            ${user.lastRank}º LUGAR GERAL
+                        </div>
+                    </div>
+
+                    <div style="position: relative; z-index: 10; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <span style="color: #FFD700; font-weight: 900; font-size: 32px; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${user.p}</span>
+                            <span style="color: #9CA3AF; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Pontos</span>
+                        </div>
+                        <div style="height: 30px; width: 1px; background: rgba(255,255,255,0.2);"></div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <span style="color: white; font-weight: 900; font-size: 32px; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${user.v}</span>
+                            <span style="color: #9CA3AF; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Cravadas</span>
+                        </div>
+                        <div style="height: 30px; width: 1px; background: rgba(255,255,255,0.2);"></div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <span style="color: white; font-weight: 900; font-size: 32px; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${user.f}</span>
+                            <span style="color: #9CA3AF; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Finais</span>
+                        </div>
+                    </div>
+
+                    <div style="position: relative; z-index: 10; color: rgba(255,255,255,0.4); font-size: 9px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">
+                        www.bolao112.com.br
+                    </div>
+                </div>
+            `;
+
+            try {
+                // Aguarda um pouquinho para garantir que a imagem (avatar) carregou no DOM
+                await new Promise(r => setTimeout(r, 500)); 
+
+                const canvas = await html2canvas(cardContainer, {
+                    scale: 2, // Alta resolução
+                    useCORS: true, // Importante para carregar imagens externas (DiceBear/Firebase)
+                    backgroundColor: null,
+                    logging: false
+                });
+
+                // 5. Download Automático
+                const link = document.createElement('a');
+                link.download = `card_${user.name}.jpg`;
+                link.href = canvas.toDataURL("image/jpeg", 0.9);
+                link.click();
+
+                // Feedback visual de sucesso (opcional, ou apenas restaura o botão)
+                
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao gerar card. Tente novamente.");
+            } finally {
+                if(document.body.contains(cardContainer)) {
+                    document.body.removeChild(cardContainer);
+                }
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        };
+        
         // Isso deve ficar LOGO APÓS a função calculatePot
         document.getElementById('btnPot').onclick = () => {
             calculatePot(); // Chama o cálculo
@@ -2364,6 +2520,7 @@ async function calculatePot() {
     </script>
 </body>
 </html>
+
 
 
 
