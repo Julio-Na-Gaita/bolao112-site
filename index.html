@@ -410,7 +410,7 @@ Término oficial: 31 de dezembro de 2026
             },
             { 
                 t: "2️⃣ PREMIAÇÃO, FESTA & REI DO MÊS", 
-                c: "💰 DESTINAÇÃO DA MENSALIDADE (R$ 15,00)\nO valor mensal arrecadado de cada participante será dividido da seguinte forma:\n\n💵 R$ 10,00 -> Pote Anual (Premiação em Dinheiro)\n🍻 R$ 5,00 -> Fundo de Confraternização (Festa + Troféus)\n\n🏆 DISTRIBUIÇÃO DO POTE (DINHEIRO)\nO valor acumulado no \"Pote Anual\" (parte de R$ 10) será distribuído aos 3 primeiros colocados da Classificação Geral:\n🥇 1º Lugar: 60% do valor\n🥈 2º Lugar: 30% do valor\n🥉 3º Lugar: 10% do valor\n\n🎉 CONFRATERNIZAÇÃO E TROFÉUS\nO \"Fundo de Confraternização\" (parte de R$ 5) será utilizado integralmente para custear o evento de encerramento no final de 2026 e a confecção dos troféus físicos para os campeões.\n\n👑 REI DO MÊS (SEM DESEMPATE)\nO título simbólico de \"Rei do Mês\" é concedido ao jogador que somar o maior número de pontos brutos dentro do mês de competência.\n\n⚠️ REGRA DE EMPATE MENSAL:\nPara o Rei do Mês, NÃO existem critérios de desempate.\n• Se dois ou mais jogadores terminarem o mês empatados na liderança, NINGUÉM receberá a coroa ou o título naquele mês.\n• O Rei deve ser, obrigatoriamente, um líder isolado." 
+                c: "💰 DESTINAÇÃO DA MENSALIDADE (R$ 15,00)\nO valor mensal arrecadado de cada participante será dividido da seguinte forma:\n\n💵 R$ 10,00 -> Pote Anual (Premiação em Dinheiro)\n🍻 R$ 5,00 -> Fundo de Confraternização (Festa + Troféus)\n\n🏆 DISTRIBUIÇÃO DO POTE (DINHEIRO)\nO valor acumulado no \"Pote Anual\" (parte de R$ 10) será distribuído aos 3 primeiros colocados da Classificação Geral:\n🥇 1º Lugar: 60% do valor\n🥈 2º Lugar: 30% do valor\n🥉 3º Lugar: 10% do valor\n\n🎉 CONFRATERNIZAÇÃO (REGRA DE ELEGIBILIDADE)\nO \"Fundo de Confraternização\" custeará o evento final.\n⚠️ IMPORTANTE: Para ter direito a participar da festa e receber eventuais brindes/troféus, o participante deve ter quitado TODAS as 12 mensalidades de 2026 (Janeiro a Dezembro).\n\n🚫 Quem tiver pago 11 mensalidades ou menos NÃO terá direito à festa.\n• O valor pago não é reembolsável, pois foi revertido para o grupo.\n\n👑 REI DO MÊS (SEM DESEMPATE)\nO título simbólico de \"Rei do Mês\" é concedido ao jogador que somar o maior número de pontos brutos dentro do mês de competência.\n• Se houver empate no topo, ninguém leva a coroa naquele mês." 
             },
             { 
                 t: "3️⃣ SISTEMA DE PONTUAÇÃO & DATAS", 
@@ -1568,7 +1568,27 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                 window.currentMonthlyRanking = monthlyData; currentRankingData = users; 
                 
                 let html = `<div class="bg-[#006400] rounded-t-xl p-3 flex justify-between items-center shadow-md"><div><h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3><p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p></div><div class="flex gap-2"><button onclick="window.showKingModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg shadow border border-white/20">🏆</button><button onclick="loadRanking()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-[#FFD700] shadow border border-white/20"><i class="fas fa-sync-alt text-xs"></i></button></div></div><div class="bg-[#005000] flex text-white/70 text-[9px] font-bold py-1 px-2 uppercase border-b border-white/10"><div class="w-[35px] text-center">Pos</div><div class="flex-1 pl-2">Participante</div><div class="w-[28px] text-center">D</div><div class="w-[40px] text-center text-white">Pts</div></div><div class="bg-white rounded-b-xl overflow-hidden shadow-sm">`;
-                html += users.map((u, i) => { const pos = i+1; const isRelegation = (i >= users.length - 2) && (users.length > 2); let bgColor = 'bg-white'; let borderColor = 'border-transparent'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; let nameColorClass = "text-gray-800"; let anchorIcon = ""; if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; } else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; anchorIcon = `<i class="fas fa-anchor text-[#8B0000] ml-1 text-[10px]" title="Zona de Rebaixamento"></i>`; } let diffHtml = ''; if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2 ${i<3 ? 'border-l-4' : ''}" style="${i<3 ? `border-left-color: ${borderColor.replace('border-[','').replace(']','')}` : ''}"><div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div><div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})"><div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0"><img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-cover"></div><div class="flex flex-col overflow-hidden"><div class="flex items-center"><span class="text-xs font-bold ${nameColorClass} truncate pl-2">${u.name}</span>${anchorIcon}</div>${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}</div></div><div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div><div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div></div>`; }).join(''); html += `</div>`; listContainer.innerHTML = html;
+                html += users.map((u, i) => { const pos = i+1; const isRelegation = (i >= users.length - 2) && (users.length > 2); let bgColor = 'bg-white'; let borderColor = 'border-transparent'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; let nameColorClass = "text-gray-800"; let anchorIcon = ""; if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; } else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; anchorIcon = `<i class="fas fa-anchor text-[#8B0000] ml-1 text-[10px]" title="Zona de Rebaixamento"></i>`; } 
+let diffHtml = '';
+if(u.lastRank > 0) {
+    if (pos !== u.lastRank) {
+        // CORREÇÃO: Se pos (atual) < lastRank (antigo), SUBIU (Melhorou) -> Verde
+        const improved = pos < u.lastRank;
+        const diff = Math.abs(u.lastRank - pos);
+        
+        if(improved) {
+             diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1 flex items-center justify-center"><i class="fas fa-caret-up mr-1"></i> ${diff}</div>`;
+        } else {
+             diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1 flex items-center justify-center"><i class="fas fa-caret-down mr-1"></i> ${diff}</div>`;
+        }
+    } else {
+         // Igual
+         diffHtml = `<div class="text-gray-300 text-[8px] font-bold mt-1">=</div>`;
+    }
+} else {
+    diffHtml = `<div class="text-blue-500 text-[7px] font-bold mt-1">NOVO</div>`;
+}
+return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2 ${i<3 ? 'border-l-4' : ''}" style="${i<3 ? `border-left-color: ${borderColor.replace('border-[','').replace(']','')}` : ''}"><div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div><div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="showModalPhoto(${i})"><div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0"><img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-cover"></div><div class="flex flex-col overflow-hidden"><div class="flex items-center"><span class="text-xs font-bold ${nameColorClass} truncate pl-2">${u.name}</span>${anchorIcon}</div>${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}</div></div><div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div><div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div></div>`; }).join(''); html += `</div>`; listContainer.innerHTML = html;
             } catch (e) { console.error(e); listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro.</div>`; }
         }
 window.showKingModal = () => {
@@ -1818,8 +1838,58 @@ window.showKingModal = () => {
         // --- LEGENDA MEDALHAS ATUALIZADA (MITO, DIAMANTE...) ---
 
         window.openAdminMenu = () => {
-            const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
-            cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 h-full flex flex-col bg-white/30 p-4"><div class="flex justify-between items-center mb-6"><button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3><div class="w-6"></div></div><div class="space-y-3"><button onclick="openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button><button onclick="openTrashBin()" class="w-full bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trash-restore"></i> LIXEIRA (RESTAURAR)</button><div class="grid grid-cols-2 gap-2"><button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-plus-circle"></i> NOVO JOGO</button><button onclick="openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-trophy"></i> COMPETIÇÕES</button></div></div><hr class="border-black/20 my-4"><h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4><div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">Carregando lista...</div></div></div>`;
+            const modal = document.getElementById('modalOverlay'); 
+            const cont = document.getElementById('modalContainer'); 
+            modal.classList.remove('hidden');
+            
+            cont.innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh] flex flex-col">
+                <img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                
+                <div class="relative z-10 flex flex-col h-full bg-white/90">
+                    <div class="bg-[#006400] p-4 text-white flex items-center shadow-md">
+                        <button onclick="closeModal()" class="mr-4"><i class="fas fa-arrow-left text-xl"></i></button>
+                        <div>
+                            <h3 class="font-black uppercase text-lg leading-none">Painel Admin</h3>
+                            <p class="text-[10px] text-[#FFD700] font-bold">Gestão 2026</p>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                        
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">⚽ GESTÃO DE JOGOS</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Novo Jogo</button>
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#0277BD] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-cloud-download-alt text-lg"></i> Importar API</button>
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
+                                <button onclick="openTrashBin()" class="bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-trash text-lg"></i> Lixeira</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">👥 PESSOAS & FINANCEIRO</h4>
+                            <button onclick="openFinancialScreen()" class="w-full bg-[#C62828] text-white py-4 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2">
+                                <i class="fas fa-wallet text-lg"></i> GERENCIAR PAGAMENTOS & USUÁRIOS
+                            </button>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📢 COMUNICAÇÃO</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#6A1B9A] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-bell text-lg"></i> Enviar Push</button>
+                                <button onclick="openCompetitionsManager()" class="bg-[#F9A825] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-trophy text-lg"></i> Competições</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="border-t border-gray-300 my-2"></div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📋 LISTA DE CONFRONTOS</h4>
+                            <div id="adminMatchList" class="bg-white border rounded p-2 text-xs text-gray-500 min-h-[100px]">Carregando...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
             loadAdminMatches();
         };
 async function loadAdminMatches() { 
@@ -2180,7 +2250,7 @@ window.calculatePot = async function() {
                 alert("Erro ao carregar valores do pote.");
             }
         }
-// --- CORREÇÃO: CARD INSTAGRAM (Reordenação Forçada) ---
+// --- CORREÇÃO: CARD INSTAGRAM TURBINADO (Tabela Inteligente + Marketing) ---
         window.generateWebCard = async () => {
             const modalEl = document.getElementById('profileModal');
             if(!modalEl) return;
@@ -2192,35 +2262,44 @@ window.calculatePot = async function() {
                  return;
             }
 
-            // 2. ORDENAÇÃO ROBUSTA (A mesma lógica do Ranking Principal)
-            // Isso impede que o líder apareça em 2º por erro de cache
+            // 2. ORDENAÇÃO ROBUSTA
             currentRankingData.sort((a,b) => {
-                // Critério 1: Pontos (Decrescente)
                 if (b.p !== a.p) return b.p - a.p;
-                
-                // Critério 2: Débitos (Crescente - quem deve menos ganha)
                 if (a.d !== b.d) return a.d - b.d;
-                
-                // Critério 3: Hierarquia de Medalhas
                 const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
                 for (let icon of hierarchy) {
-                    // Conta quantas medalhas desse tipo cada um tem
                     const countA = (a.trophyRoom || []).filter(m => m.icon === icon).length;
                     const countB = (b.trophyRoom || []).filter(m => m.icon === icon).length;
-                    
-                    if (countB !== countA) return countB - countA; // Quem tem mais ganha
+                    if (countB !== countA) return countB - countA;
                 }
-                
-                // Critério 4: Ordem alfabética (opcional, para estabilidade)
                 return a.name.localeCompare(b.name);
             });
 
-            // 3. Localiza o usuário na lista já ordenada e define a posição real
+            // 3. Localiza o usuário e define posição real
             const index = currentRankingData.findIndex(u => u.uid === uid);
             if (index === -1) return;
-            
             const user = currentRankingData[index];
-            user.lastRank = index + 1; // <--- AQUI A MÁGICA ACONTECE (Posição Real)
+            user.lastRank = index + 1;
+
+            // --- LÓGICA DA TABELA INTELIGENTE ---
+            const totalParticipants = currentRankingData.length;
+            const maxRows = 7;
+            let displayList = [];
+
+            if (totalParticipants <= maxRows) {
+                displayList = currentRankingData;
+            } else if (index < maxRows) {
+                displayList = currentRankingData.slice(0, maxRows);
+            } else {
+                const top3 = currentRankingData.slice(0, 3);
+                const separator = { uid: "sep", name: "...", p: 0 };
+                const start = Math.max(3, index - 1);
+                const end = Math.min(totalParticipants, index + 2);
+                const neighborhood = currentRankingData.slice(start, end);
+                displayList = [...top3, separator, ...neighborhood];
+            }
+            
+            const remainingCount = totalParticipants - displayList.filter(u => u.uid !== "sep").length;
 
             // 4. Configuração visual do botão
             const btn = document.getElementById('btnInstaAction');
@@ -2228,73 +2307,86 @@ window.calculatePot = async function() {
             btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> GERANDO...`;
             btn.disabled = true;
 
-            // 5. Criação do elemento invisível para captura
+            // 5. Criação do elemento invisível
             const cardContainer = document.createElement('div');
             cardContainer.id = "instaCardCapture";
-            cardContainer.style.position = "fixed"; 
-            cardContainer.style.top = "0"; 
-            cardContainer.style.left = "0"; 
-            cardContainer.style.zIndex = "-9999"; 
-            cardContainer.style.width = "320px"; 
-            cardContainer.style.height = "500px";
+            cardContainer.style.position = "fixed"; cardContainer.style.top = "0"; cardContainer.style.left = "0"; 
+            cardContainer.style.zIndex = "-9999"; cardContainer.style.width = "320px"; cardContainer.style.height = "600px"; // Altura maior
             document.body.appendChild(cardContainer);
 
             const avatarUrl = getAvatarUrl(user.photo, user.name);
             
-            // HTML do Card (Design)
+            // GERAÇÃO DO HTML DA TABELA
+            let tableHtml = "";
+            displayList.forEach((uItem, idx) => {
+                if (uItem.uid === "sep") {
+                    tableHtml += `<div style="text-align: center; color: gray; font-weight: bold; padding: 2px;">...</div>`;
+                } else {
+                    const realRank = currentRankingData.findIndex(x => x.uid === uItem.uid) + 1;
+                    const isMe = uItem.uid === user.uid;
+                    const bg = isMe ? "rgba(255, 215, 0, 0.4)" : "transparent";
+                    const colorPos = realRank <= 3 ? "#E65100" : "black";
+                    const weight = isMe ? "900" : "normal";
+                    const colorPts = isMe ? "#006400" : "black";
+                    
+                    tableHtml += `
+                    <div style="display: flex; align-items: center; background: ${bg}; padding: 4px; border-radius: 4px; margin-bottom: 2px;">
+                        <div style="width: 28px; font-size: 11px; font-weight: bold; color: ${colorPos};">${realRank}º</div>
+                        <div style="flex: 1; font-size: 11px; font-weight: ${weight}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${uItem.name}</div>
+                        <div style="width: 35px; text-align: right; font-size: 12px; font-weight: 900; color: ${colorPts};">${uItem.p}</div>
+                    </div>`;
+                }
+            });
+
+            if (remainingCount > 0) {
+                tableHtml += `<div style="text-align: center; font-size: 9px; color: #006400; font-weight: bold; margin-top: 4px;">👇 ... e mais ${remainingCount} guerreiros na disputa!</div>`;
+            }
+
+            // HTML DO CARD FINAL
             cardContainer.innerHTML = `
-                <div style="width: 320px; height: 500px; display: flex; flex-direction: column; justify-content: space-between; padding: 24px; background: linear-gradient(180deg, #006400 0%, #004D40 50%, #000000 100%); font-family: serif; text-align: center; position: relative; overflow: hidden;">
-                    <img src="bg_ranking.jpeg" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.2; mix-blend-mode: overlay;">
+                <div style="width: 320px; height: 600px; display: flex; flex-direction: column; padding: 16px; background: linear-gradient(180deg, #004D40 0%, #000000 100%); font-family: serif; text-align: center; position: relative; overflow: hidden;">
+                    <img src="bg_ranking.jpeg" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.15; mix-blend-mode: overlay;">
                     
-                    <div style="position: relative; z-index: 10;">
-                        <h1 style="color: #FFD700; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin: 0;">BOLÃO 112 F.C</h1>
-                        <p style="color: white; font-size: 10px; font-weight: bold; letter-spacing: 4px; margin-top: 5px;">TEMPORADA 2026</p>
-                    </div>
-
-                    <div style="position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center;">
-                        <div style="width: 140px; height: 140px; border-radius: 50%; border: 6px solid #FFD700; overflow: hidden; background: black; box-shadow: 0 10px 15px rgba(0,0,0,0.5); margin-bottom: 15px;">
-                            <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">
-                        </div>
-                        <h2 style="color: white; font-weight: 900; font-size: 28px; text-transform: uppercase; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin: 0 0 10px 0;">${user.name}</h2>
+                    <div style="position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column;">
+                        <h1 style="color: #FFD700; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; margin: 0;">BOLÃO 112 F.C</h1>
                         
-                        <div style="background: ${user.lastRank === 1 ? '#FFD700' : 'rgba(255,255,255,0.2)'}; color: ${user.lastRank === 1 ? 'black' : 'white'}; padding: 5px 15px; border-radius: 50px; font-weight: 900; font-size: 14px; text-transform: uppercase; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3);">
-                            ${user.lastRank === 1 ? '👑 ' : ''}${user.lastRank}º LUGAR GERAL
+                        <div style="background: rgba(0,0,0,0.6); border: 1px solid rgba(255,215,0,0.5); border-radius: 8px; padding: 6px; margin-top: 8px; margin-bottom: 16px;">
+                            <div style="color: #FFF176; font-weight: bold; font-size: 9px;">⚠️ PRÉ-TEMPORADA (PERÍODO DE TESTES)</div>
+                            <div style="color: white; font-weight: 900; font-size: 11px; margin-top: 2px;">🚀 INÍCIO OFICIAL: 1º DE FEVEREIRO</div>
                         </div>
-                    </div>
 
-                    <div style="position: relative; z-index: 10; display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <div style="display: flex; flex-direction: column; align-items: center;">
-                            <span style="color: #FFD700; font-weight: 900; font-size: 32px; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${user.p}</span>
-                            <span style="color: #9CA3AF; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Pontos</span>
+                        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                            <div style="width: 65px; height: 65px; border-radius: 50%; border: 3px solid #FFD700; overflow: hidden; background: black; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
+                                <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <div style="margin-left: 12px; text-align: left;">
+                                <div style="color: white; font-weight: 900; font-size: 20px; line-height: 1;">${user.name.toUpperCase()}</div>
+                                <div style="color: #FFD700; font-weight: 900; font-size: 14px;">${user.p} PONTOS</div>
+                            </div>
                         </div>
-                        <div style="height: 30px; width: 1px; background: rgba(255,255,255,0.2);"></div>
-                        <div style="display: flex; flex-direction: column; align-items: center;">
-                            <span style="color: white; font-weight: 900; font-size: 32px; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${user.v}</span>
-                            <span style="color: #9CA3AF; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Cravadas</span>
+
+                        <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 12px; flex: 1;">
+                            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid black; padding-bottom: 6px; margin-bottom: 6px;">
+                                <span style="font-size: 10px; font-weight: 900;">RANKING GERAL (${totalParticipants})</span>
+                                <span style="font-size: 10px; font-weight: 900;">PTS</span>
+                            </div>
+                            ${tableHtml}
                         </div>
-                        <div style="height: 30px; width: 1px; background: rgba(255,255,255,0.2);"></div>
-                        <div style="display: flex; flex-direction: column; align-items: center;">
-                            <span style="color: white; font-weight: 900; font-size: 32px; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${user.f}</span>
-                            <span style="color: #9CA3AF; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Finais</span>
+
+                        <div style="margin-top: 16px; background: #FFD700; border-radius: 12px; padding: 10px;">
+                            <div style="color: black; font-weight: 900; font-size: 12px;">VEM PRO JOGO TAMBÉM!</div>
+                            <div style="display: flex; align-items: center; justify-content: center; margin-top: 2px;">
+                                <i class="fas fa-globe" style="font-size: 12px; margin-right: 4px;"></i>
+                                <span style="color: black; font-weight: 900; font-size: 14px;">bolao112-site.vercel.app</span>
+                            </div>
+                            <div style="color: rgba(0,0,0,0.7); font-weight: bold; font-size: 8px; margin-top: 2px;">👆 COLE O LINK AQUI 👆</div>
                         </div>
-                    </div>
-                    
-                    <div style="position: relative; z-index: 10; color: rgba(255,255,255,0.4); font-size: 9px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">
-                        https://bolao112-site.vercel.app/
                     </div>
                 </div>`;
 
             try {
-                // Pequeno delay para garantir renderização das imagens
                 await new Promise(r => setTimeout(r, 800)); 
-                
-                const canvas = await html2canvas(cardContainer, { 
-                    scale: 2, 
-                    useCORS: true, 
-                    backgroundColor: null,
-                    logging: false
-                });
-                
+                const canvas = await html2canvas(cardContainer, { scale: 2, useCORS: true, backgroundColor: null, logging: false });
                 const link = document.createElement('a');
                 link.download = `card_${user.name.replace(/\s+/g, '_')}.jpg`;
                 link.href = canvas.toDataURL("image/jpeg", 0.9);
@@ -2684,6 +2776,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
