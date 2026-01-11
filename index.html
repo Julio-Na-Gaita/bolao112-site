@@ -1923,23 +1923,35 @@ async function loadAdminMatches() {
         };
 
         window.togglePay = async (uid, month, currentStatus) => {
-            // Feedback visual imediato (opcional, mas bom pra UX)
-            const cont = document.getElementById('modalContainer');
-            const scrollPos = cont.querySelector('.overflow-y-auto')?.scrollTop; // Tenta manter o scroll
+            // Mostra feedback visual rápido (opcional: muda cursor para wait)
+            document.body.style.cursor = 'wait';
 
-            const ref = doc(db, "users", uid);
-            // Sintaxe correta para atualizar APENAS um campo dentro de um objeto (Map) no Firestore
-            // Ex: "payments.Jan": true
-            await updateDoc(ref, {
-                [`payments.${month}`]: !currentStatus
-            });
-            
-            // Recarrega a tela
-            await window.openFinancialScreen();
-            
-            // Tenta restaurar scroll (básico)
-            const newCont = cont.querySelector('.overflow-y-auto');
-            if(newCont && scrollPos) newCont.scrollTop = scrollPos;
+            try {
+                const ref = doc(db, "users", uid);
+                const snap = await getDoc(ref);
+                
+                if (snap.exists()) {
+                    // 1. Pega o objeto de pagamentos atual ou cria um novo se não existir
+                    const currentData = snap.data();
+                    const payments = currentData.payments || {};
+
+                    // 2. Inverte o status do mês clicado
+                    // Se currentStatus veio como true, vira false. Se veio false/undefined, vira true.
+                    payments[month] = !currentStatus;
+
+                    // 3. Salva o objeto completo de volta no banco
+                    await updateDoc(ref, { payments: payments });
+                    
+                    // 4. Atualiza o Pote e a Tela
+                    await window.calculatePot();
+                    await window.openFinancialScreen();
+                }
+            } catch (e) {
+                console.error("Erro ao atualizar pagamento:", e);
+                alert("Erro ao salvar pagamento. Tente novamente.");
+            } finally {
+                document.body.style.cursor = 'default';
+            }
         };
         window.checkDelays = async () => { const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const now = new Date(); const currMonth = months[now.getMonth()]; const day = now.getDate(); if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; } const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const snap = await getDocs(collection(db, "users")); let late = []; snap.forEach(d => { const u = d.data(); if (!u.payments || !u.payments[currMonth]) { late.push({id: d.id, name: u.name, debts: u.debts || 0}); } }); let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`; if (late.length === 0) { html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`; } else { html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`; late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; }); html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`; } html += `</div>`; cont.innerHTML = html; window.applyBatchPenalty = async () => { if(!confirm("Confirmar aplicação de multa em massa?")) return; const batch = writeBatch(db); late.forEach(l => { const ref = doc(db, "users", l.id); batch.update(ref, { debts: l.debts + 1 }); }); await batch.commit(); alert("Penalidades aplicadas!"); openFinancialScreen(); }; };
 async function loadProfile() { 
@@ -2623,3 +2635,4 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
