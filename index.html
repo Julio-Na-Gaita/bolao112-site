@@ -386,93 +386,144 @@ Término: 31/12/2026
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        // ADICIONADO: enableIndexedDbPersistence
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // --- CONFIGURAÇÃO DO FIREBASE ---
+        const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- VARIÁVEIS GLOBAIS ---
+        let currentUser = null;
+        let currentRankingData = [];
+        let compMap = {}; 
+        let globalServerCounts = {};
+        window.cachedMatches = []; // Importante para o sino funcionar
+
+        // --- ATIVAR CACHE OFFLINE ---
+        enableIndexedDbPersistence(db).catch((err) => {
+            if (err.code == 'failed-precondition') console.log('Muitas abas abertas.');
+            else if (err.code == 'unimplemented') console.log('Navegador não suporta persistência.');
+        });
+
+        // --- CORREÇÃO: CARROSSEL DO IPHONE (SIMPLIFICADO) ---
+        // Esta lógica roda independentemente e não trava o login
+        const startCarousel = () => {
+            const imgEl = document.getElementById('showcaseImg');
+            if (!imgEl) return;
+
+            const images = ["print1.jpeg", "print2.jpeg", "print3.jpeg"];
+            let idx = 0;
+
+            // Define a primeira imagem imediatamente
+            imgEl.src = images[0];
+
+            setInterval(() => {
+                // 1. Fade Out
+                imgEl.style.opacity = '0';
+                
+                setTimeout(() => {
+                    // 2. Troca a imagem (no escuro)
+                    idx = (idx + 1) % images.length;
+                    imgEl.src = images[idx];
+                    
+                    // 3. Fade In
+                    imgEl.style.opacity = '1';
+                }, 500); // Espera metade do tempo da transição CSS
+            }, 3500); // Troca a cada 3.5 segundos
+        };
+        // Inicia o carrossel
+        startCarousel();
+
+        // --- FUNÇÕES GLOBAIS DE UTILIDADE ---
+        
+        // 1. Fechar Modal
+        window.closeModal = () => {
+            const modal = document.getElementById('modalOverlay');
+            if (modal) modal.classList.add('hidden');
+        };
+
+        // 2. Logout (Sair)
         window.onload = () => {
             const btnLogout = document.getElementById('btnLogout');
             if(btnLogout) {
                 btnLogout.onclick = () => {
-                    if(confirm("Deseja realmente sair?")) {
+                    if(confirm("Deseja realmente sair do Bolão?")) {
                         document.getElementById('mainHeader').classList.add('hidden');
                         signOut(auth).then(() => location.reload());
                     }
                 };
             }
         };
-// --- CORREÇÃO E OTIMIZAÇÃO: CARROSSEL ÚNICO ---
-        const initCarousel = () => {
-            const imgEl = document.getElementById('showcaseImg');
-            // Certifique-se de que essas imagens existem na pasta public/ do Vercel
-            const appScreenshots = ["print1.jpeg", "print2.jpeg", "print3.jpeg"]; 
-            let currentImgIdx = 0;
 
-            if (imgEl) {
-                // Define imagem inicial
-                imgEl.src = appScreenshots[0];
-                
-                setInterval(() => {
-                    // Fade Out
-                    imgEl.style.opacity = '0';
-                    
-                    setTimeout(() => {
-                        // Troca a imagem
-                        currentImgIdx = (currentImgIdx + 1) % appScreenshots.length;
-                        const nextSrc = appScreenshots[currentImgIdx];
-                        
-                        // Pré-carrega a imagem para evitar piscada branca
-                        const tempImg = new Image();
-                        tempImg.onload = () => {
-                            imgEl.src = nextSrc;
-                            imgEl.style.opacity = '1'; // Fade In
-                        };
-                        tempImg.onerror = () => {
-                            // Se der erro (ex: jpg vs jpeg), tenta carregar a próxima
-                            console.warn("Imagem não encontrada:", nextSrc);
-                            imgEl.style.opacity = '1';
-                        };
-                        tempImg.src = nextSrc;
-                        
-                    }, 500); // Espera metade da transição
-                }, 3500); // Tempo de exibição
-            }
-        };
-
-        // Inicia o carrossel assim que possível
-        initCarousel();
-        const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-            
-        // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
+        // 3. Gerador de Avatar
         const getAvatarUrl = (base64, name) => {
-            // 1. Se tem foto real, usa ela
-            if (base64 && base64.trim() !== "") {
-                return `data:image/jpeg;base64,${base64}`;
-            }
-            // 2. Se não tem, gera o DiceBear
+            if (base64 && base64.trim() !== "") return `data:image/jpeg;base64,${base64}`;
             const seed = (name || "user").trim();
-            // Cores de fundo suaves (azul, roxo, verde, laranja)
             const bgColors = ["b6e3f4", "c0aede", "d1d4f9", "ffdfbf", "fdcdc5"]; 
-            const bg = bgColors[seed.length % bgColors.length]; // Escolhe cor baseada no tamanho do nome
+            const bg = bgColors[seed.length % bgColors.length];
             return `https://api.dicebear.com/7.x/adventurer/png?seed=${seed}&backgroundColor=${bg}`;
         };
 
-        // --- OTIMIZAÇÃO: ATIVAR CACHE OFFLINE ---
-        // Isso faz o site carregar instantaneamente na 2ª visita
-        enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code == 'failed-precondition') {
-                console.log('Muitas abas abertas. O cache funcionará em apenas uma.');
-            } else if (err.code == 'unimplemented') {
-                console.log('Navegador não suporta persistência.');
-            }
-        });
-        // ----------------------------------------
+        // 4. Compresso de Imagem
+        const compressImage = (file) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 500; const scaleSize = MAX_WIDTH / img.width; canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize;
+                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7); resolve(dataUrl.split(',')[1]);
+                    };
+                };
+            });
+        };
 
-        let currentUser = null;
-        let currentRankingData = [];
-        let compMap = {}; 
-        let globalServerCounts = {};
+        // --- CORREÇÃO: LOGIN ---
+        window.handleLogin = async () => {
+            const btn = document.getElementById('btnLoginAction');
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ACESSANDO...`;
+            btn.disabled = true;
+
+            const rawUser = document.getElementById('userInput').value.trim();
+            const pass = document.getElementById('passInput').value;
+            const remember = document.getElementById('rememberMe').checked;
+
+            if (!rawUser || !pass) {
+                alert("Por favor, preencha usuário e senha.");
+                btn.innerHTML = originalText; 
+                btn.disabled = false;
+                return;
+            }
+
+            const user = rawUser.toLowerCase().replace(/\s/g, '');
+
+            try {
+                const mode = remember ? browserLocalPersistence : browserSessionPersistence;
+                await setPersistence(auth, mode);
+                // Monta o email padrão
+                await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass);
+                // O onAuthStateChanged fará o redirecionamento
+            } catch (e) {
+                console.error("Erro Login:", e.code);
+                let msg = "Erro ao acessar.";
+                if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
+                    msg = "Usuário ou senha incorretos.\nVerifique se digitou o nome de usuário (sem @) corretamente.";
+                } else if (e.code === 'auth/too-many-requests') {
+                    msg = "Muitas tentativas falhas. Tente novamente mais tarde.";
+                }
+                alert(msg);
+                btn.innerHTML = originalText; 
+                btn.disabled = false;
+            }
+        };
 // --- REGRAS ATUALIZADAS (WEB v1.4.3) ---
         const rulesData = [
             { 
@@ -533,66 +584,7 @@ Término: 31/12/2026
                 };
             });
         };
-       // --- CORREÇÃO: FUNÇÃO DE FECHAR MODAL GLOBAL ---
-        // Isso resolve o problema dos botões "X" não funcionarem
-        window.closeModal = () => {
-            const modal = document.getElementById('modalOverlay');
-            if (modal) modal.classList.add('hidden');
-        };
-
-        // --- CORREÇÃO: LOGIN ---
-        window.handleLogin = async () => {
-            const btn = document.getElementById('btnLoginAction');
-            const originalText = btn.innerHTML;
-            
-            // Feedback Visual de Carregamento
-            btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ACESSANDO...`;
-            btn.disabled = true;
-
-            // Pega os valores
-            const rawUser = document.getElementById('userInput').value.trim();
-            const pass = document.getElementById('passInput').value;
-            const remember = document.getElementById('rememberMe').checked;
-
-            if (!rawUser || !pass) {
-                alert("Por favor, preencha usuário e senha.");
-                btn.innerHTML = originalText; 
-                btn.disabled = false;
-                return;
-            }
-
-            // Tratamento do usuário (remove espaços e força minúsculo)
-            const user = rawUser.toLowerCase().replace(/\s/g, '');
-
-            try {
-                // Configura persistência
-                const mode = remember ? browserLocalPersistence : browserSessionPersistence;
-                await setPersistence(auth, mode);
-
-                // Tenta logar montando o email padrão do bolão
-                // ATENÇÃO: Se seu usuário no banco é gmail, isso dará erro.
-                const emailFormatado = `${user}@bolao112.com`;
-                console.log(`Tentando logar com: ${emailFormatado}`);
-
-                await signInWithEmailAndPassword(auth, emailFormatado, pass);
-                
-                // Se der certo, o onAuthStateChanged lá embaixo fará o redirecionamento
-                
-            } catch (e) {
-                console.error("Erro Login:", e.code, e.message);
-                
-                let msg = "Erro ao acessar.";
-                if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
-                    msg = "Usuário ou senha incorretos.\nVerifique se digitou o nome de usuário (sem @) corretamente.";
-                } else if (e.code === 'auth/too-many-requests') {
-                    msg = "Muitas tentativas falhas. Tente novamente mais tarde.";
-                }
-
-                alert(msg);
-                btn.innerHTML = originalText; 
-                btn.disabled = false;
-            }
-        };
+       
 // --- RECUPERAÇÃO DE SENHA (WEB) ---
         document.getElementById('btnForgotPass').onclick = () => {
             const modal = document.getElementById('modalOverlay'); 
@@ -2527,6 +2519,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
