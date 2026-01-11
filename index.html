@@ -1806,13 +1806,15 @@ let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-
             };
         };
 
-        // Função auxiliar para mostrar o Toast
+       // Função auxiliar para mostrar o Toast (CORRIGIDA)
         window.showToast = (title, desc, date) => {
             const toast = document.getElementById('medalToast');
             if (!toast) return;
             
             let html = `<span class="text-[#FFD700]">${title}</span><br><span class="font-normal">${desc}</span>`;
-            if(date) {
+            
+            // Só mostra a data se ela existir e não for a string "undefined"
+            if(date && date !== 'undefined' && date !== 'null') {
                 html += `<br><span class="text-[9px] text-gray-400 font-bold mt-1 block">Conquistado em: ${date}</span>`;
             }
             
@@ -2777,6 +2779,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
