@@ -1512,17 +1512,21 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     if (currentStreak >= 10) activeMedals += "👽 "; else if (currentStreak >= 5) activeMedals += "🎯 "; else if (currentStreak >= 3) activeMedals += "🔥 ";
 
                     const last3 = finishedDisplay.slice(0,3); let misses=0; let noShows=0; 
-                    if(finishedDisplay.length >= 3) { last3.forEach(m => { const g = userGuesses.find(x => x.matchId === m.id); if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++; }); if (misses === 3) { activeMedals += "🥬 "; trophyRoom.push({icon:"🥬", name:"MÃO DE ALFACE", desc:"Atual: 3 erros seguidos."}); } if (noShows === 3) { activeMedals += "👻 "; trophyRoom.push({icon:"👻", name:"FANTASMA", desc:"Atual: 3 jogos sem votar."}); } }
+                    if(finishedDisplay.length >= 3) { last3.forEach(m => { const g = userGuesses.find(x => x.matchId === m.id); if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++; }); // Correção: Adicionado date: "Atual"
+                    if (misses === 3) { activeMedals += "🥬 "; trophyRoom.push({icon:"🥬", name:"MÃO DE ALFACE", desc:"Atual: 3 erros seguidos.", date: "Atual"}); } 
+                    if (noShows === 3) { activeMedals += "👻 "; trophyRoom.push({icon:"👻", name:"FANTASMA", desc:"Atual: 3 jogos sem votar.", date: "Atual"}); } }
                     
                     if (finishedDisplay.length > 0) { const lastMatch = finishedDisplay[0]; if (zebraMatchIds.includes(lastMatch.id)) { const g = userGuesses.find(x => x.matchId === lastMatch.id); if (g && g.teamSelected === lastMatch.winner) { activeMedals += "🦓 "; } } }
                     const veteranLevel = Math.floor(v / 50); for(let i=0; i<veteranLevel; i++) { activeMedals += "🎓 "; }
                     
                     if (trophyRoom.some(t => t.icon === "💎")) activeMedals += "💎 ";
 
-                    if (f > 0) { activeMedals += "🔮 "; trophyRoom.push({icon:"🔮", name:"MÃE DINAH", desc:`Acertou ${f} campeões.`}); }
-                    let kingCount = 0; Object.keys(pastKingsMap).forEach(mName => { if(pastKingsMap[mName] === ud.id) { kingCount++; trophyRoom.push({icon:"👑", name:`REI DE ${mName.toUpperCase()}`, desc:"Campeão Mensal Isolado"}); } }); if(kingCount > 0) activeMedals += "👑 ";
+                    // Correção: Adicionado date: "Temporada" e nome do mês
+                    if (f > 0) { activeMedals += "🔮 "; trophyRoom.push({icon:"🔮", name:"MÃE DINAH", desc:`Acertou ${f} campeões.`, date: "Temporada"}); }
+                    let kingCount = 0; Object.keys(pastKingsMap).forEach(mName => { if(pastKingsMap[mName] === ud.id) { kingCount++; trophyRoom.push({icon:"👑", name:`REI DE ${mName.toUpperCase()}`, desc:"Campeão Mensal Isolado", date: mName}); } }); if(kingCount > 0) activeMedals += "👑 ";
                     
-                    let allPaid = true; if (currentYear >= 2026) { for(let i=0; i<=currentMonthIdx; i++) { if (!u.payments?.[monthsNames[i]]) { allPaid = false; break; } } } else { if ((u.debts||0) > 0) allPaid = false; } if (allPaid) { activeMedals += "💰 "; trophyRoom.unshift({icon:"💰", name:"PATRÃO", desc:"Mensalidades em dia."}); }
+                   // Correção: Adicionado date: "Em Dia"
+                    let allPaid = true; if (currentYear >= 2026) { for(let i=0; i<=currentMonthIdx; i++) { if (!u.payments?.[monthsNames[i]]) { allPaid = false; break; } } } else { if ((u.debts||0) > 0) allPaid = false; } if (allPaid) { activeMedals += "💰 "; trophyRoom.unshift({icon:"💰", name:"PATRÃO", desc:"Mensalidades em dia.", date: "Mês Atual"}); }
 
                     matches.forEach(m => { const dl = m.deadlineDate; if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
                     const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
@@ -1550,7 +1554,8 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                 
                 monthlyData.sort((a,b) => b.points - a.points); 
                 
-                if (users.length > 2) { const lastUsers = [users[users.length-1], users[users.length-2]]; lastUsers.forEach(u => { if(u) u.trophyRoom.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Atual: Z-2"}); }); }
+                // Correção: Adicionado date: "Rodada Atual"
+                if (users.length > 2) { const lastUsers = [users[users.length-1], users[users.length-2]]; lastUsers.forEach(u => { if(u) u.trophyRoom.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Atual: Z-2", date: "Rodada Atual"}); }); }
                 
                 window.currentMonthlyRanking = monthlyData; currentRankingData = users; 
                 
@@ -1647,8 +1652,8 @@ window.showKingModal = () => {
             const u = currentRankingData[idx]; 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             
-            // Agora sempre mostra imagem (Real ou DiceBear) 
-           let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-cover">`;
+            // CORREÇÃO: Usar object-contain com fundo preto para não cortar a foto
+let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-contain bg-black">`;
 
             // --- LÓGICA DE STACKING E ORDENAÇÃO DE MEDALHAS ---
             let medalsHtml = "";
@@ -2772,6 +2777,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
