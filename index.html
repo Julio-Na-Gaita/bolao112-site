@@ -2180,56 +2180,71 @@ window.calculatePot = async function() {
                 alert("Erro ao carregar valores do pote.");
             }
         }
-// --- GERADOR DE CARD INSTAGRAM (WEB) ---
+// --- CORREÇÃO: CARD INSTAGRAM (Reordenação Forçada) ---
         window.generateWebCard = async () => {
-            // 1. Pega os dados do usuário atual do modal aberto
             const modalEl = document.getElementById('profileModal');
             if(!modalEl) return;
             const uid = modalEl.getAttribute('data-uid');
             
-            // Busca na lista global de ranking (precisa ter aberto o ranking antes)
-            // Se não tiver, tenta buscar no user atual
-            let user = null;
-            if (currentRankingData && currentRankingData.length > 0) {
-                user = currentRankingData.find(u => u.uid === uid);
+            // 1. Verifica se os dados existem
+            if (!currentRankingData || currentRankingData.length === 0) {
+                 alert("Por favor, abra a aba 'Ranking' primeiro para carregar os dados atualizados."); 
+                 return;
             }
-            
-            // Fallback se não achou na lista (ex: abriu o próprio perfil sem ir no ranking)
-            if (!user && uid === currentUser.uid) {
-               // Monta um objeto user básico com o que temos na sessão
-               // Nota: para dados completos de pontos, o ideal é ter carregado o ranking.
-               // Aqui faremos um alerta se não tiver dados.
-               alert("Para gerar o card com estatísticas completas, por favor abra a aba 'Ranking' primeiro para carregarmos seus dados.");
-               return;
-            }
-            
-            if(!user) return;
 
-            // 2. Muda o botão para "Gerando..."
+            // 2. ORDENAÇÃO ROBUSTA (A mesma lógica do Ranking Principal)
+            // Isso impede que o líder apareça em 2º por erro de cache
+            currentRankingData.sort((a,b) => {
+                // Critério 1: Pontos (Decrescente)
+                if (b.p !== a.p) return b.p - a.p;
+                
+                // Critério 2: Débitos (Crescente - quem deve menos ganha)
+                if (a.d !== b.d) return a.d - b.d;
+                
+                // Critério 3: Hierarquia de Medalhas
+                const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
+                for (let icon of hierarchy) {
+                    // Conta quantas medalhas desse tipo cada um tem
+                    const countA = (a.trophyRoom || []).filter(m => m.icon === icon).length;
+                    const countB = (b.trophyRoom || []).filter(m => m.icon === icon).length;
+                    
+                    if (countB !== countA) return countB - countA; // Quem tem mais ganha
+                }
+                
+                // Critério 4: Ordem alfabética (opcional, para estabilidade)
+                return a.name.localeCompare(b.name);
+            });
+
+            // 3. Localiza o usuário na lista já ordenada e define a posição real
+            const index = currentRankingData.findIndex(u => u.uid === uid);
+            if (index === -1) return;
+            
+            const user = currentRankingData[index];
+            user.lastRank = index + 1; // <--- AQUI A MÁGICA ACONTECE (Posição Real)
+
+            // 4. Configuração visual do botão
             const btn = document.getElementById('btnInstaAction');
             const originalText = btn.innerHTML;
             btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> GERANDO...`;
             btn.disabled = true;
 
-            // 3. Prepara o Container do Card (Invisível na tela, mas renderizado)
+            // 5. Criação do elemento invisível para captura
             const cardContainer = document.createElement('div');
             cardContainer.id = "instaCardCapture";
-            cardContainer.style.position = "fixed";
-            // Coloca fora da tela mas visível pro navegador renderizar
+            cardContainer.style.position = "fixed"; 
             cardContainer.style.top = "0"; 
-            cardContainer.style.left = "0";
+            cardContainer.style.left = "0"; 
             cardContainer.style.zIndex = "-9999"; 
-            cardContainer.style.width = "320px";
+            cardContainer.style.width = "320px"; 
             cardContainer.style.height = "500px";
-            
             document.body.appendChild(cardContainer);
 
-            // HTML do Card (Tailwind + CSS Inline para garantir renderização)
-            // Usamos getAvatarUrl que criamos antes
             const avatarUrl = getAvatarUrl(user.photo, user.name);
             
+            // HTML do Card (Design)
             cardContainer.innerHTML = `
                 <div style="width: 320px; height: 500px; display: flex; flex-direction: column; justify-content: space-between; padding: 24px; background: linear-gradient(180deg, #006400 0%, #004D40 50%, #000000 100%); font-family: serif; text-align: center; position: relative; overflow: hidden;">
+                    <img src="bg_ranking.jpeg" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.2; mix-blend-mode: overlay;">
                     
                     <div style="position: relative; z-index: 10;">
                         <h1 style="color: #FFD700; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin: 0;">BOLÃO 112 F.C</h1>
@@ -2241,8 +2256,9 @@ window.calculatePot = async function() {
                             <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">
                         </div>
                         <h2 style="color: white; font-weight: 900; font-size: 28px; text-transform: uppercase; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin: 0 0 10px 0;">${user.name}</h2>
-                        <div style="background: #FFD700; color: black; padding: 5px 15px; border-radius: 50px; font-weight: 900; font-size: 14px; text-transform: uppercase; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3);">
-                            ${user.lastRank}º LUGAR GERAL
+                        
+                        <div style="background: ${user.lastRank === 1 ? '#FFD700' : 'rgba(255,255,255,0.2)'}; color: ${user.lastRank === 1 ? 'black' : 'white'}; padding: 5px 15px; border-radius: 50px; font-weight: 900; font-size: 14px; text-transform: uppercase; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3);">
+                            ${user.lastRank === 1 ? '👑 ' : ''}${user.lastRank}º LUGAR GERAL
                         </div>
                     </div>
 
@@ -2262,39 +2278,32 @@ window.calculatePot = async function() {
                             <span style="color: #9CA3AF; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Finais</span>
                         </div>
                     </div>
-
+                    
                     <div style="position: relative; z-index: 10; color: rgba(255,255,255,0.4); font-size: 9px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">
-                        https://bolao112-site.vercel.app/
+                        www.bolao112.com.br
                     </div>
-                </div>
-            `;
+                </div>`;
 
             try {
-                // Aguarda um pouquinho para garantir que a imagem (avatar) carregou no DOM
-                await new Promise(r => setTimeout(r, 500)); 
-
-                const canvas = await html2canvas(cardContainer, {
-                    scale: 2, // Alta resolução
-                    useCORS: true, // Importante para carregar imagens externas (DiceBear/Firebase)
+                // Pequeno delay para garantir renderização das imagens
+                await new Promise(r => setTimeout(r, 800)); 
+                
+                const canvas = await html2canvas(cardContainer, { 
+                    scale: 2, 
+                    useCORS: true, 
                     backgroundColor: null,
                     logging: false
                 });
-
-                // 5. Download Automático
+                
                 const link = document.createElement('a');
-                link.download = `card_${user.name}.jpg`;
+                link.download = `card_${user.name.replace(/\s+/g, '_')}.jpg`;
                 link.href = canvas.toDataURL("image/jpeg", 0.9);
                 link.click();
-
-                // Feedback visual de sucesso (opcional, ou apenas restaura o botão)
-                
             } catch (err) {
                 console.error(err);
                 alert("Erro ao gerar card. Tente novamente.");
             } finally {
-                if(document.body.contains(cardContainer)) {
-                    document.body.removeChild(cardContainer);
-                }
+                document.body.removeChild(cardContainer);
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
@@ -2675,6 +2684,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
