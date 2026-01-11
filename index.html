@@ -168,14 +168,14 @@
                 
                 <div class="text-center md:text-left animate-fade-in-up max-w-lg order-2 md:order-1 w-full">
                     
-                    <div class="inline-flex items-center gap-2 bg-black/60 backdrop-blur-md border border-[#FFD700] rounded-full px-4 py-1 mb-4 shadow-lg">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        <span class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest">Início: 01/02/2026</span>
-                    </div>
-                    
                     <h2 class="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-2xl mb-2 leading-tight">
                         Bolão 112 <span class="text-[#FFD700]">F.C</span>
                     </h2>
+
+                    <div class="inline-flex items-center gap-2 bg-black/60 backdrop-blur-md border border-[#FFD700] rounded-full px-4 py-1 mb-4 shadow-lg">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest">Início Oficial: 01/02/2026</span>
+                    </div>
         
                     <p class="text-white text-xs font-bold uppercase tracking-wide mb-1">
                         <i class="fas fa-star text-[#FFD700] mr-1"></i> Supercopa do Brasil (Final)
@@ -193,7 +193,6 @@
                                     <input type="text" id="userInput" placeholder="Ex: joaosilva" class="w-full bg-black/40 border border-white/10 text-white pl-10 pr-4 py-3 rounded-lg focus:border-[#FFD700] outline-none transition-colors text-sm font-bold placeholder-gray-500">
                                 </div>
                             </div>
-                            
                             <div>
                                 <label class="text-[10px] uppercase font-bold text-gray-300 ml-1">Senha</label>
                                 <div class="relative">
@@ -201,28 +200,15 @@
                                     <input type="password" id="passInput" placeholder="Sua senha secreta" class="w-full bg-black/40 border border-white/10 text-white pl-10 pr-4 py-3 rounded-lg focus:border-[#FFD700] outline-none transition-colors text-sm font-bold placeholder-gray-500">
                                 </div>
                             </div>
-        
                             <div class="flex justify-between items-center text-[11px] text-gray-300 font-bold px-1">
                                 <label class="flex items-center gap-2 cursor-pointer hover:text-white">
-                                    <input type="checkbox" id="rememberMe" class="accent-[#FFD700]">
-                                    Lembrar de mim
+                                    <input type="checkbox" id="rememberMe" class="accent-[#FFD700]">Lembrar de mim
                                 </label>
                                 <button id="btnForgotPass" class="text-[#FFD700] hover:underline cursor-pointer z-50 relative">Esqueci a senha</button>
                             </div>
-        
-                            <button id="btnLoginAction" onclick="window.handleLogin()" class="w-full bg-gradient-to-r from-[#006400] to-[#004d00] text-white font-black uppercase tracking-widest py-3.5 rounded-lg shadow-lg hover:scale-[1.02] transition-transform btn-press text-sm border border-[#FFD700]/30 cursor-pointer relative z-50">
-                                ENTRAR NO SITE
-                            </button>
-        
-                            <div class="relative flex py-2 items-center">
-                                <div class="flex-grow border-t border-white/10"></div>
-                                <span class="flex-shrink-0 mx-4 text-gray-400 text-[10px] uppercase font-bold">Ou</span>
-                                <div class="flex-grow border-t border-white/10"></div>
-                            </div>
-        
-                            <button id="btnOpenRegister" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-lg border border-white/20 transition-colors btn-press text-xs uppercase cursor-pointer z-50 relative">
-                                <i class="fas fa-user-plus mr-2"></i> Criar Nova Conta
-                            </button>
+                            <button id="btnLoginAction" onclick="window.handleLogin()" class="w-full bg-gradient-to-r from-[#006400] to-[#004d00] text-white font-black uppercase tracking-widest py-3.5 rounded-lg shadow-lg hover:scale-[1.02] transition-transform btn-press text-sm border border-[#FFD700]/30 cursor-pointer relative z-50">ENTRAR NO JOGO</button>
+                            <div class="relative flex py-2 items-center"><div class="flex-grow border-t border-white/10"></div><span class="flex-shrink-0 mx-4 text-gray-400 text-[10px] uppercase font-bold">Ou</span><div class="flex-grow border-t border-white/10"></div></div>
+                            <button id="btnOpenRegister" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-lg border border-white/20 transition-colors btn-press text-xs uppercase cursor-pointer z-50 relative"><i class="fas fa-user-plus mr-2"></i> Criar Nova Conta</button>
                         </div>
                     </div>
         
@@ -240,7 +226,6 @@
                     <div class="mt-6 flex justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
                         <a href="https://wa.me/5585988837389" target="_blank" class="text-xs text-white flex items-center gap-1 hover:text-[#25D366]"><i class="fab fa-whatsapp"></i> Falar com o Admin</a>
                     </div>
-        
                 </div>
         
                 <div class="order-1 md:order-2 w-[220px] md:w-[260px] shrink-0 transform rotate-[-3deg] hover:rotate-0 transition-transform duration-500 relative z-0">
@@ -1115,6 +1100,9 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
         // Função de escape para strings HTML
         const escapeStr = (str) => str ? str.replace(/'/g, "\\'").replace(/"/g, '&quot;') : "";
 
+        // Função auxiliar para evitar erro de aspas nos nomes dos times
+        const escapeStr = (str) => str ? str.replace(/'/g, "\\'").replace(/"/g, '&quot;') : "";
+
         async function renderMatchList(list, totalParticipants, serverCounts) {
             let html = "";
             for (const m of list) {
@@ -1134,10 +1122,10 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     const isUnread = sCount > lCount; 
                     const badgeColor = isUnread ? "bg-red-600" : "bg-gray-400"; 
                     const badgeText = sCount > 9 ? "+9" : sCount; 
-                    chatBadge = `<div class="absolute -top-1 -right-1 ${badgeColor} text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white pointer-events-none">${badgeText}</div>`; 
+                    // CORREÇÃO: Removido pointer-events-none do badge
+                    chatBadge = `<div class="absolute -top-1 -right-1 ${badgeColor} text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">${badgeText}</div>`; 
                 }
 
-                // Cálculo do Termômetro
                 let thermoHtml = ""; 
                 const votesA = m.stats[m.teamA] || 0; 
                 const votesB = m.stats[m.teamB] || 0; 
@@ -1155,7 +1143,6 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1"><span class="text-green-700">${pctA}%</span><span class="text-gray-400 text-[8px]">TERMÔMETRO (CINZA = NÃO VOTOU)</span><span class="text-red-700">${pctB}%</span></div><div class="w-full h-2.5 bg-gray-200 rounded-full flex overflow-hidden"><div style="flex: ${votesA}" class="bg-green-700 h-full border-r border-white/50"></div><div style="flex: ${absReal}" class="bg-gray-300 h-full border-r border-white/50"></div><div style="flex: ${votesB}" class="bg-red-700 h-full"></div></div><div class="flex justify-between text-[8px] text-gray-400 mt-1"><span>${m.teamA}: ${votesA}</span>${absReal > 0 ? `<span>Faltosos: ${absReal}</span>` : ''}<span>${m.teamB}: ${votesB}</span></div></div>`; 
                 }
 
-                // CORREÇÃO: Botão de Chat com atributos de dados seguros
                 html += `<div class="card-cut relative border-l-[6px] ${bgColor} mb-6 overflow-hidden" style="border-left-color: ${borderColor.replace('border-[','').replace(']','')};">
                             ${logo ? `<img src="${logo}" class="absolute inset-0 w-full h-full object-contain opacity-[0.10] z-0 pointer-events-none p-8">` : ''}
                             <div class="relative z-10 p-3">
@@ -1172,10 +1159,11 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                                         <span class="text-[11px] font-black text-[#D32F2F]">${m.expired ? 'Encerrado:' : '⚠️ Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
                                     </div>
                                     <div class="flex gap-3 pt-1">
-                                        <button onclick="window.openMatchComments('${m.id}', '${escapeStr(m.teamA)}', '${escapeStr(m.teamB)}', '${escapeStr(m.winner||'')}')" class="z-20 relative text-gray-500 hover:text-[#006400] transition-colors p-2 -m-2">
-                                            <i class="fas fa-comment-dots text-xl pointer-events-none"></i>${chatBadge}
+                                        <button type="button" onclick="window.openMatchComments('${m.id}', '${escapeStr(m.teamA)}', '${escapeStr(m.teamB)}', '${escapeStr(m.winner||'')}')" class="text-gray-500 hover:text-[#006400] transition-colors relative p-2">
+                                            <i class="fas fa-comment-dots text-xl"></i>${chatBadge}
                                         </button>
-                                        <button onclick="window.openVoters('${m.id}', '${escapeStr(m.teamA)}', '${escapeStr(m.teamB)}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${escapeStr(m.winner||'')}')" class="text-[#006400] hover:scale-110 transition-transform p-2 -m-2">
+                                        
+                                        <button type="button" onclick="window.openVoters('${m.id}', '${escapeStr(m.teamA)}', '${escapeStr(m.teamB)}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${escapeStr(m.winner||'')}')" class="text-[#006400] hover:scale-110 transition-transform p-2">
                                             <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-xl"></i>
                                         </button>
                                     </div>
@@ -1193,7 +1181,6 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                         </div>`;
             } return html;
         }
-
         // --- FUNÇÕES DE VOTO OTIMIZADAS (SEM LAG) ---
         
         function createTeamBtn(mid, name, url, selected, expired) { 
@@ -1706,7 +1693,6 @@ window.showKingModal = () => {
             const u = currentRankingData[idx]; 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             
-            // CORREÇÃO: Usei object-contain para a foto não cortar
             let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-contain bg-black">`;
 
             let medalsHtml = "";
@@ -1772,13 +1758,13 @@ window.showKingModal = () => {
                     </div>
                 </div>`;
             
-            // Reatribui os eventos de clique para garantir que funcionem
+            // Reatribui os eventos de clique (DELAY AUMENTADO PARA 500ms)
             setTimeout(() => {
                 const btnStats = document.getElementById('btnStatsAction'); 
                 if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
                 const btnCompare = document.getElementById('btnCompareAction'); 
                 if (btnCompare && !isMe) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
-            }, 100);
+            }, 500);
         };
         // --- NOVA FUNÇÃO PARA LISTA DE MEDALHAS (STACKING) COM FUNDO ---
         window.showMedalList = (medalName) => {
@@ -1967,7 +1953,24 @@ async function loadAdminMatches() {
         };
         window.checkDelays = async () => { const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const now = new Date(); const currMonth = months[now.getMonth()]; const day = now.getDate(); if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; } const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const snap = await getDocs(collection(db, "users")); let late = []; snap.forEach(d => { const u = d.data(); if (!u.payments || !u.payments[currMonth]) { late.push({id: d.id, name: u.name, debts: u.debts || 0}); } }); let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`; if (late.length === 0) { html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`; } else { html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`; late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; }); html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`; } html += `</div>`; cont.innerHTML = html; window.applyBatchPenalty = async () => { if(!confirm("Confirmar aplicação de multa em massa?")) return; const batch = writeBatch(db); late.forEach(l => { const ref = doc(db, "users", l.id); batch.update(ref, { debts: l.debts + 1 }); }); await batch.commit(); alert("Penalidades aplicadas!"); openFinancialScreen(); }; };
         
-async function loadProfile() { 
+// Função auxiliar de cópia corrigida
+        window.copyKeyOnly = () => {
+            const el = document.getElementById('pixKey');
+            if (el && el.value) {
+                el.select();
+                el.setSelectionRange(0, 99999); // Mobile
+                navigator.clipboard.writeText(el.value).then(() => {
+                    alert("Chave Pix Copiada com Sucesso!");
+                }).catch(() => {
+                    document.execCommand('copy'); // Fallback
+                    alert("Chave Pix Copiada!");
+                });
+            } else {
+                alert("Nenhuma chave para copiar.");
+            }
+        };
+
+        async function loadProfile() { 
             if (!currentUser) return; 
             try { 
                 const docRef = doc(db, "users", currentUser.uid); 
@@ -1977,7 +1980,6 @@ async function loadProfile() {
                 const u = snap.data(); 
                 document.getElementById('profileName').innerText = u.name || "MEMBRO"; 
                 document.getElementById('profileUser').innerText = `@${u.username || 'user'}`; 
-                
                 document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u.photoBase64, u.name || u.username)}" class="w-full h-full object-cover">`;
 
                 const myHint = u.passwordHint || "Sem dica cadastrada";
@@ -1991,15 +1993,9 @@ async function loadProfile() {
 
                 hintDiv.innerHTML = `
                     <div class="mt-4 bg-[#FFF3E0] border border-[#FF9800] rounded p-3 flex justify-between items-center text-left mx-4 mb-4">
-                        <div>
-                            <p class="text-[10px] font-bold text-[#EF6C00] uppercase"><i class="fas fa-lightbulb mr-1"></i> Dica de Senha</p>
-                            <p class="text-xs font-black text-black mt-1">${myHint}</p>
-                        </div>
-                        <button onclick="editHint('${myHint.replace(/'/g, "\\'")}')" class="bg-white border border-[#EF6C00] text-[#EF6C00] w-8 h-8 rounded-full flex items-center justify-center shadow-sm btn-press">
-                            <i class="fas fa-pen text-xs"></i>
-                        </button>
-                    </div>
-                `;
+                        <div><p class="text-[10px] font-bold text-[#EF6C00] uppercase"><i class="fas fa-lightbulb mr-1"></i> Dica de Senha</p><p class="text-xs font-black text-black mt-1">${myHint}</p></div>
+                        <button onclick="editHint('${myHint.replace(/'/g, "\\'")}')" class="bg-white border border-[#EF6C00] text-[#EF6C00] w-8 h-8 rounded-full flex items-center justify-center shadow-sm btn-press"><i class="fas fa-pen text-xs"></i></button>
+                    </div>`;
                 
                 const adminBtn = document.getElementById('btnAdminPanel'); 
                 if (u.isAdmin === true) { adminBtn.classList.remove('hidden'); } else { adminBtn.classList.add('hidden'); } 
@@ -2012,10 +2008,7 @@ async function loadProfile() {
                 const stText = document.getElementById('financialStatusText'); 
                 const stIcon = document.getElementById('financialIcon'); 
                 
-                // --- CORREÇÃO CRÍTICA: BOTÃO "MENSALIDADE" SEMPRE ABRE A TELA DO PIX ---
-                stCard.onclick = () => {
-                    document.getElementById('pixArea').classList.remove('hidden');
-                };
+                stCard.onclick = () => { document.getElementById('pixArea').classList.remove('hidden'); };
 
                 if (isPaid || new Date().getFullYear() < 2026) { 
                     stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800 shadow-sm"; 
@@ -2031,14 +2024,19 @@ async function loadProfile() {
                     const finSnap = await getDoc(doc(db, "settings", "financial")); 
                     if (finSnap.exists()) { 
                         const fin = finSnap.data(); 
-                        document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com"; 
+                        const pixKey = fin.pixKey || "admin@bolao112.com";
+                        document.getElementById('pixKey').value = pixKey; 
+                        
+                        // Correção: O botão Copia e Cola agora chama a função real
+                        document.getElementById('btnCopyPix').onclick = window.copyKeyOnly;
+
                         document.getElementById('btnSendProof').onclick = () => { 
                             const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112."); 
                             window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank'); 
                         }; 
                     } 
-                } catch (e) { console.log("Erro ao carregar dados financeiros:", e); } 
-            } catch (error) { console.error("Erro crítico no loadProfile:", error); } 
+                } catch (e) { console.log("Erro financeiro:", e); } 
+            } catch (error) { console.error("Erro loadProfile:", error); } 
         }
         // Função Global para Editar Dica (ADICIONE ISSO LOGO APÓS A loadProfile)
         window.editHint = (currentVal) => {
@@ -2529,6 +2527,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
