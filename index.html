@@ -133,154 +133,159 @@
     
     <div id="bgLayer" class="fixed inset-0 z-[-1] bg-cover bg-center transition-all duration-300" style="background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg');"></div>
 
+    <header id="mainHeader" class="hidden flex justify-between items-center p-4 bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 shadow-sm pt-safe">
+        <div class="flex items-center gap-2">
+            <div class="bg-[#006400] text-[#FFD700] w-8 h-8 rounded-full flex items-center justify-center font-black border-2 border-[#FFD700] shadow">
+                112
+            </div>
+            <div>
+                <h1 class="font-black text-[#006400] text-xs leading-none tracking-wide">BOLÃO 112 F.C</h1>
+                <p class="text-[9px] text-gray-400 font-bold tracking-widest uppercase">Temporada 2026</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="btnPot" class="text-[#FFD700] hover:scale-110 transition-transform btn-press drop-shadow-sm border border-yellow-400/30 rounded-full p-1 bg-yellow-50">
+                <i class="fas fa-piggy-bank text-xl"></i>
+            </button>
+            <button id="btnBell" onclick="window.updateBadges()" class="relative text-gray-400 hover:text-[#006400] transition-colors btn-press">
+                <i class="fas fa-bell text-xl"></i>
+            </button>
+            <button id="btnLogout" class="text-red-400 hover:text-red-600 transition-colors btn-press ml-1">
+                <i class="fas fa-sign-out-alt text-xl"></i>
+            </button>
+        </div>
+    </header>
+
     <main id="appContent" class="flex-1 w-full h-full overflow-y-auto overflow-x-hidden pb-32 relative z-10">
-        <header id="mainHeader" class="hidden flex justify-between items-center p-4 bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 shadow-sm pt-safe">
-            <div class="flex items-center gap-2">
-                <div class="bg-[#006400] text-[#FFD700] w-8 h-8 rounded-full flex items-center justify-center font-black border-2 border-[#FFD700] shadow">
-                    112
-                </div>
-                <div>
-                    
-                    <p class="text-[9px] text-gray-400 font-bold tracking-widest uppercase">Temporada 2026</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <button id="btnBell" onclick="window.updateBadges()" class="relative text-gray-400 hover:text-[#006400] transition-colors btn-press">
-                    <i class="fas fa-bell text-xl"></i>
-                </button>
-                <button id="btnRefresh" class="text-gray-400 hover:text-blue-500 transition-colors btn-press">
-                    <i class="fas fa-sync-alt text-xl"></i>
-                </button>
-                <button id="btnLogout" class="text-red-400 hover:text-red-600 transition-colors btn-press">
-                    <i class="fas fa-sign-out-alt text-xl"></i>
-                </button>
-            </div>
-        </header>
-          <h2 class="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-2xl mb-2 leading-tight">
-                Bolão 112 <span class="text-[#FFD700]">F.C</span>
-            </h2>
+        
         <section id="loginScreen" class="flex flex-col min-h-screen p-4 relative overflow-hidden bg-gray-900">
-    <div class="absolute inset-0 z-0">
-        <img src="bg_jogos.jpeg" class="w-full h-full object-cover opacity-30">
-        <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90"></div>
-    </div>
-      <h1 class="font-black text-[#006400] text-xs leading-none tracking-wide">BOLÃO 112 F.C</h1>
-    <div class="relative z-10 flex-1 container mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-10 md:gap-20 pb-10 mt-4 md:mt-0">
-    
-        <div class="text-center md:text-left animate-fade-in-up max-w-lg order-2 md:order-1 w-full">
-            
-            <div class="inline-flex items-center gap-2 bg-black/60 backdrop-blur-md border border-[#FFD700] rounded-full px-4 py-1 mb-4 shadow-lg">
-                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest">Início Oficial: 01/02/2026</span>
+            <div class="absolute inset-0 z-0">
+                <img src="bg_jogos.jpeg" class="w-full h-full object-cover opacity-30">
+                <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90"></div>
             </div>
-            
-            <p class="text-white text-xs font-bold uppercase tracking-wide mb-1">
-                <i class="fas fa-star text-[#FFD700] mr-1"></i> Supercopa do Brasil (Final)
-            </p>
-            <p class="text-2xl text-white font-black uppercase italic mb-6 drop-shadow-md">
-                Flamengo <span class="text-gray-500 text-lg">x</span> Corinthians
-            </p>
-
-            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-2xl mb-6 relative z-50">
-                <div class="space-y-4">
-                    <div>
-                        <label class="text-[10px] uppercase font-bold text-gray-300 ml-1">Usuário</label>
-                        <div class="relative">
-                            <i class="fas fa-user absolute left-3 top-3.5 text-gray-400 text-sm"></i>
-                            <input type="text" id="userInput" placeholder="Ex: joaosilva" class="w-full bg-black/40 border border-white/10 text-white pl-10 pr-4 py-3 rounded-lg focus:border-[#FFD700] outline-none transition-colors text-sm font-bold placeholder-gray-500">
-                        </div>
+              
+            <div class="relative z-10 flex-1 container mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-10 md:gap-20 pb-10 mt-4 md:mt-0">
+                
+                <div class="text-center md:text-left animate-fade-in-up max-w-lg order-2 md:order-1 w-full">
+                    
+                    <div class="inline-flex items-center gap-2 bg-black/60 backdrop-blur-md border border-[#FFD700] rounded-full px-4 py-1 mb-4 shadow-lg">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest">Início: 01/02/2026</span>
                     </div>
                     
-                    <div>
-                        <label class="text-[10px] uppercase font-bold text-gray-300 ml-1">Senha</label>
-                        <div class="relative">
-                            <i class="fas fa-lock absolute left-3 top-3.5 text-gray-400 text-sm"></i>
-                            <input type="password" id="passInput" placeholder="Sua senha secreta" class="w-full bg-black/40 border border-white/10 text-white pl-10 pr-4 py-3 rounded-lg focus:border-[#FFD700] outline-none transition-colors text-sm font-bold placeholder-gray-500">
+                    <h2 class="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-2xl mb-2 leading-tight">
+                        Bolão 112 <span class="text-[#FFD700]">F.C</span>
+                    </h2>
+        
+                    <p class="text-white text-xs font-bold uppercase tracking-wide mb-1">
+                        <i class="fas fa-star text-[#FFD700] mr-1"></i> Supercopa do Brasil (Final)
+                    </p>
+                    <p class="text-2xl text-white font-black uppercase italic mb-6 drop-shadow-md">
+                        Flamengo <span class="text-gray-500 text-lg">x</span> Corinthians
+                    </p>
+        
+                    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-2xl mb-6 relative z-50">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-gray-300 ml-1">Usuário</label>
+                                <div class="relative">
+                                    <i class="fas fa-user absolute left-3 top-3.5 text-gray-400 text-sm"></i>
+                                    <input type="text" id="userInput" placeholder="Ex: joaosilva" class="w-full bg-black/40 border border-white/10 text-white pl-10 pr-4 py-3 rounded-lg focus:border-[#FFD700] outline-none transition-colors text-sm font-bold placeholder-gray-500">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-gray-300 ml-1">Senha</label>
+                                <div class="relative">
+                                    <i class="fas fa-lock absolute left-3 top-3.5 text-gray-400 text-sm"></i>
+                                    <input type="password" id="passInput" placeholder="Sua senha secreta" class="w-full bg-black/40 border border-white/10 text-white pl-10 pr-4 py-3 rounded-lg focus:border-[#FFD700] outline-none transition-colors text-sm font-bold placeholder-gray-500">
+                                </div>
+                            </div>
+        
+                            <div class="flex justify-between items-center text-[11px] text-gray-300 font-bold px-1">
+                                <label class="flex items-center gap-2 cursor-pointer hover:text-white">
+                                    <input type="checkbox" id="rememberMe" class="accent-[#FFD700]">
+                                    Lembrar de mim
+                                </label>
+                                <button id="btnForgotPass" class="text-[#FFD700] hover:underline cursor-pointer z-50 relative">Esqueci a senha</button>
+                            </div>
+        
+                            <button id="btnLoginAction" onclick="window.handleLogin()" class="w-full bg-gradient-to-r from-[#006400] to-[#004d00] text-white font-black uppercase tracking-widest py-3.5 rounded-lg shadow-lg hover:scale-[1.02] transition-transform btn-press text-sm border border-[#FFD700]/30 cursor-pointer relative z-50">
+                                ENTRAR NO JOGO
+                            </button>
+        
+                            <div class="relative flex py-2 items-center">
+                                <div class="flex-grow border-t border-white/10"></div>
+                                <span class="flex-shrink-0 mx-4 text-gray-400 text-[10px] uppercase font-bold">Ou</span>
+                                <div class="flex-grow border-t border-white/10"></div>
+                            </div>
+        
+                            <button id="btnOpenRegister" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-lg border border-white/20 transition-colors btn-press text-xs uppercase cursor-pointer z-50 relative">
+                                <i class="fas fa-user-plus mr-2"></i> Criar Nova Conta
+                            </button>
                         </div>
                     </div>
-
-                    <div class="flex justify-between items-center text-[11px] text-gray-300 font-bold px-1">
-                        <label class="flex items-center gap-2 cursor-pointer hover:text-white">
-                            <input type="checkbox" id="rememberMe" class="accent-[#FFD700]">
-                            Lembrar de mim
-                        </label>
-                        <button id="btnForgotPass" class="text-[#FFD700] hover:underline cursor-pointer z-50 relative">Esqueci a senha</button>
+        
+                    <div class="hidden md:block bg-black/40 backdrop-blur-md p-4 rounded-xl border border-white/10 text-xs text-gray-200 space-y-3 shadow-2xl">
+                         <h3 class="text-[#FFD700] font-bold uppercase text-[10px] tracking-widest mb-2 border-b border-white/10 pb-1">Por que participar?</h3>
+                         <div class="grid grid-cols-2 gap-2">
+                            <p><i class="fas fa-check-circle text-green-400 mr-2"></i>Champions & Copa do Mundo</p>
+                            <p><i class="fas fa-check-circle text-green-400 mr-2"></i>Copa do Brasil & Liberta</p>
+                            <p><i class="fas fa-chart-line text-blue-400 mr-2"></i>Ranking Ao Vivo</p>
+                            <p><i class="fas fa-trophy text-[#FFD700] mr-2"></i>Premiação em Dinheiro</p>
+                            <p class="col-span-2"><i class="fas fa-beer text-orange-400 mr-2"></i>Confra inclusa na mensalidade!</p>
+                         </div>
                     </div>
-
-                    <button id="btnLoginAction" onclick="window.handleLogin()" class="w-full bg-gradient-to-r from-[#006400] to-[#004d00] text-white font-black uppercase tracking-widest py-3.5 rounded-lg shadow-lg hover:scale-[1.02] transition-transform btn-press text-sm border border-[#FFD700]/30 cursor-pointer relative z-50">
-                        ENTRAR NO JOGO
-                    </button>
-
-                    <div class="relative flex py-2 items-center">
-                        <div class="flex-grow border-t border-white/10"></div>
-                        <span class="flex-shrink-0 mx-4 text-gray-400 text-[10px] uppercase font-bold">Ou</span>
-                        <div class="flex-grow border-t border-white/10"></div>
+        
+                    <div class="mt-6 flex justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
+                        <a href="https://wa.me/5585988837389" target="_blank" class="text-xs text-white flex items-center gap-1 hover:text-[#25D366]"><i class="fab fa-whatsapp"></i> Falar com o Admin</a>
                     </div>
-
-                    <button id="btnOpenRegister" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-lg border border-white/20 transition-colors btn-press text-xs uppercase cursor-pointer z-50 relative">
-                        <i class="fas fa-user-plus mr-2"></i> Criar Nova Conta
-                    </button>
+        
                 </div>
-            </div>
-
-            <div class="hidden md:block bg-black/40 backdrop-blur-md p-4 rounded-xl border border-white/10 text-xs text-gray-200 space-y-3 shadow-2xl">
-                 <h3 class="text-[#FFD700] font-bold uppercase text-[10px] tracking-widest mb-2 border-b border-white/10 pb-1">Por que participar?</h3>
-                 <div class="grid grid-cols-2 gap-2">
-                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i>Champions, Copa do Mundo, Copa do Brasil, Libertadores e muito mais</p>
-                    <p><i class="fas fa-chart-line text-blue-400 mr-2"></i>Ranking Ao Vivo</p>
-                    <p><i class="fas fa-trophy text-[#FFD700] mr-2"></i>Premiação em Dinheiro</p>
-                    <p class="col-span-2"><i class="fas fa-beer text-orange-400 mr-2"></i>Confra inclusa na mensalidade!</p>
-                 </div>
-            </div>
-
-            <div class="mt-6 flex justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
-                <a href="https://wa.me/5585988837389" target="_blank" class="text-xs text-white flex items-center gap-1 hover:text-[#25D366]"><i class="fab fa-whatsapp"></i> Falar com o Admin</a>
-            </div>
-
-        </div>
-
-        <div class="order-1 md:order-2 w-[220px] md:w-[260px] shrink-0 transform rotate-[-3deg] hover:rotate-0 transition-transform duration-500 relative z-0">
-            <div class="relative mx-auto border-gray-900 bg-gray-900 border-[8px] rounded-[2.5rem] h-[450px] md:h-[500px] w-full shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/20">
-                <div class="h-[32px] w-[3px] bg-gray-800 absolute -left-[8px] top-[72px] rounded-l-lg border-l border-gray-600"></div>
-                <div class="h-[46px] w-[3px] bg-gray-800 absolute -left-[8px] top-[124px] rounded-l-lg border-l border-gray-600"></div>
-                <div class="h-[64px] w-[3px] bg-gray-800 absolute -right-[8px] top-[142px] rounded-r-lg border-r border-gray-600"></div>
-                
-                <div class="rounded-[2rem] overflow-hidden w-full h-full bg-white relative">
-                    <img id="showcaseImg" src="print1.jpeg" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500">
-                    <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"></div>
+        
+                <div class="order-1 md:order-2 w-[220px] md:w-[260px] shrink-0 transform rotate-[-3deg] hover:rotate-0 transition-transform duration-500 relative z-0">
+                    <div class="relative mx-auto border-gray-900 bg-gray-900 border-[8px] rounded-[2.5rem] h-[450px] md:h-[500px] w-full shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/20">
+                        <div class="h-[32px] w-[3px] bg-gray-800 absolute -left-[8px] top-[72px] rounded-l-lg border-l border-gray-600"></div>
+                        <div class="h-[46px] w-[3px] bg-gray-800 absolute -left-[8px] top-[124px] rounded-l-lg border-l border-gray-600"></div>
+                        <div class="h-[64px] w-[3px] bg-gray-800 absolute -right-[8px] top-[142px] rounded-r-lg border-r border-gray-600"></div>
+                        
+                        <div class="rounded-[2rem] overflow-hidden w-full h-full bg-white relative">
+                            <img id="showcaseImg" src="print1.jpeg" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"></div>
+                        </div>
+                    </div>
                 </div>
+        
+            </div>        
+            <div class="text-center pb-4 z-10">
+                <p class="text-white/30 text-[9px] font-bold uppercase tracking-widest">© 2026 Bolão 112 F.C</p>
             </div>
-        </div>
+        </section>
 
-    </div>        
-    <div class="text-center pb-4 z-10">
-        <p class="text-white/30 text-[9px] font-bold uppercase tracking-widest">© 2026 Bolão 112 F.C</p>
-    </div>
-</section>
         <div id="mainScreens" class="hidden p-4 space-y-4">
             
-            <div id="matchesScreen" class="hidden space-y-6"></div>
+            <div id="matchesScreen" class="hidden space-y-6 min-h-[50vh]">
+                <div id="progressBar" class="hidden text-center py-10">
+                    <i class="fas fa-circle-notch fa-spin text-[#006400] text-3xl"></i>
+                    <p class="text-xs font-bold text-gray-400 mt-2">Carregando jogos...</p>
+                </div>
+            </div>
 
             <div id="rankingScreen" class="hidden h-full flex flex-col px-4 pt-4">
-            
-            <div id="rankingListContent" class="flex-1 overflow-y-auto pb-4">
-                </div>
-
-            <div id="lastUpdateRanking" class="pb-24">
-                </div>
-            
-        </div>
+                <div id="rankingListContent" class="flex-1 overflow-y-auto pb-4"></div>
+                <div id="lastUpdateRanking" class="pb-24"></div>
+            </div>
 
             <div id="rulesScreen" class="hidden space-y-4">
                 <div class="card-cut p-6 border-l-4 border-yellow-400 bg-[#FFF9C4] text-left shadow-sm">
                     <p class="text-xs text-gray-800 leading-relaxed rules-text">🎯 <b>Objetivo</b>
-Competição de palpites esportivos entre amigos, baseada exclusivamente nos principais torneios de futebol em formato mata-mata...
+Competição de palpites esportivos entre amigos...
 
-🗓️ <b>VIGÊNCIA DO BOLÃO</b>
-Início oficial: 01 de janeiro de 2026
-Término oficial: 31 de dezembro de 2026
+🗓️ <b>VIGÊNCIA</b>
+Início: 01/02/2026 (Supercopa)
+Término: 31/12/2026
 
-✅ ✍️ A participação no bolão implica aceitação integral e irrestrita deste regulamento.</p>
+✅ ✍️ A participação implica aceitação deste regulamento.</p>
                 </div>
                 <div id="rulesList" class="space-y-2"></div>
                 <div class="h-10"></div>
@@ -330,8 +335,18 @@ Término oficial: 31 de dezembro de 2026
                             <p class="text-3xl font-black text-black">R$ 15,00</p>
                         </div>
                         <div class="text-center text-[10px] text-gray-800 mb-2">Beneficiário:<br><b class="text-[#006400] text-sm">MATHEUS FERREIRA ALVES</b></div>
-                        <div><button id="btnCopyPix" class="w-full bg-[#32BCAD] text-white py-2 rounded font-bold text-xs shadow btn-press mb-3"><i class="fas fa-copy mr-1"></i> PIX COPIA E COLA</button><label class="text-[10px] text-gray-500 font-bold">Chave Pix Manual</label><div class="flex gap-2"><input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded shadow-sm"><button onclick="copyKeyOnly()" class="bg-[#006400] text-white px-3 rounded shadow-sm"><i class="fas fa-copy"></i></button></div></div>
-                        <div class="border-t border-gray-300 pt-3 mt-3"><p class="text-xs text-center mb-2 font-bold text-gray-700">Já fez o pagamento?</p><button id="btnSendProof" class="w-full bg-[#25D366] text-white py-2 rounded font-bold text-xs shadow btn-press"><i class="fab fa-whatsapp mr-1"></i> AVISAR AO BRANCO</button></div>
+                        <div>
+                            <button id="btnCopyPix" class="w-full bg-[#32BCAD] text-white py-2 rounded font-bold text-xs shadow btn-press mb-3"><i class="fas fa-copy mr-1"></i> PIX COPIA E COLA</button>
+                            <label class="text-[10px] text-gray-500 font-bold">Chave Pix Manual</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="pixKey" readonly class="w-full text-xs p-2 bg-white border rounded shadow-sm">
+                                <button onclick="copyKeyOnly()" class="bg-[#006400] text-white px-3 rounded shadow-sm"><i class="fas fa-copy"></i></button>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-300 pt-3 mt-3">
+                            <p class="text-xs text-center mb-2 font-bold text-gray-700">Já fez o pagamento?</p>
+                            <button id="btnSendProof" class="w-full bg-[#25D366] text-white py-2 rounded font-bold text-xs shadow btn-press"><i class="fab fa-whatsapp mr-1"></i> AVISAR AO BRANCO</button>
+                        </div>
                     </div>
                 </div>
 
@@ -342,8 +357,11 @@ Término oficial: 31 de dezembro de 2026
         </div>
     </main>
 
-    <div id="modalOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="closeModal()"><div id="modalContainer" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden" onclick="event.stopPropagation()"></div></div>
-  <div id="potModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6" onclick="document.getElementById('potModal').classList.add('hidden')">
+    <div id="modalOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="closeModal()">
+        <div id="modalContainer" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden" onclick="event.stopPropagation()"></div>
+    </div>
+
+    <div id="potModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6" onclick="document.getElementById('potModal').classList.add('hidden')">
         <div class="card-cut w-full max-w-sm p-6 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), url('https://cdn.pixabay.com/photo/2017/09/07/08/54/money-2724241_640.jpg'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
             <i class="fas fa-piggy-bank text-4xl text-[#FFD700] mb-2 drop-shadow-sm"></i>
             <h2 class="text-lg font-bold text-gray-800 uppercase tracking-widest">ACUMULADO!</h2>
@@ -1443,11 +1461,9 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                 const matches = []; const validMatchIds = new Set(); 
                 mSnap.forEach(d => { matches.push({id:d.id, ...d.data(), deadlineDate: d.data().deadline.toDate()}); validMatchIds.add(d.id); });
                 
-                // ORDENAÇÃO DETERMINÍSTICA
                 const chronoMatches = matches.filter(m => m.winner).sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
                 const finishedDisplay = [...chronoMatches].reverse();
                 
-                // Zebra e Rodapé
                 const zebraMatchIds = []; const totalParticipants = uSnap.size || 1;
                 finishedDisplay.forEach(m => { 
                     let winnerVotes = 0; 
@@ -1465,13 +1481,11 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                 } 
                 footer.innerHTML = `<div class="bg-black/80 rounded-lg p-3 text-center shadow-lg backdrop-blur-sm mt-2 border border-white/10 mx-2">${footerContent}</div>`;
                 
-                // LÓGICA DE USUÁRIOS
                 let users = []; const now = new Date(); const currentMonthIdx = now.getMonth(); const currentYear = now.getFullYear(); 
                 const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
                 let monthlyData = [];
                 const pastKingsMap = {};
                 
-                // Reis Passados
                 for (let mIdx = 0; mIdx < currentMonthIdx; mIdx++) { 
                     const mName = monthsNames[mIdx]; let mScores = []; 
                     uSnap.forEach(ud => { 
@@ -1494,7 +1508,6 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     const rawUserGuesses = []; gSnap.forEach(gd => { if(gd.data().userId === ud.id) rawUserGuesses.push(gd.data()) }); 
                     const userGuesses = rawUserGuesses.filter(g => validMatchIds.has(g.matchId)); 
                     
-                    // Pontos base
                     finishedDisplay.forEach(m => { 
                         const g = userGuesses.find(x => x.matchId === m.id); 
                         const isThisMonth = m.deadlineDate.getMonth() === currentMonthIdx && m.deadlineDate.getFullYear() === currentYear; 
@@ -1512,9 +1525,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     
                     let trophyRoom = []; 
 
-                    // ==========================================================
-                    // 💎 LÓGICA DIAMANTE & MENSAL (Igual Android)
-                    // ==========================================================
+                    // --- Medalhas ---
                     const oitavasMatches = finishedDisplay.filter(m => m.round === "Oitavas de final");
                     const oitavasByComp = {};
                     oitavasMatches.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); });
@@ -1526,29 +1537,17 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                                 const g = userGuesses.find(x => x.matchId === m.id);
                                 if (g && g.teamSelected === m.winner) hits++;
                             });
-
                             if (hits === 8) {
-                                p += 3; // Bônus Geral
+                                p += 3; 
                                 const lastDate = groupMatches[0].deadlineDate;
-                                
-                                // Bônus Mensal (Se for do mês atual)
-                                if (lastDate.getMonth() === currentMonthIdx && lastDate.getFullYear() === currentYear) {
-                                    monthlyP += 3; 
-                                }
-
-                                // Medalha
+                                if (lastDate.getMonth() === currentMonthIdx && lastDate.getFullYear() === currentYear) { monthlyP += 3; }
                                 const dStr = lastDate.toLocaleDateString('pt-BR');
                                 trophyRoom.push({ icon: "💎", name: "DIAMANTE", desc: `Gabaritou as Oitavas (8/8) da ${compName}.`, date: dStr });
-                                
-                                // Histórico
                                 const histText = `💎 BÔNUS: Gabaritou Oitavas (${compName})`;
-                                if(!hist.some(h => h.text.includes(histText))) {
-                                     hist.push({ ts: lastDate, text: `📅 ${dStr.substring(0,5)} - ${histText} (+3 pts)`, type: 'good' });
-                                }
+                                if(!hist.some(h => h.text.includes(histText))) { hist.push({ ts: lastDate, text: `📅 ${dStr.substring(0,5)} - ${histText} (+3 pts)`, type: 'good' }); }
                             }
                         }
                     }
-                    // ==========================================================
                     
                     let simStreak = 0; let simStreakBroken = false; let vetCount = 0;
                     chronoMatches.forEach(m => { 
@@ -1573,30 +1572,30 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     if (currentStreak >= 10) activeMedals += "👽 "; else if (currentStreak >= 5) activeMedals += "🎯 "; else if (currentStreak >= 3) activeMedals += "🔥 ";
 
                     const last3 = finishedDisplay.slice(0,3); let misses=0; let noShows=0; 
-                    if(finishedDisplay.length >= 3) { last3.forEach(m => { const g = userGuesses.find(x => x.matchId === m.id); if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++; }); if (misses === 3) { activeMedals += "🥬 "; trophyRoom.push({icon:"🥬", name:"MÃO DE ALFACE", desc:"Atual: 3 erros seguidos."}); } if (noShows === 3) { activeMedals += "👻 "; trophyRoom.push({icon:"👻", name:"FANTASMA", desc:"Atual: 3 jogos sem votar."}); } }
+                    if(finishedDisplay.length >= 3) { last3.forEach(m => { const g = userGuesses.find(x => x.matchId === m.id); if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++; }); if (misses === 3) { activeMedals += "🥬 "; trophyRoom.push({icon:"🥬", name:"MÃO DE ALFACE", desc:"Atual: 3 erros seguidos.", date: "Atual"}); } if (noShows === 3) { activeMedals += "👻 "; trophyRoom.push({icon:"👻", name:"FANTASMA", desc:"Atual: 3 jogos sem votar.", date: "Atual"}); } }
                     
                     if (finishedDisplay.length > 0) { const lastMatch = finishedDisplay[0]; if (zebraMatchIds.includes(lastMatch.id)) { const g = userGuesses.find(x => x.matchId === lastMatch.id); if (g && g.teamSelected === lastMatch.winner) { activeMedals += "🦓 "; } } }
                     const veteranLevel = Math.floor(v / 50); for(let i=0; i<veteranLevel; i++) { activeMedals += "🎓 "; }
                     
                     if (trophyRoom.some(t => t.icon === "💎")) activeMedals += "💎 ";
 
-                    if (f > 0) { activeMedals += "🔮 "; trophyRoom.push({icon:"🔮", name:"MÃE DINAH", desc:`Acertou ${f} campeões.`}); }
-                    let kingCount = 0; Object.keys(pastKingsMap).forEach(mName => { if(pastKingsMap[mName] === ud.id) { kingCount++; trophyRoom.push({icon:"👑", name:`REI DE ${mName.toUpperCase()}`, desc:"Campeão Mensal Isolado"}); } }); if(kingCount > 0) activeMedals += "👑 ";
+                    if (f > 0) { activeMedals += "🔮 "; trophyRoom.push({icon:"🔮", name:"MÃE DINAH", desc:`Acertou ${f} campeões.`, date: "Final"}); }
+                    let kingCount = 0; Object.keys(pastKingsMap).forEach(mName => { if(pastKingsMap[mName] === ud.id) { kingCount++; trophyRoom.push({icon:"👑", name:`REI DE ${mName.toUpperCase()}`, desc:"Campeão Mensal Isolado", date: "Mensal"}); } }); if(kingCount > 0) activeMedals += "👑 ";
                     
-                    let allPaid = true; if (currentYear >= 2026) { for(let i=0; i<=currentMonthIdx; i++) { if (!u.payments?.[monthsNames[i]]) { allPaid = false; break; } } } else { if ((u.debts||0) > 0) allPaid = false; } if (allPaid) { activeMedals += "💰 "; trophyRoom.unshift({icon:"💰", name:"PATRÃO", desc:"Mensalidades em dia."}); }
+                    let allPaid = true; if (currentYear >= 2026) { for(let i=0; i<=currentMonthIdx; i++) { if (!u.payments?.[monthsNames[i]]) { allPaid = false; break; } } } else { if ((u.debts||0) > 0) allPaid = false; } 
+                    
+                    // CORREÇÃO: DATA DO PATRÃO AGORA É "ATIVO"
+                    if (allPaid) { activeMedals += "💰 "; trophyRoom.unshift({icon:"💰", name:"PATRÃO", desc:"Mensalidades em dia.", date: "Ativo"}); }
 
                     matches.forEach(m => { const dl = m.deadlineDate; if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
                     const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
                     
-                    // Ordena Histórico
                     hist.sort((a,b) => b.ts - a.ts);
                     
-                    // Salva na lista
                     monthlyData.push({ name: u.name || "Sem Nome", points: monthlyP, uid: ud.id });
                     users.push({ uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: activeMedals, trophyRoom: trophyRoom }); 
                 }); 
                 
-                // Ordenação Geral
                 users.sort((a,b) => { 
                     if (b.p !== a.p) return b.p - a.p; 
                     if (a.d !== b.d) return a.d - b.d; 
@@ -1611,7 +1610,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                 
                 monthlyData.sort((a,b) => b.points - a.points); 
                 
-                if (users.length > 2) { const lastUsers = [users[users.length-1], users[users.length-2]]; lastUsers.forEach(u => { if(u) u.trophyRoom.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Atual: Z-2"}); }); }
+                if (users.length > 2) { const lastUsers = [users[users.length-1], users[users.length-2]]; lastUsers.forEach(u => { if(u) u.trophyRoom.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Atual: Z-2", date: "Atual"}); }); }
                 
                 window.currentMonthlyRanking = monthlyData; currentRankingData = users; 
                 
@@ -1688,65 +1687,35 @@ window.showKingModal = () => {
             const u = currentRankingData[idx]; 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             
-            // Agora sempre mostra imagem (Real ou DiceBear) 
-           let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-cover">`;
+            // CORREÇÃO: Usei object-contain para a foto não cortar
+            let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-contain bg-black">`;
 
-            // --- LÓGICA DE STACKING E ORDENAÇÃO DE MEDALHAS ---
             let medalsHtml = "";
             if (u.trophyRoom && u.trophyRoom.length > 0) {
-                // 1. Ordem de prioridade
                 const priorityOrder = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰"];
-                
-                // 2. Ordena
                 u.trophyRoom.sort((a,b) => {
                     const idxA = priorityOrder.indexOf(a.icon);
                     const idxB = priorityOrder.indexOf(b.icon);
                     return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
                 });
-
-                // 3. Agrupa por nome
                 const grouped = {};
-                u.trophyRoom.forEach(m => {
-                    if (!grouped[m.name]) grouped[m.name] = [];
-                    grouped[m.name].push(m);
-                });
-
-                // 4. Gera HTML
+                u.trophyRoom.forEach(m => { if (!grouped[m.name]) grouped[m.name] = []; grouped[m.name].push(m); });
                 for (const [name, medals] of Object.entries(grouped)) {
                     const count = medals.length;
                     const first = medals[0];
                     const isLegendary = count >= 10;
-                    
-                    // Estilos da Bolinha (Badge)
                     const badgeBg = isLegendary ? "bg-[#FFD700] text-black shadow-lg" : "bg-[#D32F2F] text-white shadow-md";
                     const badgeSize = isLegendary ? "w-6 h-6 text-[9px]" : "w-5 h-5 text-[8px]";
-                    
                     let badgeHtml = "";
-                    if (count > 1) {
-                        badgeHtml = `<div class="absolute -top-2 -right-2 ${badgeBg} ${badgeSize} rounded-full flex items-center justify-center font-black border-2 border-white z-10">${count}x</div>`;
-                    }
-                    
-                    // Click: Se > 1 abre lista, senão Toast
-                    const clickAction = count > 1 
-                        ? `showMedalList('${name}')` 
-                        : `showToast('${first.name}', '${first.desc}', '${first.date}')`;
-
-                    medalsHtml += `
-                        <div class="relative inline-block mx-1 my-1 cursor-pointer hover:scale-110 transition-transform select-none group" onclick="${clickAction}">
-                            ${badgeHtml}
-                            <span class="text-4xl drop-shadow-sm">${first.icon}</span>
-                        </div>
-                    `;
+                    if (count > 1) { badgeHtml = `<div class="absolute -top-2 -right-2 ${badgeBg} ${badgeSize} rounded-full flex items-center justify-center font-black border-2 border-white z-10">${count}x</div>`; }
+                    const clickAction = count > 1 ? `showMedalList('${name}')` : `showToast('${first.name}', '${first.desc}', '${first.date}')`;
+                    medalsHtml += `<div class="relative inline-block mx-1 my-1 cursor-pointer hover:scale-110 transition-transform select-none group" onclick="${clickAction}">${badgeHtml}<span class="text-4xl drop-shadow-sm">${first.icon}</span></div>`;
                 }
-            } else {
-                medalsHtml = `<span class="text-xs text-gray-400 italic">Ainda não possui troféus.</span>`;
-            }
-            // ----------------------------------------------------
+            } else { medalsHtml = `<span class="text-xs text-gray-400 italic">Ainda não possui troféus.</span>`; }
 
             const isMe = currentUser && currentUser.uid === u.uid;
             const compareBtnClass = isMe ? "hidden" : "";
 
-            // ATENÇÃO: Adicionei um ID para recuperar a lista depois (data-uid)
             document.getElementById('modalContainer').innerHTML = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" id="profileModal" data-uid="${u.uid}">
                     <img src="bg_dialog_foto.png" class="absolute inset-0 w-full h-full object-cover opacity-100">
@@ -1784,10 +1753,14 @@ window.showKingModal = () => {
                     </div>
                 </div>`;
             
-            const btnStats = document.getElementById('btnStatsAction'); if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
-            const btnCompare = document.getElementById('btnCompareAction'); if (btnCompare && !isMe) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
+            // Reatribui os eventos de clique para garantir que funcionem
+            setTimeout(() => {
+                const btnStats = document.getElementById('btnStatsAction'); 
+                if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
+                const btnCompare = document.getElementById('btnCompareAction'); 
+                if (btnCompare && !isMe) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
+            }, 100);
         };
-
         // --- NOVA FUNÇÃO PARA LISTA DE MEDALHAS (STACKING) COM FUNDO ---
         window.showMedalList = (medalName) => {
             // Recupera o usuário atual do modal aberto (usando o ID salvo no atributo data-uid)
@@ -1982,17 +1955,13 @@ async function loadProfile() {
                 document.getElementById('profileName').innerText = u.name || "MEMBRO"; 
                 document.getElementById('profileUser').innerText = `@${u.username || 'user'}`; 
                 
-                // Sempre renderiza a imagem (mesmo que seja a gerada)
-document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u.photoBase64, u.name || u.username)}" class="w-full h-full object-cover">`;
+                document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u.photoBase64, u.name || u.username)}" class="w-full h-full object-cover">`;
 
-                // --- LÓGICA DA DICA ---
                 const myHint = u.passwordHint || "Sem dica cadastrada";
-                // Cria ou atualiza o container da dica (se não existir, cria abaixo dos botões)
                 let hintDiv = document.getElementById('hintContainer');
                 if (!hintDiv) {
                     hintDiv = document.createElement('div');
                     hintDiv.id = 'hintContainer';
-                    // Insere logo após o container dos botões de senha/guia
                     const btnContainer = document.querySelector('#profileScreen .card-cut .flex.justify-center.gap-4');
                     btnContainer.insertAdjacentElement('afterend', hintDiv);
                 }
@@ -2008,7 +1977,6 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
                         </button>
                     </div>
                 `;
-                // ---------------------
                 
                 const adminBtn = document.getElementById('btnAdminPanel'); 
                 if (u.isAdmin === true) { adminBtn.classList.remove('hidden'); } else { adminBtn.classList.add('hidden'); } 
@@ -2021,6 +1989,13 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
                 const stText = document.getElementById('financialStatusText'); 
                 const stIcon = document.getElementById('financialIcon'); 
                 
+                // CORREÇÃO: ADICIONADO ONCLICK PARA ABRIR PAINEL
+                stCard.onclick = () => {
+                    // Se for admin, abre o painel geral, se não, abre o card de PIX
+                    if (u.isAdmin) openFinancialScreen();
+                    else document.getElementById('pixArea').classList.remove('hidden');
+                };
+
                 if (isPaid || new Date().getFullYear() < 2026) { 
                     stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800 shadow-sm"; 
                     stText.innerText = "MENSALIDADE EM DIA"; 
@@ -2044,7 +2019,6 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
                 } catch (e) { console.log("Erro ao carregar dados financeiros:", e); } 
             } catch (error) { console.error("Erro crítico no loadProfile:", error); } 
         }
-
         // Função Global para Editar Dica (ADICIONE ISSO LOGO APÓS A loadProfile)
         window.editHint = (currentVal) => {
             const val = currentVal === "Sem dica cadastrada" ? "" : currentVal;
@@ -2634,6 +2608,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
