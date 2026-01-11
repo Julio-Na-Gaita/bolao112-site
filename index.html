@@ -322,29 +322,32 @@ Término oficial: 31 de dezembro de 2026
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         // ADICIONADO: enableIndexedDbPersistence
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// --- ANIMAÇÃO DO IPHONE NA TELA DE LOGIN ---
-        // Certifique-se que estes arquivos existem na pasta!
-        // Se suas imagens forem .jpg (sem o 'e'), mude aqui para .jpg
-        const appScreenshots = ["print1.jpeg", "print2.jpeg", "print3.jpeg"];
-        
-        let currentImgIdx = 0;
+// --- ANIMAÇÃO DO IPHONE CORRIGIDA ---
         const imgEl = document.getElementById('showcaseImg');
+        
+        // Tenta carregar .jpeg primeiro, se falhar tenta .jpg
+        // Se suas imagens se chamam "print1.jpg", mude a lista abaixo para .jpg!
+        const appScreenshots = ["print1.jpeg", "print2.jpeg", "print3.jpeg"];
+        let currentImgIdx = 0;
 
         if (imgEl) {
-            // Tenta carregar a primeira imagem
+            // Define a primeira imagem com tratamento de erro
             imgEl.src = appScreenshots[0];
+            imgEl.onerror = function() { 
+                // Se der erro (ex: arquivo não existe), tenta carregar o fundo
+                this.src = 'bg_jogos.jpeg'; 
+                console.log("Imagem do iPhone não encontrada. Usando fundo.");
+            };
 
             setInterval(() => {
-                imgEl.style.opacity = 0; // Fade Out
+                imgEl.style.opacity = 0;
                 setTimeout(() => {
                     currentImgIdx = (currentImgIdx + 1) % appScreenshots.length;
                     imgEl.src = appScreenshots[currentImgIdx];
-                    // Fade In (com pequeno delay para garantir carregamento)
                     imgEl.onload = () => { imgEl.style.opacity = 1; };
-                    // Fallback se já estiver em cache
                     setTimeout(() => { imgEl.style.opacity = 1; }, 100);
                 }, 700);
-            }, 4000); // 4 segundos
+            }, 4000); 
         }
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
         const app = initializeApp(firebaseConfig);
@@ -2564,6 +2567,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
