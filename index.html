@@ -2331,12 +2331,14 @@ window.calculatePot = async function() {
                     const weight = isMe ? "900" : "normal"; // 900 = Black, normal = Regular
                     const colorPts = isMe ? "#006400" : "black";
                     
-                   // CORREÇÃO: CSS Ajustado para evitar cortes no nome
+                    // CORREÇÃO AQUI: 
+                    // 1. Padding vertical aumentado para '6px' na linha (div pai).
+                    // 2. Adicionado 'line-height: 1.5' e 'padding-top: 2px' no nome para evitar corte e centralizar.
                     tableHtml += `
                     <div style="display: flex; align-items: center; background: ${bg}; padding: 6px 4px; border-radius: 4px; margin-bottom: 2px;">
                         <div style="width: 28px; font-size: 11px; font-weight: bold; color: ${colorPos};">${realRank}º</div>
                         
-                        <div style="flex: 1; font-size: 11px; font-weight: ${weight}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; padding-top: 2px; padding-left: 4px;">
+                        <div style="flex: 1; font-size: 11px; font-weight: ${weight}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; padding-top: 2px; padding-bottom: 2px; padding-left: 4px;">
                             ${uItem.name}
                         </div>
                         
@@ -2783,6 +2785,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
