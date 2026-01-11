@@ -136,68 +136,96 @@
     <main id="appContent" class="flex-1 w-full h-full overflow-y-auto overflow-x-hidden pb-32 relative z-10">
         
         <section id="loginScreen" class="flex flex-col min-h-screen p-4 relative overflow-hidden bg-gray-900">
-         <div class="absolute inset-0 z-0">
-            <img src="bg_jogos.jpeg" class="w-full h-full object-cover opacity-30">
-            <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90"></div>
-        </div>
-          
-            <div class="relative z-10 flex-1 container mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-10 md:gap-20 pb-10 mt-4 md:mt-0">
+    <div class="absolute inset-0 z-0">
+        <img src="bg_jogos.jpeg" class="w-full h-full object-cover opacity-30">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90"></div>
+    </div>
+      
+    <div class="relative z-10 flex-1 container mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-10 md:gap-20 pb-10 mt-4 md:mt-0">
+    
+        <div class="text-center md:text-left animate-fade-in-up max-w-lg order-2 md:order-1 w-full">
             
-            <div class="text-center md:text-left animate-fade-in-up max-w-lg order-2 md:order-1">
-                
-                <div class="inline-flex items-center gap-2 bg-black/50 backdrop-blur-md border border-[#FFD700] rounded-full px-4 py-1 mb-2 shadow-lg">
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    <span class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest">Temporada 2026</span>
-                </div>
-                
-                <p class="text-[#FFD700] text-xs font-black uppercase tracking-widest mb-4 drop-shadow-md bg-black/40 px-2 py-1 rounded inline-block">
-                    <i class="fas fa-calendar-alt mr-1"></i> Início Oficial: 01/02/2026
-                </p>
+            <div class="inline-flex items-center gap-2 bg-black/50 backdrop-blur-md border border-[#FFD700] rounded-full px-4 py-1 mb-2 shadow-lg">
+                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest">Temporada 2026</span>
+            </div>
+            
+            <h2 class="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-2xl mb-2 leading-tight">
+                Bolão 112 <span class="text-[#FFD700]">F.C</span>
+            </h2>
+            
+            <p class="text-gray-200 text-sm md:text-lg font-serif italic mb-8 drop-shadow-md">
+                "A rivalidade é lei. A resenha é garantida."
+            </p>
 
-                <h2 class="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-2xl mb-4 leading-tight">
-                    Bolão 112 <span class="text-[#FFD700]">F.C</span>
-                </h2>
-                
-                <p class="text-gray-200 text-sm md:text-lg font-serif italic mb-6 drop-shadow-md">
-                    "A rivalidade é lei. A resenha é garantida."
-                </p>
-                
-                <div class="text-left text-gray-100 text-xs md:text-sm font-bold space-y-2 bg-black/40 p-4 rounded-xl border border-white/10 backdrop-blur-sm shadow-lg mb-8">
-                    <p><i class="fas fa-trophy text-[#FFD700] mr-2"></i> Champions, Copa do Mundo & Copa do Brasil</p>
-                    <p><i class="fas fa-chart-line text-green-400 mr-2"></i> Ranking Ao Vivo & Estatísticas</p>
-                    <p><i class="fas fa-money-bill-wave text-green-400 mr-2"></i> Premiação em Dinheiro & Troféus</p>
-                    <p><i class="fas fa-beer text-yellow-500 mr-2"></i> Confra inclusa no fim do ano!</p>
-                </div>
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-2xl">
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-gray-300 ml-1">Usuário</label>
+                        <div class="relative">
+                            <i class="fas fa-user absolute left-3 top-3.5 text-gray-400 text-sm"></i>
+                            <input type="text" id="userInput" placeholder="Ex: joaosilva" class="w-full bg-black/40 border border-white/10 text-white pl-10 pr-4 py-3 rounded-lg focus:border-[#FFD700] outline-none transition-colors text-sm font-bold placeholder-gray-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-gray-300 ml-1">Senha</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-3 top-3.5 text-gray-400 text-sm"></i>
+                            <input type="password" id="passInput" placeholder="Sua senha secreta" class="w-full bg-black/40 border border-white/10 text-white pl-10 pr-4 py-3 rounded-lg focus:border-[#FFD700] outline-none transition-colors text-sm font-bold placeholder-gray-500">
+                        </div>
+                    </div>
 
-                <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                    <a href="https://wa.me/5585988837389?text=Quero%20entrar%20no%20Bolao!" target="_blank" class="bg-[#25D366] hover:bg-[#1eab52] text-white px-8 py-3 rounded-full font-bold text-xs md:text-sm shadow-lg flex items-center justify-center gap-2 transition-transform hover:scale-105 btn-press relative z-40">
-                        <i class="fab fa-whatsapp text-lg"></i> FALAR NO ZAP
-                    </a>
-                    <button onclick="alert('App Android disponível com o Admin!')" class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-8 py-3 rounded-full font-bold text-xs md:text-sm backdrop-blur-sm flex items-center justify-center gap-2 transition-all btn-press relative z-40">
-                        <i class="fab fa-android text-lg"></i> APP ANDROID
+                    <div class="flex justify-between items-center text-[11px] text-gray-300 font-bold px-1">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="rememberMe" class="accent-[#FFD700]">
+                            Lembrar de mim
+                        </label>
+                        <button id="btnForgotPass" class="text-[#FFD700] hover:underline">Esqueci a senha</button>
+                    </div>
+
+                    <button id="btnLoginAction" onclick="handleLogin()" class="w-full bg-gradient-to-r from-[#006400] to-[#004d00] text-white font-black uppercase tracking-widest py-3.5 rounded-lg shadow-lg hover:scale-[1.02] transition-transform btn-press text-sm border border-[#FFD700]/30">
+                        ENTRAR NO JOGO
+                    </button>
+
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-white/10"></div>
+                        <span class="flex-shrink-0 mx-4 text-gray-400 text-[10px] uppercase font-bold">Ou</span>
+                        <div class="flex-grow border-t border-white/10"></div>
+                    </div>
+
+                    <button id="btnOpenRegister" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-lg border border-white/20 transition-colors btn-press text-xs uppercase">
+                        <i class="fas fa-user-plus mr-2"></i> Criar Nova Conta
                     </button>
                 </div>
             </div>
-
-            <div class="order-1 md:order-2 w-[220px] md:w-[260px] shrink-0 transform rotate-[-3deg] hover:rotate-0 transition-transform duration-500 filter drop-shadow-2xl relative z-0">
-                <div class="relative mx-auto border-gray-900 bg-gray-900 border-[8px] rounded-[2.5rem] h-[450px] md:h-[500px] w-full shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/20">
-                    <div class="h-[32px] w-[3px] bg-gray-800 absolute -left-[8px] top-[72px] rounded-l-lg border-l border-gray-600"></div>
-                    <div class="h-[46px] w-[3px] bg-gray-800 absolute -left-[8px] top-[124px] rounded-l-lg border-l border-gray-600"></div>
-                    <div class="h-[64px] w-[3px] bg-gray-800 absolute -right-[8px] top-[142px] rounded-r-lg border-r border-gray-600"></div>
-                    
-                    <div class="rounded-[2rem] overflow-hidden w-full h-full bg-white relative">
-                        <img id="showcaseImg" src="print1.jpeg" onerror="this.src='bg_jogos.jpeg'" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-700">
-                        <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"></div>
-                    </div>
-                </div>
-                <div class="w-[180px] h-4 bg-black/60 blur-xl rounded-[100%] mx-auto mt-6"></div>
+            
+            <div class="mt-6 flex justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
+                <a href="https://wa.me/5585988837389" target="_blank" class="text-xs text-white flex items-center gap-1 hover:text-[#25D366]"><i class="fab fa-whatsapp"></i> Suporte</a>
+                <button onclick="alert('Baixe o APK com o Admin!')" class="text-xs text-white flex items-center gap-1 hover:text-[#FFD700]"><i class="fab fa-android"></i> App Android</button>
             </div>
 
-        </div>        
-        <div class="text-center pb-4 z-10">
-            <p class="text-white/30 text-[9px] font-bold uppercase tracking-widest">© 2026 Bolão 112 F.C</p>
         </div>
-    </section>
+
+        <div class="order-1 md:order-2 w-[220px] md:w-[260px] shrink-0 transform rotate-[-3deg] hover:rotate-0 transition-transform duration-500 relative z-0">
+            <div class="relative mx-auto border-gray-900 bg-gray-900 border-[8px] rounded-[2.5rem] h-[450px] md:h-[500px] w-full shadow-2xl flex flex-col overflow-hidden ring-1 ring-white/20">
+                <div class="h-[32px] w-[3px] bg-gray-800 absolute -left-[8px] top-[72px] rounded-l-lg border-l border-gray-600"></div>
+                <div class="h-[46px] w-[3px] bg-gray-800 absolute -left-[8px] top-[124px] rounded-l-lg border-l border-gray-600"></div>
+                <div class="h-[64px] w-[3px] bg-gray-800 absolute -right-[8px] top-[142px] rounded-r-lg border-r border-gray-600"></div>
+                
+                <div class="rounded-[2rem] overflow-hidden w-full h-full bg-white relative">
+                    <img id="showcaseImg" src="print1.jpeg" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"></div>
+                </div>
+            </div>
+            <div class="w-[180px] h-4 bg-black/60 blur-xl rounded-[100%] mx-auto mt-6"></div>
+        </div>
+
+    </div>        
+    <div class="text-center pb-4 z-10">
+        <p class="text-white/30 text-[9px] font-bold uppercase tracking-widest">© 2026 Bolão 112 F.C</p>
+    </div>
+</section>
         <div id="mainScreens" class="hidden p-4 space-y-4">
             
             <div id="matchesScreen" class="hidden space-y-6"></div>
@@ -322,48 +350,46 @@ Término oficial: 31 de dezembro de 2026
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         // ADICIONADO: enableIndexedDbPersistence
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// --- ANIMAÇÃO DO IPHONE CORRIGIDA ---
-        const imgEl = document.getElementById('showcaseImg');
-        // Adicione .jpg se suas imagens não forem .jpeg
-        const appScreenshots = ["print1.jpeg", "print2.jpeg", "print3.jpeg", "print1.jpg", "print2.jpg", "print3.jpg"];
-        let currentImgIdx = 0;
+// --- CORREÇÃO E OTIMIZAÇÃO: CARROSSEL ÚNICO ---
+        const initCarousel = () => {
+            const imgEl = document.getElementById('showcaseImg');
+            // Certifique-se de que essas imagens existem na pasta public/ do Vercel
+            const appScreenshots = ["print1.jpeg", "print2.jpeg", "print3.jpeg"]; 
+            let currentImgIdx = 0;
 
-        if (imgEl) {
-            // Inicializa a primeira imagem com fallback
-            const img = new Image();
-            img.onload = () => { imgEl.src = img.src; };
-            img.onerror = () => { imgEl.src = 'bg_jogos.jpeg'; }; // Fallback se não achar
-            img.src = appScreenshots[0];
+            if (imgEl) {
+                // Define imagem inicial
+                imgEl.src = appScreenshots[0];
+                
+                setInterval(() => {
+                    // Fade Out
+                    imgEl.style.opacity = '0';
+                    
+                    setTimeout(() => {
+                        // Troca a imagem
+                        currentImgIdx = (currentImgIdx + 1) % appScreenshots.length;
+                        const nextSrc = appScreenshots[currentImgIdx];
+                        
+                        // Pré-carrega a imagem para evitar piscada branca
+                        const tempImg = new Image();
+                        tempImg.onload = () => {
+                            imgEl.src = nextSrc;
+                            imgEl.style.opacity = '1'; // Fade In
+                        };
+                        tempImg.onerror = () => {
+                            // Se der erro (ex: jpg vs jpeg), tenta carregar a próxima
+                            console.warn("Imagem não encontrada:", nextSrc);
+                            imgEl.style.opacity = '1';
+                        };
+                        tempImg.src = nextSrc;
+                        
+                    }, 500); // Espera metade da transição
+                }, 3500); // Tempo de exibição
+            }
+        };
 
-            setInterval(() => {
-                // Fade Out
-                imgEl.style.transition = "opacity 0.5s ease-in-out";
-                imgEl.style.opacity = 0;
-
-                setTimeout(() => {
-                    // Avança o índice
-                    currentImgIdx = (currentImgIdx + 1) % 3; // Usa apenas as 3 primeiras (0, 1, 2)
-                    
-                    // Tenta carregar a próxima imagem
-                    const nextSrc = appScreenshots[currentImgIdx];
-                    const tempImg = new Image();
-                    
-                    tempImg.onload = () => {
-                        imgEl.src = nextSrc;
-                        imgEl.style.opacity = 1; // Fade In
-                    };
-                    
-                    tempImg.onerror = () => {
-                        // Se falhar (ex: extensão errada), tenta a versão .jpg
-                        imgEl.src = appScreenshots[currentImgIdx + 3] || 'bg_jogos.jpeg';
-                        imgEl.style.opacity = 1;
-                    };
-                    
-                    tempImg.src = nextSrc;
-
-                }, 500); // Espera o fade out terminar
-            }, 3000); // Troca a cada 3 segundos
-        }
+        // Inicia o carrossel assim que possível
+        initCarousel();
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -458,34 +484,6 @@ Término oficial: 31 de dezembro de 2026
                 };
             });
         };
-// --- CARROSSEL DE IMAGENS DO CELULAR ---
-        // Coloque aqui as URLs das suas imagens (Prints do App)
-        const appScreenshots = [
-            "print1.jpeg", // Exemplo: Substitua por print_ranking.jpg
-            "print2.jpeg",   // Exemplo: Substitua por print_jogos.jpg
-            "print3.jpeg"   // Exemplo: Substitua por print_perfil.jpg
-        ];
-        
-        let currentImgIdx = 0;
-        const imgEl = document.getElementById('showcaseImg');
-
-        if (imgEl && appScreenshots.length > 0) {
-            // Define a primeira imagem
-            imgEl.src = appScreenshots[0];
-
-            setInterval(() => {
-                // Efeito de Fade Out
-                imgEl.style.opacity = 0;
-                
-                setTimeout(() => {
-                    currentImgIdx = (currentImgIdx + 1) % appScreenshots.length;
-                    imgEl.src = appScreenshots[currentImgIdx];
-                    // Efeito de Fade In
-                    imgEl.style.opacity = 1;
-                }, 500); // Troca a imagem após 0.5s (metade da transição)
-                
-            }, 4000); // Muda a cada 4 segundos
-        }
         // Handlers
         // --- LOGIN OTIMIZADO PARA BIOMETRIA WEB ---
         window.handleLogin = async () => {
@@ -2582,6 +2580,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
