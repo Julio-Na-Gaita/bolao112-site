@@ -145,20 +145,23 @@
     
         <div class="text-center md:text-left animate-fade-in-up max-w-lg order-2 md:order-1 w-full">
             
-            <div class="inline-flex items-center gap-2 bg-black/50 backdrop-blur-md border border-[#FFD700] rounded-full px-4 py-1 mb-2 shadow-lg">
+            <div class="inline-flex items-center gap-2 bg-black/60 backdrop-blur-md border border-[#FFD700] rounded-full px-4 py-1 mb-4 shadow-lg">
                 <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest">Temporada 2026</span>
+                <span class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest">Início: 01/02/2026</span>
             </div>
             
             <h2 class="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-2xl mb-2 leading-tight">
                 Bolão 112 <span class="text-[#FFD700]">F.C</span>
             </h2>
-            
-            <p class="text-gray-200 text-sm md:text-lg font-serif italic mb-8 drop-shadow-md">
-                "A rivalidade é lei. A resenha é garantida."
+
+            <p class="text-white text-xs font-bold uppercase tracking-wide mb-1">
+                <i class="fas fa-star text-[#FFD700] mr-1"></i> Supercopa do Brasil (Final)
+            </p>
+            <p class="text-2xl text-white font-black uppercase italic mb-6 drop-shadow-md">
+                Flamengo <span class="text-gray-500 text-lg">x</span> Corinthians
             </p>
 
-            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-2xl">
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl shadow-2xl mb-6 relative z-50">
                 <div class="space-y-4">
                     <div>
                         <label class="text-[10px] uppercase font-bold text-gray-300 ml-1">Usuário</label>
@@ -177,14 +180,14 @@
                     </div>
 
                     <div class="flex justify-between items-center text-[11px] text-gray-300 font-bold px-1">
-                        <label class="flex items-center gap-2 cursor-pointer">
+                        <label class="flex items-center gap-2 cursor-pointer hover:text-white">
                             <input type="checkbox" id="rememberMe" class="accent-[#FFD700]">
                             Lembrar de mim
                         </label>
-                        <button id="btnForgotPass" class="text-[#FFD700] hover:underline">Esqueci a senha</button>
+                        <button id="btnForgotPass" class="text-[#FFD700] hover:underline cursor-pointer z-50 relative">Esqueci a senha</button>
                     </div>
 
-                    <button id="btnLoginAction" onclick="handleLogin()" class="w-full bg-gradient-to-r from-[#006400] to-[#004d00] text-white font-black uppercase tracking-widest py-3.5 rounded-lg shadow-lg hover:scale-[1.02] transition-transform btn-press text-sm border border-[#FFD700]/30">
+                    <button id="btnLoginAction" onclick="window.handleLogin()" class="w-full bg-gradient-to-r from-[#006400] to-[#004d00] text-white font-black uppercase tracking-widest py-3.5 rounded-lg shadow-lg hover:scale-[1.02] transition-transform btn-press text-sm border border-[#FFD700]/30 cursor-pointer relative z-50">
                         ENTRAR NO JOGO
                     </button>
 
@@ -194,15 +197,24 @@
                         <div class="flex-grow border-t border-white/10"></div>
                     </div>
 
-                    <button id="btnOpenRegister" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-lg border border-white/20 transition-colors btn-press text-xs uppercase">
+                    <button id="btnOpenRegister" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-3 rounded-lg border border-white/20 transition-colors btn-press text-xs uppercase cursor-pointer z-50 relative">
                         <i class="fas fa-user-plus mr-2"></i> Criar Nova Conta
                     </button>
                 </div>
             </div>
-            
+
+            <div class="hidden md:block bg-black/40 backdrop-blur-md p-4 rounded-xl border border-white/10 text-xs text-gray-200 space-y-3 shadow-2xl">
+                 <h3 class="text-[#FFD700] font-bold uppercase text-[10px] tracking-widest mb-2 border-b border-white/10 pb-1">Por que participar?</h3>
+                 <div class="grid grid-cols-2 gap-2">
+                    <p><i class="fas fa-check-circle text-green-400 mr-2"></i>Champions, Copa do Mundo, Copa do Brasil, Libertadores e muito mais</p>
+                    <p><i class="fas fa-chart-line text-blue-400 mr-2"></i>Ranking Ao Vivo</p>
+                    <p><i class="fas fa-trophy text-[#FFD700] mr-2"></i>Premiação em Dinheiro</p>
+                    <p class="col-span-2"><i class="fas fa-beer text-orange-400 mr-2"></i>Confra inclusa na mensalidade!</p>
+                 </div>
+            </div>
+
             <div class="mt-6 flex justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
-                <a href="https://wa.me/5585988837389" target="_blank" class="text-xs text-white flex items-center gap-1 hover:text-[#25D366]"><i class="fab fa-whatsapp"></i> Suporte</a>
-                <button onclick="alert('Baixe o APK com o Admin!')" class="text-xs text-white flex items-center gap-1 hover:text-[#FFD700]"><i class="fab fa-android"></i> App Android</button>
+                <a href="https://wa.me/5585988837389" target="_blank" class="text-xs text-white flex items-center gap-1 hover:text-[#25D366]"><i class="fab fa-whatsapp"></i> Falar com o Branco</a>
             </div>
 
         </div>
@@ -218,7 +230,6 @@
                     <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"></div>
                 </div>
             </div>
-            <div class="w-[180px] h-4 bg-black/60 blur-xl rounded-[100%] mx-auto mt-6"></div>
         </div>
 
     </div>        
@@ -484,39 +495,62 @@ Término oficial: 31 de dezembro de 2026
                 };
             });
         };
-        // Handlers
-        // --- LOGIN OTIMIZADO PARA BIOMETRIA WEB ---
+       // --- CORREÇÃO: FUNÇÃO DE FECHAR MODAL GLOBAL ---
+        // Isso resolve o problema dos botões "X" não funcionarem
+        window.closeModal = () => {
+            const modal = document.getElementById('modalOverlay');
+            if (modal) modal.classList.add('hidden');
+        };
+
+        // --- CORREÇÃO: LOGIN ---
         window.handleLogin = async () => {
             const btn = document.getElementById('btnLoginAction');
             const originalText = btn.innerHTML;
-            btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i>`;
+            
+            // Feedback Visual de Carregamento
+            btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ACESSANDO...`;
             btn.disabled = true;
 
-            const user = document.getElementById('userInput').value.trim().toLowerCase();
+            // Pega os valores
+            const rawUser = document.getElementById('userInput').value.trim();
             const pass = document.getElementById('passInput').value;
             const remember = document.getElementById('rememberMe').checked;
 
-            if (!user || !pass) {
-                alert("Preencha todos os campos.");
-                btn.innerHTML = originalText; btn.disabled = false;
+            if (!rawUser || !pass) {
+                alert("Por favor, preencha usuário e senha.");
+                btn.innerHTML = originalText; 
+                btn.disabled = false;
                 return;
             }
 
+            // Tratamento do usuário (remove espaços e força minúsculo)
+            const user = rawUser.toLowerCase().replace(/\s/g, '');
+
             try {
-                // Configura se deve manter logado (Local) ou só na sessão (Session)
+                // Configura persistência
                 const mode = remember ? browserLocalPersistence : browserSessionPersistence;
                 await setPersistence(auth, mode);
-                document.getElementById('mainHeader').classList.remove('hidden');
 
-                // Faz o login
-                await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass);
+                // Tenta logar montando o email padrão do bolão
+                // ATENÇÃO: Se seu usuário no banco é gmail, isso dará erro.
+                const emailFormatado = `${user}@bolao112.com`;
+                console.log(`Tentando logar com: ${emailFormatado}`);
+
+                await signInWithEmailAndPassword(auth, emailFormatado, pass);
                 
-                // O navegador vai perguntar "Salvar Senha?" aqui. 
-                // Se o usuário salvar, na próxima vez o FaceID/Digital aparecerá automaticamente ao tocar no campo.
+                // Se der certo, o onAuthStateChanged lá embaixo fará o redirecionamento
                 
             } catch (e) {
-                console.error(e);
-                alert("Dados incorretos ou erro de conexão.");
+                console.error("Erro Login:", e.code, e.message);
+                
+                let msg = "Erro ao acessar.";
+                if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
+                    msg = "Usuário ou senha incorretos.\nVerifique se digitou o nome de usuário (sem @) corretamente.";
+                } else if (e.code === 'auth/too-many-requests') {
+                    msg = "Muitas tentativas falhas. Tente novamente mais tarde.";
+                }
+
+                alert(msg);
                 btn.innerHTML = originalText; 
                 btn.disabled = false;
             }
@@ -2580,6 +2614,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
