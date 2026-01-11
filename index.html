@@ -562,92 +562,386 @@ Término: 31/12/2026
             await addDoc(collection(db, "match_comments"), { matchId: mid, userId: currentUser.uid, userName: u.data().name||"Anon", text: txt, timestamp: new Date() });
         };
 
-        // --- RANKING (Agora Global) ---
+        // --- RANKING (Agora Global - Lógica Completa) ---
         window.loadRanking = async () => {
-            const div = document.getElementById('rankingListContent');
-            div.innerHTML = '<div class="text-center py-4">Carregando...</div>';
+            const listContainer = document.getElementById('rankingListContent');
+            const footer = document.getElementById('lastUpdateRanking');
+            listContainer.innerHTML = `<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-[#006400] text-2xl"></i></div>`;
+            
             try {
-                const [uSnap, gSnap, mSnap] = await Promise.all([ getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches")) ]);
-                // ... (Lógica simplificada para caber) ...
-                let users = [];
-                uSnap.forEach(d => { users.push({uid: d.id, ...d.data(), p:0, d: d.data().debts||0, trophyRoom: []}); });
+                // 1. Busca Dados
+                const [uSnap, gSnap, mSnap] = await Promise.all([
+                    getDocs(collection(db, "users")),
+                    getDocs(collection(db, "guesses")),
+                    getDocs(collection(db, "matches"))
+                ]);
                 
-                // Cálculo rápido de pontos (básico)
-                const matches = []; mSnap.forEach(m => matches.push({id: m.id, ...m.data()}));
-                const guesses = []; gSnap.forEach(g => guesses.push(g.data()));
+                // 2. Processa Jogos
+                const matches = []; const validMatchIds = new Set();
+                mSnap.forEach(d => { matches.push({id:d.id, ...d.data(), deadlineDate: d.data().deadline.toDate()}); validMatchIds.add(d.id); });
                 
-                users.forEach(u => {
-                    const myGuesses = guesses.filter(g => g.userId === u.uid);
-                    matches.filter(m => m.winner).forEach(m => {
-                        const g = myGuesses.find(x => x.matchId === m.id);
-                        if(g && g.teamSelected === m.winner) u.p += 3; // Simplificado
-                    });
-                    u.p -= u.d;
+                // Ordenação cronológica para cálculo de sequências
+                const chronoMatches = matches.filter(m => m.winner).sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
+                const finishedDisplay = [...chronoMatches].reverse();
+                
+                // Zebra (<20% acerto)
+                const zebraMatchIds = []; const totalParticipants = uSnap.size || 1;
+                finishedDisplay.forEach(m => {
+                    let winnerVotes = 0;
+                    gSnap.forEach(g => { if(g.data().matchId === m.id && g.data().teamSelected === m.winner) winnerVotes++; });
+                    if (totalParticipants > 0 && (winnerVotes / totalParticipants) < 0.20) zebraMatchIds.push(m.id);
                 });
-                users.sort((a,b) => b.p - a.p);
-                currentRankingData = users; // Atualiza global
 
-                div.innerHTML = users.map((u, i) => `<div class="flex justify-between items-center p-3 border-b ${i<3?'bg-yellow-50':''}"><div class="flex items-center gap-3"><span class="font-bold text-gray-500 w-6 text-center">${i+1}º</span><img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-8 h-8 rounded-full border"><div onclick="window.showModalPhoto(${i})" class="cursor-pointer"><p class="text-xs font-bold">${u.name}</p></div></div><div class="font-black text-[#006400]">${u.p}</div></div>`).join('');
-            } catch(e) { console.error(e); div.innerHTML = "Erro."; }
+                // Rodapé
+                let footerContent = "";
+                if (finishedDisplay.length > 0) {
+                    const last = finishedDisplay[0]; const d = last.deadlineDate;
+                    const dt = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    footerContent = `<div class="text-[#FFD700] font-bold text-[10px] uppercase mb-1 tracking-wide">Legenda: D=Débitos(-1) | PTS=Pontos</div><div class="text-white opacity-70 text-[9px]">Última atualização: ${last.teamA} x ${last.teamB} em ${dt}</div>`;
+                } else {
+                    footerContent = `<div class="text-[#FFD700] font-bold text-[10px] uppercase mb-1 tracking-wide">Legenda: D=Débitos(-1) | PTS=Pontos</div><div class="text-white opacity-70 text-[9px]">Aguardando resultados...</div>`;
+                }
+                footer.innerHTML = `<div class="bg-black/80 rounded-lg p-3 text-center shadow-lg backdrop-blur-sm mt-2 border border-white/10 mx-2">${footerContent}</div>`;
+
+                // 3. Processa Usuários
+                let users = []; const now = new Date(); const currentMonthIdx = now.getMonth(); const currentYear = now.getFullYear();
+                const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                let monthlyData = []; const pastKingsMap = {};
+
+                // Reis Passados
+                for (let mIdx = 0; mIdx < currentMonthIdx; mIdx++) {
+                    const mName = monthsNames[mIdx]; let mScores = [];
+                    uSnap.forEach(ud => {
+                        let p = 0; const uGuesses = [];
+                        gSnap.forEach(g => { if(g.data().userId === ud.id) uGuesses.push(g.data()); });
+                        const mMatches = matches.filter(mat => { const d = mat.deadlineDate; return d.getMonth() === mIdx && mat.winner; });
+                        mMatches.forEach(mat => { const g = uGuesses.find(x => x.matchId === mat.id); if(g && g.teamSelected === mat.winner) p += (mat.round === "Final") ? 6 : 3; });
+                        mScores.push({uid: ud.id, pts: p});
+                    });
+                    mScores.sort((a,b) => b.pts - a.pts);
+                    if(mScores.length > 0 && mScores[0].pts > 0) {
+                        const winner = mScores[0]; const second = mScores[1];
+                        if(!second || winner.pts > second.pts) pastKingsMap[mName] = winner.uid;
+                    }
+                }
+
+                uSnap.forEach(ud => {
+                    const u = ud.data(); let p=0, v=0, f=0, monthlyP=0;
+                    const hist = [];
+                    const rawUserGuesses = []; gSnap.forEach(gd => { if(gd.data().userId === ud.id) rawUserGuesses.push(gd.data()) });
+                    const userGuesses = rawUserGuesses.filter(g => validMatchIds.has(g.matchId));
+
+                    // Loop Principal de Pontos
+                    finishedDisplay.forEach(m => {
+                        const g = userGuesses.find(x => x.matchId === m.id);
+                        const isThisMonth = m.deadlineDate.getMonth() === currentMonthIdx && m.deadlineDate.getFullYear() === currentYear;
+                        if(g) {
+                            const dStr = `📅 ${String(m.deadlineDate.getDate()).padStart(2,'0')}/${String(m.deadlineDate.getMonth()+1).padStart(2,'0')}`;
+                            if(m.winner === g.teamSelected) {
+                                const isF = m.round?.toLowerCase() === 'final'; const pts = isF ? 6 : 3;
+                                p += pts; if(isThisMonth) monthlyP += pts; v++; if(isF) f++;
+                                hist.push({ts: m.deadlineDate, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`});
+                            } else {
+                                hist.push({ts: m.deadlineDate, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type:'bad'});
+                            }
+                        }
+                    });
+
+                    let trophyRoom = [];
+                    
+                    // Lógica Diamante (Oitavas)
+                    const oitavasMatches = finishedDisplay.filter(m => m.round === "Oitavas de final");
+                    const oitavasByComp = {};
+                    oitavasMatches.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); });
+
+                    for (const [compName, groupMatches] of Object.entries(oitavasByComp)) {
+                        if (groupMatches.length === 8) {
+                            let hits = 0;
+                            groupMatches.forEach(m => {
+                                const g = userGuesses.find(x => x.matchId === m.id);
+                                if (g && g.teamSelected === m.winner) hits++;
+                            });
+                            if (hits === 8) {
+                                p += 3;
+                                const lastDate = groupMatches[0].deadlineDate;
+                                if (lastDate.getMonth() === currentMonthIdx && lastDate.getFullYear() === currentYear) monthlyP += 3;
+                                const dStr = lastDate.toLocaleDateString('pt-BR');
+                                trophyRoom.push({ icon: "💎", name: "DIAMANTE", desc: `Gabaritou as Oitavas (8/8) da ${compName}.`, date: dStr });
+                                const histText = `💎 BÔNUS: Gabaritou Oitavas (${compName})`;
+                                if(!hist.some(h => h.text.includes(histText))) hist.push({ ts: lastDate, text: `📅 ${dStr.substring(0,5)} - ${histText} (+3 pts)`, type: 'good' });
+                            }
+                        }
+                    }
+
+                    // Sequências (Alien, Mito, On Fire)
+                    let simStreak = 0; let simStreakBroken = false; let vetCount = 0;
+                    chronoMatches.forEach(m => {
+                        const g = userGuesses.find(x => x.matchId === m.id); const isHit = g && g.teamSelected === m.winner;
+                        const dateStr = m.deadlineDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit'});
+                        if(isHit && zebraMatchIds.includes(m.id)) trophyRoom.push({icon:"🦓", name:"ZEBRA", desc:`Acertou a zebra em ${m.teamA} x ${m.teamB}`, date: dateStr});
+                        if(isHit) {
+                            vetCount++;
+                            if(!simStreakBroken) {
+                                simStreak++;
+                                if(simStreak === 3) trophyRoom.push({icon:"🔥", name:"ON FIRE", desc:"Palpitou 3 acertos seguidos.", date: dateStr});
+                                if(simStreak === 5) trophyRoom.push({icon:"🎯", name:"MITO", desc:"Palpitou 5 acertos seguidos.", date: dateStr});
+                                if(simStreak === 10) trophyRoom.push({icon:"👽", name:"ALIEN", desc:"Palpitou 10 acertos seguidos!", date: dateStr});
+                            }
+                            if(vetCount > 0 && vetCount % 50 === 0) { const lvl = vetCount / 50; trophyRoom.push({icon:"🎓", name:`VETERANO Nvl ${lvl}`, desc:`Conquistou ${vetCount} acertos.`, date: dateStr}); }
+                        } else { simStreak = 0; simStreakBroken = false; }
+                    });
+
+                    // Medalhas Ativas no Card
+                    let activeMedals = ""; let currentStreak = 0; let streakBroken = false;
+                    const limit = finishedDisplay.length > 15 ? 15 : finishedDisplay.length;
+                    for(let i=0; i<limit; i++) { const m = finishedDisplay[i]; const g = userGuesses.find(x => x.matchId === m.id); if (g && g.teamSelected === m.winner) { if (!streakBroken) currentStreak++; } else { streakBroken = true; } }
+                    if (currentStreak >= 10) activeMedals += "👽 "; else if (currentStreak >= 5) activeMedals += "🎯 "; else if (currentStreak >= 3) activeMedals += "🔥 ";
+
+                    const last3 = finishedDisplay.slice(0,3); let misses=0; let noShows=0;
+                    if(finishedDisplay.length >= 3) { last3.forEach(m => { const g = userGuesses.find(x => x.matchId === m.id); if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++; }); if (misses === 3) { activeMedals += "🥬 "; trophyRoom.push({icon:"🥬", name:"MÃO DE ALFACE", desc:"Atual: 3 erros seguidos.", date: "Atual"}); } if (noShows === 3) { activeMedals += "👻 "; trophyRoom.push({icon:"👻", name:"FANTASMA", desc:"Atual: 3 jogos sem votar.", date: "Atual"}); } }
+                    
+                    if (finishedDisplay.length > 0) { const lastMatch = finishedDisplay[0]; if (zebraMatchIds.includes(lastMatch.id)) { const g = userGuesses.find(x => x.matchId === lastMatch.id); if (g && g.teamSelected === lastMatch.winner) { activeMedals += "🦓 "; } } }
+                    const veteranLevel = Math.floor(v / 50); for(let i=0; i<veteranLevel; i++) { activeMedals += "🎓 "; }
+                    if (trophyRoom.some(t => t.icon === "💎")) activeMedals += "💎 ";
+                    if (f > 0) { activeMedals += "🔮 "; trophyRoom.push({icon:"🔮", name:"MÃE DINAH", desc:`Acertou ${f} campeões.`, date: "Final"}); }
+                    
+                    let kingCount = 0; Object.keys(pastKingsMap).forEach(mName => { if(pastKingsMap[mName] === ud.id) { kingCount++; trophyRoom.push({icon:"👑", name:`REI DE ${mName.toUpperCase()}`, desc:"Campeão Mensal Isolado", date: "Mensal"}); } }); if(kingCount > 0) activeMedals += "👑 ";
+                    
+                    let allPaid = true; if (currentYear >= 2026) { for(let i=0; i<=currentMonthIdx; i++) { if (!u.payments?.[monthsNames[i]]) { allPaid = false; break; } } } else { if ((u.debts||0) > 0) allPaid = false; }
+                    if (allPaid) { activeMedals += "💰 "; trophyRoom.unshift({icon:"💰", name:"PATRÃO", desc:"Mensalidades em dia.", date: "Ativo"}); }
+
+                    // Penalidades
+                    matches.forEach(m => { const dl = m.deadlineDate; if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } });
+                    const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'});
+
+                    hist.sort((a,b) => b.ts - a.ts);
+                    monthlyData.push({ name: u.name || "Sem Nome", points: monthlyP, uid: ud.id });
+                    users.push({ uid: ud.id, name: u.name||"Sem Nome", p, v, f, d: deb, photo: u.photoBase64, hist, lastRank: u.lastRank||0, medals: activeMedals, trophyRoom: trophyRoom });
+                });
+
+                // Ordenação Final (Pontos > Débitos > Medalhas)
+                users.sort((a,b) => {
+                    if (b.p !== a.p) return b.p - a.p;
+                    if (a.d !== b.d) return a.d - b.d;
+                    const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
+                    for (let icon of hierarchy) {
+                        const countA = a.trophyRoom.filter(m => m.icon === icon).length;
+                        const countB = b.trophyRoom.filter(m => m.icon === icon).length;
+                        if (countB !== countA) return countB - countA;
+                    }
+                    return 0;
+                });
+                
+                monthlyData.sort((a,b) => b.points - a.points);
+                if (users.length > 2) { const lastUsers = [users[users.length-1], users[users.length-2]]; lastUsers.forEach(u => { if(u) u.trophyRoom.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Atual: Z-2", date: "Atual"}); }); }
+                
+                window.currentMonthlyRanking = monthlyData; currentRankingData = users;
+
+                // Renderização HTML
+                let html = `<div class="bg-[#006400] rounded-t-xl p-3 flex justify-between items-center shadow-md"><div><h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3><p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p></div><div class="flex gap-2"><button onclick="window.showKingModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg shadow border border-white/20">🏆</button><button onclick="window.loadRanking()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-[#FFD700] shadow border border-white/20"><i class="fas fa-sync-alt text-xs"></i></button></div></div><div class="bg-[#005000] flex text-white/70 text-[9px] font-bold py-1 px-2 uppercase border-b border-white/10"><div class="w-[35px] text-center">Pos</div><div class="flex-1 pl-2">Participante</div><div class="w-[28px] text-center">D</div><div class="w-[40px] text-center text-white">Pts</div></div><div class="bg-white rounded-b-xl overflow-hidden shadow-sm">`;
+                html += users.map((u, i) => { 
+                    const pos = i+1; const isRelegation = (i >= users.length - 2) && (users.length > 2); 
+                    let bgColor = 'bg-white'; let borderColor = 'border-transparent'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; let nameColorClass = "text-gray-800"; let anchorIcon = ""; 
+                    if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; } else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; anchorIcon = `<i class="fas fa-anchor text-[#8B0000] ml-1 text-[10px]" title="Zona de Rebaixamento"></i>`; } 
+                    let diffHtml = ''; if(u.lastRank > 0) { if(pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-up"></i> ${u.lastRank-pos}</div>`; else if(pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1"><i class="fas fa-caret-down"></i> ${pos-u.lastRank}</div>`; } 
+                    return `<div class="${bgColor} border-b border-gray-100 flex items-center py-3 px-2 ${i<3 ? 'border-l-4' : ''}" style="${i<3 ? `border-left-color: ${borderColor.replace('border-[','').replace(']','')}` : ''}"><div class="w-[35px] text-center flex flex-col items-center justify-center"><div class="text-sm">${posIcon}</div>${diffHtml}</div><div class="flex-1 flex items-center gap-3 pl-2 overflow-hidden shrink-0 cursor-pointer" onclick="window.showModalPhoto(${i})"><div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0"><img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-cover"></div><div class="flex flex-col overflow-hidden"><div class="flex items-center"><span class="text-xs font-bold ${nameColorClass} truncate pl-2">${u.name}</span>${anchorIcon}</div>${u.medals ? `<span class="text-[10px] pl-2 tracking-wide">${u.medals}</span>` : ''}</div></div><div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="window.showModalHistory(${i})">${u.d}</div><div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="window.showModalHistory(${i})">${u.p}</div></div>`; 
+                }).join(''); 
+                html += `</div>`; listContainer.innerHTML = html;
+
+            } catch(e) { console.error(e); listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro.</div>`; }
         };
 
         // --- PERFIL & FINANCEIRO ---
         window.loadProfile = async () => {
-             const u = await getDoc(doc(db, "users", currentUser.uid));
-             const d = u.data();
-             document.getElementById('profileName').innerText = d.name;
-             document.getElementById('profileUser').innerText = '@'+d.username;
-             document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(d.photoBase64, d.name)}" class="w-full h-full object-cover">`;
-             
-             const btnAdmin = document.getElementById('btnAdminPanel');
-             if(d.isAdmin) btnAdmin.classList.remove('hidden');
+             if (!currentUser) return;
+             try {
+                 const docRef = doc(db, "users", currentUser.uid);
+                 const snap = await getDoc(docRef);
+                 if (!snap.exists()) return;
+                 const u = snap.data();
+                 document.getElementById('profileName').innerText = u.name;
+                 document.getElementById('profileUser').innerText = '@'+u.username;
+                 document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-full h-full object-cover">`;
+                 
+                 const myHint = u.passwordHint || "Sem dica cadastrada";
+                 let hintDiv = document.getElementById('hintContainer');
+                 if (!hintDiv) {
+                     hintDiv = document.createElement('div');
+                     hintDiv.id = 'hintContainer';
+                     const btnContainer = document.querySelector('#profileScreen .card-cut .flex.justify-center.gap-4');
+                     btnContainer.insertAdjacentElement('afterend', hintDiv);
+                 }
+                 hintDiv.innerHTML = `<div class="mt-4 bg-[#FFF3E0] border border-[#FF9800] rounded p-3 flex justify-between items-center text-left mx-4 mb-4"><div><p class="text-[10px] font-bold text-[#EF6C00] uppercase"><i class="fas fa-lightbulb mr-1"></i> Dica de Senha</p><p class="text-xs font-black text-black mt-1">${myHint}</p></div><button onclick="window.editHint('${myHint.replace(/'/g, "\\'")}')" class="bg-white border border-[#EF6C00] text-[#EF6C00] w-8 h-8 rounded-full flex items-center justify-center shadow-sm btn-press"><i class="fas fa-pen text-xs"></i></button></div>`;
 
-             // Botão Financeiro (Para usuários normais abre Pix)
-             document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.remove('hidden');
+                 const btnAdmin = document.getElementById('btnAdminPanel');
+                 if(u.isAdmin) btnAdmin.classList.remove('hidden');
+
+                 // Status Financeiro
+                 const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                 const currMonth = months[new Date().getMonth()];
+                 const payments = u.payments || {};
+                 const isPaid = payments[currMonth] === true;
+                 const stCard = document.getElementById('financialCard');
+                 
+                 // CORREÇÃO: SEMPRE abre o PIX para o usuário comum
+                 stCard.onclick = () => document.getElementById('pixArea').classList.remove('hidden');
+
+                 if (isPaid || new Date().getFullYear() < 2026) {
+                    stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800 shadow-sm";
+                    document.getElementById('financialStatusText').innerText = "MENSALIDADE EM DIA";
+                    document.getElementById('financialIcon').className = "fas fa-check-circle text-2xl";
+                 } else {
+                    stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800 shadow-sm";
+                    document.getElementById('financialStatusText').innerText = "PAGAMENTO PENDENTE";
+                    document.getElementById('financialIcon').className = "fas fa-exclamation-circle text-2xl";
+                 }
+                 
+                 // Carrega dados do PIX
+                 try {
+                     const finSnap = await getDoc(doc(db, "settings", "financial"));
+                     if (finSnap.exists()) {
+                         const fin = finSnap.data();
+                         document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com";
+                         document.getElementById('btnCopyPix').onclick = window.copyKeyOnly;
+                         document.getElementById('btnSendProof').onclick = () => {
+                             const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112.");
+                             window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank');
+                         };
+                     }
+                 } catch(e) { console.log(e); }
+             } catch (error) { console.error("Erro loadProfile:", error); }
         };
 
         window.openAdminMenu = () => {
              const cont = document.getElementById('modalContainer');
              document.getElementById('modalOverlay').classList.remove('hidden');
-             cont.innerHTML = `<div class="bg-white p-4 w-full max-w-sm"><h3 class="font-bold mb-4">Painel Admin</h3><button onclick="window.openFinancialScreen()" class="w-full bg-green-700 text-white p-3 rounded mb-2">Financeiro</button><button onclick="closeModal()" class="w-full bg-gray-200 p-2 rounded">Fechar</button></div>`;
+             cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100"><div class="relative z-10 h-full flex flex-col bg-white/30 p-4"><div class="flex justify-between items-center mb-6"><button onclick="closeModal()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold uppercase text-xl text-black">Painel Admin</h3><div class="w-6"></div></div><div class="space-y-3"><button onclick="window.openFinancialScreen()" class="w-full bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-wallet"></i> FINANCEIRO & USUÁRIOS</button><button onclick="window.openTrashBin()" class="w-full bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2"><i class="fas fa-trash-restore"></i> LIXEIRA (RESTAURAR)</button><div class="grid grid-cols-2 gap-2"><button onclick="alert('Funcionalidade disponível apenas no App Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-plus-circle"></i> NOVO CONFRONTO</button><button onclick="window.openCompetitionsManager()" class="bg-[#EF6C00] text-white py-3 rounded font-bold text-xs shadow btn-press"><i class="fas fa-trophy"></i> COMPETIÇÕES</button></div></div><hr class="border-black/20 my-4"><h4 class="font-bold text-black text-sm uppercase mb-2">Gerenciar Confrontos</h4><div id="adminMatchList" class="max-h-[40vh] overflow-y-auto bg-white/80 rounded p-2 text-xs text-gray-500">Carregando lista...</div></div></div>`;
+             // Importante: Chama a função de carregar a lista de jogos do admin se ela existir
+             if(window.loadAdminMatches) window.loadAdminMatches();
         };
 
         window.openFinancialScreen = async () => {
-            // Lógica do painel financeiro (Simplificada)
+            const modal = document.getElementById('modalOverlay');
             const cont = document.getElementById('modalContainer');
+            modal.classList.remove('hidden');
+            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
+
             const snap = await getDocs(collection(db, "users"));
-            let html = `<div class="bg-white w-full max-w-sm h-[80vh] overflow-y-auto p-2"><div class="flex justify-between mb-4"><h3 class="font-bold">Financeiro</h3><button onclick="window.openAdminMenu()">Voltar</button></div>`;
-            snap.forEach(d => {
-                const u = d.data();
-                html += `<div class="border p-2 mb-2 rounded flex justify-between items-center"><span class="text-xs font-bold">${u.name}</span><div class="flex gap-1"><button onclick="window.changeDebt('${d.id}', 1)" class="bg-red-100 text-red-600 px-2 rounded">+</button><span class="text-xs">D:${u.debts||0}</span><button onclick="window.changeDebt('${d.id}', -1)" class="bg-green-100 text-green-600 px-2 rounded">-</button></div></div>`;
+            let usersList = [];
+            snap.forEach(d => { const u = d.data(); usersList.push({id: d.id, ...u}); });
+            usersList.sort((a,b) => (a.name||"").localeCompare(b.name||""));
+
+            let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 85vh; display:flex; flex-direction:column;">
+                <div class="bg-[#006400] p-4 text-white flex justify-between items-center shrink-0">
+                    <h3 class="font-bold uppercase text-sm">Financeiro</h3>
+                    <button onclick="closeModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 bg-gray-50">`;
+
+            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            
+            usersList.forEach(u => {
+                html += `<div class="bg-white border rounded p-2 mb-2 shadow-sm">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-xs text-gray-800">${u.name}</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="window.changeDebt('${u.id}', -1)" class="text-green-600 bg-green-100 w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px]">-</button>
+                            <span class="text-xs font-bold ${u.debts > 0 ? 'text-red-500' : 'text-gray-400'}">D: ${u.debts||0}</span>
+                            <button onclick="window.changeDebt('${u.id}', 1)" class="text-red-600 bg-red-100 w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px]">+</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-6 gap-1">`;
+                
+                months.forEach(m => {
+                    const isPaid = u.payments && u.payments[m];
+                    const bg = isPaid ? "bg-green-600 text-white" : "bg-gray-100 text-gray-400";
+                    html += `<div onclick="window.togglePay('${u.id}', '${m}', ${!isPaid})" class="${bg} border text-[8px] font-bold py-1 rounded text-center cursor-pointer select-none hover:opacity-80">${m}</div>`;
+                });
+                html += `</div></div>`;
             });
-            html += `</div>`;
+            
+            html += `</div><div class="p-2 bg-gray-100 border-t shrink-0"><button onclick="window.checkDelays()" class="w-full bg-red-600 text-white font-bold py-2 rounded text-xs shadow">AUDITORIA DE ATRASOS</button></div></div>`;
             cont.innerHTML = html;
+        };
+
+        window.togglePay = async (uid, month, status) => {
+            const ref = doc(db, "users", uid);
+            const u = await getDoc(ref);
+            const payments = u.data().payments || {};
+            payments[month] = status;
+            await updateDoc(ref, { payments: payments });
+            window.calculatePot(); // Atualiza o pote globalmente
+            window.openFinancialScreen(); // Recarrega a tela
         };
         
         window.changeDebt = async (uid, val) => {
             const ref = doc(db, "users", uid);
             const s = await getDoc(ref);
-            await updateDoc(ref, { debts: (s.data().debts||0) + val });
+            let newDebt = (s.data().debts||0) + val;
+            if(newDebt < 0) newDebt = 0;
+            await updateDoc(ref, { debts: newDebt });
             window.openFinancialScreen();
         };
 
-        // --- POTE (Calculo Simples) ---
         window.calculatePot = async () => {
-             // ... lógica do pote ...
              try {
                  const snap = await getDocs(collection(db, "users"));
                  let cotas = 0;
-                 snap.forEach(d => { if(d.data().payments) cotas += Object.values(d.data().payments).filter(v=>v).length; });
-                 document.getElementById('potValue').innerText = (cotas * 10).toLocaleString('pt-br',{style:'currency',currency:'BRL'});
-                 document.getElementById('partyValue').innerText = (cotas * 5).toLocaleString('pt-br',{style:'currency',currency:'BRL'});
-                 document.getElementById('totalValue').innerText = "Total: " + (cotas * 15).toLocaleString('pt-br',{style:'currency',currency:'BRL'});
-             } catch(e){}
+                 snap.forEach(d => { 
+                     const p = d.data().payments;
+                     if(p) cotas += Object.values(p).filter(v=>v).length; 
+                 });
+                 const fmt = (v) => v.toLocaleString('pt-br',{style:'currency',currency:'BRL'});
+                 document.getElementById('potValue').innerText = fmt(cotas * 10);
+                 document.getElementById('partyValue').innerText = fmt(cotas * 5);
+                 document.getElementById('totalValue').innerText = "Total Arrecadado: " + fmt(cotas * 15);
+             } catch(e){ console.error("Erro Pote:", e); }
         };
         
-        window.updateBadges = () => { /* ... */ };
-        window.copyKeyOnly = () => { /* ... */ };
+        // --- FUNÇÕES AUXILIARES FALTANTES ---
+        window.updateBadges = () => {
+            let unread = 0;
+            if(window.cachedMatches) {
+                window.cachedMatches.forEach(m => {
+                   const s = globalServerCounts[m.id]||0;
+                   const l = parseInt(localStorage.getItem(`read_count_${m.id}`)||0);
+                   if(s > l) unread++;
+                });
+            }
+            const btn = document.getElementById('btnBell');
+            const old = btn.querySelector('.bell-badge'); if(old) old.remove();
+            if(unread > 0) {
+                btn.innerHTML += `<div class="bell-badge">${unread>9?'+':unread}</div>`;
+                btn.classList.add('text-red-400');
+                btn.onclick = () => { /* Lógica de abrir lista de msg se quiser, ou só alertar */ 
+                    const modal = document.getElementById('modalOverlay');
+                    const cont = document.getElementById('modalContainer');
+                    modal.classList.remove('hidden');
+                    // Lista simples dos jogos com msg não lida
+                    const unreadList = window.cachedMatches.filter(m => (globalServerCounts[m.id]||0) > (parseInt(localStorage.getItem(`read_count_${m.id}`)||0)));
+                    let html = `<div class="bg-white w-full max-w-sm rounded overflow-hidden"><div class="bg-red-600 text-white p-3 font-bold text-center">NOVAS MENSAGENS</div><div class="p-4 space-y-2">`;
+                    if(unreadList.length === 0) html += `<p class="text-center text-gray-500">Nenhuma nova mensagem.</p>`;
+                    else unreadList.forEach(m => {
+                        html += `<div onclick="window.openMatchComments('${m.id}', '${escapeStr(m.teamA)}', '${escapeStr(m.teamB)}', '${escapeStr(m.winner||'')}')" class="border p-3 rounded flex justify-between items-center cursor-pointer hover:bg-gray-50"><span class="font-bold text-xs">${m.teamA} x ${m.teamB}</span><span class="bg-red-100 text-red-600 text-[9px] px-2 py-1 rounded font-bold">LER</span></div>`;
+                    });
+                    html += `<button onclick="closeModal()" class="w-full bg-gray-800 text-white py-2 rounded mt-4">FECHAR</button></div></div>`;
+                    cont.innerHTML = html;
+                };
+            } else {
+                btn.classList.remove('text-red-400');
+                btn.onclick = () => alert("Nenhuma nova notificação.");
+            }
+        };
+
+        window.copyKeyOnly = () => {
+            const el = document.getElementById('pixKey');
+            if (el && el.value) {
+                el.select(); el.setSelectionRange(0, 99999);
+                navigator.clipboard.writeText(el.value).then(() => alert("Chave Pix Copiada!")).catch(() => { document.execCommand('copy'); alert("Chave Copiada!"); });
+            } else alert("Chave não encontrada.");
+        };
     </script>
 </body>
 </html>
+
 
