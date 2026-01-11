@@ -59,7 +59,27 @@
             background: linear-gradient(135deg, #006400 0%, #004d00 100%);
             box-shadow: 0 4px 20px rgba(0, 100, 0, 0.3);
         }
-
+/* --- SKELETON LOADING (Performance Visual) --- */
+        .skeleton {
+            background: #e0e0e0;
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .skeleton-card {
+            height: 140px;
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            padding: 16px;
+            border: 1px solid #eee;
+        }
         /* --- CARDS --- */
         /* Mantendo o formato, mas melhorando o acabamento */
         .card-cut {
@@ -738,11 +758,33 @@ Término oficial: 31 de dezembro de 2026
         
         // Variável global para cachear o último HTML renderizado
         let lastMatchesHTML = "";
+// Gera 3 cards falsos pulsando para dar sensação de velocidade
+        function getSkeletonHTML() {
+            return Array(3).fill(0).map(() => `
+                <div class="skeleton-card">
+                    <div class="flex justify-between mb-4">
+                        <div class="skeleton h-4 w-20"></div>
+                        <div class="skeleton h-4 w-10"></div>
+                    </div>
+                    <div class="flex justify-between items-center gap-4">
+                        <div class="skeleton h-16 w-16 rounded-lg"></div>
+                        <div class="skeleton h-6 w-8"></div>
+                        <div class="skeleton h-16 w-16 rounded-lg"></div>
+                    </div>
+                    <div class="skeleton h-3 w-full mt-4"></div>
+                </div>
+            `).join('');
+        }
+       // Variável global para cachear o último HTML renderizado
+        let lastMatchesHTML = "";
 
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
-            // Só mostra spinner se estiver vazio (primeira carga)
-            if(!container.innerHTML.trim()) document.getElementById('progressBar').classList.remove('hidden');
+            
+            // 🚀 OTIMIZAÇÃO: Se estiver vazio, mostra o Skeleton imediatamente
+            if(!container.innerHTML.trim()) {
+                container.innerHTML = `<div class="p-2">${getSkeletonHTML()}</div>`;
+            }
             
             try {
                 // 1. Buscamos TUDO de uma vez
@@ -756,10 +798,7 @@ Término oficial: 31 de dezembro de 2026
                 ]);
 
                 const totalParticipants = uSnap.size || 1; 
-
                 if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
-
-                // Mapas de Estatísticas e Votos
                 const statsMap = {};
                 const guessesData = []; 
                 guessesSnap.forEach(d => {
@@ -770,14 +809,11 @@ Término oficial: 31 de dezembro de 2026
                     statsMap[g.matchId][g.teamSelected]++;
                     statsMap[g.matchId].total++;
                 });
-
                 const serverCounts = {};
                 commentsSnap.forEach(doc => { const mid = doc.data().matchId; serverCounts[mid] = (serverCounts[mid] || 0) + 1; });
                 globalServerCounts = serverCounts;
-                
                 const now = new Date();
                 let allMatchesList = [];
-
                 matchesSnap.forEach(d => {
                     const m = {id:d.id, ...d.data()};
                     if(m.deadline) {
@@ -788,20 +824,15 @@ Término oficial: 31 de dezembro de 2026
                         allMatchesList.push(m);
                     }
                 });
-
-                // Ordenação Mestra
                 allMatchesList.sort((a,b) => {
                     const timeDiff = a.deadlineDate - b.deadlineDate;
                     if (timeDiff !== 0) return timeDiff;
                     return a.id.localeCompare(b.id);
                 });
-
                 window.cachedMatches = allMatchesList; 
-
                 let open = [], waiting = [], finished = [];
                 let totalUnread = 0;
                 let unreadInOpen = false, unreadInWaiting = false, unreadInFinished = false;
-
                 allMatchesList.forEach((m, index) => {
                     m.matchNumber = index + 1;
                     const sCount = serverCounts[m.id] || 0;
@@ -812,15 +843,12 @@ Término oficial: 31 de dezembro de 2026
                     }
                     if(m.winner) finished.push(m); else if(m.expired) waiting.push(m); else open.push(m);
                 });
-
                 waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
                 finished.sort((a,b)=>b.deadlineDate-a.deadlineDate); 
                 
-                // =================================================================
-                // 📰 GERADOR DE LETREIRO (LÓGICA CORRIGIDA)
-                // =================================================================
+                // ... RECOLOCANDO O NEWS FEED E MONTAGEM DO HTML ...
                 const generateNewsFeed = () => {
-                    let newsSegments = []; 
+                   let newsSegments = []; 
                     const addSegment = (text, colorHex) => { newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`); };
                     
                     const C_GOLD = "#FFD700"; const C_BLUE_LIGHT = "#4FC3F7"; const C_GRAY = "#808080"; 
@@ -992,18 +1020,13 @@ Término oficial: 31 de dezembro de 2026
                 
                 if(finished.length) {
                     const pulseFin = unreadInFinished ? '<span class="pulse-dot"></span>' : '';
-                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`;
+                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="glass-panel p-2 text-center shadow-sm flex justify-between items-center px-4 border-l-4 border-[#D32F2F]"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`;
                 }
-                // --- O PULO DO GATO: SÓ ATUALIZA SE MUDOU ---
-                // Remove espaços e quebras de linha para comparar apenas conteúdo útil
+               // Só atualiza o DOM se mudou algo real (evita piscar)
                 if (html !== lastMatchesHTML) {
-                    // Usa requestAnimationFrame para sincronizar com a pintura da tela
                     requestAnimationFrame(() => {
                         container.innerHTML = html;
                         lastMatchesHTML = html;
-                        
-                        // Restaura estado dos toggles se necessário (opcional)
-                        // window.updateBadges(); // Chama badges aqui
                     });
                 }
             window.updateBadges(); 
@@ -1068,7 +1091,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                                 <div class="flex justify-between items-start mb-4">
                                     <div class="flex flex-col w-full pr-2">
                                         <div class="flex justify-between items-baseline">
-                                            <span class="text-[14px] font-black text-black leading-none mb-1">JOGO #${m.matchNumber}</span>
+                                            <span class="text-[14px] font-black text-black leading-none mb-1">#${m.matchNumber}</span>
                                         </div>
                                         <span class="text-[10px] text-gray-500 font-bold leading-tight mb-1">${m.round}</span>
                                         <span class="text-[11px] font-black text-[#D32F2F]">${m.expired ? 'Encerrado:' : '⚠️ Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
@@ -2779,6 +2802,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
