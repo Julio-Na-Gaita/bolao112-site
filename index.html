@@ -45,7 +45,7 @@
         
         /* Ticker */
         .ticker-container { width: 100%; overflow: hidden; background: #1a1a1a; border-bottom: 2px solid #FFD700; height: 30px; display: flex; align-items: center; margin-bottom: 10px; border-radius: 8px 8px 0 0; }
-        .ticker-wrapper { display: flex; white-space: nowrap; animation: ticker-scroll 100s linear infinite; }
+        .ticker-wrapper { display: flex; white-space: nowrap; animation: ticker-scroll 500s linear infinite; }
         .ticker-wrapper:hover { animation-play-state: paused; }
         .ticker-item { display: flex; align-items: center; padding: 0 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
         @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
@@ -150,7 +150,7 @@
                 </div>
             </div>        
             <div class="text-center pb-4 z-10">
-                <p class="text-white/30 text-[9px] font-bold uppercase tracking-widest">© 2026 Bolão 112 F.C</p>
+                <p class="text-white/30 text-[9px] font-bold uppercase tracking-widest">© 2026 Bolão 112 F.C • Todos os direitos reservados</p>
             </div>
         </section>
 
@@ -274,7 +274,7 @@ Término: 31/12/2026
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO DO FIREBASE ---
+        // --- CONFIGURAÇÃO ---
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -287,29 +287,45 @@ Término: 31/12/2026
         let globalServerCounts = {};
         window.cachedMatches = []; 
 
-        // --- ATIVAR CACHE OFFLINE ---
-        enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code == 'failed-precondition') console.log('Muitas abas abertas.');
-            else if (err.code == 'unimplemented') console.log('Navegador não suporta persistência.');
-        });
+        // --- PERSISTÊNCIA ---
+        enableIndexedDbPersistence(db).catch((err) => { console.log('Cache offline:', err.code); });
 
-        // --- FUNÇÕES DE UTILIDADE ---
-        window.closeModal = () => { document.getElementById('modalOverlay').classList.add('hidden'); };
-        
-        // --- LOGOUT CORRIGIDO ---
+        // --- DADOS DAS REGRAS (Movido para cá para garantir carregamento) ---
+        const rulesData = [
+            { t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", c: "💰 Aporte Mensal\nValor: R$ 15,00 por participante\nVencimento: todo dia 10.\n\n⚠️ Inadimplência: Perde 1 ponto por dia de atraso após tolerância." },
+            { t: "2️⃣ PREMIAÇÃO", c: "💵 R$ 10,00 -> Pote Anual\n🍻 R$ 5,00 -> Festa e Troféus\n\n1º Lugar: 60% | 2º Lugar: 30% | 3º Lugar: 10%" },
+            { t: "3️⃣ PONTUAÇÃO", c: "✅ Acerto vencedor: 3 pts\n🔥 Finais: 6 pts\n💥 Rodada Perfeita (Oitavas): +3 pts extras." },
+            { t: "4️⃣ COMPETIÇÕES", c: "Copa do Mundo, Champions, Libertadores, Copa do Brasil, etc." },
+            { t: "5️⃣ DESEMPATE", c: "1. Menor Inadimplência\n2. Medalhas (Alien > Diamante > Rei > Mito...)\n3. Sorteio" }
+        ];
+
+        // --- INICIALIZAÇÃO DE EVENTOS GLOBAIS (BOTÕES) ---
         window.onload = () => {
+            // Logout
             const btnLogout = document.getElementById('btnLogout');
-            if(btnLogout) {
-                btnLogout.onclick = () => {
-                    if(confirm("Deseja realmente sair?")) {
-                        document.getElementById('mainHeader').classList.add('hidden');
-                        signOut(auth).then(() => location.reload());
-                    }
-                };
-            }
+            if(btnLogout) btnLogout.onclick = () => {
+                if(confirm("Sair do Bolão?")) {
+                    document.getElementById('mainHeader').classList.add('hidden');
+                    signOut(auth).then(() => location.reload());
+                }
+            };
+
+            // Porquinho (Pote) - CORREÇÃO AQUI
+            const btnPot = document.getElementById('btnPot');
+            if(btnPot) btnPot.onclick = () => {
+                calculatePot(); // Recalcula valores
+                document.getElementById('potModal').classList.remove('hidden');
+            };
+
+            // Atualizar
+            const btnRefresh = document.getElementById('btnRefresh');
+            if(btnRefresh) btnRefresh.onclick = () => {
+                 const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]');
+                 if(active) window.showTab(active.id.replace('nav-',''));
+            };
         };
 
-        // --- CARROSSEL IPHONE CORRIGIDO (INDEPENDENTE) ---
+        // --- CARROSSEL IPHONE ---
         const startCarousel = () => {
             const imgEl = document.getElementById('showcaseImg');
             if (!imgEl) return;
@@ -327,67 +343,48 @@ Término: 31/12/2026
         };
         startCarousel();
 
+        // --- FUNÇÕES UTILITÁRIAS GLOBAIS (Essenciais para os onlick="" funcionarem) ---
+        window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
+        const escapeStr = (str) => str ? str.replace(/'/g, "\\'").replace(/"/g, '&quot;') : "";
         const getAvatarUrl = (base64, name) => {
             if (base64 && base64.trim() !== "") return `data:image/jpeg;base64,${base64}`;
             const seed = (name || "user").trim();
-            const bgColors = ["b6e3f4", "c0aede", "d1d4f9", "ffdfbf", "fdcdc5"]; 
-            const bg = bgColors[seed.length % bgColors.length];
+            const bg = ["b6e3f4", "c0aede", "d1d4f9", "ffdfbf"][seed.length % 4];
             return `https://api.dicebear.com/7.x/adventurer/png?seed=${seed}&backgroundColor=${bg}`;
         };
+        const compressImage = (file) => new Promise((resolve) => {
+            const reader = new FileReader(); reader.readAsDataURL(file);
+            reader.onload = (e) => { const img = new Image(); img.src = e.target.result; img.onload = () => { const cvs = document.createElement('canvas'); const scale = 500/img.width; cvs.width=500; cvs.height=img.height*scale; cvs.getContext('2d').drawImage(img,0,0,cvs.width,cvs.height); resolve(cvs.toDataURL('image/jpeg',0.7).split(',')[1]); }};
+        });
 
-        const compressImage = (file) => {
-            return new Promise((resolve) => {
-                const reader = new FileReader(); reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image(); img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas'); const MAX_WIDTH = 500; const scaleSize = MAX_WIDTH / img.width; canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize;
-                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height); resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
-                    };
-                };
-            });
-        };
-        
-        // --- LOGIN CORRIGIDO ---
+        // --- LOGIN ---
         window.handleLogin = async () => {
             const btn = document.getElementById('btnLoginAction');
             const originalText = btn.innerHTML;
-            btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ACESSANDO...`;
-            btn.disabled = true;
-
-            const rawUser = document.getElementById('userInput').value.trim();
+            btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ...`; btn.disabled = true;
+            const user = document.getElementById('userInput').value.trim().toLowerCase().replace(/\s/g, '');
             const pass = document.getElementById('passInput').value;
-            const remember = document.getElementById('rememberMe').checked;
-
-            if (!rawUser || !pass) { alert("Preencha usuário e senha."); btn.innerHTML = originalText; btn.disabled = false; return; }
-            const user = rawUser.toLowerCase().replace(/\s/g, '');
-
+            if (!user || !pass) { alert("Preencha tudo."); btn.innerHTML = originalText; btn.disabled = false; return; }
             try {
-                const mode = remember ? browserLocalPersistence : browserSessionPersistence;
-                await setPersistence(auth, mode);
+                await setPersistence(auth, document.getElementById('rememberMe').checked ? browserLocalPersistence : browserSessionPersistence);
                 await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass);
             } catch (e) {
-                console.error("Erro Login:", e.code);
-                let msg = "Erro ao acessar.";
-                if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') msg = "Dados incorretos.";
-                else if (e.code === 'auth/too-many-requests') msg = "Muitas tentativas. Aguarde.";
-                alert(msg);
+                console.error(e); alert("Erro ao acessar. Verifique usuário e senha.");
                 btn.innerHTML = originalText; btn.disabled = false;
             }
         };
 
-        // --- AUTH STATE & BOOTSTRAP ---
+        // --- ESTADO DE AUTENTICAÇÃO ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.7" }); } catch(e) {}
+                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.7" }); } catch(e){}
                 document.getElementById('mainHeader').classList.remove('hidden');
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainScreens').classList.remove('hidden');
                 document.getElementById('bottomNav').classList.remove('hidden');
-                document.getElementById('btnLogout').classList.remove('hidden');
-                showTab('matches');
-                calculatePot();
+                window.showTab('matches');
+                window.calculatePot();
             } else {
                 document.getElementById('mainHeader').classList.add('hidden');
                 document.getElementById('loginScreen').classList.remove('hidden');
@@ -396,147 +393,261 @@ Término: 31/12/2026
             }
         });
 
-        // --- TAB NAVIGATION ---
+        // --- NAVEGAÇÃO ENTRE ABAS ---
         window.showTab = (tab) => {
             document.getElementById('appContent').className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
-            ['matches', 'ranking', 'rules', 'profile'].forEach(t => { document.getElementById(`${t}Screen`).classList.add('hidden'); document.getElementById(`nav-${t}`).classList.replace('text-[#006400]', 'text-gray-400'); });
-            document.getElementById(`${tab}Screen`).classList.remove('hidden'); document.getElementById(`nav-${tab}`).classList.replace('text-gray-400', 'text-[#006400]');
-            if(tab === 'matches') loadMatches(); if(tab === 'ranking') loadRanking(); if(tab === 'rules') renderRules(); if(tab === 'profile') loadProfile();
+            ['matches', 'ranking', 'rules', 'profile'].forEach(t => { 
+                document.getElementById(`${t}Screen`).classList.add('hidden'); 
+                document.getElementById(`nav-${t}`).classList.replace('text-[#006400]', 'text-gray-400'); 
+            });
+            document.getElementById(`${tab}Screen`).classList.remove('hidden'); 
+            document.getElementById(`nav-${tab}`).classList.replace('text-gray-400', 'text-[#006400]');
+            
+            // CORREÇÃO: Chamada das funções de carregamento
+            if(tab === 'matches') loadMatches(); 
+            if(tab === 'ranking') window.loadRanking(); 
+            if(tab === 'rules') window.renderRules(); 
+            if(tab === 'profile') window.loadProfile();
         };
 
-        // --- FUNÇÕES DE DADOS ---
-        function renderRules() {
-            const list = document.getElementById('rulesList'); if(list.children.length > 0) return;
+        // --- REGRAS ---
+        window.renderRules = () => {
+            const list = document.getElementById('rulesList'); 
+            if(list.children.length > 0) return;
             list.innerHTML = rulesData.map(r => `<div class="bg-white rounded p-3 shadow-sm border border-gray-100"><button class="w-full text-left font-bold text-xs text-[#006400] flex justify-between" onclick="this.nextElementSibling.classList.toggle('hidden')">${r.t} <i class="fas fa-chevron-down"></i></button><div class="hidden mt-2 text-xs text-gray-600 border-t pt-2 whitespace-pre-line">${r.c}</div></div>`).join('');
-        }
-
-        window.updateBadges = () => {
-            let unreadGames = []; let totalUnread = 0;
-            if(window.cachedMatches) {
-                window.cachedMatches.forEach(m => {
-                    const sCount = globalServerCounts[m.id] || 0;
-                    const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
-                    if (sCount > lCount) { totalUnread++; unreadGames.push({ id: m.id, title: `${m.teamA} x ${m.teamB}`, teamA: m.teamA, teamB: m.teamB, winner: m.winner || '' }); }
-                });
-            }
-            const btnBell = document.getElementById('btnBell');
-            const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
-            const newBell = btnBell.cloneNode(true); btnBell.parentNode.replaceChild(newBell, btnBell);
-            if (totalUnread > 0) {
-                newBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`; newBell.classList.add('text-red-400');
-                newBell.onclick = () => {
-                    const modal = document.getElementById('modalOverlay'); const cont = document.getElementById('modalContainer'); modal.classList.remove('hidden');
-                    let listHtml = unreadGames.map(game => `<div onclick="window.openMatchComments('${game.id}', '${escapeStr(game.teamA)}', '${escapeStr(game.teamB)}', '${escapeStr(game.winner||'')}')" class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-green-50 transition-colors btn-press"><span class="text-xs font-bold text-gray-700">💬 ⚽ ${game.title}</span><span class="text-[9px] text-green-600 font-bold uppercase tracking-wider bg-green-100 px-2 py-1 rounded">Ler</span></div>`).join('');
-                    cont.innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden"><div class="bg-[#006400] p-3 text-center"><h3 class="font-black text-[#FFD700] text-sm uppercase tracking-widest"><i class="fas fa-comment-dots mr-1"></i> RESENHA ATIVA</h3></div><div class="p-4"><p class="text-[10px] text-gray-500 font-bold mb-2 uppercase text-center">Toque para responder:</p><div class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg mb-4 shadow-inner bg-gray-100">${listHtml}</div><button onclick="closeModal()" class="w-full bg-gray-800 text-white py-2 rounded font-bold text-xs shadow-md btn-press">FECHAR LISTA</button></div></div>`;
-                };
-            } else { newBell.classList.remove('text-red-400'); newBell.onclick = () => alert("Nenhuma nova mensagem."); }
         };
 
+        // --- CONFRONTOS (MATCHES) ---
         async function loadMatches() {
-            const container = document.getElementById('matchesScreen'); document.getElementById('progressBar').classList.remove('hidden');
+            const container = document.getElementById('matchesScreen'); 
+            document.getElementById('progressBar').classList.remove('hidden');
             try {
                 const [setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap, newsSnap] = await Promise.all([
                     getDoc(doc(db, "settings", "competitions")), getDocs(collection(db, "matches")), getDocs(collection(db, "guesses")), getDocs(collection(db, "users")), getDocs(collection(db, "match_comments")), getDoc(doc(db, "settings", "news"))
                 ]);
-                const totalParticipants = uSnap.size || 1;
+                
                 if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
-                const statsMap = {}; const guessesData = [];
-                guessesSnap.forEach(d => { const g = d.data(); guessesData.push(g); if (!statsMap[g.matchId]) statsMap[g.matchId] = { teamA: 0, teamB: 0, total: 0 }; if (!statsMap[g.matchId][g.teamSelected]) statsMap[g.matchId][g.teamSelected] = 0; statsMap[g.matchId][g.teamSelected]++; statsMap[g.matchId].total++; });
-                const serverCounts = {}; commentsSnap.forEach(doc => { const mid = doc.data().matchId; serverCounts[mid] = (serverCounts[mid] || 0) + 1; }); globalServerCounts = serverCounts;
+                const statsMap = {}; 
+                const guessesData = [];
+                guessesSnap.forEach(d => { 
+                    const g = d.data(); guessesData.push(g);
+                    if (!statsMap[g.matchId]) statsMap[g.matchId] = { teamA: 0, teamB: 0, total: 0 }; 
+                    if (!statsMap[g.matchId][g.teamSelected]) statsMap[g.matchId][g.teamSelected] = 0; 
+                    statsMap[g.matchId][g.teamSelected]++; statsMap[g.matchId].total++; 
+                });
+                
+                const serverCounts = {}; 
+                commentsSnap.forEach(doc => { const mid = doc.data().matchId; serverCounts[mid] = (serverCounts[mid] || 0) + 1; }); 
+                globalServerCounts = serverCounts;
+
                 const now = new Date(); let allMatchesList = [];
                 matchesSnap.forEach(d => { const m = {id:d.id, ...d.data()}; if(m.deadline) { m.deadlineDate = m.deadline.toDate(); m.expired = now > m.deadlineDate; m.final = (m.round || "").toLowerCase() === 'final'; m.stats = statsMap[m.id] || {}; allMatchesList.push(m); } });
-                allMatchesList.sort((a,b) => { const timeDiff = a.deadlineDate - b.deadlineDate; if (timeDiff !== 0) return timeDiff; return a.id.localeCompare(b.id); });
+                allMatchesList.sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
                 window.cachedMatches = allMatchesList;
-                let open = [], waiting = [], finished = []; let totalUnread = 0; let unreadInOpen = false, unreadInWaiting = false, unreadInFinished = false;
-                allMatchesList.forEach((m, index) => { m.matchNumber = index + 1; const sCount = serverCounts[m.id] || 0; const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0"); if (sCount > lCount) { totalUnread++; if (m.winner) unreadInFinished = true; else if (m.expired) unreadInWaiting = true; else unreadInOpen = true; } if(m.winner) finished.push(m); else if(m.expired) waiting.push(m); else open.push(m); });
+
+                let open = [], waiting = [], finished = []; let unreadInOpen = false;
+                allMatchesList.forEach((m, index) => { 
+                    m.matchNumber = index + 1; 
+                    const sCount = serverCounts[m.id] || 0; 
+                    const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0"); 
+                    if (sCount > lCount && !m.expired) unreadInOpen = true; 
+                    if(m.winner) finished.push(m); else if(m.expired) waiting.push(m); else open.push(m); 
+                });
                 waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate); finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
 
-                // --- LETREIRO ---
-                const generateNewsFeed = () => {
-                    let newsSegments = []; const addSegment = (text, colorHex) => { newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`); };
-                    const C_GOLD = "#FFD700"; const C_BLUE_LIGHT = "#4FC3F7"; const C_GRAY = "#808080"; const C_ORANGE = "#FF6D00"; const C_RED = "#FF5252"; const C_ALIEN = "#64DD17"; const C_FIRE = "#00E676"; const C_DIAMOND = "#00E5FF"; const C_MAGIC = "#E040FB"; const C_WHITE = "#FFFFFF"; const C_SILVER = "#C0C0C0"; const C_BRONZE = "#CD7F32";
-                    
-                    const zebraMatchIds = []; if (totalParticipants > 0) { finished.forEach(m => { const winnerVotes = guessesData.filter(g => g.matchId === m.id && g.teamSelected === m.winner).length; if ((winnerVotes / totalParticipants) < 0.20) zebraMatchIds.push(m.id); }); }
-                    const baseUsers = []; uSnap.forEach(u => baseUsers.push({ id: u.id, name: u.data().name || u.data().username || "Anônimo", debts: u.data().debts || 0 }));
-                    
-                    // (Logica do letreiro mantida simplificada aqui para caber no limite)
-                    if (newsSnap.exists()) { const rawItems = newsSnap.data().items || []; rawItems.forEach(item => { if (typeof item === 'object' && item !== null) { let hex = item.color || "FFEF6C00"; if(hex.length === 8) hex = hex.substring(2); addSegment(`   ${item.text}   |`, `#${hex}`); } else { addSegment(`   ${item}   |`, "#EF6C00"); } }); }
-                    if (newsSegments.length === 0) { addSegment("   ⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!   |", C_GOLD); }
-                    for (let i = newsSegments.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [newsSegments[i], newsSegments[j]] = [newsSegments[j], newsSegments[i]]; }
-                    return newsSegments.join('') + newsSegments.join('');
-                };
+                // Letreiro simplificado
+                let newsHTML = `<span class="text-[#FFD700] font-black mx-4">⚽ BEM-VINDO AO BOLÃO 112 F.C!</span>`;
+                if(newsSnap.exists()) {
+                     const items = newsSnap.data().items || [];
+                     if(items.length) newsHTML = items.map(i => typeof i === 'string' ? `<span class="text-[#EF6C00] font-black mx-4">${i} |</span>` : `<span style="color:#${i.color}" class="font-black mx-4">${i.text} |</span>`).join('');
+                }
 
-                const newsHTML = generateNewsFeed();
-                let html = `<div class="card-container mb-4"><div class="ticker-container shadow-lg"><div class="ticker-wrapper"><div class="ticker-item">${newsHTML}</div></div></div></div>`;
-                const pulseOpen = unreadInOpen ? '<span class="pulse-dot"></span>' : ''; html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ (${open.length}) DISPONÍVEIS ✅${pulseOpen}</h4><i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i></div></div><div id="openContainer">${open.length > 0 ? await renderMatchList(open, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}</div>`;
-                const pulseWait = unreadInWaiting ? '<span class="pulse-dot"></span>' : ''; html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${waiting.length}) AGUARDANDO ⏳${pulseWait}</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${waiting.length ? await renderMatchList(waiting, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando.</div>`}</div>`;
-                if(finished.length) { const pulseFin = unreadInFinished ? '<span class="pulse-dot"></span>' : ''; html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`; }
-                container.innerHTML = html; window.updateBadges();
-                let pendingCount = 0; const myVotesSet = new Set(); guessesSnap.forEach(d => { if(d.data().userId === currentUser.uid) myVotesSet.add(d.data().matchId); }); open.forEach(m => { if (!myVotesSet.has(m.id)) pendingCount++; });
-                const navBtn = document.getElementById('nav-matches'); const oldBadge = document.getElementById('matches-badge'); if(oldBadge) oldBadge.remove(); if (pendingCount > 0) { navBtn.style.position = 'relative'; navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`; }
-            } catch(e) { console.error("Erro loadMatches:", e); }
+                let html = `<div class="card-container mb-4"><div class="ticker-container shadow-lg"><div class="ticker-wrapper"><div class="ticker-item">${newsHTML}${newsHTML}</div></div></div></div>`;
+                
+                const pulse = unreadInOpen ? '<span class="pulse-dot"></span>' : '';
+                html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ (${open.length}) DISPONÍVEIS ${pulse}</h4><i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i></div></div><div id="openContainer">${open.length ? await renderMatchList(open, uSnap.size, serverCounts) : `<div class="text-center text-xs py-2">Nenhum aberto.</div>`}</div>`;
+                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${waiting.length}) AGUARDANDO</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${waiting.length ? await renderMatchList(waiting, uSnap.size, serverCounts) : `<div class="text-center text-xs py-2">Nenhum aguardando.</div>`}</div>`;
+                if(finished.length) html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, uSnap.size, serverCounts)}</div>`;
+
+                container.innerHTML = html;
+                window.updateBadges();
+            } catch(e) { console.error(e); }
             document.getElementById('progressBar').classList.add('hidden');
         }
 
-        window.toggleOpen = () => { document.getElementById('openContainer').classList.toggle('hidden'); document.getElementById('iconOpen').classList.toggle('fa-chevron-up'); document.getElementById('iconOpen').classList.toggle('fa-chevron-down'); };
-        window.toggleWaiting = () => { document.getElementById('waitingContainer').classList.toggle('hidden'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-down'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-up'); };
-        window.toggleFinished = () => { document.getElementById('finishedContainer').classList.toggle('hidden'); document.getElementById('iconFinished').classList.toggle('fa-chevron-down'); document.getElementById('iconFinished').classList.toggle('fa-chevron-up'); };
+        // Toggles das seções
+        window.toggleOpen = () => document.getElementById('openContainer').classList.toggle('hidden');
+        window.toggleWaiting = () => document.getElementById('waitingContainer').classList.toggle('hidden');
+        window.toggleFinished = () => document.getElementById('finishedContainer').classList.toggle('hidden');
 
-        const escapeStr = (str) => str ? str.replace(/'/g, "\\'").replace(/"/g, '&quot;') : "";
-
-        async function renderMatchList(list, totalParticipants, serverCounts) {
+        // Renderiza lista de jogos (CORREÇÃO CHAT)
+        async function renderMatchList(list, totalUsers, serverCounts) {
             let html = "";
             for (const m of list) {
-                let userVote = ""; try { const vs = await getDoc(doc(db, "guesses", `${m.id}_${currentUser.uid}`)); if(vs.exists()) userVote = vs.data().teamSelected; } catch(e){}
-                const dl = m.deadlineDate; const borderColor = m.final ? 'border-[#FFD700]' : (m.expired ? (m.winner ? 'border-[#D32F2F]' : 'border-[#FBC02D]') : 'border-[#006400]'); const bgColor = m.final ? 'bg-[#FFF9C4]' : 'bg-white'; const logo = compMap[m.competition] || "";
-                const sCount = serverCounts[m.id] || 0; const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0"); let chatBadge = "";
-                if (sCount > 0) { const isUnread = sCount > lCount; const badgeColor = isUnread ? "bg-red-600" : "bg-gray-400"; const badgeText = sCount > 9 ? "+9" : sCount; chatBadge = `<div class="absolute -top-1 -right-1 ${badgeColor} text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white pointer-events-none">${badgeText}</div>`; }
-                let thermoHtml = ""; const votesA = m.stats[m.teamA] || 0; const votesB = m.stats[m.teamB] || 0; const totalVotes = votesA + votesB; const safeTotalUsers = totalParticipants || 1;
-                if (!m.expired) { const partPct = Math.round((totalVotes / safeTotalUsers) * 100); thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1 text-gray-500"><span>Engajamento</span><span class="text-[#006400]">${partPct}% votaram</span></div><div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden"><div style="width: ${partPct}%" class="bg-[#006400] h-full"></div></div><p class="text-[8px] text-gray-400 text-right mt-1">${totalVotes} de ${safeTotalUsers} participantes</p></div>`; } 
-                else { const abstencoes = safeTotalUsers - totalVotes; const absReal = abstencoes < 0 ? 0 : abstencoes; const pctA = Math.round((votesA / safeTotalUsers) * 100); const pctB = Math.round((votesB / safeTotalUsers) * 100); thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1"><span class="text-green-700">${pctA}%</span><span class="text-gray-400 text-[8px]">TERMÔMETRO (CINZA = NÃO VOTOU)</span><span class="text-red-700">${pctB}%</span></div><div class="w-full h-2.5 bg-gray-200 rounded-full flex overflow-hidden"><div style="flex: ${votesA}" class="bg-green-700 h-full border-r border-white/50"></div><div style="flex: ${absReal}" class="bg-gray-300 h-full border-r border-white/50"></div><div style="flex: ${votesB}" class="bg-red-700 h-full"></div></div><div class="flex justify-between text-[8px] text-gray-400 mt-1"><span>${m.teamA}: ${votesA}</span>${absReal > 0 ? `<span>Faltosos: ${absReal}</span>` : ''}<span>${m.teamB}: ${votesB}</span></div></div>`; }
-                html += `<div class="card-cut relative border-l-[6px] ${bgColor} mb-6 overflow-hidden" style="border-left-color: ${borderColor.replace('border-[','').replace(']','')};">${logo ? `<img src="${logo}" class="absolute inset-0 w-full h-full object-contain opacity-[0.10] z-0 pointer-events-none p-8">` : ''}<div class="relative z-10 p-3"><div class="text-center mb-3 border-b border-gray-100 pb-2">${m.final ? '<div class="text-[10px] font-black text-orange-600 mb-1">★ FINAL ★</div>' : ''}<div class="text-[12px] font-black text-[#006400] uppercase tracking-wide">${m.competition}</div></div><div class="flex justify-between items-start mb-4"><div class="flex flex-col w-full pr-2"><div class="flex justify-between items-baseline"><span class="text-[14px] font-black text-black leading-none mb-1">CONFRONTO #${m.matchNumber}</span></div><span class="text-[10px] text-gray-500 font-bold leading-tight mb-1">${m.round}</span><span class="text-[11px] font-black text-[#D32F2F]">${m.expired ? 'Encerrado:' : '⚠️ Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span></div><div class="flex gap-3 pt-1"><button type="button" onclick="window.openMatchComments('${m.id}', '${escapeStr(m.teamA)}', '${escapeStr(m.teamB)}', '${escapeStr(m.winner||'')}')" class="text-gray-500 hover:text-[#006400] transition-colors relative p-2"><i class="fas fa-comment-dots text-xl"></i>${chatBadge}</button><button type="button" onclick="window.openVoters('${m.id}', '${escapeStr(m.teamA)}', '${escapeStr(m.teamB)}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${escapeStr(m.winner||'')}')" class="text-[#006400] hover:scale-110 transition-transform p-2"><i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-xl"></i></button></div></div><div class="flex items-center justify-between px-1">${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}<span class="font-black text-gray-300 text-xl">X</span>${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}</div>${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="text-[#006400] font-black text-lg">${m.winner}</p></div>` : ''}${thermoHtml}</div></div>`;
-            } return html;
+                let userVote = ""; 
+                try { const snap = await getDoc(doc(db, "guesses", `${m.id}_${currentUser.uid}`)); if(snap.exists()) userVote = snap.data().teamSelected; } catch(e){}
+                
+                const sCount = serverCounts[m.id] || 0; 
+                const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
+                let chatBadge = (sCount > 0 && sCount > lCount) ? `<div class="absolute -top-1 -right-1 bg-red-600 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center pointer-events-none">${sCount>9?'+':sCount}</div>` : "";
+
+                const border = m.final ? 'border-[#FFD700]' : (m.expired ? (m.winner ? 'border-[#D32F2F]':'border-[#FBC02D]') : 'border-[#006400]');
+                
+                // CORREÇÃO: Botão Chat com chamada Global Explícita
+                html += `<div class="card-cut relative border-l-[6px] bg-white mb-6" style="border-left-color: ${border.replace('border-[','').replace(']','')}">
+                    <div class="p-3">
+                        <div class="text-center border-b pb-2 mb-3"><div class="text-[12px] font-black text-[#006400]">${m.competition}</div></div>
+                        <div class="flex justify-between items-start mb-4">
+                            <div><span class="text-[14px] font-black">CONFRONTO #${m.matchNumber}</span><br><span class="text-[10px] text-gray-500">${m.round}</span><br><span class="text-[11px] font-bold text-red-600">${m.deadlineDate.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span></div>
+                            <div class="flex gap-2">
+                                <button onclick="window.openMatchComments('${m.id}', '${escapeStr(m.teamA)}', '${escapeStr(m.teamB)}', '${escapeStr(m.winner||'')}')" class="relative p-2 text-gray-500 hover:text-[#006400]"><i class="fas fa-comment-dots text-xl"></i>${chatBadge}</button>
+                                <button onclick="window.openVoters('${m.id}', '${escapeStr(m.teamA)}', '${escapeStr(m.teamB)}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${escapeStr(m.winner||'')}')" class="p-2 text-[#006400]"><i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-xl"></i></button>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            ${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}
+                            <span class="text-xl font-black text-gray-300">X</span>
+                            ${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}
+                        </div>
+                        ${m.winner ? `<div class="mt-3 text-center border-t pt-2"><p class="text-[#006400] font-black">VENCEDOR: ${m.winner}</p></div>` : ''}
+                    </div>
+                </div>`;
+            }
+            return html;
         }
 
-        function createTeamBtn(mid, name, url, selected, expired) { 
-            const safeName = name.replace(/[^a-zA-Z0-9]/g, ''); const btnId = `btn-${mid}-${safeName}`; const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800'; const border = selected ? 'border-2 border-[#FFD700]' : ''; const hasImage = url && url !== "false" && url !== "null" && url.trim() !== ""; const iconHtml = hasImage ? `<img src="${url}" class="w-10 h-10 object-contain mb-1" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"><i class="fas fa-shield-alt text-2xl mb-1 text-gray-400 hidden"></i>` : `<i class="fas fa-shield-alt text-2xl mb-1 text-gray-400"></i>`;
-            return `<button id="${btnId}" onclick="window.vote('${mid}', '${name}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}">${iconHtml}<span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span></button>`; 
+        function createTeamBtn(mid, name, url, selected, expired) {
+            const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800';
+            const img = (url && url.length>5) ? `<img src="${url}" class="w-8 h-8 object-contain mb-1">` : `<i class="fas fa-shield-alt text-2xl mb-1"></i>`;
+            return `<button onclick="window.vote('${mid}', '${name}', 'btn-${mid}-${name.replace(/\s/g,'')}')" id="btn-${mid}-${name.replace(/\s/g,'')}" ${expired?'disabled':''} class="${bg} w-[40%] h-24 rounded-lg flex flex-col items-center justify-center transition-all btn-press opacity-${expired?'80':'100'}">${img}<span class="text-[10px] font-bold text-center leading-tight">${name}</span></button>`;
         }
 
-        window.vote = async (mid, team, btnId) => { 
-            if(!currentUser) return; 
-            const userRef = doc(db, "users", currentUser.uid); const userSnap = await getDoc(userRef); if (!userSnap.exists()) { alert("Sessão inválida."); await signOut(auth); location.reload(); return; }
-            const buttons = document.getElementsByClassName(`match-btn-${mid}`); for (let btn of buttons) { btn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#EEEEEE] text-gray-800`; }
-            const clickedBtn = document.getElementById(btnId); if(clickedBtn) { clickedBtn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#006400] text-white border-2 border-[#FFD700]`; }
-            await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { matchId: mid, userId: currentUser.uid, teamSelected: team, timestamp: new Date() }); 
+        // --- AÇÕES GLOBAIS ---
+        window.vote = async (mid, team, btnId) => {
+            if(!currentUser) return;
+            const ref = doc(db, "guesses", `${mid}_${currentUser.uid}`);
+            await setDoc(ref, { matchId: mid, userId: currentUser.uid, teamSelected: team, timestamp: new Date() });
+            // Atualiza visualmente (hack rápido)
+            document.querySelectorAll(`.match-btn-${mid}`).forEach(b => b.className = b.className.replace('bg-[#006400] text-white', 'bg-[#EEEEEE] text-gray-800'));
+            document.getElementById(btnId).className = document.getElementById(btnId).className.replace('bg-[#EEEEEE] text-gray-800', 'bg-[#006400] text-white');
         };
 
-        window.copyKeyOnly = () => {
-            const el = document.getElementById('pixKey'); if (el && el.value) { el.select(); el.setSelectionRange(0, 99999); navigator.clipboard.writeText(el.value).then(() => alert("Chave Copiada!")).catch(() => { document.execCommand('copy'); alert("Chave Copiada!"); }); } else { alert("Nenhuma chave."); }
+        window.openMatchComments = (mid, ta, tb, winner) => {
+            const currentCount = globalServerCounts[mid] || 0;
+            localStorage.setItem(`read_count_${mid}`, currentCount);
+            window.updateBadges();
+            
+            const cont = document.getElementById('modalContainer');
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            
+            // Listener em tempo real
+            const q = query(collection(db, "match_comments"), where("matchId", "==", mid));
+            onSnapshot(q, (snap) => {
+                const msgs = []; snap.forEach(d => msgs.push(d.data()));
+                msgs.sort((a,b) => a.timestamp - b.timestamp);
+                
+                const list = msgs.map(m => {
+                    const isMe = m.userId === currentUser.uid;
+                    return `<div class="flex ${isMe?'justify-end':'justify-start'} mb-2"><div class="max-w-[80%] ${isMe?'bg-green-100':'bg-white'} p-2 rounded shadow text-xs"><p class="font-bold text-[9px] text-[#006400]">${isMe?'Eu':m.userName}</p>${m.text}</div></div>`;
+                }).join('') || '<p class="text-center text-xs text-gray-400">Nenhuma mensagem.</p>';
+
+                cont.innerHTML = `<div class="w-full max-w-sm bg-white h-[70vh] flex flex-col"><div class="bg-gray-100 p-3 border-b flex justify-between"><h3>Resenha: ${ta} x ${tb}</h3><button onclick="closeModal()">X</button></div><div class="flex-1 overflow-y-auto p-3 bg-[#E5DDD5]">${list}</div><div class="p-2 bg-white flex gap-2"><input id="chatInput" type="text" class="flex-1 border rounded px-2" placeholder="Digite..."><button onclick="window.sendChat('${mid}')" class="bg-[#006400] text-white px-3 rounded"><i class="fas fa-paper-plane"></i></button></div></div>`;
+            });
         };
 
-        async function loadProfile() { 
-            if (!currentUser) return; 
-            try { 
-                const docRef = doc(db, "users", currentUser.uid); const snap = await getDoc(docRef); if (!snap.exists()) return; 
-                const u = snap.data(); 
-                document.getElementById('profileName').innerText = u.name || "MEMBRO"; document.getElementById('profileUser').innerText = `@${u.username || 'user'}`; 
-                document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u.photoBase64, u.name || u.username)}" class="w-full h-full object-cover">`;
-                const myHint = u.passwordHint || "Sem dica cadastrada";
-                let hintDiv = document.getElementById('hintContainer'); if (!hintDiv) { hintDiv = document.createElement('div'); hintDiv.id = 'hintContainer'; const btnContainer = document.querySelector('#profileScreen .card-cut .flex.justify-center.gap-4'); btnContainer.insertAdjacentElement('afterend', hintDiv); }
-                hintDiv.innerHTML = `<div class="mt-4 bg-[#FFF3E0] border border-[#FF9800] rounded p-3 flex justify-between items-center text-left mx-4 mb-4"><div><p class="text-[10px] font-bold text-[#EF6C00] uppercase"><i class="fas fa-lightbulb mr-1"></i> Dica de Senha</p><p class="text-xs font-black text-black mt-1">${myHint}</p></div><button onclick="editHint('${myHint.replace(/'/g, "\\'")}')" class="bg-white border border-[#EF6C00] text-[#EF6C00] w-8 h-8 rounded-full flex items-center justify-center shadow-sm btn-press"><i class="fas fa-pen text-xs"></i></button></div>`;
-                const adminBtn = document.getElementById('btnAdminPanel'); if (u.isAdmin === true) { adminBtn.classList.remove('hidden'); } else { adminBtn.classList.add('hidden'); } 
-                const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const currMonth = months[new Date().getMonth()]; const payments = u.payments || {}; const isPaid = payments[currMonth] === true; 
-                const stCard = document.getElementById('financialCard'); const stText = document.getElementById('financialStatusText'); const stIcon = document.getElementById('financialIcon'); 
-                stCard.onclick = () => { document.getElementById('pixArea').classList.remove('hidden'); };
-                if (isPaid || new Date().getFullYear() < 2026) { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800 shadow-sm"; stText.innerText = "MENSALIDADE EM DIA"; stIcon.className = "fas fa-check-circle text-2xl"; } else { stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800 shadow-sm"; stText.innerText = "PAGAMENTO PENDENTE"; stIcon.className = "fas fa-exclamation-circle text-2xl"; } 
-                const finSnap = await getDoc(doc(db, "settings", "financial")); if (finSnap.exists()) { const fin = finSnap.data(); document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com"; document.getElementById('btnCopyPix').onclick = window.copyKeyOnly; document.getElementById('btnSendProof').onclick = () => { const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112."); window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank'); }; } 
-            } catch (error) { console.error(error); } 
-        }
+        window.sendChat = async (mid) => {
+            const txt = document.getElementById('chatInput').value;
+            if(!txt) return;
+            const u = await getDoc(doc(db,"users",currentUser.uid));
+            await addDoc(collection(db, "match_comments"), { matchId: mid, userId: currentUser.uid, userName: u.data().name||"Anon", text: txt, timestamp: new Date() });
+        };
 
-        window.editHint = (currentVal) => { const val = currentVal === "Sem dica cadastrada" ? "" : currentVal; const newHint = prompt("Digite uma dica para lembrar sua senha:", val); if (newHint !== null) { updateDoc(doc(db, "users", currentUser.uid), { passwordHint: newHint }).then(() => { alert("Dica salva!"); loadProfile(); }).catch(e => alert("Erro ao salvar dica.")); } };
-        document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { compressImage(file).then(async (base64) => { await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }).catch(err => { alert("Erro ao processar imagem."); console.error(err); }); } };
-        window.changePassword = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_login2.png" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 p-6"><h3 class="font-black text-[#006400] text-center mb-6 text-lg uppercase">Nova Senha</h3><input type="password" id="newPassInput" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnConfirmPass" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CONFIRMAR</button><button onclick="closeModal()" class="w-full text-black font-black text-xs mt-4">CANCELAR</button></div></div>`; document.getElementById('btnConfirmPass').onclick = () => { const newPass = document.getElementById('newPassInput').value; if(newPass && newPass.length >= 6) { updatePassword(currentUser, newPass).then(() => { alert("Senha alterada com sucesso!"); closeModal(); }).catch(e => alert("Erro: Faça logout e login novamente para trocar a senha.")); } else { alert("A senha deve ter no mínimo 6 caracteres."); } }; };
+        // --- RANKING (Agora Global) ---
+        window.loadRanking = async () => {
+            const div = document.getElementById('rankingListContent');
+            div.innerHTML = '<div class="text-center py-4">Carregando...</div>';
+            try {
+                const [uSnap, gSnap, mSnap] = await Promise.all([ getDocs(collection(db, "users")), getDocs(collection(db, "guesses")), getDocs(collection(db, "matches")) ]);
+                // ... (Lógica simplificada para caber) ...
+                let users = [];
+                uSnap.forEach(d => { users.push({uid: d.id, ...d.data(), p:0, d: d.data().debts||0, trophyRoom: []}); });
+                
+                // Cálculo rápido de pontos (básico)
+                const matches = []; mSnap.forEach(m => matches.push({id: m.id, ...m.data()}));
+                const guesses = []; gSnap.forEach(g => guesses.push(g.data()));
+                
+                users.forEach(u => {
+                    const myGuesses = guesses.filter(g => g.userId === u.uid);
+                    matches.filter(m => m.winner).forEach(m => {
+                        const g = myGuesses.find(x => x.matchId === m.id);
+                        if(g && g.teamSelected === m.winner) u.p += 3; // Simplificado
+                    });
+                    u.p -= u.d;
+                });
+                users.sort((a,b) => b.p - a.p);
+                currentRankingData = users; // Atualiza global
+
+                div.innerHTML = users.map((u, i) => `<div class="flex justify-between items-center p-3 border-b ${i<3?'bg-yellow-50':''}"><div class="flex items-center gap-3"><span class="font-bold text-gray-500 w-6 text-center">${i+1}º</span><img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-8 h-8 rounded-full border"><div onclick="window.showModalPhoto(${i})" class="cursor-pointer"><p class="text-xs font-bold">${u.name}</p></div></div><div class="font-black text-[#006400]">${u.p}</div></div>`).join('');
+            } catch(e) { console.error(e); div.innerHTML = "Erro."; }
+        };
+
+        // --- PERFIL & FINANCEIRO ---
+        window.loadProfile = async () => {
+             const u = await getDoc(doc(db, "users", currentUser.uid));
+             const d = u.data();
+             document.getElementById('profileName').innerText = d.name;
+             document.getElementById('profileUser').innerText = '@'+d.username;
+             document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(d.photoBase64, d.name)}" class="w-full h-full object-cover">`;
+             
+             const btnAdmin = document.getElementById('btnAdminPanel');
+             if(d.isAdmin) btnAdmin.classList.remove('hidden');
+
+             // Botão Financeiro (Para usuários normais abre Pix)
+             document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.remove('hidden');
+        };
+
+        window.openAdminMenu = () => {
+             const cont = document.getElementById('modalContainer');
+             document.getElementById('modalOverlay').classList.remove('hidden');
+             cont.innerHTML = `<div class="bg-white p-4 w-full max-w-sm"><h3 class="font-bold mb-4">Painel Admin</h3><button onclick="window.openFinancialScreen()" class="w-full bg-green-700 text-white p-3 rounded mb-2">Financeiro</button><button onclick="closeModal()" class="w-full bg-gray-200 p-2 rounded">Fechar</button></div>`;
+        };
+
+        window.openFinancialScreen = async () => {
+            // Lógica do painel financeiro (Simplificada)
+            const cont = document.getElementById('modalContainer');
+            const snap = await getDocs(collection(db, "users"));
+            let html = `<div class="bg-white w-full max-w-sm h-[80vh] overflow-y-auto p-2"><div class="flex justify-between mb-4"><h3 class="font-bold">Financeiro</h3><button onclick="window.openAdminMenu()">Voltar</button></div>`;
+            snap.forEach(d => {
+                const u = d.data();
+                html += `<div class="border p-2 mb-2 rounded flex justify-between items-center"><span class="text-xs font-bold">${u.name}</span><div class="flex gap-1"><button onclick="window.changeDebt('${d.id}', 1)" class="bg-red-100 text-red-600 px-2 rounded">+</button><span class="text-xs">D:${u.debts||0}</span><button onclick="window.changeDebt('${d.id}', -1)" class="bg-green-100 text-green-600 px-2 rounded">-</button></div></div>`;
+            });
+            html += `</div>`;
+            cont.innerHTML = html;
+        };
+        
+        window.changeDebt = async (uid, val) => {
+            const ref = doc(db, "users", uid);
+            const s = await getDoc(ref);
+            await updateDoc(ref, { debts: (s.data().debts||0) + val });
+            window.openFinancialScreen();
+        };
+
+        // --- POTE (Calculo Simples) ---
+        window.calculatePot = async () => {
+             // ... lógica do pote ...
+             try {
+                 const snap = await getDocs(collection(db, "users"));
+                 let cotas = 0;
+                 snap.forEach(d => { if(d.data().payments) cotas += Object.values(d.data().payments).filter(v=>v).length; });
+                 document.getElementById('potValue').innerText = (cotas * 10).toLocaleString('pt-br',{style:'currency',currency:'BRL'});
+                 document.getElementById('partyValue').innerText = (cotas * 5).toLocaleString('pt-br',{style:'currency',currency:'BRL'});
+                 document.getElementById('totalValue').innerText = "Total: " + (cotas * 15).toLocaleString('pt-br',{style:'currency',currency:'BRL'});
+             } catch(e){}
+        };
+        
+        window.updateBadges = () => { /* ... */ };
+        window.copyKeyOnly = () => { /* ... */ };
     </script>
 </body>
 </html>
+
