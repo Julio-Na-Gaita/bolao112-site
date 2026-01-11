@@ -18,115 +18,75 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700;900&display=swap');
 
-        /* --- CORREÇÕES CRÍTICAS IOS (Flickering & Scroll) --- */
-        html {
-            height: 100%;
-            overflow: hidden; /* Impede que a página inteira role (o iPhone odeia isso) */
-            -webkit-text-size-adjust: 100%;
-        }
-        
+        /* --- CONFIGURAÇÕES GERAIS --- */
+        html { height: 100%; overflow: hidden; -webkit-text-size-adjust: 100%; }
         body {
-            height: 100%;
-            width: 100%;
-            overflow: hidden; /* O scroll será delegado para a div principal */
-            background-color: #f3f4f6;
+            height: 100%; width: 100%; overflow: hidden;
+            /* Novo Fundo Premium: Gradiente sutil cinza-azulado */
+            background: radial-gradient(circle at 50% 0%, #eef2f3 0%, #d9e2e8 100%);
             -webkit-font-smoothing: antialiased;
-            font-family: 'PT Serif', serif; 
+            font-family: 'PT Serif', serif;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
 
-        /* Container principal que rola (Substitui o scroll do body) */
-        /* Container principal que rola (Substitui o scroll do body) */
         #appContent {
-            flex: 1; /* Ocupa todo o espaço restante */
-            overflow-y: auto; /* Habilita a rolagem vertical */
-            overflow-x: hidden; /* Evita rolagem lateral */
-            -webkit-overflow-scrolling: touch; /* Rolagem suave no iOS */
-            transform: translateZ(0); /* Força GPU */
-            will-change: scroll-position;
-            padding-bottom: 120px; /* Garante espaço para não cortar o fim da lista */
+            flex: 1; overflow-y: auto; overflow-x: hidden;
+            -webkit-overflow-scrolling: touch; transform: translateZ(0); will-change: scroll-position;
+            padding-bottom: 120px;
         }
 
-        /* Ajuste para o Topo e Fundo do iPhone (Notch e Barra Home) */
         .pt-safe { padding-top: env(safe-area-inset-top, 20px); }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
         
-        /* --- ESTILOS GERAIS & CORES --- */
         :root { --dark-green: #006400; --gold: #FFD700; }
-        
         .btn-press:active { transform: scale(0.96); transition: transform 0.1s; }
-        
-        /* --- BADGES E NOTIFICAÇÕES --- */
-        @keyframes pulse-red { 
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 
-            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 82, 82, 0); } 
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } 
+
+        /* --- GLASSMORPHISM (O Segredo do Design Premium) --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85); /* Branco translúcido */
+            backdrop-filter: blur(12px); /* Desfoque do fundo */
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6); /* Borda de vidro */
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); /* Sombra suave */
         }
+        
+        .glass-header {
+            background: linear-gradient(135deg, #006400 0%, #004d00 100%);
+            box-shadow: 0 4px 20px rgba(0, 100, 0, 0.3);
+        }
+
+        /* --- CARDS --- */
+        /* Mantendo o formato, mas melhorando o acabamento */
+        .card-cut {
+            background: rgba(255, 255, 255, 0.95);
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.05));
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        
+        /* Utilitários */
+        ::-webkit-scrollbar { display: none; }
+        .rules-text { white-space: pre-wrap; }
+        .gold-text-outline { background: linear-gradient(to bottom, #B8860B, #FFD700, #B8860B); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 1.2px black; color: transparent; font-weight: 900; }
+        
+        /* Badges */
+        @keyframes pulse-red { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 82, 82, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } }
         .pulse-dot { width: 8px; height: 8px; background-color: #FF5252; border-radius: 50%; display: inline-block; margin-left: 8px; animation: pulse-red 2s infinite; }
-        
         .bell-badge { position: absolute; top: 5px; right: 5px; background-color: #FF5252; color: white; border-radius: 50%; width: 14px; height: 14px; font-size: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 1px solid #006400; }
-        
         .nav-badge { position: absolute; top: -5px; right: 20px; background-color: red; color: white; border-radius: 50%; padding: 2px 5px; font-size: 9px; font-weight: bold; border: 1px solid white; z-index: 60; }
-        
         .medal-toast { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); background-color: #333; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 50; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; text-align: center; min-width: 200px; }
         .medal-toast.show { opacity: 1; }
 
-        /* --- CARDS E LAYOUT --- */
-        .card-cut { background: white; clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)); border: 1px solid #e5e7eb; }
-        
-        /* Utilitários de Texto e Scroll */
-        ::-webkit-scrollbar { display: none; }
-        .rules-text { white-space: pre-wrap; }
-        
-        .gold-text-outline { background: linear-gradient(to bottom, #B8860B, #FFD700, #B8860B); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 1.2px black; color: transparent; font-weight: 900; }
-        
-        .bg-z2 { background-color: #FFEBEE !important; } 
-        .text-blood { color: #8B0000 !important; }
+        /* Ticker */
+        .ticker-container { width: 100%; overflow: hidden; background: linear-gradient(90deg, #1a1a1a 0%, #000 100%); border-bottom: 2px solid #FFD700; height: 30px; display: flex; align-items: center; margin-bottom: 10px; border-radius: 8px 8px 0 0; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .ticker-wrapper { display: flex; white-space: nowrap; animation: ticker-scroll 100s linear infinite; }
+        .ticker-wrapper:hover { animation-play-state: paused; }
+        .ticker-item { display: flex; align-items: center; padding: 0 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+        @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
-        /* --- HALL DA FAMA E DA LAMA (NEWS TICKER) --- */
-        .ticker-container {
-            width: 100%;
-            overflow: hidden;
-            background: #1a1a1a; /* Fundo escuro */
-            border-bottom: 2px solid #FFD700; /* Linha dourada */
-            height: 30px;
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            border-radius: 8px 8px 0 0;
-        }
-        
-        .ticker-wrapper {
-            display: flex;
-            white-space: nowrap;
-            animation: ticker-scroll 100s linear infinite; /* Velocidade do letreiro */
-        }
-        
-        .ticker-wrapper:hover {
-            animation-play-state: paused; /* Pausa ao passar o mouse */
-        }
-
-        .ticker-item {
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            font-size: 11px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        @keyframes ticker-scroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
-        }
-
-        /* Cores dos Textos */
-        .txt-fama { color: #00E676; text-shadow: 0 0 5px rgba(0, 230, 118, 0.3); } /* Verde Neon */
-        .txt-lama { color: #FF5252; text-shadow: 0 0 5px rgba(255, 82, 82, 0.3); } /* Vermelho Neon */
-        .txt-info { color: #4FC3F7; } /* Azul Claro */
-        .txt-gold { color: #FFD700; } /* Dourado */
+        /* Overlay do Modal - Mais escuro e desfocado */
+        #modalOverlay { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
     </style>
 </head>
 <body class="h-full w-full overflow-hidden relative text-gray-900 flex flex-col">
@@ -274,7 +234,7 @@ Término oficial: 31 de dezembro de 2026
             </div>
 
             <div id="profileScreen" class="hidden">
-                <div class="card-cut p-6 border-t-4 border-[#006400] text-center relative mb-4">
+                <div class="card-cut glass-panel p-6 border-t-4 border-[#006400] text-center relative mb-4">
                     <h2 class="font-bold text-gray-400 text-xs mb-6 tracking-[0.2em]">CARTÃO DE MEMBRO</h2>
                     <div class="relative w-28 h-28 mx-auto mb-4">
                         <div id="profileAvatar" class="w-full h-full bg-gray-200 rounded-full border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
@@ -1842,50 +1802,50 @@ window.showKingModal = () => {
             const cont = document.getElementById('modalContainer'); 
             modal.classList.remove('hidden');
             
+            // DESIGN PREMIUM: Fundo cinza suave, cabeçalho gradiente
             cont.innerHTML = `
-            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh] flex flex-col">
-                <img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
+            <div class="w-full max-w-sm bg-[#f8f9fa] rounded-xl shadow-2xl overflow-hidden relative h-[85vh] flex flex-col border border-white/40">
+                <img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-5">
                 
-                <div class="relative z-10 flex flex-col h-full bg-white/90">
-                    <div class="bg-[#006400] p-4 text-white flex items-center shadow-md">
-                        <button onclick="closeModal()" class="mr-4"><i class="fas fa-arrow-left text-xl"></i></button>
+                <div class="relative z-10 flex flex-col h-full">
+                    <div class="bg-gradient-to-r from-[#006400] to-[#004d00] p-5 text-white flex items-center shadow-lg">
+                        <button onclick="closeModal()" class="mr-4 hover:scale-110 transition-transform"><i class="fas fa-arrow-left text-xl"></i></button>
                         <div>
-                            <h3 class="font-black uppercase text-lg leading-none">Painel Admin</h3>
-                            <p class="text-[10px] text-[#FFD700] font-bold">Gestão 2026</p>
+                            <h3 class="font-black uppercase text-lg leading-none tracking-wide">Painel Admin</h3>
+                            <p class="text-[10px] text-[#FFD700] font-bold mt-1 opacity-90">Gestão 2026</p>
                         </div>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                    <div class="flex-1 overflow-y-auto p-5 space-y-6">
                         
-                        <div>
-                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">⚽ GESTÃO DE JOGOS</h4>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Novo Jogo</button>
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#0277BD] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-cloud-download-alt text-lg"></i> Importar API</button>
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
-                                <button onclick="openTrashBin()" class="bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-trash text-lg"></i> Lixeira</button>
+                        <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-100">
+                            <h4 class="text-[10px] font-black text-gray-400 mb-3 uppercase tracking-widest pl-1"><i class="fas fa-futbol mr-1"></i> Gestão de Jogos</h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-gradient-to-br from-[#1565C0] to-[#0D47A1] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-plus-circle text-xl mb-1"></i> Novo Jogo</button>
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-gradient-to-br from-[#0277BD] to-[#01579B] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-cloud-download-alt text-xl mb-1"></i> Importar API</button>
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-gradient-to-br from-[#2E7D32] to-[#1B5E20] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-check-circle text-xl mb-1"></i> Baixa Rápida</button>
+                                <button onclick="openTrashBin()" class="bg-gradient-to-br from-gray-700 to-gray-900 text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-trash text-xl mb-1"></i> Lixeira</button>
                             </div>
                         </div>
 
-                        <div>
-                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">👥 PESSOAS & FINANCEIRO</h4>
-                            <button onclick="openFinancialScreen()" class="w-full bg-[#C62828] text-white py-4 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2">
-                                <i class="fas fa-wallet text-lg"></i> GERENCIAR PAGAMENTOS & USUÁRIOS
+                        <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-100">
+                             <h4 class="text-[10px] font-black text-gray-400 mb-3 uppercase tracking-widest pl-1"><i class="fas fa-users mr-1"></i> Pessoas & Financeiro</h4>
+                            <button onclick="openFinancialScreen()" class="w-full bg-gradient-to-r from-[#C62828] to-[#B71C1C] text-white py-4 rounded-lg font-bold text-xs shadow-md btn-press flex items-center justify-center gap-3 border border-white/20">
+                                <i class="fas fa-wallet text-xl"></i> GERENCIAR PAGAMENTOS & USUÁRIOS
                             </button>
                         </div>
 
-                        <div>
-                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📢 COMUNICAÇÃO</h4>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#6A1B9A] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-bell text-lg"></i> Enviar Push</button>
-                                <button onclick="openCompetitionsManager()" class="bg-[#F9A825] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-trophy text-lg"></i> Competições</button>
+                        <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-100">
+                             <h4 class="text-[10px] font-black text-gray-400 mb-3 uppercase tracking-widest pl-1"><i class="fas fa-bullhorn mr-1"></i> Comunicação</h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-gradient-to-br from-[#6A1B9A] to-[#4A148C] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-bell text-xl mb-1"></i> Enviar Push</button>
+                                <button onclick="openCompetitionsManager()" class="bg-gradient-to-br from-[#F9A825] to-[#F57F17] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-trophy text-xl mb-1"></i> Competições</button>
                             </div>
                         </div>
 
                         <div>
-                            <div class="border-t border-gray-300 my-2"></div>
-                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📋 LISTA DE CONFRONTOS</h4>
-                            <div id="adminMatchList" class="bg-white border rounded p-2 text-xs text-gray-500 min-h-[100px]">Carregando...</div>
+                           <h4 class="text-[10px] font-black text-gray-400 mb-3 uppercase tracking-widest pl-1 text-center">📋 LISTA DE CONFRONTOS</h4>
+                            <div id="adminMatchList" class="bg-white border border-gray-200 rounded-xl p-2 text-xs text-gray-500 min-h-[100px] shadow-inner">Carregando...</div>
                         </div>
                     </div>
                 </div>
@@ -1961,12 +1921,12 @@ async function loadAdminMatches() {
                 snap.forEach(d => { const u = d.data(); usersList.push({id: d.id, ...u}); });
                 usersList.sort((a,b) => (a.name||"").localeCompare(b.name||""));
 
-                let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 85vh; display:flex; flex-direction:column;">
-                    <div class="bg-[#006400] p-4 text-white flex justify-between items-center shrink-0">
-                        <h3 class="font-bold uppercase text-sm">Financeiro</h3>
-                        <button onclick="window.closeModal()"><i class="fas fa-times"></i></button>
+                let html = `<div class="w-full max-w-sm bg-[#f8f9fa] rounded-xl shadow-2xl overflow-hidden relative" style="max-height: 85vh; display:flex; flex-direction:column;">
+                    <div class="bg-gradient-to-r from-[#006400] to-[#004d00] p-4 text-white flex justify-between items-center shrink-0 shadow-md">
+                        <h3 class="font-bold uppercase text-sm tracking-wide"><i class="fas fa-coins mr-2"></i>Financeiro</h3>
+                        <button onclick="window.closeModal()" class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"><i class="fas fa-times text-xs"></i></button>
                     </div>
-                    <div class="flex-1 overflow-y-auto p-2 bg-gray-50">`;
+                    <div class="flex-1 overflow-y-auto p-3 bg-[#f3f4f6]">`;
 
                 const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
                 
@@ -1974,8 +1934,8 @@ async function loadAdminMatches() {
                     // Ícone de chave se tiver dica
                     const hintIcon = u.passwordHint ? `<i class="fas fa-key text-orange-400 text-xs ml-2 cursor-pointer" onclick="alert('Dica: ${u.passwordHint}')" title="Ver Dica"></i>` : '';
 
-                    html += `<div class="bg-white border rounded p-2 mb-2 shadow-sm">
-                        <div class="flex justify-between items-center mb-2">
+                    html += `<div class="bg-white border border-gray-200 rounded-lg p-3 mb-3 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
                             <span class="font-bold text-xs text-gray-800 flex items-center">${u.name} ${hintIcon}</span>
                             <div class="flex items-center gap-2">
                                 <button onclick="window.changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus-circle"></i></button>
@@ -2785,6 +2745,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
