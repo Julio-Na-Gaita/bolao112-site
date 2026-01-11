@@ -399,7 +399,7 @@ Término: 31/12/2026
         let currentRankingData = [];
         let compMap = {}; 
         let globalServerCounts = {};
-        window.cachedMatches = []; // Importante para o sino funcionar
+        window.cachedMatches = []; 
 
         // --- ATIVAR CACHE OFFLINE ---
         enableIndexedDbPersistence(db).catch((err) => {
@@ -407,8 +407,20 @@ Término: 31/12/2026
             else if (err.code == 'unimplemented') console.log('Navegador não suporta persistência.');
         });
 
-        // --- CORREÇÃO: CARROSSEL DO IPHONE (SIMPLIFICADO) ---
-        // Esta lógica roda independentemente e não trava o login
+        // --- CORREÇÃO: LOGOUT (Definido globalmente) ---
+        window.handleLogout = () => {
+             if(confirm("Deseja realmente sair do Bolão?")) {
+                document.getElementById('mainHeader').classList.add('hidden');
+                signOut(auth).then(() => location.reload());
+            }
+        };
+        // Vincula ao botão quando o DOM estiver pronto
+        document.addEventListener("DOMContentLoaded", () => {
+            const btn = document.getElementById('btnLogout');
+            if(btn) btn.onclick = window.handleLogout;
+        });
+
+        // --- CORREÇÃO: CARROSSEL DO IPHONE ---
         const startCarousel = () => {
             const imgEl = document.getElementById('showcaseImg');
             if (!imgEl) return;
@@ -416,22 +428,21 @@ Término: 31/12/2026
             const images = ["print1.jpeg", "print2.jpeg", "print3.jpeg"];
             let idx = 0;
 
-            // Define a primeira imagem imediatamente
+            // Define a primeira imagem
             imgEl.src = images[0];
 
             setInterval(() => {
-                // 1. Fade Out
+                // Fade Out
                 imgEl.style.opacity = '0';
                 
                 setTimeout(() => {
-                    // 2. Troca a imagem (no escuro)
+                    // Troca a imagem
                     idx = (idx + 1) % images.length;
                     imgEl.src = images[idx];
-                    
-                    // 3. Fade In
+                    // Fade In
                     imgEl.style.opacity = '1';
-                }, 500); // Espera metade do tempo da transição CSS
-            }, 3500); // Troca a cada 3.5 segundos
+                }, 500); 
+            }, 3500);
         };
         // Inicia o carrossel
         startCarousel();
@@ -2519,6 +2530,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
