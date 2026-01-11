@@ -1919,7 +1919,8 @@ async function loadAdminMatches() {
                         const isPaid = u.payments && u.payments[m];
                         const bg = isPaid ? "bg-green-600 text-white border-green-600 shadow-md" : "bg-gray-100 text-gray-400 border-gray-200";
                         // AQUI ESTAVA O ERRO: Passamos apenas ID e Mês. O JS resolve o resto.
-                        html += `<div onclick="window.togglePay('${u.id}', '${m}')" class="${bg} border text-[8px] font-bold py-1 rounded text-center cursor-pointer select-none hover:opacity-80 transition-all">${m}</div>`;
+                       // Correção: Passamos apenas o ID e o Mês. O status é calculado na função.
+                    html += `<div onclick="window.togglePay('${u.id}', '${m}')" class="${bg} border text-[8px] font-bold py-1 rounded text-center cursor-pointer select-none hover:opacity-80 transition-all">${m}</div>`;
                     });
                     html += `</div></div>`;
                 });
@@ -2058,7 +2059,38 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
             }
         };
         document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { compressImage(file).then(async (base64) => { await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }).catch(err => { alert("Erro ao processar imagem."); console.error(err); }); } };
-        window.togglePay = async (uid, month, status) => { const ref = doc(db, "users", uid); const u = await getDoc(ref); const payments = u.data().payments || {}; payments[month] = status; await updateDoc(ref, { payments: payments }); calculatePot(); openFinancialScreen(); };
+window.togglePay = async (uid, month) => {
+            // Cursor de carregamento
+            document.body.style.cursor = 'wait';
+            
+            try {
+                const ref = doc(db, "users", uid);
+                const snap = await getDoc(ref);
+                
+                if (snap.exists()) {
+                    const currentData = snap.data();
+                    const payments = currentData.payments || {};
+
+                    // Inverte o valor atual (se era true vira false, se não existia vira true)
+                    // Nota: Removido o parâmetro 'status' da assinatura pois calculamos aqui
+                    payments[month] = !payments[month];
+
+                    // Salva no banco
+                    await setDoc(ref, { payments: payments }, { merge: true });
+                    
+                    // Atualiza o pote e a tela
+                    if(window.calculatePot) await window.calculatePot();
+                    
+                    // Reabre a tela para mostrar a cor nova (verde/cinza)
+                    await window.openFinancialScreen();
+                }
+            } catch (e) {
+                console.error("Erro ao atualizar:", e);
+                alert("Erro ao salvar: " + e.message);
+            } finally {
+                document.body.style.cursor = 'default';
+            }
+        };
         window.changeDebt = async (uid, delta) => { const ref = doc(db, "users", uid); const u = await getDoc(ref); let debts = u.data().debts || 0; debts += delta; if(debts < 0) debts = 0; await updateDoc(ref, { debts: debts }); openFinancialScreen(); };
         document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.remove('hidden');
         window.copyKeyOnly = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
@@ -2119,7 +2151,7 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
                 </div>
             </div>`; 
         };
-async function calculatePot() { 
+window.calculatePot = async function() {
             try {
                 const snap = await getDocs(collection(db, "users")); 
                 let totalCotas = 0; 
@@ -2643,6 +2675,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
