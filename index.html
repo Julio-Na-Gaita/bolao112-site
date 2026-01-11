@@ -151,97 +151,95 @@
 
     <main id="appContent" class="flex-1 w-full h-full overflow-y-auto overflow-x-hidden pb-32 relative z-10">
         
-        <section id="loginScreen" class="flex flex-col h-screen w-full relative bg-gray-900 overflow-hidden">
-        
-        <div class="absolute inset-0 z-0">
-            <img src="bg_jogos.jpeg" class="w-full h-full object-cover opacity-40">
-            <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black/80"></div>
+        <section id="loginScreen" class="flex flex-col min-h-screen p-4 relative overflow-hidden bg-gray-900">
+         <div class="absolute inset-0 z-0">
+            <img src="bg_jogos.jpeg" class="w-full h-full object-cover opacity-30">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90"></div>
         </div>
 
-        <div class="relative z-20 w-full bg-white/95 backdrop-blur-md border-b-4 border-[#006400] shadow-xl">
-            <div class="container mx-auto px-4 py-3">
-                
-                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                    
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-[#006400] rounded-full flex items-center justify-center text-[#FFD700] border-2 border-[#FFD700] shadow">
-                            <i class="fas fa-trophy text-lg"></i>
-                        </div>
-                        <div>
-                            <h1 class="font-black text-[#006400] text-xl leading-none tracking-tighter uppercase">BOLÃO 112 F.C</h1>
-                            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Temporada 2026</p>
-                        </div>
-                    </div>
-
-                    <div class="w-full md:w-auto">
-                        <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();" class="flex flex-col md:flex-row items-center gap-2">
-                            
-                            <div class="flex gap-2 w-full md:w-auto">
-                                <div class="relative w-full md:w-40">
-                                    <i class="fas fa-user absolute left-3 top-2.5 text-gray-400 text-xs"></i>
-                                    <input type="text" id="userInput" name="username" autocomplete="username" placeholder="Usuário" 
-                                           class="w-full pl-8 p-2 bg-gray-100 border border-gray-300 rounded text-xs font-bold outline-none focus:border-[#006400] h-9">
-                                </div>
-                                
-                                <div class="relative w-full md:w-40">
-                                    <i class="fas fa-lock absolute left-3 top-2.5 text-gray-400 text-xs"></i>
-                                    <input type="password" id="passInput" name="password" autocomplete="current-password" placeholder="Senha" 
-                                           class="w-full pl-8 p-2 bg-gray-100 border border-gray-300 rounded text-xs font-bold outline-none focus:border-[#006400] h-9">
-                                </div>
-                            </div>
-
-                            <button type="submit" id="btnLoginAction" class="w-full md:w-auto bg-[#006400] hover:bg-green-900 text-white px-6 py-2 rounded text-xs font-black uppercase shadow btn-press h-9 flex items-center justify-center gap-2 transition-colors">
-                                <span>ENTRAR</span> <i class="fas fa-sign-in-alt"></i>
-                            </button>
-                        </form>
-
-                        <div class="flex justify-between md:justify-end items-center gap-4 mt-2 px-1">
-                            <label class="flex items-center text-[10px] text-gray-600 font-bold cursor-pointer hover:text-black">
-                                <input type="checkbox" id="rememberMe" checked class="mr-1 accent-[#006400]">
-                                Lembrar-me
-                            </label>
-                            
-                            <div class="flex gap-3 text-[10px] font-bold">
-                                <button type="button" id="btnForgotPass" class="text-gray-500 hover:text-[#006400] hover:underline">Esqueci a senha</button>
-                                <span class="text-gray-300">|</span>
-                                <button type="button" id="btnOpenRegister" class="text-[#006400] hover:text-black uppercase">CRIAR NOVA CONTA</button>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
-        <div class="relative z-10 flex-1 flex flex-col items-center justify-center text-center p-6 pb-20">
+        <div class="relative z-10 container mx-auto flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 flex-1 py-6">
             
-            <div class="animate-fade-in-up">
-                <div class="inline-flex items-center gap-2 bg-black/50 backdrop-blur-md border border-[#FFD700] rounded-full px-4 py-1 mb-6">
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    <span class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest">Inscrições Abertas</span>
-                </div>
-
-                <h2 class="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter drop-shadow-2xl mb-2">
-                    A Rivalidade <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-[#FFD700] to-[#FFA000]">Começa Aqui</span>
-                </h2>
+            <div class="flex flex-col items-center lg:items-start text-center lg:text-left space-y-6 max-w-xl animate-fade-in-up">
                 
-                <p class="text-gray-300 text-sm md:text-base font-serif italic max-w-lg mx-auto mb-8">
-                    Participe do bolão mais disputado da temporada. Palpites, resenha e prêmios em dinheiro.
-                </p>
+                <div>
+                    <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-[#FFD700] rounded-full px-4 py-1 mb-4 shadow-lg">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest">Temporada 2026</span>
+                    </div>
+                    <h1 class="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none text-white drop-shadow-2xl">
+                        Bolão 112 <span class="text-[#FFD700]">F.C</span>
+                    </h1>
+                    <p class="text-gray-300 text-sm md:text-lg font-serif italic mt-2">
+                        "A rivalidade é lei. A resenha é garantida."
+                    </p>
+                </div>
 
-                <div class="flex justify-center gap-4">
-                    <a href="https://wa.me/5585988837389?text=Quero%20entrar%20no%20Bolao!" target="_blank" class="bg-[#25D366] hover:bg-[#1eab52] text-white px-5 py-2 rounded-full font-bold text-xs shadow-lg flex items-center gap-2 transition-transform hover:scale-105">
-                        <i class="fab fa-whatsapp text-base"></i> Falar no Zap
-                    </a>
-                    <button onclick="alert('App Android disponível com o Admin!')" class="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-5 py-2 rounded-full font-bold text-xs backdrop-blur-sm flex items-center gap-2 transition-all">
-                        <i class="fab fa-android text-base"></i> App Android
+                <div class="relative w-[220px] md:w-[260px] h-[450px] md:h-[520px] shrink-0 transform rotate-[-2deg] hover:rotate-0 transition-transform duration-500 my-2">
+                    <div class="absolute inset-0 border-gray-900 bg-black border-[10px] rounded-[2.5rem] shadow-2xl overflow-hidden ring-1 ring-white/20">
+                         <div class="absolute top-0 inset-x-0 h-6 bg-black z-20 rounded-b-xl w-32 mx-auto"></div>
+                         <div class="w-full h-full bg-white relative overflow-hidden">
+                             <img id="showcaseImg" src="" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-700">
+                             <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none z-10"></div>
+                         </div>
+                    </div>
+                     <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[180px] h-4 bg-black/60 blur-xl rounded-[100%]"></div>
+                </div>
+
+                <div class="text-gray-200 text-xs md:text-sm font-bold space-y-1 bg-black/40 p-4 rounded-xl border border-white/10 backdrop-blur-sm shadow-lg w-full text-left">
+                    <p><i class="fas fa-trophy text-[#FFD700] mr-2"></i> Champions, Copa do Mundo & Copa do Brasil</p>
+                    <p><i class="fas fa-chart-line text-green-400 mr-2"></i> Ranking Ao Vivo & Estatísticas</p>
+                    <p><i class="fas fa-money-bill-wave text-green-400 mr-2"></i> Premiação em Dinheiro & Troféus</p>
+                    <p><i class="fas fa-beer text-yellow-500 mr-2"></i> Confra inclusa no fim do ano!</p>
+                </div>
+
+            </div>
+
+            <div class="w-full max-w-sm bg-white p-6 rounded-2xl shadow-2xl border-t-4 border-[#006400] relative z-20">
+                <h2 class="text-xl font-black text-center text-[#006400] mb-6 uppercase tracking-widest">Área de Membros</h2>
+                
+                <form id="loginForm" onsubmit="event.preventDefault(); handleLogin();">
+                    <div class="relative mb-4">
+                        <i class="fas fa-user absolute left-4 top-3.5 text-gray-400"></i>
+                        <input type="text" id="userInput" name="username" autocomplete="username" placeholder="Usuário" class="w-full pl-10 p-3 bg-gray-100 border border-gray-300 rounded text-xs font-bold outline-none focus:ring-2 focus:ring-green-700 transition-all text-sm font-bold">
+                    </div>
+                    
+                    <div class="relative mb-2">
+                        <i class="fas fa-lock absolute left-4 top-3.5 text-gray-400"></i>
+                        <input type="password" id="passInput" name="password" autocomplete="current-password" placeholder="Senha" class="w-full pl-10 p-3 bg-gray-100 border border-gray-300 rounded text-xs font-bold outline-none focus:border-[#006400] transition-all text-sm font-bold">
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-6">
+                        <label class="flex items-center text-xs text-gray-500 font-bold cursor-pointer">
+                            <input type="checkbox" id="rememberMe" checked class="mr-2 accent-[#006400]">
+                            Manter conectado
+                        </label>
+                        <button type="button" id="btnForgotPass" class="text-xs text-gray-500 font-bold hover:text-[#006400]">Esqueci a senha</button>
+                    </div>
+
+                    <button type="submit" id="btnLoginAction" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg btn-press shadow-lg mb-4 flex justify-center items-center gap-2">
+                        <span>ENTRAR</span> <i class="fas fa-sign-in-alt"></i>
                     </button>
+                </form>
+                
+                <div class="border-t pt-4 text-center">
+                     <p class="text-[10px] text-gray-400 mb-2 font-bold">Não tem conta?</p>
+                    <button type="button" id="btnOpenRegister" class="text-[#006400] font-black text-xs uppercase hover:underline">CRIAR NOVA CONTA</button>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-gray-100 flex justify-center gap-4">
+                     <a href="https://wa.me/5585988837389?text=Quero%20entrar%20no%20Bolao!" target="_blank" class="text-xs font-bold text-gray-500 hover:text-green-600 flex items-center gap-1">
+                         <i class="fab fa-whatsapp text-lg"></i> Falar no Zap
+                     </a>
+                     <button onclick="alert('App Android disponível com o Admin!')" class="text-xs font-bold text-gray-500 hover:text-green-600 flex items-center gap-1">
+                         <i class="fab fa-android text-lg"></i> Baixar App
+                     </button>
                 </div>
             </div>
 
-            <div class="absolute bottom-4 text-white/30 text-[9px] font-bold uppercase tracking-widest">
-                © 2026 Bolão 112 F.C • Todos os direitos reservados
-            </div>
+        </div>
+        
+        <div class="text-center pb-4 z-10">
+            <p class="text-white/30 text-[9px] font-bold uppercase tracking-widest">© 2026 Bolão 112 F.C</p>
         </div>
     </section>
         <div id="mainScreens" class="hidden p-4 space-y-4">
@@ -368,11 +366,34 @@ Término oficial: 31 de dezembro de 2026
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         // ADICIONADO: enableIndexedDbPersistence
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// --- ANIMAÇÃO DO IPHONE NA TELA DE LOGIN ---
+        // Certifique-se que os arquivos print1.jpeg, print2.jpeg e print3.jpeg estão na pasta!
+        const appScreenshots = ["print1.jpeg", "print2.jpeg", "print3.jpeg"];
+        let currentImgIdx = 0;
+        const imgEl = document.getElementById('showcaseImg');
 
+        if (imgEl && appScreenshots.length > 0) {
+            // Inicia com a primeira imagem
+            imgEl.src = appScreenshots[0];
+            
+            // Troca a cada 4 segundos
+            setInterval(() => {
+                imgEl.style.opacity = 0; // Fade out
+                setTimeout(() => {
+                    currentImgIdx = (currentImgIdx + 1) % appScreenshots.length;
+                    imgEl.src = appScreenshots[currentImgIdx]; // Troca source
+                    
+                    // Fade in (com pequeno delay para garantir carregamento)
+                    imgEl.onload = () => { imgEl.style.opacity = 1; };
+                    setTimeout(() => { imgEl.style.opacity = 1; }, 100);
+                }, 700);
+            }, 4000); 
+        }
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+            
         // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
         const getAvatarUrl = (base64, name) => {
             // 1. Se tem foto real, usa ela
@@ -1876,37 +1897,51 @@ async function loadAdminMatches() {
             render();
         };
 
-        window.openFinancialScreen = async () => { 
-            // ... (código inicial igual) ...
-            
-            users.forEach(u => { 
-                // Ícone de chave se tiver dica
-                const hintIcon = u.passwordHint ? `<i class="fas fa-key text-orange-400 text-xs ml-2 cursor-pointer" onclick="alert('Dica de ${u.name}:\\n\\n${u.passwordHint}')" title="Ver Dica"></i>` : '';
+        // --- CORREÇÃO: PAINEL FINANCEIRO (Buscando dados na hora) ---
+        window.openFinancialScreen = async () => {
+            const modal = document.getElementById('modalOverlay'); 
+            const cont = document.getElementById('modalContainer'); 
+            modal.classList.remove('hidden');
+            // Mostra loading
+            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
 
+            // Buscar dados atualizados do banco
+            const snap = await getDocs(collection(db, "users"));
+            let usersList = [];
+            snap.forEach(d => {
+                const u = d.data();
+                usersList.push({id: d.id, ...u});
+            });
+            // Ordena por nome
+            usersList.sort((a,b) => (a.name||"").localeCompare(b.name||""));
+
+            let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 85vh; display:flex; flex-direction:column;">
+                <div class="bg-[#006400] p-4 text-white flex justify-between items-center shrink-0">
+                    <h3 class="font-bold uppercase text-sm">Financeiro</h3>
+                    <button onclick="closeModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-2 bg-gray-50">`;
+
+            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            
+            usersList.forEach(u => {
                 html += `<div class="bg-white border rounded p-2 mb-2 shadow-sm">
                     <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-xs text-gray-800 flex items-center">
-                            ${u.name} ${hintIcon}
-                        </span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus-circle"></i></button>
-                            <span class="text-red-600 font-black text-xs min-w-[30px] text-center">${u.debts||0}</span>
-                            <button onclick="changeDebt('${u.id}', 1)" class="text-red-500 bg-red-50 p-1 rounded"><i class="fas fa-plus-circle"></i></button>
-                        </div>
+                        <span class="font-bold text-xs text-gray-800">${u.name}</span>
                     </div>
-                    <div class="grid grid-cols-6 gap-1">`; 
-                    
-                const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
-                months.forEach(m => { 
-                    const isPaid = u.payments && u.payments[m]; 
-                    const bg = isPaid ? "bg-green-600 text-white border-green-600 shadow-md" : "bg-gray-100 text-gray-400 border-gray-200"; 
-                    html += `<div onclick="togglePay('${u.id}', '${m}', ${!isPaid})" class="${bg} border text-[8px] font-bold py-1 rounded text-center cursor-pointer transition-colors">${m}</div>`; 
-                }); 
-                html += `</div></div>`; 
-            }); 
+                    <div class="grid grid-cols-6 gap-1">`;
+                
+                months.forEach(m => {
+                    const isPaid = u.payments && u.payments[m];
+                    const bg = isPaid ? "bg-green-600 text-white" : "bg-gray-100 text-gray-400";
+                    // Adiciona o clique para alterar pagamento se for admin (pode adicionar verificação de admin aqui se quiser)
+                    html += `<div class="${bg} border text-[8px] font-bold py-1 rounded text-center">${m}</div>`;
+                });
+                html += `</div></div>`;
+            });
             
-            html += `</div></div></div>`; 
-            cont.innerHTML = html; 
+            html += `</div></div>`;
+            cont.innerHTML = html;
         };
         window.checkDelays = async () => { const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const now = new Date(); const currMonth = months[now.getMonth()]; const day = now.getDate(); if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; } const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const snap = await getDocs(collection(db, "users")); let late = []; snap.forEach(d => { const u = d.data(); if (!u.payments || !u.payments[currMonth]) { late.push({id: d.id, name: u.name, debts: u.debts || 0}); } }); let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`; if (late.length === 0) { html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`; } else { html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`; late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; }); html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`; } html += `</div>`; cont.innerHTML = html; window.applyBatchPenalty = async () => { if(!confirm("Confirmar aplicação de multa em massa?")) return; const batch = writeBatch(db); late.forEach(l => { const ref = doc(db, "users", l.id); batch.update(ref, { debts: l.debts + 1 }); }); await batch.commit(); alert("Penalidades aplicadas!"); openFinancialScreen(); }; };
 async function loadProfile() { 
@@ -2095,62 +2130,55 @@ async function calculatePot() {
                 alert("Erro ao carregar valores do pote.");
             }
         }
-// --- GERADOR DE CARD INSTAGRAM (WEB) ---
+// --- CORREÇÃO: CARD INSTAGRAM (Recalcula Ranking na Hora) ---
         window.generateWebCard = async () => {
-            // 1. Pega os dados do usuário atual do modal aberto
             const modalEl = document.getElementById('profileModal');
             if(!modalEl) return;
             const uid = modalEl.getAttribute('data-uid');
             
-            // Busca na lista global de ranking (precisa ter aberto o ranking antes)
-            // Se não tiver, tenta buscar no user atual
-            let user = null;
-            if (currentRankingData && currentRankingData.length > 0) {
-                user = currentRankingData.find(u => u.uid === uid);
+            // Verifica se os dados do ranking estão carregados
+            if (!currentRankingData || currentRankingData.length === 0) {
+                 alert("Por favor, abra a aba 'Ranking' primeiro para carregarmos os dados atualizados."); 
+                 return;
             }
-            
-            // Fallback se não achou na lista (ex: abriu o próprio perfil sem ir no ranking)
-            if (!user && uid === currentUser.uid) {
-               // Monta um objeto user básico com o que temos na sessão
-               // Nota: para dados completos de pontos, o ideal é ter carregado o ranking.
-               // Aqui faremos um alerta se não tiver dados.
-               alert("Para gerar o card com estatísticas completas, por favor abra a aba 'Ranking' primeiro para carregarmos seus dados.");
-               return;
-            }
-            
-            if(!user) return;
 
-            // 2. Muda o botão para "Gerando..."
+            // Reordena a lista localmente para garantir precisão (Pontos DESC, Débitos ASC)
+            currentRankingData.sort((a,b) => {
+                if (b.p !== a.p) return b.p - a.p;
+                if (a.d !== b.d) return a.d - b.d;
+                return 0; // Se empatar tudo, mantém ordem
+            });
+
+            // Encontra o usuário na lista reordenada
+            const index = currentRankingData.findIndex(u => u.uid === uid);
+            if (index === -1) return;
+            
+            const user = currentRankingData[index];
+            // Sobrescreve a propriedade lastRank com a posição real atual (Index + 1)
+            user.lastRank = index + 1; 
+
+            // (O restante da função de geração de imagem permanece igual...)
             const btn = document.getElementById('btnInstaAction');
             const originalText = btn.innerHTML;
             btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> GERANDO...`;
             btn.disabled = true;
 
-            // 3. Prepara o Container do Card (Invisível na tela, mas renderizado)
             const cardContainer = document.createElement('div');
             cardContainer.id = "instaCardCapture";
-            cardContainer.style.position = "fixed";
-            // Coloca fora da tela mas visível pro navegador renderizar
-            cardContainer.style.top = "0"; 
-            cardContainer.style.left = "0";
-            cardContainer.style.zIndex = "-9999"; 
-            cardContainer.style.width = "320px";
-            cardContainer.style.height = "500px";
-            
+            cardContainer.style.position = "fixed"; cardContainer.style.top = "0"; cardContainer.style.left = "0"; cardContainer.style.zIndex = "-9999"; 
+            cardContainer.style.width = "320px"; cardContainer.style.height = "500px";
             document.body.appendChild(cardContainer);
 
-            // HTML do Card (Tailwind + CSS Inline para garantir renderização)
-            // Usamos getAvatarUrl que criamos antes
             const avatarUrl = getAvatarUrl(user.photo, user.name);
             
+            // HTML do Card
             cardContainer.innerHTML = `
                 <div style="width: 320px; height: 500px; display: flex; flex-direction: column; justify-content: space-between; padding: 24px; background: linear-gradient(180deg, #006400 0%, #004D40 50%, #000000 100%); font-family: serif; text-align: center; position: relative; overflow: hidden;">
-                    
+                    <img src="bg_ranking.jpeg" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.2; mix-blend-mode: overlay;">
                     <div style="position: relative; z-index: 10;">
                         <h1 style="color: #FFD700; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); margin: 0;">BOLÃO 112 F.C</h1>
                         <p style="color: white; font-size: 10px; font-weight: bold; letter-spacing: 4px; margin-top: 5px;">TEMPORADA 2026</p>
                     </div>
-
                     <div style="position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center;">
                         <div style="width: 140px; height: 140px; border-radius: 50%; border: 6px solid #FFD700; overflow: hidden; background: black; box-shadow: 0 10px 15px rgba(0,0,0,0.5); margin-bottom: 15px;">
                             <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -2160,7 +2188,6 @@ async function calculatePot() {
                             ${user.lastRank}º LUGAR GERAL
                         </div>
                     </div>
-
                     <div style="position: relative; z-index: 10; display: flex; justify-content: space-between; align-items: center; width: 100%;">
                         <div style="display: flex; flex-direction: column; align-items: center;">
                             <span style="color: #FFD700; font-weight: 900; font-size: 32px; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${user.p}</span>
@@ -2177,39 +2204,21 @@ async function calculatePot() {
                             <span style="color: #9CA3AF; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Finais</span>
                         </div>
                     </div>
-
-                    <div style="position: relative; z-index: 10; color: rgba(255,255,255,0.4); font-size: 9px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">
-                        https://bolao112-site.vercel.app/
-                    </div>
-                </div>
-            `;
+                    <div style="position: relative; z-index: 10; color: rgba(255,255,255,0.4); font-size: 9px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;">www.bolao112.com.br</div>
+                </div>`;
 
             try {
-                // Aguarda um pouquinho para garantir que a imagem (avatar) carregou no DOM
                 await new Promise(r => setTimeout(r, 500)); 
-
-                const canvas = await html2canvas(cardContainer, {
-                    scale: 2, // Alta resolução
-                    useCORS: true, // Importante para carregar imagens externas (DiceBear/Firebase)
-                    backgroundColor: null,
-                    logging: false
-                });
-
-                // 5. Download Automático
+                const canvas = await html2canvas(cardContainer, { scale: 2, useCORS: true, backgroundColor: null });
                 const link = document.createElement('a');
                 link.download = `card_${user.name}.jpg`;
                 link.href = canvas.toDataURL("image/jpeg", 0.9);
                 link.click();
-
-                // Feedback visual de sucesso (opcional, ou apenas restaura o botão)
-                
             } catch (err) {
                 console.error(err);
                 alert("Erro ao gerar card. Tente novamente.");
             } finally {
-                if(document.body.contains(cardContainer)) {
-                    document.body.removeChild(cardContainer);
-                }
+                document.body.removeChild(cardContainer);
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
@@ -2590,6 +2599,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
