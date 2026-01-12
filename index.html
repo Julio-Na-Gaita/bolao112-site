@@ -1578,7 +1578,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     });
                     
                     // 3. Limita a 5
-                    const maxVisible = 5;
+                    const maxVisible = 8;
                     const visible = uniqueIcons.slice(0, maxVisible);
                     const remain = uniqueIcons.length - maxVisible;
 
@@ -1589,7 +1589,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                             const qty = counts[icon];
                             // Exibe contador sobrescrito se > 1
                             const qtyHtml = qty > 1 ? `<sup class="text-[8px] text-gray-500 font-bold ml-[1px]">${qty}</sup>` : '';
-                            return `<span class="text-[14px] leading-none">${icon}${qtyHtml}</span>`;
+                            return `<span class="text-[16px] leading-none">${icon}${qtyHtml}</span>`;
                         }).join('') + (remain > 0 ? `<span class="text-[9px] text-gray-400 font-bold ml-1">+${remain}</span>` : '') + `</div>`;
                     }
                     // -------------------------------------------------------------
@@ -2871,6 +2871,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
