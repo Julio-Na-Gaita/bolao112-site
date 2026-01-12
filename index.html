@@ -18,99 +18,115 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700;900&display=swap');
 
-        /* --- CONFIGURAÇÕES GERAIS --- */
-        html { height: 100%; overflow: hidden; -webkit-text-size-adjust: 100%; }
+        /* --- CORREÇÕES CRÍTICAS IOS (Flickering & Scroll) --- */
+        html {
+            height: 100%;
+            overflow: hidden; /* Impede que a página inteira role (o iPhone odeia isso) */
+            -webkit-text-size-adjust: 100%;
+        }
+        
         body {
-            height: 100%; width: 100%; overflow: hidden;
-            /* Novo Fundo Premium: Gradiente sutil cinza-azulado */
-            background: radial-gradient(circle at 50% 0%, #eef2f3 0%, #d9e2e8 100%);
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* O scroll será delegado para a div principal */
+            background-color: #f3f4f6;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            font-family: 'PT Serif', serif;
+            font-family: 'PT Serif', serif; 
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
 
-       #appContent, .card-cut, #mainScreens {
+        /* Container principal que rola (Substitui o scroll do body) */
+        /* Container principal que rola (Substitui o scroll do body) */
+        #appContent {
+            flex: 1; /* Ocupa todo o espaço restante */
+            overflow-y: auto; /* Habilita a rolagem vertical */
+            overflow-x: hidden; /* Evita rolagem lateral */
+            -webkit-overflow-scrolling: touch; /* Rolagem suave no iOS */
             transform: translateZ(0); /* Força GPU */
-            backface-visibility: hidden; /* Evita flicker em animações */
-            perspective: 1000px;
-        }
-        .fade-transition {
-            transition: opacity 0.3s ease-in-out;
+            will-change: scroll-position;
+            padding-bottom: 120px; /* Garante espaço para não cortar o fim da lista */
         }
 
+        /* Ajuste para o Topo e Fundo do iPhone (Notch e Barra Home) */
         .pt-safe { padding-top: env(safe-area-inset-top, 20px); }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
         
+        /* --- ESTILOS GERAIS & CORES --- */
         :root { --dark-green: #006400; --gold: #FFD700; }
+        
         .btn-press:active { transform: scale(0.96); transition: transform 0.1s; }
-
-        /* --- GLASSMORPHISM (O Segredo do Design Premium) --- */
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.85); /* Branco translúcido */
-            backdrop-filter: blur(12px); /* Desfoque do fundo */
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.6); /* Borda de vidro */
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); /* Sombra suave */
-        }
         
-        .glass-header {
-            background: linear-gradient(135deg, #006400 0%, #004d00 100%);
-            box-shadow: 0 4px 20px rgba(0, 100, 0, 0.3);
+        /* --- BADGES E NOTIFICAÇÕES --- */
+        @keyframes pulse-red { 
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 82, 82, 0); } 
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } 
         }
-/* --- SKELETON LOADING (Performance Visual) --- */
-        .skeleton {
-            background: #e0e0e0;
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 4px;
-        }
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-        .skeleton-card {
-            height: 140px;
-            width: 100%;
-            background: white;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            padding: 16px;
-            border: 1px solid #eee;
-        }
-        /* --- CARDS --- */
-        /* Mantendo o formato, mas melhorando o acabamento */
-        .card-cut {
-            background: rgba(255, 255, 255, 0.95);
-            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
-            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.05));
-            border: 1px solid rgba(255,255,255,0.8);
-        }
-        
-        /* Utilitários */
-        ::-webkit-scrollbar { display: none; }
-        .rules-text { white-space: pre-wrap; }
-        .gold-text-outline { background: linear-gradient(to bottom, #B8860B, #FFD700, #B8860B); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 1.2px black; color: transparent; font-weight: 900; }
-        
-        /* Badges */
-        @keyframes pulse-red { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 82, 82, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } }
         .pulse-dot { width: 8px; height: 8px; background-color: #FF5252; border-radius: 50%; display: inline-block; margin-left: 8px; animation: pulse-red 2s infinite; }
+        
         .bell-badge { position: absolute; top: 5px; right: 5px; background-color: #FF5252; color: white; border-radius: 50%; width: 14px; height: 14px; font-size: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 1px solid #006400; }
+        
         .nav-badge { position: absolute; top: -5px; right: 20px; background-color: red; color: white; border-radius: 50%; padding: 2px 5px; font-size: 9px; font-weight: bold; border: 1px solid white; z-index: 60; }
+        
         .medal-toast { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); background-color: #333; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 50; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; text-align: center; min-width: 200px; }
         .medal-toast.show { opacity: 1; }
 
-        /* Ticker */
-        .ticker-container { width: 100%; overflow: hidden; background: linear-gradient(90deg, #1a1a1a 0%, #000 100%); border-bottom: 2px solid #FFD700; height: 30px; display: flex; align-items: center; margin-bottom: 10px; border-radius: 8px 8px 0 0; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .ticker-wrapper { display: flex; white-space: nowrap; animation: ticker-scroll 100s linear infinite; }
-        .ticker-wrapper:hover { animation-play-state: paused; }
-        .ticker-item { display: flex; align-items: center; padding: 0 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
-        @keyframes ticker-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+        /* --- CARDS E LAYOUT --- */
+        .card-cut { background: white; clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)); border: 1px solid #e5e7eb; }
+        
+        /* Utilitários de Texto e Scroll */
+        ::-webkit-scrollbar { display: none; }
+        .rules-text { white-space: pre-wrap; }
+        
+        .gold-text-outline { background: linear-gradient(to bottom, #B8860B, #FFD700, #B8860B); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 1.2px black; color: transparent; font-weight: 900; }
+        
+        .bg-z2 { background-color: #FFEBEE !important; } 
+        .text-blood { color: #8B0000 !important; }
 
-        /* Overlay do Modal - Mais escuro e desfocado */
-        #modalOverlay { background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+        /* --- HALL DA FAMA E DA LAMA (NEWS TICKER) --- */
+        .ticker-container {
+            width: 100%;
+            overflow: hidden;
+            background: #1a1a1a; /* Fundo escuro */
+            border-bottom: 2px solid #FFD700; /* Linha dourada */
+            height: 30px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .ticker-wrapper {
+            display: flex;
+            white-space: nowrap;
+            animation: ticker-scroll 100s linear infinite; /* Velocidade do letreiro */
+        }
+        
+        .ticker-wrapper:hover {
+            animation-play-state: paused; /* Pausa ao passar o mouse */
+        }
+
+        .ticker-item {
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @keyframes ticker-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Cores dos Textos */
+        .txt-fama { color: #00E676; text-shadow: 0 0 5px rgba(0, 230, 118, 0.3); } /* Verde Neon */
+        .txt-lama { color: #FF5252; text-shadow: 0 0 5px rgba(255, 82, 82, 0.3); } /* Vermelho Neon */
+        .txt-info { color: #4FC3F7; } /* Azul Claro */
+        .txt-gold { color: #FFD700; } /* Dourado */
     </style>
 </head>
 <body class="h-full w-full overflow-hidden relative text-gray-900 flex flex-col">
@@ -258,7 +274,7 @@ Término oficial: 31 de dezembro de 2026
             </div>
 
             <div id="profileScreen" class="hidden">
-                <div class="card-cut glass-panel p-6 border-t-4 border-[#006400] text-center relative mb-4">
+                <div class="card-cut p-6 border-t-4 border-[#006400] text-center relative mb-4">
                     <h2 class="font-bold text-gray-400 text-xs mb-6 tracking-[0.2em]">CARTÃO DE MEMBRO</h2>
                     <div class="relative w-28 h-28 mx-auto mb-4">
                         <div id="profileAvatar" class="w-full h-full bg-gray-200 rounded-full border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
@@ -458,30 +474,21 @@ Término oficial: 31 de dezembro de 2026
         const imgEl = document.getElementById('showcaseImg');
 
         if (imgEl && appScreenshots.length > 0) {
-            // Pré-carrega imagens para evitar piscada de carregamento
-            appScreenshots.forEach(src => { const i = new Image(); i.src = src; });
-
+            // Define a primeira imagem
             imgEl.src = appScreenshots[0];
-            // Garante transição CSS
-            imgEl.style.transition = "opacity 0.5s ease-in-out"; 
 
             setInterval(() => {
-                // 1. Fade Out
+                // Efeito de Fade Out
                 imgEl.style.opacity = 0;
                 
                 setTimeout(() => {
-                    // 2. Troca Fonte (enquanto invisível)
                     currentImgIdx = (currentImgIdx + 1) % appScreenshots.length;
                     imgEl.src = appScreenshots[currentImgIdx];
-                    
-                    // 3. Aguarda um frame para o navegador processar a nova imagem
-                    requestAnimationFrame(() => {
-                        // 4. Fade In
-                        imgEl.style.opacity = 1;
-                    });
-                }, 500); // Espera o tempo da transição CSS
+                    // Efeito de Fade In
+                    imgEl.style.opacity = 1;
+                }, 500); // Troca a imagem após 0.5s (metade da transição)
                 
-            }, 4000); 
+            }, 4000); // Muda a cada 4 segundos
         }
         // Handlers
         // --- LOGIN OTIMIZADO PARA BIOMETRIA WEB ---
@@ -756,35 +763,9 @@ Término oficial: 31 de dezembro de 2026
             }
         };
         
-        // Variável global para cachear o último HTML renderizado
-        let lastMatchesHTML = "";
-// Gera 3 cards falsos pulsando para dar sensação de velocidade
-        function getSkeletonHTML() {
-            return Array(3).fill(0).map(() => `
-                <div class="skeleton-card">
-                    <div class="flex justify-between mb-4">
-                        <div class="skeleton h-4 w-20"></div>
-                        <div class="skeleton h-4 w-10"></div>
-                    </div>
-                    <div class="flex justify-between items-center gap-4">
-                        <div class="skeleton h-16 w-16 rounded-lg"></div>
-                        <div class="skeleton h-6 w-8"></div>
-                        <div class="skeleton h-16 w-16 rounded-lg"></div>
-                    </div>
-                    <div class="skeleton h-3 w-full mt-4"></div>
-                </div>
-            `).join('');
-        }
-       // Variável global para cachear o último HTML renderizado
-        let lastMatchesHTML = "";
-
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
-            
-            // 🚀 OTIMIZAÇÃO: Se estiver vazio, mostra o Skeleton imediatamente
-            if(!container.innerHTML.trim()) {
-                container.innerHTML = `<div class="p-2">${getSkeletonHTML()}</div>`;
-            }
+            document.getElementById('progressBar').classList.remove('hidden');
             
             try {
                 // 1. Buscamos TUDO de uma vez
@@ -798,7 +779,10 @@ Término oficial: 31 de dezembro de 2026
                 ]);
 
                 const totalParticipants = uSnap.size || 1; 
+
                 if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
+
+                // Mapas de Estatísticas e Votos
                 const statsMap = {};
                 const guessesData = []; 
                 guessesSnap.forEach(d => {
@@ -809,11 +793,14 @@ Término oficial: 31 de dezembro de 2026
                     statsMap[g.matchId][g.teamSelected]++;
                     statsMap[g.matchId].total++;
                 });
+
                 const serverCounts = {};
                 commentsSnap.forEach(doc => { const mid = doc.data().matchId; serverCounts[mid] = (serverCounts[mid] || 0) + 1; });
                 globalServerCounts = serverCounts;
+                
                 const now = new Date();
                 let allMatchesList = [];
+
                 matchesSnap.forEach(d => {
                     const m = {id:d.id, ...d.data()};
                     if(m.deadline) {
@@ -824,15 +811,20 @@ Término oficial: 31 de dezembro de 2026
                         allMatchesList.push(m);
                     }
                 });
+
+                // Ordenação Mestra
                 allMatchesList.sort((a,b) => {
                     const timeDiff = a.deadlineDate - b.deadlineDate;
                     if (timeDiff !== 0) return timeDiff;
                     return a.id.localeCompare(b.id);
                 });
+
                 window.cachedMatches = allMatchesList; 
+
                 let open = [], waiting = [], finished = [];
                 let totalUnread = 0;
                 let unreadInOpen = false, unreadInWaiting = false, unreadInFinished = false;
+
                 allMatchesList.forEach((m, index) => {
                     m.matchNumber = index + 1;
                     const sCount = serverCounts[m.id] || 0;
@@ -843,12 +835,15 @@ Término oficial: 31 de dezembro de 2026
                     }
                     if(m.winner) finished.push(m); else if(m.expired) waiting.push(m); else open.push(m);
                 });
+
                 waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
                 finished.sort((a,b)=>b.deadlineDate-a.deadlineDate); 
                 
-                // ... RECOLOCANDO O NEWS FEED E MONTAGEM DO HTML ...
+                // =================================================================
+                // 📰 GERADOR DE LETREIRO (LÓGICA CORRIGIDA)
+                // =================================================================
                 const generateNewsFeed = () => {
-                   let newsSegments = []; 
+                    let newsSegments = []; 
                     const addSegment = (text, colorHex) => { newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`); };
                     
                     const C_GOLD = "#FFD700"; const C_BLUE_LIGHT = "#4FC3F7"; const C_GRAY = "#808080"; 
@@ -999,7 +994,7 @@ Término oficial: 31 de dezembro de 2026
 
                 const newsHTML = generateNewsFeed();
 
-                // --- GERAÇÃO DO HTML (AQUI MUDA) ---
+                // --- MONTAGEM DO HTML DA TELA ---
                 let html = `
                     <div class="card-container mb-4">
                         <div class="ticker-container shadow-lg">
@@ -1020,16 +1015,11 @@ Término oficial: 31 de dezembro de 2026
                 
                 if(finished.length) {
                     const pulseFin = unreadInFinished ? '<span class="pulse-dot"></span>' : '';
-                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="glass-panel p-2 text-center shadow-sm flex justify-between items-center px-4 border-l-4 border-[#D32F2F]"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`;
+                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`;
                 }
-               // Só atualiza o DOM se mudou algo real (evita piscar)
-                if (html !== lastMatchesHTML) {
-                    requestAnimationFrame(() => {
-                        container.innerHTML = html;
-                        lastMatchesHTML = html;
-                    });
-                }
-            window.updateBadges(); 
+                
+                container.innerHTML = html;
+                window.updateBadges(); 
 
                 let pendingCount = 0; const myVotesSet = new Set(); guessesSnap.forEach(d => { if(d.data().userId === currentUser.uid) myVotesSet.add(d.data().matchId); }); open.forEach(m => { if (!myVotesSet.has(m.id)) pendingCount++; });
                 const navBtn = document.getElementById('nav-matches'); const oldBadge = document.getElementById('matches-badge'); if(oldBadge) oldBadge.remove(); if (pendingCount > 0) { navBtn.style.position = 'relative'; navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`; }
@@ -1091,8 +1081,8 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                                 <div class="flex justify-between items-start mb-4">
                                     <div class="flex flex-col w-full pr-2">
                                         <div class="flex justify-between items-baseline">
-                                        <span class="text-[14px] font-black text-black leading-none mb-1">#${m.matchNumber}</span>
-                                    </div>
+                                            <span class="text-[14px] font-black text-black leading-none mb-1">JOGO #${m.matchNumber}</span>
+                                        </div>
                                         <span class="text-[10px] text-gray-500 font-bold leading-tight mb-1">${m.round}</span>
                                         <span class="text-[11px] font-black text-[#D32F2F]">${m.expired ? 'Encerrado:' : '⚠️ Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
                                     </div>
@@ -1535,45 +1525,17 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     if (currentStreak >= 10) activeMedals += "👽 "; else if (currentStreak >= 5) activeMedals += "🎯 "; else if (currentStreak >= 3) activeMedals += "🔥 ";
 
                     const last3 = finishedDisplay.slice(0,3); let misses=0; let noShows=0; 
-                   // Correção: Adicionado propriedade date: "Atual"
-                    if(finishedDisplay.length >= 3) { 
-                        last3.forEach(m => { 
-                            const g = userGuesses.find(x => x.matchId === m.id); 
-                            if(!g) noShows++; 
-                            else if(g.teamSelected !== m.winner) misses++; 
-                        }); 
-                        if (misses === 3) { activeMedals += "🥬 "; trophyRoom.push({icon:"🥬", name:"MÃO DE ALFACE", desc:"Atual: 3 erros seguidos.", date: "Atual"}); } 
-                        if (noShows === 3) { activeMedals += "👻 "; trophyRoom.push({icon:"👻", name:"FANTASMA", desc:"Atual: 3 jogos sem votar.", date: "Atual"}); } 
-                    }
+                    if(finishedDisplay.length >= 3) { last3.forEach(m => { const g = userGuesses.find(x => x.matchId === m.id); if(!g) noShows++; else if(g.teamSelected !== m.winner) misses++; }); if (misses === 3) { activeMedals += "🥬 "; trophyRoom.push({icon:"🥬", name:"MÃO DE ALFACE", desc:"Atual: 3 erros seguidos."}); } if (noShows === 3) { activeMedals += "👻 "; trophyRoom.push({icon:"👻", name:"FANTASMA", desc:"Atual: 3 jogos sem votar."}); } }
                     
                     if (finishedDisplay.length > 0) { const lastMatch = finishedDisplay[0]; if (zebraMatchIds.includes(lastMatch.id)) { const g = userGuesses.find(x => x.matchId === lastMatch.id); if (g && g.teamSelected === lastMatch.winner) { activeMedals += "🦓 "; } } }
                     const veteranLevel = Math.floor(v / 50); for(let i=0; i<veteranLevel; i++) { activeMedals += "🎓 "; }
                     
                     if (trophyRoom.some(t => t.icon === "💎")) activeMedals += "💎 ";
 
-                    // Correção: Adicionado date: "Temporada" e nome do mês
-                   // Correção: Adicionado datas explícitas
-                    if (f > 0) { activeMedals += "🔮 "; trophyRoom.push({icon:"🔮", name:"MÃE DINAH", desc:`Acertou ${f} campeões.`, date: "Temporada 2026"}); }
+                    if (f > 0) { activeMedals += "🔮 "; trophyRoom.push({icon:"🔮", name:"MÃE DINAH", desc:`Acertou ${f} campeões.`}); }
+                    let kingCount = 0; Object.keys(pastKingsMap).forEach(mName => { if(pastKingsMap[mName] === ud.id) { kingCount++; trophyRoom.push({icon:"👑", name:`REI DE ${mName.toUpperCase()}`, desc:"Campeão Mensal Isolado"}); } }); if(kingCount > 0) activeMedals += "👑 ";
                     
-                    let kingCount = 0; 
-                    Object.keys(pastKingsMap).forEach(mName => { 
-                        if(pastKingsMap[mName] === ud.id) { 
-                            kingCount++; 
-                            trophyRoom.push({icon:"👑", name:`REI DE ${mName.toUpperCase()}`, desc:"Campeão Mensal Isolado", date: mName}); 
-                        } 
-                    }); 
-                    if(kingCount > 0) activeMedals += "👑 ";
-                    
-                  // Correção: Adicionado date: "Em Dia"
-                    let allPaid = true; 
-                    if (currentYear >= 2026) { 
-                        for(let i=0; i<=currentMonthIdx; i++) { 
-                            if (!u.payments?.[monthsNames[i]]) { allPaid = false; break; } 
-                        } 
-                    } else { 
-                        if ((u.debts||0) > 0) allPaid = false; 
-                    } 
-                    if (allPaid) { activeMedals += "💰 "; trophyRoom.unshift({icon:"💰", name:"PATRÃO", desc:"Mensalidades em dia.", date: "Mês Atual"}); }
+                    let allPaid = true; if (currentYear >= 2026) { for(let i=0; i<=currentMonthIdx; i++) { if (!u.payments?.[monthsNames[i]]) { allPaid = false; break; } } } else { if ((u.debts||0) > 0) allPaid = false; } if (allPaid) { activeMedals += "💰 "; trophyRoom.unshift({icon:"💰", name:"PATRÃO", desc:"Mensalidades em dia."}); }
 
                     matches.forEach(m => { const dl = m.deadlineDate; if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
                     const deb = u.debts || 0; p -= deb; if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${deb} pts`, type:'bad'}); 
@@ -1601,13 +1563,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                 
                 monthlyData.sort((a,b) => b.points - a.points); 
                 
-                // Correção: Adicionado date: "Rodada Atual"
-                if (users.length > 2) { 
-                    const lastUsers = [users[users.length-1], users[users.length-2]]; 
-                    lastUsers.forEach(u => { 
-                        if(u) u.trophyRoom.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Atual: Z-2", date: "Rodada Atual"}); 
-                    }); 
-                }
+                if (users.length > 2) { const lastUsers = [users[users.length-1], users[users.length-2]]; lastUsers.forEach(u => { if(u) u.trophyRoom.push({icon:"⚓", name:"ZONA DE REBAIXAMENTO", desc:"Atual: Z-2"}); }); }
                 
                 window.currentMonthlyRanking = monthlyData; currentRankingData = users; 
                 
@@ -1704,8 +1660,8 @@ window.showKingModal = () => {
             const u = currentRankingData[idx]; 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             
-           // CORREÇÃO: Usar object-contain com fundo preto para ver a imagem inteira
-            let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-contain bg-black">`;
+            // Agora sempre mostra imagem (Real ou DiceBear) 
+           let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-cover">`;
 
             // --- LÓGICA DE STACKING E ORDENAÇÃO DE MEDALHAS ---
             let medalsHtml = "";
@@ -1858,15 +1814,13 @@ window.showKingModal = () => {
             };
         };
 
-       // Função auxiliar para mostrar o Toast (CORRIGIDA)
+        // Função auxiliar para mostrar o Toast
         window.showToast = (title, desc, date) => {
             const toast = document.getElementById('medalToast');
             if (!toast) return;
             
             let html = `<span class="text-[#FFD700]">${title}</span><br><span class="font-normal">${desc}</span>`;
-            
-            // Só mostra a data se ela existir e não for a string "undefined"
-            if(date && date !== 'undefined' && date !== 'null') {
+            if(date) {
                 html += `<br><span class="text-[9px] text-gray-400 font-bold mt-1 block">Conquistado em: ${date}</span>`;
             }
             
@@ -1888,50 +1842,50 @@ window.showKingModal = () => {
             const cont = document.getElementById('modalContainer'); 
             modal.classList.remove('hidden');
             
-            // DESIGN PREMIUM: Fundo cinza suave, cabeçalho gradiente
             cont.innerHTML = `
-            <div class="w-full max-w-sm bg-[#f8f9fa] rounded-xl shadow-2xl overflow-hidden relative h-[85vh] flex flex-col border border-white/40">
-                <img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-5">
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh] flex flex-col">
+                <img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
                 
-                <div class="relative z-10 flex flex-col h-full">
-                    <div class="bg-gradient-to-r from-[#006400] to-[#004d00] p-5 text-white flex items-center shadow-lg">
-                        <button onclick="closeModal()" class="mr-4 hover:scale-110 transition-transform"><i class="fas fa-arrow-left text-xl"></i></button>
+                <div class="relative z-10 flex flex-col h-full bg-white/90">
+                    <div class="bg-[#006400] p-4 text-white flex items-center shadow-md">
+                        <button onclick="closeModal()" class="mr-4"><i class="fas fa-arrow-left text-xl"></i></button>
                         <div>
-                            <h3 class="font-black uppercase text-lg leading-none tracking-wide">Painel Admin</h3>
-                            <p class="text-[10px] text-[#FFD700] font-bold mt-1 opacity-90">Gestão 2026</p>
+                            <h3 class="font-black uppercase text-lg leading-none">Painel Admin</h3>
+                            <p class="text-[10px] text-[#FFD700] font-bold">Gestão 2026</p>
                         </div>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto p-5 space-y-6">
+                    <div class="flex-1 overflow-y-auto p-4 space-y-6">
                         
-                        <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-100">
-                            <h4 class="text-[10px] font-black text-gray-400 mb-3 uppercase tracking-widest pl-1"><i class="fas fa-futbol mr-1"></i> Gestão de Jogos</h4>
-                            <div class="grid grid-cols-2 gap-3">
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-gradient-to-br from-[#1565C0] to-[#0D47A1] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-plus-circle text-xl mb-1"></i> Novo Jogo</button>
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-gradient-to-br from-[#0277BD] to-[#01579B] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-cloud-download-alt text-xl mb-1"></i> Importar API</button>
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-gradient-to-br from-[#2E7D32] to-[#1B5E20] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-check-circle text-xl mb-1"></i> Baixa Rápida</button>
-                                <button onclick="openTrashBin()" class="bg-gradient-to-br from-gray-700 to-gray-900 text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-trash text-xl mb-1"></i> Lixeira</button>
-                            </div>
-                        </div>
-
-                        <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-100">
-                             <h4 class="text-[10px] font-black text-gray-400 mb-3 uppercase tracking-widest pl-1"><i class="fas fa-users mr-1"></i> Pessoas & Financeiro</h4>
-                            <button onclick="openFinancialScreen()" class="w-full bg-gradient-to-r from-[#C62828] to-[#B71C1C] text-white py-4 rounded-lg font-bold text-xs shadow-md btn-press flex items-center justify-center gap-3 border border-white/20">
-                                <i class="fas fa-wallet text-xl"></i> GERENCIAR PAGAMENTOS & USUÁRIOS
-                            </button>
-                        </div>
-
-                        <div class="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-gray-100">
-                             <h4 class="text-[10px] font-black text-gray-400 mb-3 uppercase tracking-widest pl-1"><i class="fas fa-bullhorn mr-1"></i> Comunicação</h4>
-                            <div class="grid grid-cols-2 gap-3">
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-gradient-to-br from-[#6A1B9A] to-[#4A148C] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-bell text-xl mb-1"></i> Enviar Push</button>
-                                <button onclick="openCompetitionsManager()" class="bg-gradient-to-br from-[#F9A825] to-[#F57F17] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex flex-col items-center gap-1 border border-white/20"><i class="fas fa-trophy text-xl mb-1"></i> Competições</button>
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">⚽ GESTÃO DE JOGOS</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Novo Jogo</button>
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#0277BD] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-cloud-download-alt text-lg"></i> Importar API</button>
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
+                                <button onclick="openTrashBin()" class="bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-trash text-lg"></i> Lixeira</button>
                             </div>
                         </div>
 
                         <div>
-                           <h4 class="text-[10px] font-black text-gray-400 mb-3 uppercase tracking-widest pl-1 text-center">📋 LISTA DE CONFRONTOS</h4>
-                            <div id="adminMatchList" class="bg-white border border-gray-200 rounded-xl p-2 text-xs text-gray-500 min-h-[100px] shadow-inner">Carregando...</div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">👥 PESSOAS & FINANCEIRO</h4>
+                            <button onclick="openFinancialScreen()" class="w-full bg-[#C62828] text-white py-4 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2">
+                                <i class="fas fa-wallet text-lg"></i> GERENCIAR PAGAMENTOS & USUÁRIOS
+                            </button>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📢 COMUNICAÇÃO</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#6A1B9A] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-bell text-lg"></i> Enviar Push</button>
+                                <button onclick="openCompetitionsManager()" class="bg-[#F9A825] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-trophy text-lg"></i> Competições</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="border-t border-gray-300 my-2"></div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📋 LISTA DE CONFRONTOS</h4>
+                            <div id="adminMatchList" class="bg-white border rounded p-2 text-xs text-gray-500 min-h-[100px]">Carregando...</div>
                         </div>
                     </div>
                 </div>
@@ -2007,12 +1961,12 @@ async function loadAdminMatches() {
                 snap.forEach(d => { const u = d.data(); usersList.push({id: d.id, ...u}); });
                 usersList.sort((a,b) => (a.name||"").localeCompare(b.name||""));
 
-                let html = `<div class="w-full max-w-sm bg-[#f8f9fa] rounded-xl shadow-2xl overflow-hidden relative" style="max-height: 85vh; display:flex; flex-direction:column;">
-                    <div class="bg-gradient-to-r from-[#006400] to-[#004d00] p-4 text-white flex justify-between items-center shrink-0 shadow-md">
-                        <h3 class="font-bold uppercase text-sm tracking-wide"><i class="fas fa-coins mr-2"></i>Financeiro</h3>
-                        <button onclick="window.closeModal()" class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"><i class="fas fa-times text-xs"></i></button>
+                let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 85vh; display:flex; flex-direction:column;">
+                    <div class="bg-[#006400] p-4 text-white flex justify-between items-center shrink-0">
+                        <h3 class="font-bold uppercase text-sm">Financeiro</h3>
+                        <button onclick="window.closeModal()"><i class="fas fa-times"></i></button>
                     </div>
-                    <div class="flex-1 overflow-y-auto p-3 bg-[#f3f4f6]">`;
+                    <div class="flex-1 overflow-y-auto p-2 bg-gray-50">`;
 
                 const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
                 
@@ -2020,8 +1974,8 @@ async function loadAdminMatches() {
                     // Ícone de chave se tiver dica
                     const hintIcon = u.passwordHint ? `<i class="fas fa-key text-orange-400 text-xs ml-2 cursor-pointer" onclick="alert('Dica: ${u.passwordHint}')" title="Ver Dica"></i>` : '';
 
-                    html += `<div class="bg-white border border-gray-200 rounded-lg p-3 mb-3 shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
+                    html += `<div class="bg-white border rounded p-2 mb-2 shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
                             <span class="font-bold text-xs text-gray-800 flex items-center">${u.name} ${hintIcon}</span>
                             <div class="flex items-center gap-2">
                                 <button onclick="window.changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus-circle"></i></button>
@@ -2831,23 +2785,5 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
