@@ -367,7 +367,7 @@ Término oficial: 31 de dezembro de 2026
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         // ADICIONADO: enableIndexedDbPersistence
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
         const app = initializeApp(firebaseConfig);
@@ -1955,8 +1955,7 @@ let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-
                             <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">⚽ GESTÃO DE JOGOS</h4>
                             <div class="grid grid-cols-2 gap-2">
                                 <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Novo Jogo</button>
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#0277BD] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-cloud-download-alt text-lg"></i> Importar API</button>
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
+                                                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
                                 <button onclick="openTrashBin()" class="bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-trash text-lg"></i> Lixeira</button>
                             </div>
                         </div>
@@ -2518,28 +2517,38 @@ document.getElementById('btnLogout').onclick = () => {
 };
        // --- RESENHA (CHAT) COM ATUALIZAÇÃO IMEDIATA DE LEITURA ---
         window.openMatchComments = async (mid, ta, tb, winner) => {
-            // 1. Marca como lido IMEDIATAMENTE ao abrir
             const currentCount = globalServerCounts[mid] || 0;
             localStorage.setItem(`read_count_${mid}`, currentCount);
             
-            // 2. Remove a bolinha do card do jogo (Visual)
-            // (Tenta achar o botão na tela se estiver visível)
             const matchBtns = document.querySelectorAll(`button[onclick*="${mid}"]`);
-            matchBtns.forEach(btn => {
-                const badge = btn.querySelector('.absolute');
-                if(badge) badge.remove();
-            });
-
-            // 3. Atualiza o Sino Global (Remove a notificação lá em cima)
+            matchBtns.forEach(btn => { const badge = btn.querySelector('.absolute'); if(badge) badge.remove(); });
             window.updateBadges();
 
-            // 4. Abre o Modal do Chat
             const modal = document.getElementById('modalOverlay'); 
             const cont = document.getElementById('modalContainer'); 
             modal.classList.remove('hidden'); 
             cont.innerHTML = `<div class="bg-white p-4 text-center"><i class="fas fa-spinner fa-spin text-[#006400]"></i></div>`;
             
             const isFinished = winner && winner !== "";
+
+            // Função global para dar Like (precisa ser window. para funcionar no onclick do HTML injetado)
+            window.toggleLike = async (docId) => {
+                const ref = doc(db, "match_comments", docId);
+                const docSnap = await getDoc(ref);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const likes = data.likes || [];
+                    const myId = currentUser.uid;
+                    
+                    if (likes.includes(myId)) {
+                        // Remove Like
+                        await updateDoc(ref, { likes: arrayRemove(myId) });
+                    } else {
+                        // Adiciona Like
+                        await updateDoc(ref, { likes: arrayUnion(myId) });
+                    }
+                }
+            };
 
             const renderChat = (msgs) => {
                 let html = `
@@ -2556,13 +2565,27 @@ document.getElementById('btnLogout').onclick = () => {
                         ${msgs.length ? msgs.map(m => {
                             const isMe = m.userId === currentUser.uid;
                             const time = m.timestamp ? new Date(m.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+                            
+                            // Lógica de Likes Web
+                            const likes = m.likes || [];
+                            const likeCount = likes.length;
+                            const isLiked = likes.includes(currentUser.uid);
+                            const heartClass = isLiked ? "fas fa-heart text-red-500" : "far fa-heart text-gray-400";
+                            const countDisplay = likeCount > 0 ? `<span class="text-[9px] text-gray-500 font-bold ml-1">${likeCount}</span>` : '';
+
                             return `
-                            <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
-                                <div class="max-w-[80%] bg-${isMe ? '[#DCF8C6]' : 'white'} p-2 rounded-lg shadow text-xs">
-                                    ${!isMe ? `<p class="text-[9px] font-bold text-[#006400] mb-1">${m.userName}</p>` : ''}
-                                    <p class="text-gray-800 text-sm leading-snug">${m.text}</p>
-                                    <p class="text-[8px] text-gray-400 text-right mt-1">${time}</p>
+                            <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+                                <div class="flex ${isMe ? 'justify-end' : 'justify-start'} w-full">
+                                    <div class="max-w-[80%] bg-${isMe ? '[#DCF8C6]' : 'white'} p-2 rounded-lg shadow text-xs">
+                                        ${!isMe ? `<p class="text-[9px] font-bold text-[#006400] mb-1">${m.userName}</p>` : ''}
+                                        <p class="text-gray-800 text-sm leading-snug">${m.text}</p>
+                                        <p class="text-[8px] text-gray-400 text-right mt-1">${time}</p>
+                                    </div>
                                 </div>
+                                <button onclick="window.toggleLike('${m.id}')" class="flex items-center mt-1 px-1 hover:scale-110 transition-transform">
+                                    <i class="${heartClass} text-[10px]"></i>
+                                    ${countDisplay}
+                                </button>
                             </div>`;
                         }).join('') : '<p class="text-center text-gray-400 text-xs mt-4">Seja o primeiro a comentar!</p>'}
                     </div>
@@ -2570,11 +2593,11 @@ document.getElementById('btnLogout').onclick = () => {
                     ${isFinished 
                         ? `<div class="p-4 bg-gray-200 text-center border-t shrink-0">
                              <p class="text-xs font-bold text-gray-500">⛔ Chat encerrado (Jogo Finalizado)</p>
-                           </div>`
+                            </div>`
                         : `<div class="p-2 bg-white border-t flex items-center gap-2 shrink-0">
                              <input type="text" id="commentInput" placeholder="Digite sua resenha..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none border focus:border-[#006400]">
                              <button onclick="sendComment('${mid}')" class="bg-[#006400] text-white w-10 h-10 rounded-full shadow flex items-center justify-center btn-press"><i class="fas fa-paper-plane text-xs"></i></button>
-                           </div>`
+                            </div>`
                     }
                 </div>`;
                 cont.innerHTML = html;
@@ -2585,10 +2608,10 @@ document.getElementById('btnLogout').onclick = () => {
             const q = query(collection(db, "match_comments"), where("matchId", "==", mid)); 
             const unsub = onSnapshot(q, (snap) => {
                 const msgs = [];
-                snap.forEach(d => msgs.push(d.data()));
+                // Precisamos do ID do documento para o Like, então mapeamos doc.id
+                snap.forEach(d => msgs.push({ id: d.id, ...d.data() }));
                 msgs.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
                 
-                // Atualiza contagem local se chegar msg nova com chat aberto
                 if(msgs.length > currentCount) {
                     localStorage.setItem(`read_count_${mid}`, msgs.length);
                 }
@@ -2601,7 +2624,16 @@ document.getElementById('btnLogout').onclick = () => {
                 if(!txt) return;
                 const uDoc = await getDoc(doc(db, "users", currentUser.uid));
                 const uData = uDoc.data();
-                await addDoc(collection(db, "match_comments"), { matchId: matchId, userId: currentUser.uid, userName: uData.name || "Anônimo", userPhoto: uData.photoBase64 || "", text: txt, timestamp: new Date() });
+                // Inicializa com likes vazio
+                await addDoc(collection(db, "match_comments"), { 
+                    matchId: matchId, 
+                    userId: currentUser.uid, 
+                    userName: uData.name || "Anônimo", 
+                    userPhoto: uData.photoBase64 || "", 
+                    text: txt, 
+                    timestamp: new Date(),
+                    likes: [] 
+                });
                 document.getElementById('commentInput').value = "";
                 document.getElementById('commentInput').focus();
             };
@@ -2879,6 +2911,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
