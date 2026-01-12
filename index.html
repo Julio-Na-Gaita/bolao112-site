@@ -1555,7 +1555,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     const pos = i+1; 
                     const isRelegation = (i >= users.length - 2) && (users.length > 2); 
                     let bgColor = 'bg-white'; let borderColor = 'border-transparent'; let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`; let nameColorClass = "text-gray-800"; let anchorIcon = ""; 
-                    if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; } else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; anchorIcon = `<i class="fas fa-anchor text-[#8B0000] ml-1 text-[10px]" title="Zona de Rebaixamento"></i>`; } 
+                    if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; } else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; } else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; } else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; anchorIcon = `<i class="fas fa-anchor text-[#8B0000] ml-1 text-[14px]" title="Zona de Rebaixamento"></i>`; } 
                     
                     let diffHtml = ''; 
                     if(u.lastRank > 0) { 
@@ -1578,7 +1578,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     });
                     
                     // 3. Limita a 5
-                    const maxVisible = 8;
+                    const maxVisible = 6;
                     const visible = uniqueIcons.slice(0, maxVisible);
                     const remain = uniqueIcons.length - maxVisible;
 
@@ -1589,7 +1589,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                             const qty = counts[icon];
                             // Exibe contador sobrescrito se > 1
                             const qtyHtml = qty > 1 ? `<sup class="text-[8px] text-gray-500 font-bold ml-[1px]">${qty}</sup>` : '';
-                            return `<span class="text-[16px] leading-none">${icon}${qtyHtml}</span>`;
+                            return `<span class="text-[14px] leading-none">${icon}${qtyHtml}</span>`;
                         }).join('') + (remain > 0 ? `<span class="text-[9px] text-gray-400 font-bold ml-1">+${remain}</span>` : '') + `</div>`;
                     }
                     // -------------------------------------------------------------
@@ -2871,6 +2871,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
