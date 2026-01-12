@@ -326,7 +326,7 @@ Término oficial: 31 de dezembro de 2026
 
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-4"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
                 
-                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.5.9</p>
+                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.6</p>
             </div>
         </div>
     </main>
@@ -404,11 +404,11 @@ Término oficial: 31 de dezembro de 2026
         let currentRankingData = [];
         let compMap = {}; 
         let globalServerCounts = {};
-// --- REGRAS ATUALIZADAS (WEB v1.4.3) ---
+// --- REGRAS ATUALIZADAS (WEB v1.6) ---
         const rulesData = [
             { 
                 t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", 
-                c: "💰 Aporte Mensal\nValor: R$ 15,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -1 ponto. A cada 5 dias subsequentes (16, 21, 26...), -1 ponto adicional cumulativo.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" 
+                c: "💰 Aporte Mensal\nValor: R$ 15,00 por participante\nVencimento: todo dia 10 de cada mês\n\n🟢 Entrada de novos participantes\nNovos participantes podem ingressar a qualquer momento da temporada\nNão haverá pontuação retroativa, sob nenhuma hipótese\nA pontuação passa a valer exclusivamente a partir da inclusão oficial do participante no bolão\n\n❌ Desistência\nNão haverá reembolso de valores pagos, independentemente do motivo da desistência, afastamento ou exclusão\n\n⚠️ Política de Inadimplência (Pontos e Votos)\n1. Penalidade de Pontos: Atraso de 1 dia (pagamento dia 11) gera -3 pontos. A cada 5 dias subsequentes (16, 21, 26...), -3 pontos adicionais cumulativos.\n2. Penalidade Política (Votações): Participantes que estiverem INADIMPLENTES no momento de qualquer votação perdem imediatamente o direito de voto.\n   - O voto é direito exclusivo de quem está com o financeiro em dia na data da votação.\n\n📌 A drenagem de pontos somente é interrompida mediante envio do comprovante\n\n📌 O histórico de inadimplência permanece registrado para fins de desempate" 
             },
             { 
                 t: "2️⃣ PREMIAÇÃO, FESTA & REI DO MÊS", 
@@ -637,7 +637,7 @@ Término oficial: 31 de dezembro de 2026
                         isAdmin: false, 
                         debts: 0, 
                         payments: {}, 
-                        appVersion: "Web v1.5.9",
+                        appVersion: "Web v1.6",
                         passwordHint: hint // <--- SALVA AQUI
                     }); 
                     alert("Conta criada!"); closeModal(); 
@@ -647,8 +647,8 @@ Término oficial: 31 de dezembro de 2026
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                // ATUALIZANDO VERSÃO PARA 1.5.9
-                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.5.9" }); } catch(e) {}
+                // ATUALIZANDO VERSÃO PARA 1.6
+                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.6" }); } catch(e) {}
                 
                 // --- CORREÇÃO: MOSTRAR O HEADER AO CARREGAR PÁGINA LOGADO ---
                 document.getElementById('mainHeader').classList.remove('hidden'); 
@@ -894,7 +894,7 @@ Término oficial: 31 de dezembro de 2026
 
                         if (finalsWon > 0) userMedals.push("🔮");
                         if (victories >= 50) { const qtd = Math.floor(victories/50); for(let k=0; k<qtd; k++) userMedals.push("🎓"); }
-                        pts -= u.debts;
+                        pts -= (u.debts * 3);
 
                         return { name: u.name.split(' ')[0].toUpperCase(), pts: pts, debts: u.debts, medals: userMedals, id: u.id };
                     }).sort((a, b) => {
@@ -2264,7 +2264,7 @@ window.togglePay = async (uid, month) => {
         
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.5.9) ---
+        // --- GUIA DO APP ATUALIZADO (v1.6) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
@@ -2272,7 +2272,7 @@ window.togglePay = async (uid, month) => {
                 <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
-                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.5.9</p>
+                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.6</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
@@ -2913,6 +2913,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
