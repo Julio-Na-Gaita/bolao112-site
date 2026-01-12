@@ -83,30 +83,7 @@
         
         .bg-z2 { background-color: #FFEBEE !important; } 
         .text-blood { color: #8B0000 !important; }
-/* --- EFEITOS ESPECIAIS (VIP & 3D) --- */
-        .perspective-1000 { perspective: 1000px; }
-        .transform-style-3d { transform-style: preserve-3d; }
-        .backface-hidden { backface-visibility: hidden; }
-        .rotate-y-180 { transform: rotateY(180deg); }
-        .rotate-y-0 { transform: rotateY(0deg); }
-        
-        /* Texto Dourado com Contorno Preto (Efeito Pomposo) */
-        .text-vip-gold {
-            color: #FFD700;
-            text-shadow: 
-                2px 2px 0 #000, -1px -1px 0 #000,  
-                1px -1px 0 #000, -1px 1px 0 #000,
-                1px 1px 0 #000;
-            font-family: 'PT Serif', serif;
-            letter-spacing: 1px;
-        }
-        
-        /* Botão VIP (Moeda) */
-        .btn-vip-icon {
-            background: radial-gradient(circle, #333 0%, #000 100%);
-            border: 2px solid #FFD700;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-        }
+
         /* --- HALL DA FAMA E DA LAMA (NEWS TICKER) --- */
         .ticker-container {
             width: 100%;
@@ -1017,38 +994,10 @@ Término oficial: 31 de dezembro de 2026
 
                 const newsHTML = generateNewsFeed();
 
-// --- 1. CABEÇALHO VIP (CORRIGIDO: Nome Real e Margens Apertadas) ---
-                // Busca o nome real do usuário na lista de usuários carregada
-                let safeName = "PALPITADOR";
-                uSnap.forEach(doc => {
-                    if(doc.id === currentUser.uid) {
-                        const d = doc.data();
-                        if(d.name) safeName = d.name.split(' ')[0].toUpperCase();
-                        else if(d.username) safeName = d.username.toUpperCase();
-                    }
-                });
-
+                // --- MONTAGEM DO HTML DA TELA ---
                 let html = `
-                    <div class="flex justify-between items-center px-4 pt-2 pb-1"> 
-                        <div class="flex flex-col">
-                            <span class="text-[10px] font-bold text-gray-500 pl-1 uppercase tracking-widest shadow-black drop-shadow-sm leading-none mb-1">Olá,</span>
-                            <span class="text-3xl font-black text-vip-gold uppercase leading-none transform -translate-y-1" 
-                                  style="color: #FFD700; text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; letter-spacing: 1px;">
-                                ${safeName}
-                            </span>
-                        </div>
-                        <button onclick="window.openMemberCard()" class="w-12 h-12 rounded-full flex items-center justify-center btn-press relative"
-                                style="background: radial-gradient(circle, #333 0%, #000 100%); border: 2px solid #FFD700; box-shadow: 0 4px 6px rgba(0,0,0,0.5);">
-                            <i class="fas fa-id-card text-[#FFD700] text-xl"></i>
-                            <div class="absolute -bottom-1 -right-1 bg-[#FFD700] text-black text-[7px] font-black px-1 rounded border border-black">VIP</div>
-                        </button>
-                    </div>
-                `;
-
-                // 2. LETREIRO (News Ticker) - Margem superior reduzida (mt-1)
-                html += `
-                    <div class="card-container mb-3 mt-1">
-                        <div class="ticker-container shadow-lg" style="border-top: 1px solid #333;">
+                    <div class="card-container mb-4">
+                        <div class="ticker-container shadow-lg">
                             <div class="ticker-wrapper">
                                 <div class="ticker-item">
                                     ${newsHTML}
@@ -1057,23 +1006,6 @@ Término oficial: 31 de dezembro de 2026
                         </div>
                     </div>
                 `;
-
-                // 3. BOTÃO FAST VOTE (Lógica de Pendência)
-                // Filtra jogos 'open' que eu NÃO votei, comparando com guessesData
-                const myPendingIds = open.filter(m => {
-                    return !guessesData.some(g => g.matchId === m.id && g.userId === currentUser.uid);
-                });
-
-                if (myPendingIds.length > 0) {
-                    html += `
-                    <div class="px-4 mb-6">
-                        <button onclick="window.openFastVote()" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 border-b-4 border-orange-800 text-white py-3 rounded-full font-black shadow-lg btn-press flex items-center justify-center gap-2 animate-pulse ring-2 ring-orange-300/50">
-                            <i class="fas fa-bolt text-yellow-300 text-lg"></i>
-                            <span class="tracking-wider text-sm">VOTAR RÁPIDO (${myPendingIds.length})</span>
-                        </button>
-                    </div>`;
-                }
-                // -------------------------------
                 
                 const pulseOpen = unreadInOpen ? '<span class="pulse-dot"></span>' : '';
                 html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ (${open.length}) DISPONÍVEIS ✅${pulseOpen}</h4><i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i></div></div><div id="openContainer">${open.length > 0 ? await renderMatchList(open, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}</div>`;
@@ -2411,272 +2343,6 @@ window.calculatePot = async function() {
                 alert("Erro ao carregar valores do pote.");
             }
         }
-        window.openMemberCard = async () => {
-            const modal = document.getElementById('modalOverlay');
-            const cont = document.getElementById('modalContainer');
-            
-            // 1. Loading Transparente (Sem fundo branco)
-            modal.classList.remove('hidden');
-            cont.className = "w-full max-w-sm bg-transparent shadow-none relative outline-none border-none"; 
-            cont.innerHTML = `<div class="text-center mt-20"><i class="fas fa-circle-notch fa-spin text-4xl text-[#FFD700] drop-shadow-md"></i></div>`;
-            
-            try {
-                // 2. Tenta carregar o Ranking se estiver vazio
-                if (!window.currentRankingData || window.currentRankingData.length === 0) {
-                    try {
-                        // Tenta carregar, mas não trava se der erro
-                        await loadRanking(); 
-                    } catch (err) {
-                        console.warn("Ranking demorou ou falhou, abrindo modo básico.");
-                    }
-                }
-
-                // 3. Busca Dados (Com segurança contra falhas)
-                // Se o ranking falhou, usa lista vazia para não quebrar o .find
-                const rankingList = window.currentRankingData || [];
-                
-                // Tenta achar o usuário na lista
-                let uStats = rankingList.find(u => u.uid === currentUser.uid);
-                
-                // Se não achou (ou ranking falhou), busca dados brutos do usuário no banco agora
-                if (!uStats) {
-                    const docSnap = await getDoc(doc(db, "users", currentUser.uid));
-                    const rawData = docSnap.data();
-                    uStats = { 
-                        name: rawData.name || "Palpitador", 
-                        p: rawData.points || 0, // Pega o que tiver salvo
-                        v: 0, 
-                        d: rawData.debts || 0, 
-                        trophyRoom: [], 
-                        lastRank: "-" 
-                    };
-                }
-
-                // Calcula Posição Real (Se tiver lista)
-                const realRankIndex = rankingList.findIndex(u => u.uid === currentUser.uid);
-                const rankDisplay = realRankIndex !== -1 ? `${realRankIndex + 1}º` : "-";
-
-                // Preparação Visual
-                const photo = getAvatarUrl(uStats.photo, uStats.name);
-                const medalCount = uStats.trophyRoom ? uStats.trophyRoom.length : 0;
-                
-                // Lógica Financeira (Verso)
-                const finStatus = uStats.d > 0 
-                    ? `<span class="text-red-500 font-black text-xl">R$ ${uStats.d},00</span><br><span class="text-[8px] text-red-400 font-bold uppercase tracking-widest">PENDÊNCIAS</span>`
-                    : `<span class="text-[#00E676] font-black text-xl">EM DIA</span><br><span class="text-[8px] text-green-400 font-bold uppercase tracking-widest">MENSALIDADE</span>`;
-
-                // 4. Renderiza o Cartão (CSS 3D)
-                cont.innerHTML = `
-                <div class="w-full h-[320px] flex items-center justify-center perspective-1000 bg-transparent select-none" onclick="this.querySelector('.flipper').classList.toggle('rotate-y-180')">
-                    <div class="flipper w-[320px] h-[200px] relative transform-style-3d transition-transform duration-700 cursor-pointer">
-                        
-                        <div class="absolute inset-0 backface-hidden rounded-xl shadow-2xl overflow-hidden border border-yellow-600/50" 
-                             style="background: linear-gradient(135deg, #1a1a1a 0%, #000 100%); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                            
-                            <i class="fas fa-futbol absolute -bottom-6 -right-6 text-9xl text-white opacity-5"></i>
-                            
-                            <div class="p-5 flex flex-col h-full relative z-10">
-                                <div class="flex justify-between items-start mb-2">
-                                    <div class="w-11 h-8 bg-gradient-to-r from-yellow-200 to-yellow-500 rounded flex items-center justify-center border border-yellow-600/50 shadow-sm">
-                                        <div class="w-7 h-5 border border-black/20 rounded"></div>
-                                    </div>
-                                    <i class="fas fa-wifi text-white/50 rotate-90 text-xl"></i>
-                                </div>
-                                
-                                <div class="flex items-center gap-4 mt-2">
-                                    <div class="w-14 h-14 rounded-full border-2 border-[#FFD700] p-0.5 bg-black shadow-lg">
-                                        <img src="${photo}" class="w-full h-full rounded-full object-cover">
-                                    </div>
-                                    <div>
-                                        <h2 class="text-white font-black text-xl leading-none uppercase tracking-wide" 
-                                            style="text-shadow: 2px 2px 4px black;">
-                                            ${uStats.name.split(' ')[0]}
-                                        </h2>
-                                        <p class="text-gray-400 text-[11px] font-mono mt-1 tracking-wider text-shadow-sm font-bold">
-                                            ID: ${currentUser.uid.substring(0,4).toUpperCase()} ${currentUser.uid.substring(4,8).toUpperCase()}
-                                        </p>
-                                    </div>
-                                </div>
-                                
-                                <div class="mt-auto flex justify-between items-end">
-                                    <div>
-                                        <p class="text-[7px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Membro Desde</p>
-                                        <p class="text-white text-sm font-black text-shadow-sm">2025</p>
-                                    </div>
-                                    <div class="bg-black/40 border border-[#FFD700] px-3 py-1 rounded backdrop-blur-sm">
-                                        <p class="text-[#FFD700] text-sm font-black tracking-wide">${rankDisplay} LUGAR</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="absolute inset-0 backface-hidden rounded-xl shadow-2xl overflow-hidden border border-gray-700 rotate-y-180"
-                             style="background: linear-gradient(135deg, #2c2c2c 0%, #121212 100%);">
-                            
-                            <div class="w-full h-10 bg-black mt-5"></div>
-                            
-                            <div class="p-5 text-center flex flex-col h-full justify-between pb-4">
-                                <div>
-                                    <h3 class="text-[#FFD700] text-[10px] font-bold uppercase tracking-[0.2em] mb-3 mt-1">Performance do Atleta</h3>
-                                    <div class="h-px w-20 bg-gray-600 mx-auto mb-3"></div>
-                                </div>
-                                
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <div class="flex items-center justify-center gap-1 text-white">
-                                            <i class="fas fa-star text-[10px] text-white/50"></i>
-                                            <span class="text-2xl font-black">${uStats.p}</span>
-                                        </div>
-                                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Pontos</p>
-                                    </div>
-                                    <div>
-                                        <div class="flex items-center justify-center gap-1 text-[#69F0AE]">
-                                            <i class="fas fa-check-circle text-[10px] opacity-70"></i>
-                                            <span class="text-2xl font-black">${uStats.v}</span>
-                                        </div>
-                                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Acertos</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="grid grid-cols-2 gap-4 mt-2">
-                                    <div>
-                                        <div class="flex items-center justify-center gap-1 text-[#FFD700]">
-                                            <i class="fas fa-trophy text-[10px] opacity-70"></i>
-                                            <span class="text-2xl font-black">${medalCount}</span>
-                                        </div>
-                                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Medalhas</p>
-                                    </div>
-                                    <div>
-                                        <div class="flex items-center justify-center gap-1">
-                                            ${finStatus.split('<br>')[0]}
-                                        </div>
-                                        ${finStatus.split('<br>')[1]}
-                                    </div>
-                                </div>
-                                
-                                <p class="text-[8px] text-gray-600 mt-2 italic opacity-50">Autenticado digitalmente</p>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-                
-                <div class="text-center mt-6">
-                    <button onclick="closeModal()" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-md transition-all shadow-lg">
-                        Fechar
-                    </button>
-                </div>
-                `;
-
-            } catch (e) {
-                console.error(e);
-                cont.innerHTML = `<div class="bg-white p-4 rounded text-center text-red-600 font-bold border border-red-500">Erro ao carregar cartão.<br><span class="text-xs text-black font-normal">Tente atualizar a página.</span><br><button onclick="closeModal()" class="mt-2 bg-black text-white px-4 py-1 rounded text-xs">Fechar</button></div>`;
-            }
-        };
-        window.openFastVote = async () => {
-            const modal = document.getElementById('modalOverlay');
-            const cont = document.getElementById('modalContainer');
-            modal.classList.remove('hidden');
-            
-            // 1. Filtra Pendentes Reais
-            const pendingMatches = window.cachedMatches.filter(m => {
-                const now = new Date();
-                const isExpired = now > m.deadlineDate;
-                // Se expirou, não entra. Se já votei, não entra.
-                const alreadyVoted = window.guessesDataGlobal 
-                    ? window.guessesDataGlobal.some(g => g.matchId === m.id && g.userId === currentUser.uid)
-                    : false; // Fallback se não tivermos guessesDataGlobal, o loadMatches deve popular isso
-                
-                // *Nota: Precisamos expor guessesData globalmente no loadMatches para isso funcionar perfeitamente sem requery.
-                // Vou adicionar um fetch rápido aqui para garantir.
-                return !isExpired; 
-            });
-
-            // Recarregar palpites frescos para garantir
-            const gSnap = await getDocs(query(collection(db, "guesses"), where("userId", "==", currentUser.uid)));
-            const myVotes = new Set();
-            gSnap.forEach(d => myVotes.add(d.data().matchId));
-            
-            const gamesToVote = pendingMatches.filter(m => !myVotes.has(m.id)).sort((a,b) => a.deadlineDate - b.deadlineDate);
-
-            if(gamesToVote.length === 0) {
-                alert("Você já votou em tudo! 🎉");
-                closeModal();
-                return;
-            }
-
-            let currentIndex = 0;
-
-            const renderCard = () => {
-                if(currentIndex >= gamesToVote.length) {
-                    cont.innerHTML = `
-                        <div class="bg-white p-6 rounded-lg text-center">
-                            <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
-                            <h3 class="font-black text-xl">Tudo Pronto!</h3>
-                            <p class="text-sm text-gray-500 mb-4">Você votou em todos os jogos pendentes.</p>
-                            <button onclick="closeModal(); loadMatches();" class="bg-[#006400] text-white px-6 py-2 rounded-full font-bold shadow">FECHAR</button>
-                        </div>`;
-                    return;
-                }
-
-                const m = gamesToVote[currentIndex];
-                const pct = Math.round(((currentIndex) / gamesToVote.length) * 100);
-
-                cont.innerHTML = `
-                <div class="w-full max-w-sm bg-white rounded-lg shadow-2xl overflow-hidden relative">
-                    <div class="h-1 bg-gray-200 w-full"><div class="h-full bg-orange-500 transition-all duration-300" style="width: ${pct}%"></div></div>
-                    
-                    <div class="p-2 text-center border-b bg-gray-50 flex justify-between items-center">
-                        <span class="text-[10px] font-bold text-gray-400">JOGO ${currentIndex + 1}/${gamesToVote.length}</span>
-                        <button onclick="closeModal(); loadMatches();" class="text-gray-400"><i class="fas fa-times"></i></button>
-                    </div>
-
-                    <div class="p-6 text-center">
-                        <p class="text-[10px] text-[#006400] font-black uppercase mb-1">${m.competition}</p>
-                        <p class="text-[10px] text-red-500 font-bold mb-6">Prazo: ${m.deadlineDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
-                        
-                        <div class="flex justify-between items-center mb-8 px-4">
-                            <div class="flex flex-col items-center w-24">
-                                <img src="${m.teamAUrl || ''}" class="w-16 h-16 object-contain mb-2" onerror="this.src='https://via.placeholder.com/50?text=A'">
-                                <span class="font-black text-sm leading-tight">${m.teamA}</span>
-                            </div>
-                            <span class="text-2xl font-black text-gray-300">X</span>
-                            <div class="flex flex-col items-center w-24">
-                                <img src="${m.teamBUrl || ''}" class="w-16 h-16 object-contain mb-2" onerror="this.src='https://via.placeholder.com/50?text=B'">
-                                <span class="font-black text-sm leading-tight">${m.teamB}</span>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <button onclick="window.fastVoteSelect('${m.id}', '${m.teamA}')" class="bg-gray-100 hover:bg-[#006400] hover:text-white border border-gray-300 text-gray-800 py-4 rounded-xl font-bold shadow-sm transition-all btn-press">
-                                ${m.teamA}
-                            </button>
-                            <button onclick="window.fastVoteSelect('${m.id}', '${m.teamB}')" class="bg-gray-100 hover:bg-[#006400] hover:text-white border border-gray-300 text-gray-800 py-4 rounded-xl font-bold shadow-sm transition-all btn-press">
-                                ${m.teamB}
-                            </button>
-                        </div>
-                        
-                        <button onclick="window.fastVoteSkip()" class="mt-4 text-xs text-gray-400 underline">Pular este jogo</button>
-                    </div>
-                </div>`;
-            };
-
-            window.fastVoteSelect = async (mid, team) => {
-                // Efeito visual de clique (opcional, já que muda rápido)
-                await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { 
-                    matchId: mid, userId: currentUser.uid, teamSelected: team, timestamp: new Date() 
-                });
-                currentIndex++;
-                renderCard();
-            };
-
-            window.fastVoteSkip = () => {
-                currentIndex++;
-                renderCard();
-            };
-
-            renderCard();
-        };
 // --- CORREÇÃO: CARD INSTAGRAM TURBINADO (Tabela Inteligente + Marketing) ---
         window.generateWebCard = async () => {
             const modalEl = document.getElementById('profileModal');
@@ -3245,10 +2911,6 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
-
-
-
-
 
 
 
