@@ -1530,11 +1530,21 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                     let allPaid = true; if (currentYear >= 2026) { for(let i=0; i<=currentMonthIdx; i++) { if (!u.payments?.[monthsNames[i]]) { allPaid = false; break; } } } else { if ((u.debts||0) > 0) allPaid = false; } if (allPaid) { trophyRoom.unshift({icon:"💰", name:"PATRÃO", desc:"Mensalidades em dia.", date: "Mês Atual"}); }
 
                     matches.forEach(m => { const dl = m.deadlineDate; if(now > dl && !userGuesses.some(g => g.matchId === m.id)) { const dStr = `📅 ${String(dl.getDate()).padStart(2,'0')}/${String(dl.getMonth()+1).padStart(2,'0')}`; hist.push({ts: dl, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type:'bad'}); } }); 
-                    // CÓDIGO NOVO (CORRIGIDO)
-                    const deb = u.debts || 0; 
-                    const penalty = deb * 3; // Multiplica por 3
-                    p -= penalty; 
-                    if(deb > 0) hist.push({ts: now, text: `🔻 Penalidade: -${penalty} pts`, type:'bad'});
+                    // PENALIDADE COM DATA (WEB)
+                    if (deb > 0) { 
+                        const penalty = deb * 3; 
+                        p -= penalty; 
+                        
+                        // Formata a data de hoje (ex: 12/01)
+                        const dStr = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+                        
+                        // Adiciona ao histórico seguindo o padrão visual da Web
+                        hist.push({
+                            ts: now, 
+                            text: `📅 ${dStr} - 🔻 PENALIDADE: Inadimplência (-${penalty} pts)`, 
+                            type:'bad'
+                        }); 
+                    }
                     
                     hist.sort((a,b) => b.ts - a.ts);
                     
@@ -2917,6 +2927,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
