@@ -1017,42 +1017,37 @@ Término oficial: 31 de dezembro de 2026
 
                 const newsHTML = generateNewsFeed();
 
-// --- COLE AQUI O NOVO CÓDIGO ---
-
-                // 1. CABEÇALHO VIP (Olá + Botão Carteirinha)
-                let userNameDisplay = "PALPITADOR";
-                if (currentUser && currentUser.displayName) {
-                    userNameDisplay = currentUser.displayName.split(' ')[0].toUpperCase(); // Pega só o primeiro nome
-                } else if (currentUser && currentUser.email) {
-                    // Tenta pegar do email ou username salvo no objeto local se o displayName falhar
-                    userNameDisplay = (currentUser.reloadUserInfo && currentUser.reloadUserInfo.screenName) 
-                                      ? currentUser.reloadUserInfo.screenName.toUpperCase() 
-                                      : "PALPITADOR";
-                }
-
-                // Ajuste de nome para garantir que apareça algo
-                const safeName = document.getElementById('profileName') ? document.getElementById('profileName').innerText.split(' ')[0] : userNameDisplay;
+// --- 1. CABEÇALHO VIP (CORRIGIDO: Nome Real e Margens Apertadas) ---
+                // Busca o nome real do usuário na lista de usuários carregada
+                let safeName = "PALPITADOR";
+                uSnap.forEach(doc => {
+                    if(doc.id === currentUser.uid) {
+                        const d = doc.data();
+                        if(d.name) safeName = d.name.split(' ')[0].toUpperCase();
+                        else if(d.username) safeName = d.username.toUpperCase();
+                    }
+                });
 
                 let html = `
-                    <div class="flex justify-between items-center px-4 pt-6 pb-2">
+                    <div class="flex justify-between items-center px-4 pt-2 pb-1"> 
                         <div class="flex flex-col">
-                            <span class="text-xs font-bold text-gray-500 pl-1 uppercase tracking-widest shadow-black drop-shadow-sm">Olá,</span>
+                            <span class="text-[10px] font-bold text-gray-500 pl-1 uppercase tracking-widest shadow-black drop-shadow-sm leading-none mb-1">Olá,</span>
                             <span class="text-3xl font-black text-vip-gold uppercase leading-none transform -translate-y-1" 
                                   style="color: #FFD700; text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; letter-spacing: 1px;">
                                 ${safeName}
                             </span>
                         </div>
-                        <button onclick="window.openMemberCard()" class="w-14 h-14 rounded-full flex items-center justify-center btn-press relative"
+                        <button onclick="window.openMemberCard()" class="w-12 h-12 rounded-full flex items-center justify-center btn-press relative"
                                 style="background: radial-gradient(circle, #333 0%, #000 100%); border: 2px solid #FFD700; box-shadow: 0 4px 6px rgba(0,0,0,0.5);">
-                            <i class="fas fa-id-card text-[#FFD700] text-2xl"></i>
-                            <div class="absolute -bottom-1 -right-1 bg-[#FFD700] text-black text-[9px] font-black px-1.5 py-0.5 rounded border border-black">VIP</div>
+                            <i class="fas fa-id-card text-[#FFD700] text-xl"></i>
+                            <div class="absolute -bottom-1 -right-1 bg-[#FFD700] text-black text-[7px] font-black px-1 rounded border border-black">VIP</div>
                         </button>
                     </div>
                 `;
 
-                // 2. LETREIRO (News Ticker)
+                // 2. LETREIRO (News Ticker) - Margem superior reduzida (mt-1)
                 html += `
-                    <div class="card-container mb-4 mt-2">
+                    <div class="card-container mb-3 mt-1">
                         <div class="ticker-container shadow-lg" style="border-top: 1px solid #333;">
                             <div class="ticker-wrapper">
                                 <div class="ticker-item">
@@ -2419,93 +2414,145 @@ window.calculatePot = async function() {
         window.openMemberCard = async () => {
             const modal = document.getElementById('modalOverlay');
             const cont = document.getElementById('modalContainer');
+            
+            // Loading Transparente
             modal.classList.remove('hidden');
+            cont.className = "w-full max-w-sm bg-transparent shadow-none relative"; // Remove fundo branco e sombra do container
+            cont.innerHTML = `<div class="text-center"><i class="fas fa-spinner fa-spin text-3xl text-[#FFD700]"></i></div>`;
             
-            // Dados do Usuário
-            const uDoc = await getDoc(doc(db, "users", currentUser.uid));
-            const uData = uDoc.data();
-            const photo = getAvatarUrl(uData.photoBase64, uData.name);
+            // 1. GARANTE DADOS ATUALIZADOS (Simula o Ranking para pegar pontos e medalhas)
+            // Se ainda não carregou o ranking globalmente, carrega agora em background
+            if (!window.currentRankingData || window.currentRankingData.length === 0) {
+                await loadRanking(); // Isso popula window.currentRankingData
+            }
+
+            // 2. Encontra o usuário na lista processada
+            const uStats = window.currentRankingData.find(u => u.uid === currentUser.uid);
             
-            // Recalcula Ranking Rápido (ou pega do cache se tiver)
-            // Para simplificar, pegamos do uData se tiver salvo, ou mostra "..."
-            const points = uData.points || 0; 
-            const rank = uData.lastRank || "-"; 
-            const debts = uData.debts || 0;
-            // *Nota: Idealmente, chamamos loadRanking() antes ou salvamos esses dados no login.
+            // Fallback caso algo dê muito errado
+            const safeStats = uStats || { 
+                name: "Palpitador", 
+                p: 0, 
+                v: 0, // Vitórias/Acertos
+                d: 0, 
+                trophyRoom: [], 
+                lastRank: "-" 
+            };
+
+            // Calcula Posição Real
+            const realRank = window.currentRankingData.findIndex(u => u.uid === currentUser.uid) + 1;
+            const rankDisplay = realRank > 0 ? `${realRank}º` : "-";
+
+            // Dados Visuais
+            const photo = getAvatarUrl(safeStats.photo, safeStats.name);
+            const medalCount = safeStats.trophyRoom ? safeStats.trophyRoom.length : 0;
             
             // Lógica Financeira (Verso)
-            const finStatus = debts > 0 
-                ? `<span class="text-red-500 font-black">R$ ${debts},00</span><br><span class="text-[8px] text-red-400">PENDENTE</span>`
-                : `<span class="text-[#00E676] font-black">EM DIA</span><br><span class="text-[8px] text-green-400">MENSALIDADE</span>`;
+            const finStatus = safeStats.d > 0 
+                ? `<span class="text-red-500 font-black text-xl">R$ ${safeStats.d},00</span><br><span class="text-[8px] text-red-400 font-bold uppercase tracking-widest">PENDÊNCIAS</span>`
+                : `<span class="text-[#00E676] font-black text-xl">EM DIA</span><br><span class="text-[8px] text-green-400 font-bold uppercase tracking-widest">MENSALIDADE</span>`;
 
+            // HTML DO CARTÃO (Com CSS 3D Injetado inline para garantir)
             cont.innerHTML = `
-            <div class="w-full h-[300px] flex items-center justify-center perspective-1000 bg-transparent" onclick="this.querySelector('.flipper').classList.toggle('rotate-y-180')">
-                <div class="flipper w-[300px] h-[190px] relative transform-style-3d transition-transform duration-700">
+            <div class="w-full h-[320px] flex items-center justify-center perspective-1000 bg-transparent select-none" onclick="this.querySelector('.flipper').classList.toggle('rotate-y-180')">
+                <div class="flipper w-[320px] h-[200px] relative transform-style-3d transition-transform duration-700 cursor-pointer">
                     
-                    <div class="absolute inset-0 backface-hidden rounded-xl shadow-2xl overflow-hidden border border-yellow-600" 
-                         style="background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);">
-                        <i class="fas fa-futbol absolute -bottom-4 -right-4 text-8xl text-white opacity-5"></i>
+                    <div class="absolute inset-0 backface-hidden rounded-xl shadow-2xl overflow-hidden border border-yellow-600/50" 
+                         style="background: linear-gradient(135deg, #1a1a1a 0%, #000 100%); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                         
-                        <div class="p-4 flex flex-col h-full relative z-10">
+                        <i class="fas fa-futbol absolute -bottom-6 -right-6 text-9xl text-white opacity-5"></i>
+                        
+                        <div class="p-5 flex flex-col h-full relative z-10">
                             <div class="flex justify-between items-start mb-2">
-                                <div class="w-10 h-7 bg-gradient-to-r from-yellow-200 to-yellow-500 rounded flex items-center justify-center border border-yellow-600/50">
-                                    <div class="w-6 h-4 border border-black/20 rounded"></div>
+                                <div class="w-11 h-8 bg-gradient-to-r from-yellow-200 to-yellow-500 rounded flex items-center justify-center border border-yellow-600/50 shadow-sm">
+                                    <div class="w-7 h-5 border border-black/20 rounded"></div>
                                 </div>
-                                <i class="fas fa-wifi text-white/50 rotate-90"></i>
+                                <i class="fas fa-wifi text-white/50 rotate-90 text-xl"></i>
                             </div>
                             
-                            <div class="flex items-center gap-3 mt-1">
-                                <div class="w-12 h-12 rounded-full border-2 border-[#FFD700] p-0.5 bg-black">
+                            <div class="flex items-center gap-4 mt-2">
+                                <div class="w-14 h-14 rounded-full border-2 border-[#FFD700] p-0.5 bg-black shadow-lg">
                                     <img src="${photo}" class="w-full h-full rounded-full object-cover">
                                 </div>
                                 <div>
-                                    <h2 class="text-white font-black text-lg leading-none uppercase tracking-wide text-shadow-sm">${uData.name?.split(' ')[0]}</h2>
-                                    <p class="text-gray-400 text-[10px] font-mono mt-1">ID: ${currentUser.uid.substring(0,4).toUpperCase()} 2026</p>
+                                    <h2 class="text-white font-black text-xl leading-none uppercase tracking-wide" 
+                                        style="text-shadow: 2px 2px 4px black;">
+                                        ${safeStats.name}
+                                    </h2>
+                                    <p class="text-gray-400 text-[11px] font-mono mt-1 tracking-wider text-shadow-sm font-bold">
+                                        ID: ${currentUser.uid.substring(0,4).toUpperCase()} ${currentUser.uid.substring(4,8).toUpperCase()}
+                                    </p>
                                 </div>
                             </div>
                             
                             <div class="mt-auto flex justify-between items-end">
                                 <div>
-                                    <p class="text-[7px] text-gray-500 uppercase font-bold">Membro Desde</p>
-                                    <p class="text-white text-xs font-bold">2026</p>
+                                    <p class="text-[7px] text-gray-400 uppercase font-bold tracking-wider mb-0.5">Membro Desde</p>
+                                    <p class="text-white text-sm font-black text-shadow-sm">2025</p>
                                 </div>
-                                <div class="bg-white/10 border border-[#FFD700] px-2 py-1 rounded">
-                                    <p class="text-[#FFD700] text-xs font-black">${rank}º LUGAR</p>
+                                <div class="bg-black/40 border border-[#FFD700] px-3 py-1 rounded backdrop-blur-sm">
+                                    <p class="text-[#FFD700] text-sm font-black tracking-wide">${rankDisplay} LUGAR</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div class="absolute inset-0 backface-hidden rounded-xl shadow-2xl overflow-hidden border border-gray-700 rotate-y-180"
-                         style="background: linear-gradient(135deg, #212121 0%, #000 100%);">
+                         style="background: linear-gradient(135deg, #2c2c2c 0%, #121212 100%);">
                         
-                        <div class="w-full h-8 bg-black mt-4"></div>
+                        <div class="w-full h-10 bg-black mt-5"></div>
                         
-                        <div class="p-4 text-center">
-                            <h3 class="text-[#FFD700] text-[10px] font-bold uppercase tracking-widest mb-2 border-b border-gray-700 pb-1">Performance do Atleta</h3>
+                        <div class="p-5 text-center flex flex-col h-full justify-between pb-4">
+                            <div>
+                                <h3 class="text-[#FFD700] text-[10px] font-bold uppercase tracking-[0.2em] mb-3 mt-1">Performance do Atleta</h3>
+                                <div class="h-px w-20 bg-gray-600 mx-auto mb-3"></div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="flex items-center justify-center gap-1 text-white">
+                                        <i class="fas fa-star text-[10px] text-white/50"></i>
+                                        <span class="text-2xl font-black">${safeStats.p}</span>
+                                    </div>
+                                    <p class="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Pontos</p>
+                                </div>
+                                <div>
+                                    <div class="flex items-center justify-center gap-1 text-[#69F0AE]">
+                                        <i class="fas fa-check-circle text-[10px] opacity-70"></i>
+                                        <span class="text-2xl font-black">${safeStats.v}</span>
+                                    </div>
+                                    <p class="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Acertos</p>
+                                </div>
+                            </div>
                             
                             <div class="grid grid-cols-2 gap-4 mt-2">
                                 <div>
-                                    <p class="text-2xl font-black text-white">${points}</p>
-                                    <p class="text-[8px] text-gray-500 font-bold uppercase">Pontos</p>
+                                    <div class="flex items-center justify-center gap-1 text-[#FFD700]">
+                                        <i class="fas fa-trophy text-[10px] opacity-70"></i>
+                                        <span class="text-2xl font-black">${medalCount}</span>
+                                    </div>
+                                    <p class="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Medalhas</p>
                                 </div>
                                 <div>
-                                    <p class="text-xl font-black text-[#FFD700]">Em Breve</p>
-                                    <p class="text-[8px] text-gray-500 font-bold uppercase">Medalhas</p>
+                                    <div class="flex items-center justify-center gap-1">
+                                        ${finStatus.split('<br>')[0]}
+                                    </div>
+                                    ${finStatus.split('<br>')[1]}
                                 </div>
                             </div>
                             
-                            <div class="mt-4 pt-2 border-t border-gray-800">
-                                ${finStatus}
-                            </div>
-                            
-                            <p class="text-[8px] text-gray-600 mt-3 italic">Toque no cartão para virar</p>
+                            <p class="text-[8px] text-gray-600 mt-2 italic opacity-50">Autenticado digitalmente</p>
                         </div>
                     </div>
 
                 </div>
             </div>
-            <div class="text-center mt-2"><button onclick="closeModal()" class="text-white text-xs font-bold underline">Fechar</button></div>
+            
+            <div class="text-center mt-6">
+                <button onclick="closeModal()" class="bg-white/10 hover:bg-white/20 border border-white/20 text-white px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-md transition-all">
+                    Fechar
+                </button>
+            </div>
             `;
         };
         window.openFastVote = async () => {
@@ -3180,6 +3227,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
