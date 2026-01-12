@@ -1092,14 +1092,7 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                                         <span class="text-[10px] text-gray-500 font-bold leading-tight mb-1">${m.round}</span>
                                         <span class="text-[11px] font-black text-[#D32F2F]">${m.expired ? 'Encerrado:' : '⚠️ Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
                                     </div>
-                                <div class="flex justify-between items-start mb-4">
-                                    <div class="flex flex-col w-full pr-2">
-                                        <div class="flex justify-between items-baseline">
-    <span class="text-[14px] font-black text-black leading-none mb-1">#${m.matchNumber}</span>
-</div>
-                                        <span class="text-[10px] text-gray-500 font-bold leading-tight mb-1">${m.round}</span>
-                                        <span class="text-[11px] font-black text-[#D32F2F]">${m.expired ? 'Encerrado:' : '⚠️ Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
-                                    </div>
+                                    
                                     <div class="flex gap-3 pt-1">
                                         <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="text-gray-500 hover:text-[#006400] transition-colors relative">
                                             <i class="fas fa-comment-dots text-xl"></i>${chatBadge}
@@ -1120,7 +1113,8 @@ window.toggleOpen = () => { document.getElementById('openContainer').classList.t
                                 ${thermoHtml}
                             </div>
                         </div>`;
-            } return html;
+            } 
+            return html;
         }
 
         // --- FUNÇÕES DE VOTO OTIMIZADAS (SEM LAG) ---
@@ -2885,6 +2879,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
