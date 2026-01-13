@@ -879,7 +879,7 @@ Término oficial: 31 de dezembro de 2026
             document.getElementById('progressBar').classList.remove('hidden');
             
             try {
-                // 1. Buscamos TUDO de uma vez
+                // 1. Busca TUDO de uma vez
                 const [setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap, newsSnap] = await Promise.all([
                     getDoc(doc(db, "settings", "competitions")),
                     getDocs(collection(db, "matches")),
@@ -896,9 +896,18 @@ Término oficial: 31 de dezembro de 2026
                 // Mapas de Estatísticas e Votos
                 const statsMap = {};
                 const guessesData = []; 
+                // CRIAÇÃO DO MAPA DE VOTOS DO USUÁRIO (CORREÇÃO AQUI)
+                const myVotesMap = {}; 
+
                 guessesSnap.forEach(d => {
                     const g = d.data();
                     guessesData.push(g);
+                    
+                    // Se o palpite for MEU, salva no mapa para acesso rápido
+                    if (g.userId === currentUser.uid) {
+                        myVotesMap[g.matchId] = g.teamSelected;
+                    }
+
                     if (!statsMap[g.matchId]) statsMap[g.matchId] = { teamA: 0, teamB: 0, total: 0 };
                     if (!statsMap[g.matchId][g.teamSelected]) statsMap[g.matchId][g.teamSelected] = 0;
                     statsMap[g.matchId][g.teamSelected]++;
@@ -950,9 +959,10 @@ Término oficial: 31 de dezembro de 2026
                 waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
                 finished.sort((a,b)=>b.deadlineDate-a.deadlineDate); 
                 
-                // =================================================================
-                // 📰 GERADOR DE LETREIRO (LÓGICA CORRIGIDA)
-                // =================================================================
+                // MANTENHA AQUI O BLOCO DO "generateNewsFeed" QUE JÁ EXISTE NO SEU CÓDIGO
+                // VOU PULAR DIRETO PARA A MONTAGEM DO HTML COM A CORREÇÃO:
+                
+                // --- INÍCIO DO CÓDIGO DO LETREIRO QUE VOCÊ JÁ TEM ---
                 const generateNewsFeed = () => {
                     let newsSegments = []; 
                     const addSegment = (text, colorHex) => { newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`); };
@@ -1084,13 +1094,13 @@ Término oficial: 31 de dezembro de 2026
                         });
                     }
 
-                    // 5. Frases Aleatórias (CORRIGIDO: O ERRO ESTAVA AQUI NO SHUFFLE)
+                    // 5. Frases Aleatórias
                     const frasesPadrao = [
                         { t: "   💎 QUEM VAI GABARITAR AS OITAVAS E LEVAR O DIAMANTE?   |", c: C_DIAMOND },
                         { t: "   🔮 MÃE DINAH: ACERTE O CAMPEÃO E DOBRE SEUS PONTOS NA FINAL!   |", c: C_MAGIC },
                         { t: "   🚀 FOGUETE NÃO TEM RÉ! QUEM VAI DISPARAR NA PRÓXIMA RODADA?   |", c: C_WHITE }
                     ];
-                    // Shuffle manual (JavaScript não tem .shuffled())
+                    // Shuffle manual
                     const shuffledExtras = frasesPadrao.sort(() => 0.5 - Math.random()).slice(0, 3);
                     shuffledExtras.forEach(item => addSegment(item.t, item.c));
 
@@ -1104,8 +1114,10 @@ Término oficial: 31 de dezembro de 2026
                 };
 
                 const newsHTML = generateNewsFeed();
+                // --- FIM DO CÓDIGO DO LETREIRO ---
 
-                // --- MONTAGEM DO HTML DA TELA ---
+                const pulseOpen = unreadInOpen ? '<span class="pulse-dot"></span>' : '';
+                // AQUI ESTÁ A MUDANÇA: Passamos myVotesMap como argumento extra
                 let html = `
                     <div class="card-container mb-4">
                         <div class="ticker-container shadow-lg">
@@ -1117,37 +1129,37 @@ Término oficial: 31 de dezembro de 2026
                         </div>
                     </div>
                 `;
-                
-                const pulseOpen = unreadInOpen ? '<span class="pulse-dot"></span>' : '';
-                html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ (${open.length}) DISPONÍVEIS ✅${pulseOpen}</h4><i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i></div></div><div id="openContainer">${open.length > 0 ? await renderMatchList(open, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}</div>`;
+                html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ (${open.length}) DISPONÍVEIS ✅${pulseOpen}</h4><i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i></div></div><div id="openContainer">${open.length > 0 ? await renderMatchList(open, totalParticipants, serverCounts, myVotesMap) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}</div>`;
                 
                 const pulseWait = unreadInWaiting ? '<span class="pulse-dot"></span>' : '';
-                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${waiting.length}) AGUARDANDO ⏳${pulseWait}</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${waiting.length ? await renderMatchList(waiting, totalParticipants, serverCounts) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando.</div>`}</div>`;
+                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${waiting.length}) AGUARDANDO ⏳${pulseWait}</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${waiting.length ? await renderMatchList(waiting, totalParticipants, serverCounts, myVotesMap) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando.</div>`}</div>`;
                 
                 if(finished.length) {
                     const pulseFin = unreadInFinished ? '<span class="pulse-dot"></span>' : '';
-                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts)}</div>`;
+                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts, myVotesMap)}</div>`;
                 }
                 
                 container.innerHTML = html;
                 window.updateBadges(); 
 
-                let pendingCount = 0; const myVotesSet = new Set(); guessesSnap.forEach(d => { if(d.data().userId === currentUser.uid) myVotesSet.add(d.data().matchId); }); open.forEach(m => { if (!myVotesSet.has(m.id)) pendingCount++; });
-                const navBtn = document.getElementById('nav-matches'); const oldBadge = document.getElementById('matches-badge'); if(oldBadge) oldBadge.remove(); if (pendingCount > 0) { navBtn.style.position = 'relative'; navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`; }
+                // Badge Navegação
+                let pendingCount = 0; 
+                open.forEach(m => { if (!myVotesMap[m.id]) pendingCount++; });
+                const navBtn = document.getElementById('nav-matches'); 
+                const oldBadge = document.getElementById('matches-badge'); 
+                if(oldBadge) oldBadge.remove(); 
+                if (pendingCount > 0) { navBtn.style.position = 'relative'; navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`; }
 
             } catch(e) { console.error("Erro loadMatches:", e); }
             document.getElementById('progressBar').classList.add('hidden');
         }
-window.toggleOpen = () => { document.getElementById('openContainer').classList.toggle('hidden'); document.getElementById('iconOpen').classList.toggle('fa-chevron-up'); document.getElementById('iconOpen').classList.toggle('fa-chevron-down'); };
-        window.toggleWaiting = () => { document.getElementById('waitingContainer').classList.toggle('hidden'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-down'); document.getElementById('iconWaiting').classList.toggle('fa-chevron-up'); };
-        window.toggleFinished = () => { document.getElementById('finishedContainer').classList.toggle('hidden'); document.getElementById('iconFinished').classList.toggle('fa-chevron-down'); document.getElementById('iconFinished').classList.toggle('fa-chevron-up'); };
-        
-        // Recebe o serverCounts como 3º parâmetro
-        async function renderMatchList(list, totalParticipants, serverCounts) {
+
+        // Recebe myVotesMap como 4º parâmetro
+        async function renderMatchList(list, totalParticipants, serverCounts, myVotesMap) {
             let html = "";
             for (const m of list) {
-                let userVote = ""; 
-                try { const vs = await getDoc(doc(db, "guesses", `${m.id}_${currentUser.uid}`)); if(vs.exists()) userVote = vs.data().teamSelected; } catch(e){}
+                // CORREÇÃO: Pega o voto direto do mapa, sem await extra
+                let userVote = myVotesMap[m.id] || ""; 
                 
                 const dl = m.deadlineDate; 
                 const borderColor = m.final ? 'border-[#FFD700]' : (m.expired ? (m.winner ? 'border-[#D32F2F]' : 'border-[#FBC02D]') : 'border-[#006400]'); 
@@ -3158,6 +3170,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
