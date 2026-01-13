@@ -653,7 +653,6 @@ Término oficial: 31 de dezembro de 2026
                 return;
             }
 
-            // --- TRAVA DE SEGURANÇA (WHITELIST) ---
             const btn = document.getElementById('btnDoRegister');
             const originalText = btn.innerText;
             btn.innerText = "VERIFICANDO...";
@@ -663,37 +662,62 @@ Término oficial: 31 de dezembro de 2026
                 // 1. Verifica se existe o convite na Whitelist
                 const whitelistRef = doc(db, "whitelist", user);
                 const whitelistSnap = await getDoc(whitelistRef);
+                
+                let finalName = name;
+                let isTrial = false;
+                let trialDate = null;
 
+                // SE NÃO TIVER CONVITE: OFERECE O TESTE GRÁTIS
                 if (!whitelistSnap.exists()) {
-                    alert("🚫 ACESSO NEGADO!\n\nEste usuário não possui um convite ativo.\nSolicite ao administrador.");
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                    return; // PARA TUDO AQUI
+                    const aceitaTeste = confirm("Convite oficial não encontrado.\n\nDeseja criar uma conta de TESTE GRÁTIS por 7 dias?");
+                    
+                    if (!aceitaTeste) {
+                        btn.innerText = originalText;
+                        btn.disabled = false;
+                        return; // Usuário desistiu
+                    }
+
+                    // Configura modo Trial
+                    isTrial = true;
+                    finalName = `${name} (Teste ⏳)`; // Adiciona identificação no nome
+                    
+                    // Calcula data de expiração (Hoje + 7 dias)
+                    const d = new Date();
+                    d.setDate(d.getDate() + 7);
+                    trialDate = d;
                 }
 
-                // 2. Se passou, cria a conta
+                // 2. Cria a conta no Firebase Auth
                 btn.innerText = "CRIANDO...";
                 const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass);
 
-                // 3. Salva os dados do perfil
+                // 3. Salva os dados do perfil com as flags de teste
                 await setDoc(doc(db, "users", res.user.uid), {
-                    name,
+                    name: finalName,
                     username: user,
                     createdAt: new Date(),
                     isAdmin: false,
                     debts: 0,
                     payments: {},
                     appVersion: "Web v1.6",
-                    passwordHint: hint
+                    passwordHint: hint,
+                    // NOVOS CAMPOS PARA CONTROLE:
+                    isTrial: isTrial, 
+                    trialValidUntil: trialDate 
                 });
 
-                alert("Conta criada com sucesso! Bem-vindo(a).");
+                if (isTrial) {
+                    alert(`Conta de Teste Criada!\n\nVocê tem acesso liberado até ${trialDate.toLocaleDateString()}.\nPara continuar depois disso, regularize sua mensalidade.`);
+                } else {
+                    alert("Conta oficial criada com sucesso! Bem-vindo(a).");
+                }
+                
                 closeModal();
 
             } catch (e) {
                 console.error(e);
                 let msg = "Erro ao criar conta.";
-                if (e.code === 'auth/email-already-in-use') msg = "Este usuário já está cadastrado.";
+                if (e.code === 'auth/email-already-in-use') msg = "Este usuário já existe.";
                 alert(msg);
                 btn.innerText = originalText;
                 btn.disabled = false;
@@ -3086,6 +3110,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
