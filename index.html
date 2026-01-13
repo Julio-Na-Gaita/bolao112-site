@@ -1104,17 +1104,7 @@ Término oficial: 31 de dezembro de 2026
                         });
                     }
 
-                    // 5. Frases Aleatórias
-                    const frasesPadrao = [
-                        { t: "   💎 QUEM VAI GABARITAR AS OITAVAS E LEVAR O DIAMANTE?   |", c: C_DIAMOND },
-                        { t: "   🔮 MÃE DINAH: ACERTE O CAMPEÃO E DOBRE SEUS PONTOS NA FINAL!   |", c: C_MAGIC },
-                        { t: "   🚀 FOGUETE NÃO TEM RÉ! QUEM VAI DISPARAR NA PRÓXIMA RODADA?   |", c: C_WHITE }
-                    ];
-                    // Shuffle manual
-                    const shuffledExtras = frasesPadrao.sort(() => 0.5 - Math.random()).slice(0, 3);
-                    shuffledExtras.forEach(item => addSegment(item.t, item.c));
-
-                    if (newsSegments.length === 0) {
+                   if (newsSegments.length === 0) {
                         addSegment("   ⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!   |", C_GOLD);
                     }
 
@@ -3183,6 +3173,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
