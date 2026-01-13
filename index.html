@@ -639,30 +639,66 @@ Término oficial: 31 de dezembro de 2026
             </div>`;
             
             document.getElementById('btnDoRegister').onclick = async () => {
-                const name = document.getElementById('regName').value.trim(); 
-                const user = document.getElementById('regUser').value.trim().toLowerCase(); 
-                const pass = document.getElementById('regPass').value;
-                const hint = document.getElementById('regHint').value.trim(); // Pega a dica
+            const name = document.getElementById('regName').value.trim();
+            const user = document.getElementById('regUser').value.trim().toLowerCase();
+            const pass = document.getElementById('regPass').value;
+            const hint = document.getElementById('regHint').value.trim();
 
-                if(!name || !user || pass.length < 6) { alert("Dados inválidos."); return; }
-                if(user.includes(" ")) { alert("Usuário sem espaços."); return; }
-                
-                try { 
-                    const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass); 
-                    // Salva a dica no banco junto com os outros dados
-                    await setDoc(doc(db, "users", res.user.uid), { 
-                        name, 
-                        username: user, 
-                        createdAt: new Date(), 
-                        isAdmin: false, 
-                        debts: 0, 
-                        payments: {}, 
-                        appVersion: "Web v1.6",
-                        passwordHint: hint // <--- SALVA AQUI
-                    }); 
-                    alert("Conta criada!"); closeModal(); 
-                } catch(e) { alert("Erro ao criar conta: " + e.message); }
-            };
+            if (!name || !user || pass.length < 6) {
+                alert("Preencha todos os dados corretamente (Senha min. 6 caracteres).");
+                return;
+            }
+            if (user.includes(" ")) {
+                alert("O usuário não pode conter espaços.");
+                return;
+            }
+
+            // --- TRAVA DE SEGURANÇA (WHITELIST) ---
+            const btn = document.getElementById('btnDoRegister');
+            const originalText = btn.innerText;
+            btn.innerText = "VERIFICANDO...";
+            btn.disabled = true;
+
+            try {
+                // 1. Verifica se existe o convite na Whitelist
+                const whitelistRef = doc(db, "whitelist", user);
+                const whitelistSnap = await getDoc(whitelistRef);
+
+                if (!whitelistSnap.exists()) {
+                    alert("🚫 ACESSO NEGADO!\n\nEste usuário não possui um convite ativo.\nSolicite ao administrador.");
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    return; // PARA TUDO AQUI
+                }
+
+                // 2. Se passou, cria a conta
+                btn.innerText = "CRIANDO...";
+                const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass);
+
+                // 3. Salva os dados do perfil
+                await setDoc(doc(db, "users", res.user.uid), {
+                    name,
+                    username: user,
+                    createdAt: new Date(),
+                    isAdmin: false,
+                    debts: 0,
+                    payments: {},
+                    appVersion: "Web v1.6",
+                    passwordHint: hint
+                });
+
+                alert("Conta criada com sucesso! Bem-vindo(a).");
+                closeModal();
+
+            } catch (e) {
+                console.error(e);
+                let msg = "Erro ao criar conta.";
+                if (e.code === 'auth/email-already-in-use') msg = "Este usuário já está cadastrado.";
+                alert(msg);
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        };
         };
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -3050,6 +3086,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
