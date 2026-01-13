@@ -2480,49 +2480,8 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
             }
         };
 
-        // Função Global para Editar Dica
-        window.editHint = (currentVal) => {
-            const val = currentVal === "Sem dica cadastrada" ? "" : currentVal;
-            const newHint = prompt("Digite uma dica para lembrar sua senha:", val);
-            if (newHint !== null) {
-                updateDoc(doc(db, "users", currentUser.uid), { passwordHint: newHint })
-                    .then(() => { alert("Dica salva!"); loadProfile(); })
-                    .catch(e => alert("Erro ao salvar dica."));
-            }
-        };
-        document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { compressImage(file).then(async (base64) => { await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }).catch(err => { alert("Erro ao processar imagem."); console.error(err); }); } };
-window.togglePay = async (uid, month) => {
-            // Cursor de carregamento
-            document.body.style.cursor = 'wait';
-            
-            try {
-                const ref = doc(db, "users", uid);
-                const snap = await getDoc(ref);
-                
-                if (snap.exists()) {
-                    const currentData = snap.data();
-                    const payments = currentData.payments || {};
+            document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { compressImage(file).then(async (base64) => { await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }).catch(err => { alert("Erro ao processar imagem."); console.error(err); }); } };
 
-                    // Inverte o valor atual (se era true vira false, se não existia vira true)
-                    // Nota: Removido o parâmetro 'status' da assinatura pois calculamos aqui
-                    payments[month] = !payments[month];
-
-                    // Salva no banco
-                    await setDoc(ref, { payments: payments }, { merge: true });
-                    
-                    // Atualiza o pote e a tela
-                    if(window.calculatePot) await window.calculatePot();
-                    
-                    // Reabre a tela para mostrar a cor nova (verde/cinza)
-                    await window.openFinancialScreen();
-                }
-            } catch (e) {
-                console.error("Erro ao atualizar:", e);
-                alert("Erro ao salvar: " + e.message);
-            } finally {
-                document.body.style.cursor = 'default';
-            }
-        };
         window.changeDebt = async (uid, delta) => { const ref = doc(db, "users", uid); const u = await getDoc(ref); let debts = u.data().debts || 0; debts += delta; if(debts < 0) debts = 0; await updateDoc(ref, { debts: debts }); openFinancialScreen(); };
         document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.remove('hidden');
         window.copyKeyOnly = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
@@ -3226,6 +3185,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
