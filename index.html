@@ -726,28 +726,57 @@ Término oficial: 31 de dezembro de 2026
         };
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                currentUser = user;
-                // ATUALIZANDO VERSÃO PARA 1.6
-                try { await updateDoc(doc(db, "users", user.uid), { appVersion: "Web v1.6" }); } catch(e) {}
-                
-                // --- CORREÇÃO: MOSTRAR O HEADER AO CARREGAR PÁGINA LOGADO ---
-                document.getElementById('mainHeader').classList.remove('hidden'); 
-                // -------------------------------------------------------------
+                // --- TRAVA DE SEGURANÇA E TRIAL (NOVO) ---
+                const userDocRef = doc(db, "users", user.uid);
+                const userSnap = await getDoc(userDocRef);
 
-                document.getElementById('loginScreen').classList.add('hidden'); 
-                document.getElementById('mainScreens').classList.remove('hidden'); 
-                document.getElementById('bottomNav').classList.remove('hidden'); 
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    
+                    // Verifica se é TRIAL VENCIDO
+                    if (data.isTrial === true && data.trialValidUntil) {
+                        const now = new Date();
+                        const validUntil = data.trialValidUntil.toDate(); // Converte do Firestore
+
+                        // Se HOJE é maior que a validade
+                        if (now > validUntil) {
+                            // Verifica se pagou o mês atual (Salvação)
+                            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                            const currentMonth = months[now.getMonth()];
+                            const isPaid = data.payments && data.payments[currentMonth] === true;
+
+                            if (!isPaid) {
+                                alert(`🚫 PERÍODO DE TESTE EXPIRADO!\n\nSua conta de teste venceu em ${validUntil.toLocaleDateString()}.\n\nPara continuar jogando e recuperar seu acesso, realize o pagamento da mensalidade com o Admin.`);
+                                signOut(auth); // Chuta o usuário para fora
+                                return;
+                            } else {
+                                // Se pagou, remove o status de Trial automaticamente (Promoção para Oficial)
+                                await updateDoc(userDocRef, { isTrial: false, name: data.name.replace(" (Teste ⏳)", "") });
+                                alert("Parabéns! Sua mensalidade foi confirmada e sua conta agora é OFICIAL! 🚀");
+                                location.reload(); // Recarrega para limpar o nome
+                                return;
+                            }
+                        }
+                    }
+
+                    // ATUALIZANDO VERSÃO
+                    try { await updateDoc(userDocRef, { appVersion: "Web v1.6" }); } catch(e) {}
+                }
+                // ------------------------------------------
+
+                currentUser = user;
+                document.getElementById('mainHeader').classList.remove('hidden');
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainScreens').classList.remove('hidden');
+                document.getElementById('bottomNav').classList.remove('hidden');
                 document.getElementById('btnLogout').classList.remove('hidden');
                 
-                showTab('matches'); 
+                showTab('matches');
                 calculatePot();
             } else {
-                // --- CORREÇÃO: GARANTIR QUE ESCONDE SE SAIR ---
                 document.getElementById('mainHeader').classList.add('hidden');
-                // ----------------------------------------------
-
-                document.getElementById('loginScreen').classList.remove('hidden'); 
-                document.getElementById('mainScreens').classList.add('hidden'); 
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('mainScreens').classList.add('hidden');
                 document.getElementById('bottomNav').classList.add('hidden');
             }
         });
@@ -2333,6 +2362,25 @@ async function loadProfile() {
                 if (!snap.exists()) return; 
                 
                 const u = snap.data(); 
+                // AVISO DE TESTE
+                if (u.isTrial && u.trialValidUntil) {
+                    const validDate = u.trialValidUntil.toDate().toLocaleDateString();
+                    // Injeta um aviso vermelho no topo do perfil
+                    const profileArea = document.getElementById('profileScreen');
+                    let warningDiv = document.getElementById('trialWarning');
+                    if(!warningDiv) {
+                        warningDiv = document.createElement('div');
+                        warningDiv.id = 'trialWarning';
+                        profileArea.prepend(warningDiv);
+                    }
+                    warningDiv.innerHTML = `
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow-sm">
+                            <p class="font-bold text-xs uppercase"><i class="fas fa-clock"></i> CONTA DE TESTE</p>
+                            <p class="text-xs">Seu acesso gratuito expira em: <b>${validDate}</b></p>
+                            <p class="text-[10px] mt-1">Pague a mensalidade para não perder o acesso.</p>
+                        </div>
+                    `;
+                }
                 document.getElementById('profileName').innerText = u.name || "MEMBRO"; 
                 document.getElementById('profileUser').innerText = `@${u.username || 'user'}`; 
                 
@@ -3110,6 +3158,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
