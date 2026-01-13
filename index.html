@@ -2005,7 +2005,6 @@ window.showKingModal = () => {
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             
             // Agora sempre mostra imagem (Real ou DiceBear) 
-// Alterar para object-contain e bg-black
 let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-contain bg-black">`;
             // --- LÓGICA DE STACKING E ORDENAÇÃO DE MEDALHAS ---
             let medalsHtml = "";
@@ -2736,8 +2735,7 @@ window.calculatePot = async function() {
             calculatePot(); // Chama o cálculo
             document.getElementById('potModal').classList.remove('hidden'); // Abre o modal novo
         };
-        document.getElementById('btnPot').onclick = () => document.getElementById('potModal').classList.remove('hidden');
-        window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
+               window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
         document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
 document.getElementById('btnLogout').onclick = () => {
     document.getElementById('mainHeader').classList.add('hidden'); // Esconde menu
@@ -3185,6 +3183,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
