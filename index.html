@@ -3167,9 +3167,56 @@ document.getElementById('btnLogout').onclick = () => {
                 cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro ao carregar scout.<br><span class="text-xs font-normal text-black">${e.message}</span></div>`;
             }
         };
+        // --- FUNÇÕES PARA ABRIR/FECHAR AS LISTAS (TOGGLE) ---
+        window.toggleOpen = () => {
+            const container = document.getElementById('openContainer');
+            const icon = document.getElementById('iconOpen');
+            if (container && icon) {
+                container.classList.toggle('hidden');
+                // Troca a seta (Cima/Baixo)
+                if (container.classList.contains('hidden')) {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                } else {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                }
+            }
+        };
+
+        window.toggleWaiting = () => {
+            const container = document.getElementById('waitingContainer');
+            const icon = document.getElementById('iconWaiting');
+            if (container && icon) {
+                container.classList.toggle('hidden');
+                if (container.classList.contains('hidden')) {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                } else {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                }
+            }
+        };
+
+        window.toggleFinished = () => {
+            const container = document.getElementById('finishedContainer');
+            const icon = document.getElementById('iconFinished');
+            if (container && icon) {
+                container.classList.toggle('hidden');
+                if (container.classList.contains('hidden')) {
+                    icon.classList.remove('fa-chevron-up');
+                    icon.classList.add('fa-chevron-down');
+                } else {
+                    icon.classList.remove('fa-chevron-down');
+                    icon.classList.add('fa-chevron-up');
+                }
+            }
+        };
     </script>
 </body>
 </html>
+
 
 
 
