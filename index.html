@@ -736,11 +736,12 @@
             document.getElementById(`${tab}Screen`).classList.remove('hidden'); document.getElementById(`nav-${tab}`).classList.replace('text-gray-400', 'text-[#006400]');
             if(tab === 'matches') loadMatches(); if(tab === 'ranking') loadRanking(); if(tab === 'rules') renderRules(); if(tab === 'profile') loadProfile();
         };
+       
 
-        // --- NOVA LÓGICA DE REGRAS (DO BANCO DE DADOS) ---
+        // --- NOVA LÓGICA DE REGRAS (COM CABEÇALHO E DATA) ---
         
-        // Variável de cache para não buscar no banco toda hora
-        let cachedRules = null;
+        // Cache guarda objeto completo agora: { items: [], date: "..." }
+        let cachedRulesData = null;
 
         async function renderRules() {
             const list = document.getElementById('rulesList');
@@ -748,33 +749,59 @@
             // Se já tem conteúdo renderizado visualmente, não faz nada
             if(list.children.length > 0) return;
 
-            // Mostra Loading enquanto busca
-            list.innerHTML = `<div class="text-center p-6"><i class="fas fa-circle-notch fa-spin text-[#006400] text-2xl"></i><p class="text-xs text-gray-500 mt-2">Carregando regulamento oficial...</p></div>`;
+            // Mostra Loading
+            list.innerHTML = `<div class="text-center p-6"><i class="fas fa-circle-notch fa-spin text-[#006400] text-2xl"></i><p class="text-xs text-gray-500 mt-2">Buscando atualizações...</p></div>`;
 
             try {
                 // Se não temos cache, buscamos no Firebase
-                if (!cachedRules) {
+                if (!cachedRulesData) {
                     const docRef = doc(db, "settings", "rules");
                     const snap = await getDoc(docRef);
                     
                     if (snap.exists()) {
-                        // O Android salva dentro de um array chamado 'items'
-                        // Cada item tem { title: "...", content: "..." }
-                        cachedRules = snap.data().items || []; 
+                        const d = snap.data();
+                        
+                        // Formata a data de atualização
+                        let dateStr = "Data desconhecida";
+                        if (d.updatedAt) {
+                            const dt = d.updatedAt.toDate();
+                            dateStr = dt.toLocaleDateString('pt-BR', {
+                                day: '2-digit', month: '2-digit', year: 'numeric',
+                                hour: '2-digit', minute: '2-digit'
+                            });
+                        }
+
+                        cachedRulesData = {
+                            items: d.items || [],
+                            dateDisplay: dateStr
+                        };
                     } else {
-                        cachedRules = []; // Documento não existe
+                        cachedRulesData = { items: [], dateDisplay: "--/--/----" };
                     }
                 }
 
                 // Se a lista estiver vazia
-                if (cachedRules.length === 0) {
+                if (cachedRulesData.items.length === 0) {
                     list.innerHTML = `<div class="text-center p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-xs">O regulamento está sendo atualizado pelo Administrador.</div>`;
                     return;
                 }
 
-                // Renderização (Compatível com o formato do Android)
-                // Nota: Usamos r.title e r.content, mas previnem erro com r.t ou r.c caso venha do formato antigo
-                list.innerHTML = cachedRules.map(r => `
+                // 1. Gera o HTML do Cabeçalho
+                const headerHtml = `
+                    <div class="flex flex-col items-center justify-center mb-6 pt-2">
+                        <div class="bg-[#006400] text-white px-4 py-1 rounded-full shadow-md border-2 border-[#FFD700] mb-2">
+                            <h3 class="font-black text-xs uppercase tracking-widest">
+                                <i class="fas fa-balance-scale mr-2"></i>REGULAMENTO OFICIAL
+                            </h3>
+                        </div>
+                        <p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+                            <i class="fas fa-sync-alt text-[#006400] mr-1"></i> Atualizado em: <span class="text-black">${cachedRulesData.dateDisplay}</span>
+                        </p>
+                    </div>
+                `;
+
+                // 2. Gera a Lista de Regras
+                const itemsHtml = cachedRulesData.items.map(r => `
                     <div class="bg-white rounded p-3 shadow-sm border border-gray-100 mb-2">
                         <button class="w-full text-left font-black text-xs text-[#006400] uppercase tracking-wide flex justify-between items-center py-1" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('i').classList.toggle('fa-chevron-up'); this.querySelector('i').classList.toggle('fa-chevron-down');">
                             ${r.title || r.t} 
@@ -785,6 +812,9 @@
                         </div>
                     </div>
                 `).join('');
+
+                // 3. Junta tudo
+                list.innerHTML = headerHtml + itemsHtml;
 
             } catch (e) {
                 console.error("Erro ao buscar regras:", e);
@@ -3164,6 +3194,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
