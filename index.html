@@ -409,50 +409,38 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         // --- SISTEMA DE REMOTE CONFIG (BANNERS & MANUTENÇÃO) ---
+// --- SISTEMA DE REMOTE CONFIG (VERSÃO SEGURA) ---
 const initRemoteConfig = () => {
-    // Escuta em Tempo Real (Snapshot) para bloquear/desbloquear instantaneamente
     onSnapshot(doc(db, "settings", "config"), (docSnap) => {
         if (docSnap.exists()) {
             const config = docSnap.data();
             
-            // Elementos UI
+            // Busca elementos com segurança (evita erro null)
             const maintScreen = document.getElementById('maintenanceScreen');
             const alertBanner = document.getElementById('alertBanner');
-            const appContent = document.getElementById('appContent'); // Para travar scroll se necessário
+            
+            if (!maintScreen || !alertBanner) return; // Se o HTML não existir, para aqui.
 
-            // 1. Lógica de Bloqueio (Manutenção)
+            // 1. Bloqueio (Manutenção)
             if (config.banner_active && config.banner_blocking) {
-                // Preenche textos
                 document.getElementById('maintTitle').innerText = config.banner_title || "EM MANUTENÇÃO";
                 document.getElementById('maintMessage').innerText = config.banner_message || "Voltamos logo!";
                 
-                // Mostra Tela de Bloqueio
                 maintScreen.classList.remove('hidden');
-                // Esconde banner pequeno para não ficar redundante
                 alertBanner.classList.add('hidden');
-                
-                console.log("⛔ App entrou em Modo de Manutenção");
-                return; // Para a execução aqui, o app está travado
             } else {
-                // Libera o app
                 maintScreen.classList.add('hidden');
             }
 
-            // 2. Lógica de Banner Informativo (Apenas aviso visual)
+            // 2. Aviso Informativo
             if (config.banner_active && !config.banner_blocking) {
                 document.getElementById('alertTitle').innerText = config.banner_title || "AVISO";
                 document.getElementById('alertMessage').innerText = config.banner_message || "";
-                
-                // Define cor baseada no tipo (Opcional - aqui fixei Laranja para destaque)
-                // Se quiser dinâmico, pode ler config.banner_color do banco depois
-                
                 alertBanner.classList.remove('hidden');
             } else {
                 alertBanner.classList.add('hidden');
             }
         }
-    }, (error) => {
-        console.error("Erro ao sincronizar Remote Config:", error);
     });
 };
 
@@ -3293,6 +3281,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
