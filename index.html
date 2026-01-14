@@ -130,7 +130,29 @@
     </style>
 </head>
 <body class="h-full w-full overflow-hidden relative text-gray-900 flex flex-col">
-    
+    <div id="maintenanceScreen" class="hidden fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+    <div class="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-2xl shadow-2xl max-w-sm w-full">
+        <div class="w-20 h-20 bg-[#FFD700] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-pulse">
+            <i class="fas fa-tools text-3xl text-black"></i>
+        </div>
+        <h2 id="maintTitle" class="text-2xl font-black text-white uppercase tracking-wider mb-2">EM MANUTENÇÃO</h2>
+        <p id="maintMessage" class="text-sm text-gray-300 font-medium leading-relaxed mb-6">
+            Estamos fazendo melhorias no gramado.<br>O app volta em instantes!
+        </p>
+        <div class="h-1 w-24 bg-[#FFD700] mx-auto rounded-full"></div>
+        <p class="text-[10px] text-white/40 mt-8 font-bold uppercase tracking-widest">Equipe Bolão 112 F.C</p>
+    </div>
+</div>
+
+<div id="alertBanner" class="hidden bg-orange-500 text-white px-4 py-3 relative shadow-md z-40">
+    <div class="flex items-center justify-center gap-3">
+        <i class="fas fa-exclamation-triangle text-[#FFD700] text-lg animate-bounce"></i>
+        <div class="text-left">
+            <p id="alertTitle" class="font-black text-xs uppercase tracking-wide text-[#FFD700]">Atenção</p>
+            <p id="alertMessage" class="text-xs font-bold leading-tight">Mensagem do sistema aqui.</p>
+        </div>
+    </div>
+</div>
     <div id="bgLayer" class="fixed inset-0 z-[-1] bg-cover bg-center transition-all duration-300" style="background-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg');"></div>
 
 <nav id="mainHeader" class="hidden bg-[#006400] text-white pt-safe sticky top-0 z-50 shadow-md w-full">
@@ -386,6 +408,56 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        // --- SISTEMA DE REMOTE CONFIG (BANNERS & MANUTENÇÃO) ---
+const initRemoteConfig = () => {
+    // Escuta em Tempo Real (Snapshot) para bloquear/desbloquear instantaneamente
+    onSnapshot(doc(db, "settings", "config"), (docSnap) => {
+        if (docSnap.exists()) {
+            const config = docSnap.data();
+            
+            // Elementos UI
+            const maintScreen = document.getElementById('maintenanceScreen');
+            const alertBanner = document.getElementById('alertBanner');
+            const appContent = document.getElementById('appContent'); // Para travar scroll se necessário
+
+            // 1. Lógica de Bloqueio (Manutenção)
+            if (config.banner_active && config.banner_blocking) {
+                // Preenche textos
+                document.getElementById('maintTitle').innerText = config.banner_title || "EM MANUTENÇÃO";
+                document.getElementById('maintMessage').innerText = config.banner_message || "Voltamos logo!";
+                
+                // Mostra Tela de Bloqueio
+                maintScreen.classList.remove('hidden');
+                // Esconde banner pequeno para não ficar redundante
+                alertBanner.classList.add('hidden');
+                
+                console.log("⛔ App entrou em Modo de Manutenção");
+                return; // Para a execução aqui, o app está travado
+            } else {
+                // Libera o app
+                maintScreen.classList.add('hidden');
+            }
+
+            // 2. Lógica de Banner Informativo (Apenas aviso visual)
+            if (config.banner_active && !config.banner_blocking) {
+                document.getElementById('alertTitle').innerText = config.banner_title || "AVISO";
+                document.getElementById('alertMessage').innerText = config.banner_message || "";
+                
+                // Define cor baseada no tipo (Opcional - aqui fixei Laranja para destaque)
+                // Se quiser dinâmico, pode ler config.banner_color do banco depois
+                
+                alertBanner.classList.remove('hidden');
+            } else {
+                alertBanner.classList.add('hidden');
+            }
+        }
+    }, (error) => {
+        console.error("Erro ao sincronizar Remote Config:", error);
+    });
+};
+
+// INICIA O SISTEMA IMEDIATAMENTE
+initRemoteConfig();
         // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
         const getAvatarUrl = (base64, name) => {
             // 1. Se tem foto real, usa ela
@@ -3194,6 +3266,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
