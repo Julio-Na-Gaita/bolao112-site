@@ -408,152 +408,265 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-      // --- SISTEMA DE REMOTE CONFIG (VERSÃO SEGURA) ---
-        const initRemoteConfig = () => {
-            onSnapshot(doc(db, "settings", "config"), (docSnap) => {
-                if (docSnap.exists()) {
-                    const config = docSnap.data();
-                    
-                    const maintScreen = document.getElementById('maintenanceScreen');
-                    const alertBanner = document.getElementById('alertBanner');
-                    
-                    if (!maintScreen || !alertBanner) return;
+      // --- 1. VARIÁVEIS GLOBAIS (DEVEM FICAR NO TOPO) ---
+    let currentUser = null;
+    let currentRankingData = [];
+    let compMap = {}; 
+    let globalServerCounts = {};
+    let cachedMatches = [];
 
-                    // 1. Bloqueio (Manutenção)
-                    if (config.banner_active && config.banner_blocking) {
-                        const titleEl = document.getElementById('maintTitle');
-                        const msgEl = document.getElementById('maintMessage');
-                        if(titleEl) titleEl.innerText = config.banner_title || "EM MANUTENÇÃO";
-                        if(msgEl) msgEl.innerText = config.banner_message || "Voltamos logo!";
-                        
-                        maintScreen.classList.remove('hidden');
-                        alertBanner.classList.add('hidden');
-                    } else {
-                        maintScreen.classList.add('hidden');
-                    }
+    // --- 2. SISTEMA DE REMOTE CONFIG (BANNERS & MANUTENÇÃO) ---
+    const initRemoteConfig = () => {
+        onSnapshot(doc(db, "settings", "config"), (docSnap) => {
+            if (docSnap.exists()) {
+                const config = docSnap.data();
+                
+                const maintScreen = document.getElementById('maintenanceScreen');
+                const alertBanner = document.getElementById('alertBanner');
+                
+                if (!maintScreen || !alertBanner) return;
 
-                    // 2. Aviso Informativo
-                    if (config.banner_active && !config.banner_blocking) {
-                        const alertTitle = document.getElementById('alertTitle');
-                        const alertMsg = document.getElementById('alertMessage');
-                        if(alertTitle) alertTitle.innerText = config.banner_title || "AVISO";
-                        if(alertMsg) alertMsg.innerText = config.banner_message || "";
-                        alertBanner.classList.remove('hidden');
-                    } else {
-                        alertBanner.classList.add('hidden');
-                    }
+                // Bloqueio (Manutenção)
+                if (config.banner_active && config.banner_blocking) {
+                    document.getElementById('maintTitle').innerText = config.banner_title || "EM MANUTENÇÃO";
+                    document.getElementById('maintMessage').innerText = config.banner_message || "Voltamos logo!";
+                    maintScreen.classList.remove('hidden');
+                    alertBanner.classList.add('hidden');
+                } else {
+                    maintScreen.classList.add('hidden');
                 }
-            });
-        };
 
-        // INICIA O SISTEMA IMEDIATAMENTE
-        initRemoteConfig(); // <--- AGORA FECHAMOS AQUI!
-
-        // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
-        const getAvatarUrl = (base64, name) => {
-            if (base64 && base64.trim() !== "") {
-                return `data:image/jpeg;base64,${base64}`;
-            }
-            const seed = (name || "user").trim();
-            const bgColors = ["b6e3f4", "c0aede", "d1d4f9", "ffdfbf", "fdcdc5"]; 
-            const bg = bgColors[seed.length % bgColors.length]; 
-            return `https://api.dicebear.com/7.x/adventurer/png?seed=${seed}&backgroundColor=${bg}`;
-        };
-
-        // --- OTIMIZAÇÃO: ATIVAR CACHE OFFLINE ---
-        // Isso faz o site carregar instantaneamente na 2ª visita
-        enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code == 'failed-precondition') {
-                console.log('Muitas abas abertas. O cache funcionará em apenas uma.');
-            } else if (err.code == 'unimplemented') {
-                console.log('Navegador não suporta persistência.');
+                // Aviso Informativo
+                if (config.banner_active && !config.banner_blocking) {
+                    document.getElementById('alertTitle').innerText = config.banner_title || "AVISO";
+                    document.getElementById('alertMessage').innerText = config.banner_message || "";
+                    alertBanner.classList.remove('hidden');
+                } else {
+                    alertBanner.classList.add('hidden');
+                }
             }
         });
-        // ----------------------------------------
-// --- RESTAURAÇÃO DA LÓGICA DE LOGIN ---
-        
-        window.handleLogin = async () => {
-            const btn = document.getElementById('btnLoginAction');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i>`;
-            btn.disabled = true;
+    };
+    initRemoteConfig();
 
-            const user = document.getElementById('userInput').value.trim().toLowerCase();
-            const pass = document.getElementById('passInput').value;
-            const remember = document.getElementById('rememberMe').checked;
+    // --- 3. CACHE OFFLINE ---
+    enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.log('Múltiplas abas abertas.');
+        } else if (err.code == 'unimplemented') {
+            console.log('Sem suporte a persistência.');
+        }
+    });
 
-            if (!user || !pass) {
-                alert("Preencha todos os campos.");
-                btn.innerHTML = originalText; btn.disabled = false;
-                return;
+    // --- 4. FUNÇÕES AUXILIARES DE IMAGEM ---
+    const getAvatarUrl = (base64, name) => {
+        if (base64 && base64.trim() !== "") return `data:image/jpeg;base64,${base64}`;
+        const seed = (name || "user").trim();
+        const bgColors = ["b6e3f4", "c0aede", "d1d4f9", "ffdfbf", "fdcdc5"]; 
+        const bg = bgColors[seed.length % bgColors.length];
+        return `https://api.dicebear.com/7.x/adventurer/png?seed=${seed}&backgroundColor=${bg}`;
+    };
+
+    const compressImage = (file) => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 500; const scaleSize = MAX_WIDTH / img.width; canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize;
+                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7); resolve(dataUrl.split(',')[1]);
+                };
+            };
+        });
+    };
+
+    // --- 5. LÓGICA DE LOGIN ---
+    window.handleLogin = async () => {
+        const btn = document.getElementById('btnLoginAction');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i>`;
+        btn.disabled = true;
+
+        const user = document.getElementById('userInput').value.trim().toLowerCase();
+        const pass = document.getElementById('passInput').value;
+        const remember = document.getElementById('rememberMe').checked;
+
+        if (!user || !pass) {
+            alert("Preencha todos os campos.");
+            btn.innerHTML = originalText; btn.disabled = false;
+            return;
+        }
+
+        try {
+            const mode = remember ? browserLocalPersistence : browserSessionPersistence;
+            await setPersistence(auth, mode);
+            await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass);
+        } catch (e) {
+            console.error(e);
+            alert("Dados incorretos ou erro de conexão.");
+            btn.innerHTML = originalText; 
+            btn.disabled = false;
+        }
+    };
+
+    // --- 6. MONITOR DE AUTENTICAÇÃO (Sincroniza Telas) ---
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // Verifica Trial e Segurança
+            const userDocRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userDocRef);
+
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                if (data.isTrial === true && data.trialValidUntil) {
+                    const now = new Date();
+                    const validUntil = data.trialValidUntil.toDate();
+                    if (now > validUntil) {
+                        const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                        const currentMonth = months[now.getMonth()];
+                        const isPaid = data.payments && data.payments[currentMonth] === true;
+
+                        if (!isPaid) {
+                            alert(`🚫 PERÍODO DE TESTE EXPIRADO!\n\nSua conta venceu em ${validUntil.toLocaleDateString()}.`);
+                            signOut(auth); return;
+                        } else {
+                            await updateDoc(userDocRef, { isTrial: false, name: data.name.replace(" (Teste ⏳)", "") });
+                            location.reload(); return;
+                        }
+                    }
+                }
+                try { await updateDoc(userDocRef, { appVersion: "Web v1.6.1" }); } catch(e) {}
             }
+
+            // Sucesso: Carrega App
+            currentUser = user;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainHeader').classList.remove('hidden');
+            document.getElementById('mainScreens').classList.remove('hidden');
+            document.getElementById('bottomNav').classList.remove('hidden');
+            document.getElementById('btnLogout').classList.remove('hidden');
+            
+            if(window.showTab) {
+                showTab('matches');
+                if(window.calculatePot) calculatePot();
+            }
+        } else {
+            // Logout
+            document.getElementById('mainHeader').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainScreens').classList.add('hidden');
+            document.getElementById('bottomNav').classList.add('hidden');
+        }
+    });
+
+    // --- 7. HANDLERS DE RECUPERAÇÃO E CADASTRO ---
+    document.getElementById('btnForgotPass').onclick = () => {
+        const modal = document.getElementById('modalOverlay'); 
+        const cont = document.getElementById('modalContainer'); 
+        modal.classList.remove('hidden');
+
+        cont.innerHTML = `
+            <div class="bg-white p-6 relative w-full max-w-sm rounded shadow-xl">
+                <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400 p-2"><i class="fas fa-times text-xl"></i></button>
+                <div class="text-center">
+                    <h3 class="text-[#006400] font-black uppercase text-lg mb-4">Recuperar Acesso</h3>
+                    <input type="text" id="recoverUser" placeholder="Usuário" class="w-full p-3 bg-gray-50 border rounded-lg mb-4 text-center font-bold">
+                    <div id="hintResultArea" class="hidden mb-4 p-3 bg-orange-50 border border-orange-200 rounded">
+                        <p class="text-[10px] text-orange-600 font-bold uppercase">💡 SUA DICA:</p>
+                        <p id="hintTextDisplay" class="text-sm font-black text-black mt-1"></p>
+                    </div>
+                    <button id="btnSearchHint" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press text-sm">BUSCAR DICA</button>
+                    <p id="recoverMsg" class="text-xs text-red-500 font-bold mt-2"></p>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('btnSearchHint').onclick = async () => {
+            const user = document.getElementById('recoverUser').value.trim();
+            const msg = document.getElementById('recoverMsg');
+            const area = document.getElementById('hintResultArea');
+            if(!user) { msg.innerText = "Digite seu usuário."; return; }
+            msg.innerText = "Buscando...";
+            area.classList.add('hidden');
 
             try {
-                const mode = remember ? browserLocalPersistence : browserSessionPersistence;
-                await setPersistence(auth, mode);
-                // Faz o login
-                await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass);
+                const q = query(collection(db, "users"), where("username", "==", user));
+                const snap = await getDocs(q);
+                if (!snap.empty) {
+                    const data = snap.docs[0].data();
+                    if (data.passwordHint) {
+                        document.getElementById('hintTextDisplay').innerText = data.passwordHint;
+                        area.classList.remove('hidden');
+                        msg.innerText = "";
+                    } else { msg.innerText = "Sem dica cadastrada."; }
+                } else { msg.innerText = "Usuário não encontrado."; }
+            } catch(e) { msg.innerText = "Erro ao buscar."; }
+        };
+    };
+
+    document.getElementById('btnOpenRegister').onclick = () => {
+        const modal = document.getElementById('modalOverlay'); 
+        const cont = document.getElementById('modalContainer'); 
+        modal.classList.remove('hidden');
+        
+        cont.innerHTML = `
+        <div class="bg-white p-6 relative">
+            <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400 p-2"><i class="fas fa-times text-xl"></i></button>
+            <h3 class="text-[#006400] font-black uppercase text-center mb-6 text-lg">Criar Nova Conta</h3>
+            <input type="text" id="regName" placeholder="Nome Completo" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm">
+            <input type="text" id="regUser" placeholder="Usuário (sem espaços)" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm">
+            <input type="text" id="regHint" placeholder="Dica de Senha (Opcional)" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm">
+            <input type="password" id="regPass" placeholder="Senha (Min 6)" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm">
+            <button id="btnDoRegister" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CADASTRAR</button>
+        </div>`;
+        
+        document.getElementById('btnDoRegister').onclick = async () => {
+            const name = document.getElementById('regName').value.trim();
+            const user = document.getElementById('regUser').value.trim().toLowerCase();
+            const pass = document.getElementById('regPass').value;
+            const hint = document.getElementById('regHint').value.trim();
+
+            if (!name || !user || pass.length < 6) { alert("Dados inválidos."); return; }
+            if (user.includes(" ")) { alert("Usuário sem espaços."); return; }
+
+            const btn = document.getElementById('btnDoRegister');
+            btn.innerText = "CRIANDO..."; btn.disabled = true;
+
+            try {
+                const whitelistRef = doc(db, "whitelist", user);
+                const whitelistSnap = await getDoc(whitelistRef);
+                let finalName = name;
+                let isTrial = false;
+                let trialDate = null;
+
+                if (!whitelistSnap.exists()) {
+                    const aceita = confirm("Sem convite oficial. Criar conta de TESTE GRÁTIS (7 dias)?");
+                    if (!aceita) { btn.innerText = "CADASTRAR"; btn.disabled = false; return; }
+                    isTrial = true;
+                    finalName = `${name} (Teste ⏳)`;
+                    const d = new Date(); d.setDate(d.getDate() + 7);
+                    trialDate = d;
+                }
+
+                const res = await createUserWithEmailAndPassword(auth, `${user}@bolao112.com`, pass);
+                await setDoc(doc(db, "users", res.user.uid), {
+                    name: finalName, username: user, createdAt: new Date(), isAdmin: false, debts: 0, payments: {},
+                    appVersion: "Web v1.6.1", passwordHint: hint, isTrial: isTrial, trialValidUntil: trialDate
+                });
+
+                alert(isTrial ? "Conta Teste Criada!" : "Bem-vindo!");
+                closeModal();
             } catch (e) {
                 console.error(e);
-                alert("Dados incorretos ou erro de conexão.");
-                btn.innerHTML = originalText; 
-                btn.disabled = false;
+                alert("Erro ao criar conta (Usuário já existe?).");
+                btn.innerText = "CADASTRAR"; btn.disabled = false;
             }
         };
-
-        // --- MONITOR DE AUTENTICAÇÃO (Sincroniza Telas) ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // 1. Oculta Tela de Login
-                document.getElementById('loginScreen').classList.add('hidden');
-                
-                // 2. Mostra Interface Principal
-                document.getElementById('mainHeader').classList.remove('hidden');
-                document.getElementById('mainScreens').classList.remove('hidden');
-                document.getElementById('bottomNav').classList.remove('hidden');
-                document.getElementById('btnLogout').classList.remove('hidden');
-
-                // 3. Verifica dados do usuário
-                currentUser = user;
-                
-                // Se estiver em manutenção, a tela preta vai cobrir o app aqui, 
-                // mas como o Login já passou, você está logado!
-                
-                // Carrega a aba inicial
-                if(window.showTab) {
-                    showTab('matches');
-                    calculatePot();
-                }
-            } else {
-                // NÃO LOGADO: Mostra Login e esconde o resto
-                document.getElementById('mainHeader').classList.add('hidden');
-                document.getElementById('loginScreen').classList.remove('hidden');
-                document.getElementById('mainScreens').classList.add('hidden');
-                document.getElementById('bottomNav').classList.add('hidden');
-            }
-        });
-        let currentUser = null;
-        let currentRankingData = [];
-        let compMap = {}; 
-        let globalServerCounts = {};
-
-        // COMPRESSÃO
-        const compressImage = (file) => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 500; const scaleSize = MAX_WIDTH / img.width; canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize;
-                        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7); resolve(dataUrl.split(',')[1]);
-                    };
-                };
-            });
-        };
+    };
 // --- CARROSSEL DE IMAGENS DO CELULAR ---
         // Coloque aqui as URLs das suas imagens (Prints do App)
         const appScreenshots = [
@@ -3280,6 +3393,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
