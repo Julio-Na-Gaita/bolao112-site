@@ -346,7 +346,7 @@ Término oficial: 31 de dezembro de 2026
 
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-4"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
                 
-                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.6</p>
+                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.6.1</p>
             </div>
         </div>
     </main>
@@ -424,7 +424,7 @@ Término oficial: 31 de dezembro de 2026
         let currentRankingData = [];
         let compMap = {}; 
         let globalServerCounts = {};
-// --- REGRAS ATUALIZADAS (WEB v1.6) ---
+// --- REGRAS ATUALIZADAS (WEB v1.6.1) ---
         const rulesData = [
             { 
                 t: "1️⃣ PARTICIPAÇÃO E FINANCEIRO", 
@@ -699,7 +699,7 @@ Término oficial: 31 de dezembro de 2026
                     isAdmin: false,
                     debts: 0,
                     payments: {},
-                    appVersion: "Web v1.6",
+                    appVersion: "Web v1.6.1",
                     passwordHint: hint,
                     // NOVOS CAMPOS PARA CONTROLE:
                     isTrial: isTrial, 
@@ -760,7 +760,7 @@ Término oficial: 31 de dezembro de 2026
                     }
 
                     // ATUALIZANDO VERSÃO
-                    try { await updateDoc(userDocRef, { appVersion: "Web v1.6" }); } catch(e) {}
+                    try { await updateDoc(userDocRef, { appVersion: "Web v1.6.1" }); } catch(e) {}
                 }
                 // ------------------------------------------
 
@@ -1514,13 +1514,12 @@ Término oficial: 31 de dezembro de 2026
         // Variável global para armazenar a info da última atualização
         window.globalLastUpdateInfo = "Aguardando atualização...";
 
+        // --- RANKING ATUALIZADO (Money Zone + Campeão 2025) ---
         async function loadRanking() {
             const listContainer = document.getElementById('rankingListContent');
             const footer = document.getElementById('lastUpdateRanking');
 
-            // Limpa o footer antigo
             footer.innerHTML = "";
-
             listContainer.innerHTML = `<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-[#006400] text-2xl"></i></div>`;
 
             try {
@@ -1535,7 +1534,6 @@ Término oficial: 31 de dezembro de 2026
                 const validMatchIds = new Set();
                 mSnap.forEach(d => {
                     const data = d.data();
-                    // Converte timestamp para Date do JS
                     const deadlineDate = data.deadline ? data.deadline.toDate() : null;
                     const finishedAt = data.finishedAt ? data.finishedAt.toDate() : null;
 
@@ -1550,7 +1548,6 @@ Término oficial: 31 de dezembro de 2026
                     }
                 });
 
-                // Ordenação Cronológica e Filtragem
                 const chronoMatches = matches
                     .filter(m => m.winner)
                     .sort((a, b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
@@ -1586,7 +1583,7 @@ Término oficial: 31 de dezembro de 2026
                     }
                 });
 
-                // 4. Loop de Usuários (Cálculo de Pontos)
+                // 4. Loop de Usuários
                 let users = [];
                 let monthlyData = [];
                 const now = new Date();
@@ -1594,7 +1591,6 @@ Término oficial: 31 de dezembro de 2026
                 const currentYear = now.getFullYear();
                 const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
-                // Coletando palpites
                 const allGuesses = [];
                 gSnap.forEach(d => allGuesses.push(d.data()));
 
@@ -1605,7 +1601,18 @@ Término oficial: 31 de dezembro de 2026
                     const userGuesses = allGuesses.filter(g => g.userId === ud.id && validMatchIds.has(g.matchId));
                     const trophyRoom = [];
 
-                    // Processa cada jogo finalizado
+                    // --- INJEÇÃO DA MEDALHA DO AMAURI (OCULTA NA LISTA) ---
+                    // Verifica pelo username para garantir (assumindo que o login dele é 'amauri')
+                    if (u.username === 'amauri') {
+                        trophyRoom.push({ 
+                            icon: "🏆", 
+                            name: "CAMPEÃO 2025", 
+                            desc: "Grande Vencedor da Temporada 2025", 
+                            date: "31/12/2025",
+                            hiddenInList: true // <--- FLAG IMPORTANTE
+                        });
+                    }
+
                     finishedDisplay.forEach(m => {
                         const g = userGuesses.find(x => x.matchId === m.id);
                         const isThisMonth = m.deadlineDate.getMonth() === currentMonthIdx && m.deadlineDate.getFullYear() === currentYear;
@@ -1626,7 +1633,7 @@ Término oficial: 31 de dezembro de 2026
                         }
                     });
 
-                    // Diamante (Oitavas)
+                    // Diamante (Oitavas) e Medalhas Padrão
                     const oitavasMatches = finishedDisplay.filter(m => m.round === "Oitavas de final");
                     const oitavasByComp = {};
                     oitavasMatches.forEach(m => {
@@ -1657,7 +1664,6 @@ Término oficial: 31 de dezembro de 2026
                         }
                     }
 
-                    // Processamento de Medalhas
                     let simStreak = 0;
                     let currentVeteranCount = 0;
                     
@@ -1669,11 +1675,9 @@ Término oficial: 31 de dezembro de 2026
                         if (isHit && (m.round || "").toLowerCase() === 'final') {
                             trophyRoom.push({ icon: "🔮", name: "MÃE DINAH", desc: `Cravou o campeão em ${m.teamA} x ${m.teamB}`, date: dateStr });
                         }
-
                         if (isHit && zebraMatchIds.includes(m.id)) {
                             trophyRoom.push({ icon: "🦓", name: "CAÇADOR DE ZEBRAS", desc: `Acertou a zebra em ${m.teamA} x ${m.teamB}`, date: dateStr });
                         }
-
                         if (isHit) {
                             currentVeteranCount++;
                             simStreak++;
@@ -1689,42 +1693,29 @@ Término oficial: 31 de dezembro de 2026
                         }
                     });
                     
-                    // Status Negativos
                     const last3 = finishedDisplay.slice(0, 3);
-                    let misses = 0;
-                    let noShows = 0;
+                    let misses = 0; let noShows = 0;
                     if (finishedDisplay.length >= 3) {
                         last3.forEach(m => {
                             const g = userGuesses.find(x => x.matchId === m.id);
                             if (!g) noShows++;
                             else if (g.teamSelected !== m.winner) misses++;
                         });
-                        if (misses === 3) {
-                            trophyRoom.push({ icon: "🥬", name: "MÃO DE ALFACE", desc: "Atual: 3 erros seguidos.", date: "Atual" });
-                        }
-                        if (noShows === 3) {
-                            trophyRoom.push({ icon: "👻", name: "FANTASMA", desc: "Atual: 3 jogos sem votar.", date: "Atual" });
-                        }
+                        if (misses === 3) trophyRoom.push({ icon: "🥬", name: "MÃO DE ALFACE", desc: "Atual: 3 erros seguidos.", date: "Atual" });
+                        if (noShows === 3) trophyRoom.push({ icon: "👻", name: "FANTASMA", desc: "Atual: 3 jogos sem votar.", date: "Atual" });
                     }
 
-                    // Status Patrão
                     let allPaid = true;
                     const payments = u.payments || {};
                     if (currentYear >= 2026) {
                         for (let i = 0; i <= currentMonthIdx; i++) {
-                            if (!payments[monthsNames[i]]) {
-                                allPaid = false;
-                                break;
-                            }
+                            if (!payments[monthsNames[i]]) { allPaid = false; break; }
                         }
                     } else {
                         if ((u.debts || 0) > 0) allPaid = false;
                     }
-                    if (allPaid) {
-                        trophyRoom.unshift({ icon: "💰", name: "PATRÃO", desc: "Mensalidades em dia.", date: "Mês Atual" });
-                    }
+                    if (allPaid) trophyRoom.unshift({ icon: "💰", name: "PATRÃO", desc: "Mensalidades em dia.", date: "Mês Atual" });
 
-                    // Fantasma em jogos não finalizados mas expirados
                     matches.forEach(m => {
                         if (m.deadlineDate < now && !m.winner && !userGuesses.some(g => g.matchId === m.id)) {
                             const dStr = `📅 ${String(m.deadlineDate.getDate()).padStart(2, '0')}/${String(m.deadlineDate.getMonth() + 1).padStart(2, '0')}`;
@@ -1732,30 +1723,20 @@ Término oficial: 31 de dezembro de 2026
                         }
                     });
 
-                    // PENALIDADE COM DATA E CÁLCULO DE -3 PONTOS
                     const deb = u.debts || 0;
                     if (deb > 0) {
                         const penalty = deb * 3;
                         p -= penalty;
-                        
                         const dStr = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
-                        
-                        hist.push({
-                            ts: now,
-                            text: `📅 ${dStr} - 🔻 PENALIDADE: Inadimplência (-${penalty} pts)`,
-                            type: 'bad'
-                        });
+                        hist.push({ ts: now, text: `📅 ${dStr} - 🔻 PENALIDADE: Inadimplência (-${penalty} pts)`, type: 'bad' });
                     }
 
                     hist.sort((a, b) => b.ts - a.ts);
-
                     monthlyData.push({ name: u.name || "Sem Nome", points: monthlyP, uid: ud.id });
                     users.push({
                         uid: ud.id,
                         name: u.name || u.username || "Sem Nome",
-                        p,
-                        v,
-                        f,
+                        p, v, f,
                         d: deb,
                         photo: u.photoBase64,
                         hist,
@@ -1764,15 +1745,16 @@ Término oficial: 31 de dezembro de 2026
                     });
                 });
 
-                // 5. Ordenação Geral (Critérios Completos)
                 users.sort((a, b) => {
-                    if (b.p !== a.p) return b.p - a.p; // Pontos
-                    if (a.d !== b.d) return a.d - b.d; // Menos débitos
-                    
-                    const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
+                    if (b.p !== a.p) return b.p - a.p;
+                    if (a.d !== b.d) return a.d - b.d;
+                    const hierarchy = ["🏆", "👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"]; // 🏆 adicionado na prioridade
                     for (let icon of hierarchy) {
-                        const countA = a.trophyRoom.filter(m => m.icon === icon).length;
-                        const countB = b.trophyRoom.filter(m => m.icon === icon).length;
+                        // Importante: No sorting do ranking, a medalha do amauri conta?
+                        // O prompt disse "sem que ela apareça na tabela". Se ela não conta pro desempate, removemos do filtro aqui.
+                        // Assumindo que ela NÃO conta pro desempate geral, filtramos hiddenInList.
+                        const countA = a.trophyRoom.filter(m => m.icon === icon && !m.hiddenInList).length;
+                        const countB = b.trophyRoom.filter(m => m.icon === icon && !m.hiddenInList).length;
                         if (countB !== countA) return countB - countA;
                     }
                     return 0;
@@ -1780,7 +1762,6 @@ Término oficial: 31 de dezembro de 2026
 
                 monthlyData.sort((a, b) => b.points - a.points);
 
-                // Z-2 (Status)
                 if (users.length > 2) {
                     const z2Users = [users[users.length - 1], users[users.length - 2]];
                     z2Users.forEach(u => {
@@ -1791,7 +1772,6 @@ Término oficial: 31 de dezembro de 2026
                 window.currentMonthlyRanking = monthlyData;
                 currentRankingData = users;
 
-                // 6. Montagem do HTML
                 let html = `<div class="bg-[#006400] rounded-t-xl p-3 flex justify-between items-center shadow-md"><div><h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3><p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p></div><div class="flex gap-2"><button onclick="window.showKingModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg shadow border border-white/20">🏆</button><button onclick="window.openRankingInfo()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white shadow border border-white/20"><i class="fas fa-info text-xs"></i></button></div></div><div class="bg-[#005000] flex text-white/70 text-[9px] font-bold py-1 px-2 uppercase border-b border-white/10"><div class="w-[35px] text-center">Pos</div><div class="flex-1 pl-2">Participante</div><div class="w-[28px] text-center">D</div><div class="w-[40px] text-center text-white">Pts</div></div><div class="bg-white rounded-b-xl overflow-hidden shadow-sm">`;
 
                 html += users.map((u, i) => {
@@ -1801,12 +1781,20 @@ Término oficial: 31 de dezembro de 2026
                     let borderColor = 'border-transparent';
                     let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`;
                     let nameColorClass = "text-gray-800";
-                    let anchorIcon = ""; // CORREÇÃO: Variável vazia para não duplicar no nome
-
+                    
+                    // --- ZONA DE DESTAQUE (Money Zone) ---
                     if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; }
                     else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; }
                     else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; }
-                    else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; } // Sem setar anchorIcon aqui
+                    
+                    // 4º e 5º Lugar: MONEY ZONE (Verde)
+                    else if (i === 3 || i === 4) { 
+                        bgColor = 'bg-green-50'; // Fundo Verde Claro
+                        borderColor = 'border-green-600'; // Borda Verde Escura
+                        posIcon = `<span class="text-green-700 font-black">${pos}º</span>`; // Texto Verde
+                    }
+                    
+                    else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; }
 
                     let diffHtml = '';
                     if (u.lastRank > 0) {
@@ -1815,9 +1803,14 @@ Término oficial: 31 de dezembro de 2026
                         else diffHtml = `<div class="text-gray-300 text-[8px] font-bold mt-1 text-center">=</div>`;
                     } else { diffHtml = `<div class="text-blue-500 text-[7px] font-bold mt-1 text-center">NOVO</div>`; }
 
-                    // Lógica de Agrupamento de Medalhas
                     const counts = {};
-                    u.trophyRoom.forEach(m => { const icon = m.icon.trim(); counts[icon] = (counts[icon] || 0) + 1; });
+                    // FILTRO: Só conta medalhas que NÃO tenham hiddenInList: true
+                    u.trophyRoom.forEach(m => { 
+                        if(!m.hiddenInList) {
+                            const icon = m.icon.trim(); 
+                            counts[icon] = (counts[icon] || 0) + 1; 
+                        }
+                    });
 
                     const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰", "👻", "🥬", "⚓"];
                     const uniqueIcons = Object.keys(counts).sort((a, b) => {
@@ -1839,8 +1832,7 @@ Término oficial: 31 de dezembro de 2026
                         }).join('') + (remain > 0 ? `<span class="text-[9px] text-gray-400 font-bold ml-1">+${remain}</span>` : '') + `</div>`;
                     }
 
-                    // Renderização do Card do Usuário
-                    return `<div class="${bgColor} border-b border-gray-100 flex items-center py-1 px-2 ${i < 3 ? 'border-l-4' : ''}" style="${i < 3 ? `border-left-color: ${borderColor.replace('border-[', '').replace(']', '')}` : ''}">
+                    return `<div class="${bgColor} border-b border-gray-100 flex items-center py-1 px-2 ${i < 5 ? 'border-l-4' : ''}" style="${i < 5 ? `border-left-color: ${borderColor.replace('border-[', '').replace(']', '')}` : ''}">
                         <div class="w-[35px] text-center flex flex-col items-center justify-center h-full"><div class="text-sm">${posIcon}</div>${diffHtml}</div>
                         
                         <div class="flex-1 flex flex-col justify-center pl-2 overflow-hidden shrink-0 cursor-pointer h-full py-1" onclick="showModalPhoto(${i})">
@@ -1994,13 +1986,13 @@ window.showKingModal = () => {
             const u = currentRankingData[idx]; 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             
-            // Agora sempre mostra imagem (Real ou DiceBear) 
-let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-contain bg-black">`;
+            let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-contain bg-black">`;
+            
             // --- LÓGICA DE STACKING E ORDENAÇÃO DE MEDALHAS ---
             let medalsHtml = "";
             if (u.trophyRoom && u.trophyRoom.length > 0) {
-                // 1. Ordem de prioridade
-                const priorityOrder = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰"];
+                // 1. Ordem de prioridade (TROFÉU ADICIONADO NO INÍCIO)
+                const priorityOrder = ["🏆", "👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰"];
                 
                 // 2. Ordena
                 u.trophyRoom.sort((a,b) => {
@@ -2051,7 +2043,6 @@ let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-
             const isMe = currentUser && currentUser.uid === u.uid;
             const compareBtnClass = isMe ? "hidden" : "";
 
-            // ATENÇÃO: Adicionei um ID para recuperar a lista depois (data-uid)
             document.getElementById('modalContainer').innerHTML = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" id="profileModal" data-uid="${u.uid}">
                     <img src="bg_dialog_foto.png" class="absolute inset-0 w-full h-full object-cover opacity-100">
@@ -2480,7 +2471,7 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
         
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.6) ---
+        // --- GUIA DO APP ATUALIZADO (v1.6.1) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
@@ -2488,7 +2479,7 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
                 <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
-                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.6</p>
+                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.6.1</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
@@ -3174,6 +3165,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
