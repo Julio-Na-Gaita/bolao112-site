@@ -408,55 +408,55 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        // --- SISTEMA DE REMOTE CONFIG (BANNERS & MANUTENÇÃO) ---
-// --- SISTEMA DE REMOTE CONFIG (VERSÃO SEGURA) ---
-const initRemoteConfig = () => {
-    onSnapshot(doc(db, "settings", "config"), (docSnap) => {
-        if (docSnap.exists()) {
-            const config = docSnap.data();
-            
-            // Busca elementos com segurança (evita erro null)
-            const maintScreen = document.getElementById('maintenanceScreen');
-            const alertBanner = document.getElementById('alertBanner');
-            
-            if (!maintScreen || !alertBanner) return; // Se o HTML não existir, para aqui.
+      // --- SISTEMA DE REMOTE CONFIG (VERSÃO SEGURA) ---
+        const initRemoteConfig = () => {
+            onSnapshot(doc(db, "settings", "config"), (docSnap) => {
+                if (docSnap.exists()) {
+                    const config = docSnap.data();
+                    
+                    const maintScreen = document.getElementById('maintenanceScreen');
+                    const alertBanner = document.getElementById('alertBanner');
+                    
+                    if (!maintScreen || !alertBanner) return;
 
-            // 1. Bloqueio (Manutenção)
-            if (config.banner_active && config.banner_blocking) {
-                document.getElementById('maintTitle').innerText = config.banner_title || "EM MANUTENÇÃO";
-                document.getElementById('maintMessage').innerText = config.banner_message || "Voltamos logo!";
-                
-                maintScreen.classList.remove('hidden');
-                alertBanner.classList.add('hidden');
-            } else {
-                maintScreen.classList.add('hidden');
-            }
+                    // 1. Bloqueio (Manutenção)
+                    if (config.banner_active && config.banner_blocking) {
+                        const titleEl = document.getElementById('maintTitle');
+                        const msgEl = document.getElementById('maintMessage');
+                        if(titleEl) titleEl.innerText = config.banner_title || "EM MANUTENÇÃO";
+                        if(msgEl) msgEl.innerText = config.banner_message || "Voltamos logo!";
+                        
+                        maintScreen.classList.remove('hidden');
+                        alertBanner.classList.add('hidden');
+                    } else {
+                        maintScreen.classList.add('hidden');
+                    }
 
-            // 2. Aviso Informativo
-            if (config.banner_active && !config.banner_blocking) {
-                document.getElementById('alertTitle').innerText = config.banner_title || "AVISO";
-                document.getElementById('alertMessage').innerText = config.banner_message || "";
-                alertBanner.classList.remove('hidden');
-            } else {
-                alertBanner.classList.add('hidden');
-            }
-        }
-    });
-};
+                    // 2. Aviso Informativo
+                    if (config.banner_active && !config.banner_blocking) {
+                        const alertTitle = document.getElementById('alertTitle');
+                        const alertMsg = document.getElementById('alertMessage');
+                        if(alertTitle) alertTitle.innerText = config.banner_title || "AVISO";
+                        if(alertMsg) alertMsg.innerText = config.banner_message || "";
+                        alertBanner.classList.remove('hidden');
+                    } else {
+                        alertBanner.classList.add('hidden');
+                    }
+                }
+            });
+        };
 
-// INICIA O SISTEMA IMEDIATAMENTE
-initRemoteConfig();
+        // INICIA O SISTEMA IMEDIATAMENTE
+        initRemoteConfig(); // <--- AGORA FECHAMOS AQUI!
+
         // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
         const getAvatarUrl = (base64, name) => {
-            // 1. Se tem foto real, usa ela
             if (base64 && base64.trim() !== "") {
                 return `data:image/jpeg;base64,${base64}`;
             }
-            // 2. Se não tem, gera o DiceBear
             const seed = (name || "user").trim();
-            // Cores de fundo suaves (azul, roxo, verde, laranja)
             const bgColors = ["b6e3f4", "c0aede", "d1d4f9", "ffdfbf", "fdcdc5"]; 
-            const bg = bgColors[seed.length % bgColors.length]; // Escolhe cor baseada no tamanho do nome
+            const bg = bgColors[seed.length % bgColors.length]; 
             return `https://api.dicebear.com/7.x/adventurer/png?seed=${seed}&backgroundColor=${bg}`;
         };
 
@@ -3280,6 +3280,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
