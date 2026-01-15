@@ -49,7 +49,7 @@ export default async function handler(req, res) {
             if (match.notifiedAuto) return;
 
             const deadlineDate = match.deadline.toDate();
-// CORREÇÃO DE FUSO HORÁRIO (Força Brasília/SP)
+// CORREÇÃO DE FUSO HORÁRIO
             const horaFormatada = deadlineDate.toLocaleTimeString('pt-BR', {
                 timeZone: 'America/Sao_Paulo', // <--- Isso conserta as 3h de diferença
                 hour: '2-digit',
