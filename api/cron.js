@@ -61,7 +61,7 @@ export default async function handler(req, res) {
                 topic: 'todos',
                 notification: {
                     title: '⏳ Falta 1 hora!',
-                    body: `O jogo ${match.teamA} x ${match.teamB} encerra às ${horaFormatada}. (Se você já votou, desconsidere este aviso).`,
+                    body: `A votação do confronto ${match.teamA} x ${match.teamB} encerra às ${horaFormatada}. (Se você já votou, desconsidere este aviso).`,
                 },
                 android: {
                     priority: 'high',
