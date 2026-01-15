@@ -709,7 +709,8 @@
                     }
 
                     // ATUALIZANDO VERSÃO
-                    try { await updateDoc(userDocRef, { appVersion: "Web v1.6.1" }); } catch(e) {}
+                    try { await updateDoc(userDocRef, { appVersion: "Web v1.6.1", lastAccess: new Date() // <--- GRAVA A DATA/HORA ATUAL
+                                                       }); } catch(e) {}
                 }
                 // ------------------------------------------
 
@@ -3194,4 +3195,5 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
