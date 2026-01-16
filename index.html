@@ -359,7 +359,7 @@
 
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-4"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
                 
-                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.6.2</p>
+                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.6.4</p>
             </div>
         </div>
     </main>
@@ -375,13 +375,13 @@
                 <div class="bg-[#FFF8E1] border border-[#FFD700] rounded p-3 shadow-sm">
                     <p class="text-xs font-black text-[#F57F17] uppercase">🏆 Pote de Premiação</p>
                     <p id="potValue" class="text-3xl font-black text-black">R$ 0,00</p>
-                    <p class="text-[9px] text-gray-500">Ref. R$ 10,00 por cota</p>
+                    <p id="potRef" class="text-[9px] text-gray-500 font-bold">Calculando previsão...</p>
                 </div>
 
                 <div class="bg-[#E3F2FD] border border-[#42A5F5] rounded p-3 shadow-sm">
                     <p class="text-xs font-black text-[#1565C0] uppercase">🍻 Festa & Troféus</p>
                     <p id="partyValue" class="text-2xl font-black text-black">R$ 0,00</p>
-                    <p class="text-[9px] text-gray-500">Ref. R$ 5,00 por cota</p>
+                    <p id="partyRef" class="text-[9px] text-gray-500 font-bold">Calculando previsão...</p>
                 </div>
                 
                 <p id="totalValue" class="text-xs font-bold text-[#006400] pt-2">Total Arrecadado: R$ 0,00</p>
@@ -714,7 +714,7 @@ initRemoteConfig();
                     isAdmin: false,
                     debts: 0,
                     payments: {},
-                    appVersion: "Web v1.6.2",
+                    appVersion: "Web v1.6.4",
                     passwordHint: hint,
                     // NOVOS CAMPOS PARA CONTROLE:
                     isTrial: isTrial, 
@@ -775,7 +775,7 @@ initRemoteConfig();
                     }
 
                     // ATUALIZANDO VERSÃO
-                    try { await updateDoc(userDocRef, { appVersion: "Web v1.6.2", lastAccess: new Date() // <--- GRAVA A DATA/HORA ATUAL
+                    try { await updateDoc(userDocRef, { appVersion: "Web v1.6.4", lastAccess: new Date() // <--- GRAVA A DATA/HORA ATUAL
                                                        }); } catch(e) {}
                 }
                 // ------------------------------------------
@@ -2579,7 +2579,7 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
         
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.6.2) ---
+        // --- GUIA DO APP ATUALIZADO (v1.6.4) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
@@ -2587,7 +2587,7 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
                 <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
-                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.6.2</p>
+                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.6.4</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
@@ -2631,35 +2631,51 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
                 </div>
             </div>`; 
         };
-window.calculatePot = async function() {
-            try {
-                const snap = await getDocs(collection(db, "users")); 
-                let totalCotas = 0; 
-                snap.forEach(d => { 
-                    const p = d.data().payments; 
-                    if(p) totalCotas += Object.values(p).filter(v => v).length; 
-                }); 
-                
-                // LÓGICA DE DIVISÃO (R$ 10 Prêmio + R$ 5 Festa)
-                const prizePot = totalCotas * 10;
-                const partyPot = totalCotas * 5;
-                const totalArrecadado = prizePot + partyPot;
+// --- CÁLCULO DO POTE COM PREVISÃO ANUAL ---
+        window.calculatePot = async () => {
+             try {
+                 const snap = await getDocs(collection(db, "users"));
+                 
+                 let totalCotasPagas = 0; // Quantidade de meses pagos (real)
+                 const totalParticipantes = snap.size; // Total de pessoas no bolão
+                 
+                 snap.forEach(d => {
+                     const p = d.data().payments;
+                     if(p) totalCotasPagas += Object.values(p).filter(Boolean).length;
+                 });
+                 
+                 // 1. Valores Reais (O que já tem no caixa)
+                 const currentPrize = totalCotasPagas * 10;
+                 const currentParty = totalCotasPagas * 5;
+                 const currentTotal = currentPrize + currentParty;
 
-                const fmt = (v) => v.toLocaleString('pt-br',{style:'currency',currency:'BRL'});
+                 // 2. Valores de Previsão (Participantes * 12 meses * Valor)
+                 const forecastPrize = totalParticipantes * 12 * 10;
+                 const forecastParty = totalParticipantes * 12 * 5;
 
-                // Preenche os campos SE eles existirem no DOM
-                const elPot = document.getElementById('potValue');
-                const elParty = document.getElementById('partyValue');
-                const elTotal = document.getElementById('totalValue');
+                 // Formatador de Moeda
+                 const fmt = (v) => v.toLocaleString('pt-br',{style:'currency',currency:'BRL'});
 
-                if(elPot) elPot.innerText = fmt(prizePot);
-                if(elParty) elParty.innerText = fmt(partyPot);
-                if(elTotal) elTotal.innerText = `Total Arrecadado: ${fmt(totalArrecadado)}`;
-            } catch (e) {
-                console.error("Erro ao calcular pote:", e);
-                alert("Erro ao carregar valores do pote.");
-            }
-        }
+                 // Atualiza HTML - Valores Reais
+                 const elPot = document.getElementById('potValue');
+                 const elParty = document.getElementById('partyValue');
+                 const elTotal = document.getElementById('totalValue');
+
+                 if(elPot) elPot.innerText = fmt(currentPrize);
+                 if(elParty) elParty.innerText = fmt(currentParty);
+                 if(elTotal) elTotal.innerText = `Total Arrecadado (Real): ${fmt(currentTotal)}`;
+
+                 // Atualiza HTML - Previsões
+                 const elPotRef = document.getElementById('potRef');
+                 const elPartyRef = document.getElementById('partyRef');
+
+                 if(elPotRef) elPotRef.innerText = `Previsão Final: ${fmt(forecastPrize)}`;
+                 if(elPartyRef) elPartyRef.innerText = `Previsão Final: ${fmt(forecastParty)}`;
+
+             } catch (e) {
+                 console.error("Erro ao calcular pote:", e);
+             }
+        };
 // --- CORREÇÃO: CARD INSTAGRAM TURBINADO (Tabela Inteligente + Marketing) ---
         window.generateWebCard = async () => {
             const modalEl = document.getElementById('profileModal');
@@ -3293,6 +3309,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
