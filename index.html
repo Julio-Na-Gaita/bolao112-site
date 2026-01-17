@@ -369,7 +369,8 @@
         <div class="card-cut w-full max-w-sm p-6 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.95), rgba(255,255,255,0.95)), url('https://cdn.pixabay.com/photo/2017/09/07/08/54/money-2724241_640.jpg'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
             <i class="fas fa-piggy-bank text-4xl text-[#FFD700] mb-2 drop-shadow-sm"></i>
             <h2 class="text-lg font-bold text-gray-800 uppercase tracking-widest">ACUMULADO!</h2>
-            <p class="text-xs text-gray-500 font-bold mb-4">Mensalidade: R$ 15,00</p>
+            <p class="text-xs text-gray-500 font-bold">Mensalidade: R$ 15,00</p>
+            <p id="potCount" class="text-[10px] text-[#006400] font-black mb-4 uppercase tracking-wide">Carregando...</p>
             
             <div class="space-y-3 mb-6">
                 <div class="bg-[#FFF8E1] border border-[#FFD700] rounded p-3 shadow-sm">
@@ -412,6 +413,8 @@
         let currentRankingData = [];
         let compMap = {}; 
         let globalServerCounts = {};
+        // NOVO: Objeto para guardar as regras do Android
+        let appConfig = { chat: true, scout: true, vote: true };
         // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
         const getAvatarUrl = (base64, name) => {
             // 1. Se tem foto real, usa ela
@@ -439,47 +442,47 @@
       
 
         // COLETAR ESTE BLOCO AQUI (INÍCIO)
-       // --- SISTEMA DE REMOTE CONFIG (BANNERS) ---
-const initRemoteConfig = () => {
-    onSnapshot(doc(db, "settings", "config"), (docSnap) => {
-        if (docSnap.exists()) {
-            const config = docSnap.data();
-            
-            const maintScreen = document.getElementById('maintenanceScreen');
-            const alertBanner = document.getElementById('alertBanner');
-            
-            if (!maintScreen || !alertBanner) return;
+// --- 2. SISTEMA DE REMOTE CONFIG (BANNERS E RECURSOS) ---
+        const initRemoteConfig = () => {
+            onSnapshot(doc(db, "settings", "config"), (docSnap) => {
+                if (docSnap.exists()) {
+                    const config = docSnap.data();
+                    
+                    // A. Atualiza Configurações Globais (Lê do seu print)
+                    appConfig.chat = config.enable_chat !== false; // Padrão true se não existir
+                    appConfig.scout = config.enable_scout !== false;
+                    appConfig.vote = config.enable_fast_vote !== false;
 
-            // 1. Bloqueio (Manutenção)
-            if (config.banner_active && config.banner_blocking) {
-                const t = document.getElementById('maintTitle'); 
-                const m = document.getElementById('maintMessage');
-                if(t) t.innerText = config.banner_title || "EM MANUTENÇÃO";
-                if(m) m.innerText = config.banner_message || "Voltamos logo!";
-                
-                maintScreen.classList.remove('hidden');
-                alertBanner.classList.add('hidden');
-                document.body.style.overflow = "hidden"; // Trava rolagem
-            } else {
-                maintScreen.classList.add('hidden');
-                document.body.style.overflow = "auto";
-            }
+                    // B. Lógica Visual do Banner
+                    const maintScreen = document.getElementById('maintenanceScreen');
+                    const alertBanner = document.getElementById('alertBanner');
+                    
+                    if (!maintScreen || !alertBanner) return;
 
-            // 2. Aviso (Faixa Laranja)
-            if (config.banner_active && !config.banner_blocking) {
-                const t = document.getElementById('alertTitle'); 
-                const m = document.getElementById('alertMessage');
-                if(t) t.innerText = config.banner_title || "AVISO";
-                if(m) m.innerText = config.banner_message || "";
-                
-                alertBanner.classList.remove('hidden');
-            } else {
-                alertBanner.classList.add('hidden');
-            }
-        }
-    });
-};
-initRemoteConfig();
+                    // Bloqueio (Manutenção)
+                    if (config.banner_active && config.banner_blocking) {
+                        const t = document.getElementById('maintTitle'); if(t) t.innerText = config.banner_title || "EM MANUTENÇÃO";
+                        const m = document.getElementById('maintMessage'); if(m) m.innerText = config.banner_message || "Voltamos logo!";
+                        maintScreen.classList.remove('hidden');
+                        alertBanner.classList.add('hidden');
+                        document.body.style.overflow = "hidden";
+                    } else {
+                        maintScreen.classList.add('hidden');
+                        document.body.style.overflow = "auto";
+                    }
+
+                    // Aviso Informativo
+                    if (config.banner_active && !config.banner_blocking) {
+                        const t = document.getElementById('alertTitle'); if(t) t.innerText = config.banner_title || "AVISO";
+                        const m = document.getElementById('alertMessage'); if(m) m.innerText = config.banner_message || "";
+                        alertBanner.classList.remove('hidden');
+                    } else {
+                        alertBanner.classList.add('hidden');
+                    }
+                }
+            });
+        };
+        initRemoteConfig();
         // (FIM DO BLOCO)
 
         // COMPRESSÃO
@@ -2174,10 +2177,10 @@ window.showKingModal = () => {
                             <button id="btnInstaAction" onclick="window.generateWebCard()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
                                 <i class="fab fa-instagram text-xl"></i> GERAR CARD STORIES
                             </button>
-                            
-                            <button id="btnStatsAction" class="w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
-                                <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
-                            </button>
+                            const scoutClass = appConfig.scout ? "flex" : "hidden";
+                            <button id="btnStatsAction" class="${scoutClass} w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg items-center justify-center gap-2 btn-press">
+                 <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
+            </button>
                             
                             <button id="btnCompareAction" class="${compareBtnClass} w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press flex items-center justify-center gap-2">
                                 <i class="fas fa-exchange-alt"></i> COMPARAR PALPITES
@@ -2672,9 +2675,13 @@ document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u
                  if(elPotRef) elPotRef.innerText = `Previsão Final: ${fmt(forecastPrize)}`;
                  if(elPartyRef) elPartyRef.innerText = `Previsão Final: ${fmt(forecastParty)}`;
 
-             } catch (e) {
-                 console.error("Erro ao calcular pote:", e);
-             }
+             // ATUALIZAÇÃO DO CONTADOR NO HTML
+                 const elCount = document.getElementById('potCount');
+                 if (elCount) {
+                     elCount.innerText = `👥 ${totalParticipantes} PARTICIPANTES ATIVOS`;
+                 }
+
+             } catch (e) { console.error("Erro Pote:", e); }
         };
 // --- CORREÇÃO: CARD INSTAGRAM TURBINADO (Tabela Inteligente + Marketing) ---
         window.generateWebCard = async () => {
@@ -2849,6 +2856,10 @@ document.getElementById('btnLogout').onclick = () => {
 };
        // --- CHAT COM MÚLTIPLAS REAÇÕES ---
         window.openMatchComments = async (mid, ta, tb, winner) => {
+            if (!appConfig.chat) {
+                alert("⛔ O Chat está desativado no momento.");
+                return;
+            }
             const currentCount = globalServerCounts[mid] || 0;
             localStorage.setItem(`read_count_${mid}`, currentCount);
             const matchBtns = document.querySelectorAll(`button[onclick*="${mid}"]`);
@@ -3309,6 +3320,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
