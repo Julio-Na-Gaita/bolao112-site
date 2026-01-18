@@ -17,6 +17,25 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style id="theme-override">
+        /* Força as cores dinâmicas sobre as cores fixas do Tailwind */
+        :root { --primary: #006400; --secondary: #FFD700; --bg-image: url('bg_jogos.jpeg'); }
+        
+        /* Aplica ao Header e Botões Principais */
+        #mainHeader, .bg-\[\#006400\], .bg-green-600 { background-color: var(--primary) !important; }
+        .text-\[\#006400\], .text-green-600 { color: var(--primary) !important; }
+        .border-\[\#006400\] { border-color: var(--primary) !important; }
+        
+        /* Aplica aos Destaques Secundários */
+        .text-\[\#FFD700\], .text-yellow-400 { color: var(--secondary) !important; }
+        .border-\[\#FFD700\] { border-color: var(--secondary) !important; }
+
+        /* Fundo com Marca D'água */
+        #bgLayer {
+            background-image: var(--bg-image) !important;
+            opacity: 1 !important; /* Controlado via JS */
+        }
+    </style>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
@@ -473,7 +492,7 @@
         secondaryColor: '#FFD700',
         skin: 'padrao', 
         font: "'PT Serif', serif",
-        audioPack: 'som_pop.mp3' // Padrão agora é o arquivo direto
+        audioPack: 'som_pop.mp3'
     };
 
     // Lista de Sons (Arquivos na Raiz)
@@ -500,26 +519,25 @@
     const applyThemeVisuals = () => {
         const root = document.documentElement;
         
-        // Aplica Skin
+        // 1. Aplica Fontes
+        root.style.setProperty('--app-font', userPreferences.font);
+        document.body.style.fontFamily = userPreferences.font;
+
+        // 2. Aplica Skins (Cores e Fundo)
         if (userPreferences.skin === 'ceara') {
             root.style.setProperty('--primary', '#000000');
             root.style.setProperty('--secondary', '#FFFFFF');
-            // Como a imagem não existe, usamos um gradiente ou cor sólida por enquanto para garantir feedback
-            document.body.style.backgroundImage = "none"; 
-            document.body.style.backgroundColor = "#e0e0e0"; 
+            root.style.setProperty('--bg-image', "linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('escudo_ceara.png')");
         } else if (userPreferences.skin === 'fortaleza') {
             root.style.setProperty('--primary', '#1155cc');
             root.style.setProperty('--secondary', '#bb0a1e');
-            document.body.style.backgroundImage = "none";
-            document.body.style.backgroundColor = "#e3f2fd";
+            root.style.setProperty('--bg-image', "linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('escudo_fortaleza.png')");
         } else {
+            // Modo Personalizado
             root.style.setProperty('--primary', userPreferences.primaryColor);
             root.style.setProperty('--secondary', userPreferences.secondaryColor);
-            document.body.style.backgroundImage = "none"; // Reseta fundo
-            document.body.style.backgroundColor = "#f3f4f6";
+            root.style.setProperty('--bg-image', "linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg')");
         }
-
-        root.style.setProperty('--app-font', userPreferences.font);
     };
 
     const saveTheme = (newPrefs) => {
@@ -528,9 +546,10 @@
         applyThemeVisuals();
     };
 
-    // Tocar Som (Cria o objeto Audio na hora para evitar erros de carregamento)
+    // Tocar Som (Direto da Raiz)
     const playVoteSound = (previewFile) => {
         const file = previewFile || userPreferences.audioPack;
+        // Cria o áudio e força o play
         const audio = new Audio(file);
         audio.volume = 0.5;
         audio.play().catch(e => console.log("Áudio bloqueado:", e));
@@ -2600,11 +2619,26 @@ async function loadProfile() {
             const u = snap.data(); 
             const avatar = getAvatarUrl(u.photoBase64, u.name || u.username);
 
-            // HTML DO MODAL PIX (Escondido) - Injetado aqui para garantir que exista
+            // --- LÓGICA FINANCEIRA ORIGINAL (RESTAURADA) ---
+            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            const currMonth = months[new Date().getMonth()];
+            const payments = u.payments || {};
+            // Regra: Se for 2026, verifica o mês. Se for antes, assume pago ou verifica débitos.
+            const isPaid = (new Date().getFullYear() < 2026) || (payments[currMonth] === true);
+            
+            // Define o visual do cartão (Verde ou Vermelho)
+            const finCardClass = isPaid 
+                ? "bg-green-50 border-green-200 text-green-800" 
+                : "bg-red-50 border-red-200 text-red-800 animate-pulse";
+            
+            const finStatusText = isPaid ? "MENSALIDADE EM DIA" : "PAGAMENTO PENDENTE";
+            const finIcon = isPaid ? "fa-check-circle" : "fa-exclamation-circle";
+
+            // HTML DO MODAL PIX (Escondido)
             const pixModalHTML = `
-            <div id="pixArea" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onclick="this.classList.add('hidden')">
+            <div id="pixArea" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onclick="if(event.target === this) this.classList.add('hidden')">
                 <div class="bg-white rounded-lg w-full max-w-sm overflow-hidden" onclick="event.stopPropagation()">
-                    <div class="relative h-24 bg-[#006400] flex items-center justify-center">
+                    <div class="relative h-24 theme-bg-primary bg-[#006400] flex items-center justify-center">
                         <i class="fas fa-qrcode text-6xl text-white opacity-50"></i>
                         <h3 class="absolute bottom-2 text-white font-black uppercase tracking-widest">Pagamento Pix</h3>
                         <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-white"><i class="fas fa-times"></i></button>
@@ -2612,7 +2646,7 @@ async function loadProfile() {
                     <div class="p-6 text-center space-y-4">
                          <div>
                             <p class="text-xs text-gray-500 font-bold uppercase">Valor da Mensalidade</p>
-                            <p class="text-4xl font-black text-[#006400]">R$ 15,00</p>
+                            <p class="text-4xl font-black theme-text-primary text-[#006400]">R$ 15,00</p>
                          </div>
                          <div class="bg-gray-100 p-3 rounded text-left">
                             <p class="text-[10px] font-bold text-gray-500">Chave Pix (E-mail):</p>
@@ -2633,16 +2667,16 @@ async function loadProfile() {
             <div id="profileScreen" class="animate-fade-in p-4">
                 ${pixModalHTML}
                 
-                <div class="card-cut relative overflow-hidden bg-white shadow-lg mb-6 border-l-4 theme-border-primary">
+                <div class="card-cut relative overflow-hidden bg-white shadow-lg mb-6 border-l-4 theme-border-primary border-[#006400]">
                     <div class="absolute right-0 top-0 p-2 opacity-10">
-                        <i class="fas fa-id-card text-6xl theme-text-primary"></i>
+                        <i class="fas fa-id-card text-6xl theme-text-primary text-[#006400]"></i>
                     </div>
                     <div class="p-6 flex items-center gap-4 relative z-10">
-                        <div class="w-20 h-20 rounded-full border-4 theme-border-secondary shadow-md overflow-hidden bg-gray-200">
+                        <div class="w-20 h-20 rounded-full border-4 theme-border-secondary border-[#FFD700] shadow-md overflow-hidden bg-gray-200">
                             <img src="${avatar}" class="w-full h-full object-cover">
                         </div>
                         <div>
-                            <h2 class="text-xl font-black theme-text-primary uppercase leading-tight">${u.name || "Membro"}</h2>
+                            <h2 class="text-xl font-black theme-text-primary text-[#006400] uppercase leading-tight">${u.name || "Membro"}</h2>
                             <p class="text-sm text-gray-500 font-bold">@${u.username}</p>
                             <div class="mt-2 inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-[10px] font-bold text-gray-600">
                                 <i class="fas fa-crown text-[#FFD700]"></i> SÓCIO TORCEDOR
@@ -2675,14 +2709,12 @@ async function loadProfile() {
                 </div>
 
                 <div class="space-y-3 mb-8">
-                     <div id="financialCard" class="p-4 rounded-lg border bg-white shadow-sm cursor-pointer btn-press" onclick="document.getElementById('pixArea').classList.remove('hidden')">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="font-black text-sm theme-text-primary">FINANCEIRO</p>
-                                <p class="text-[10px] text-gray-500 font-bold">Toque para pagar</p>
-                            </div>
-                            <i class="fas fa-wallet text-2xl text-gray-300"></i>
+                     <div id="financialCard" class="p-4 rounded-lg border shadow-sm cursor-pointer btn-press flex justify-between items-center transition-colors ${finCardClass}" onclick="document.getElementById('pixArea').classList.remove('hidden')">
+                        <div class="text-left">
+                            <p class="font-black text-sm">${finStatusText}</p>
+                            <p class="text-[10px] font-bold opacity-70">Toque para detalhes</p>
                         </div>
+                        <i class="fas ${finIcon} text-2xl"></i>
                     </div>
                     ${u.isAdmin ? `<button onclick="openAdminMenu()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold text-xs shadow-lg btn-press"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>` : ''}
                 </div>
@@ -3534,6 +3566,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
