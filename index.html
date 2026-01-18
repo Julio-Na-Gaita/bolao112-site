@@ -976,30 +976,7 @@
             }
         };
       
-    
-       // --- GERADORES DE COMPONENTES SDUI (Banners, Enquetes, Letreiro) ---
-
-        // 1. Letreiro (Restaurado)
-        const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users) => {
-            let segments = [];
-            const addSegment = (text, color) => segments.push(`<span style="color: ${color}; font-weight: 900; margin: 0 10px;">${text}</span>`);
-            
-            // Frases do Admin (Firebase)
-            if (newsSnap && newsSnap.exists()) {
-                (newsSnap.data().items || []).forEach(item => {
-                    if (typeof item === 'object') addSegment(item.text, `#${item.color.replace('FF','')}`);
-                    else addSegment(item, "#EF6C00");
-                });
-            }
-            // Frases Automáticas (Líder e Boas-vindas)
-            if (finishedMatches.length > 0) {
-                 addSegment("🏆 QUEM SERÁ O REI DESTE MÊS?", "#FFD700");
-                 addSegment("⚽ CONFIRA A TABELA ATUALIZADA!", "#00E676");
-            }
-            if (segments.length === 0) addSegment("⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!", "#FFD700");
-
-            return segments.join(' | ') + " | " + segments.join(' | ');
-        };
+   
 // --- CORREÇÃO DE IMAGENS DO GOOGLE DRIVE ---
         const fixDriveUrl = (url) => {
             if (!url) return "";
@@ -3347,4 +3324,5 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
