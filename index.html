@@ -999,16 +999,30 @@
 
             return segments.join(' | ') + " | " + segments.join(' | ');
         };
-
+// --- CORREÇÃO DE IMAGENS DO GOOGLE DRIVE ---
+        const fixDriveUrl = (url) => {
+            if (!url) return "";
+            if (url.includes("drive.google.com") && url.includes("id=")) {
+                const match = url.match(/id=([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    // Usa o domínio lh3 que é mais permissivo para imagens
+                    return `https://lh3.googleusercontent.com/d/${match[1]}`;
+                }
+            }
+            return url;
+        };
         // 2. Banner de Propaganda
-        const renderBanner = (bannerData) => {
+       const renderBanner = (bannerData) => {
             if (!bannerData || !bannerData.active) return '';
-            let imgUrl = bannerData.imageUrl || "";
+            
+            // Aplica a correção no link da imagem
+            let imgUrl = fixDriveUrl(bannerData.imageUrl || "");
             let targetUrl = bannerData.targetUrl || "#";
+            
             return `
             <div class="card-container mb-4 animate-fade-in">
                 <a href="${targetUrl}" target="_blank" class="block rounded-xl overflow-hidden shadow-lg border border-gray-200 relative group">
-                    <img src="${imgUrl}" class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105">
+                    <img src="${imgUrl}" referrerpolicy="no-referrer" class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.style.display='none'">
                     <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
                     ${bannerData.name ? `<div class="absolute bottom-0 right-0 bg-black/60 text-white text-[8px] px-2 py-1 font-bold rounded-tl-lg">${bannerData.name}</div>` : ''}
                 </a>
@@ -1020,22 +1034,32 @@
             if (!poll || !poll.active) return '';
             const totalVotes = Object.keys(poll.votes || {}).length;
             const myVote = poll.votes ? poll.votes[currentUser.uid] : null;
-            const isExpired = poll.deadline ? new Date() > poll.deadline.toDate() : false;
+            // Verificação de segurança para data
+            const now = new Date();
+            let isExpired = false;
+            if(poll.deadline) {
+                try { isExpired = now > poll.deadline.toDate(); } catch(e) { isExpired = false; }
+            }
             
             let optionsHtml = '';
             (poll.options || []).forEach((opt, idx) => {
-                let count = 0; if (poll.votes) Object.values(poll.votes).forEach(v => { if(v == idx) count++; });
+                let count = 0; 
+                if (poll.votes) Object.values(poll.votes).forEach(v => { if(v == idx) count++; });
                 const pct = totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
+                
                 const isSelected = myVote === idx;
-                const barColor = isSelected ? 'bg-[#006400]' : 'bg-gray-400';
-                const textColor = isSelected ? 'text-[#006400]' : 'text-gray-600';
+                const barColor = isSelected ? 'bg-[#006400]' : 'bg-gray-300';
+                const textColor = isSelected ? 'text-[#006400]' : 'text-gray-700';
                 const border = isSelected ? 'border-[#FFD700] border-2' : 'border-gray-200 border';
-                const clickAction = isExpired ? '' : `onclick="window.votePoll('${poll.id}', ${idx})"`;
+                
+                // Adiciona preventDefault para garantir o clique
+                const clickAction = isExpired ? '' : `onclick="event.stopPropagation(); window.votePoll('${poll.id}', ${idx})"`;
 
                 optionsHtml += `
-                <div ${clickAction} class="mb-2 relative rounded-lg overflow-hidden ${border} bg-white p-2 cursor-pointer btn-press shadow-sm">
-                    <div class="absolute top-0 left-0 bottom-0 ${barColor} opacity-20" style="width: ${pct}%"></div>
-                    <div class="relative flex justify-between items-center z-10">
+                <div ${clickAction} class="mb-2 relative rounded-lg overflow-hidden ${border} bg-white p-3 cursor-pointer btn-press shadow-sm group">
+                    <div class="absolute top-0 left-0 bottom-0 ${barColor} opacity-20 transition-all duration-500" style="width: ${pct}%; z-index: 0;"></div>
+                    
+                    <div class="relative flex justify-between items-center z-10 pointer-events-none">
                         <span class="text-xs font-bold ${textColor}">${opt} ${isSelected ? '<i class="fas fa-check-circle ml-1"></i>' : ''}</span>
                         <span class="text-[10px] font-black text-gray-500">${pct}%</span>
                     </div>
@@ -1048,17 +1072,28 @@
                     <h3 class="font-black text-blue-800 text-sm uppercase"><i class="fas fa-poll-h mr-2"></i>${poll.question}</h3>
                     ${isExpired ? '<span class="bg-red-100 text-red-600 text-[8px] font-bold px-2 py-1 rounded">ENCERRADA</span>' : ''}
                 </div>
-                <div>${optionsHtml}</div>
+                <div class="flex flex-col gap-1">${optionsHtml}</div>
                 <p class="text-[9px] text-gray-400 text-right mt-2 font-bold">${totalVotes} votos • ${isExpired ? 'Finalizada' : 'Toque para votar'}</p>
             </div>`;
         };
 
-        // Função de Voto na Enquete
-        window.votePoll = async (pollId, optionIdx) => {
-            if(!currentUser) return;
-            const ref = doc(db, "polls", pollId);
-            await setDoc(ref, { [`votes.${currentUser.uid}`]: optionIdx }, { merge: true });
-            loadMatches();
+        window.votePoll = async (pid, idx) => {
+            if(!currentUser) { alert("Faça login para votar."); return; }
+            
+            // Feedback tátil/visual imediato (opcional, pode remover o alert depois)
+            // alert("Computando voto..."); 
+            
+            try {
+                const ref = doc(db, "polls", pid);
+                await setDoc(ref, { [`votes.${currentUser.uid}`]: idx }, { merge: true });
+                
+                // Recarrega apenas para atualizar a barra visualmente
+                // (Em um app ideal usaríamos onSnapshot, mas loadMatches serve aqui)
+                await loadMatches(); 
+            } catch(e) {
+                console.error("Erro ao votar:", e);
+                alert("Erro ao salvar voto.");
+            }
         };
         async function loadMatches() {
         const container = document.getElementById('matchesScreen');
@@ -3253,6 +3288,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
