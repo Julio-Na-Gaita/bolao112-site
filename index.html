@@ -2619,14 +2619,14 @@ async function loadProfile() {
             const u = snap.data(); 
             const avatar = getAvatarUrl(u.photoBase64, u.name || u.username);
 
-            // --- LÓGICA FINANCEIRA ORIGINAL (RESTAURADA) ---
+            // --- LÓGICA FINANCEIRA (Mantém verificação de pagamento) ---
             const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
             const currMonth = months[new Date().getMonth()];
             const payments = u.payments || {};
-            // Regra: Se for 2026, verifica o mês. Se for antes, assume pago ou verifica débitos.
+            // Regra: Se for antes de 2026, considera pago (ou verifique sua regra específica)
             const isPaid = (new Date().getFullYear() < 2026) || (payments[currMonth] === true);
             
-            // Define o visual do cartão (Verde ou Vermelho)
+            // Define o visual do botão financeiro
             const finCardClass = isPaid 
                 ? "bg-green-50 border-green-200 text-green-800" 
                 : "bg-red-50 border-red-200 text-red-800 animate-pulse";
@@ -2634,35 +2634,50 @@ async function loadProfile() {
             const finStatusText = isPaid ? "MENSALIDADE EM DIA" : "PAGAMENTO PENDENTE";
             const finIcon = isPaid ? "fa-check-circle" : "fa-exclamation-circle";
 
-            // HTML DO MODAL PIX (Escondido)
+            // --- HTML DO MODAL PIX (RESTAURADO COM A IMAGEM DE FUNDO) ---
             const pixModalHTML = `
-            <div id="pixArea" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onclick="if(event.target === this) this.classList.add('hidden')">
-                <div class="bg-white rounded-lg w-full max-w-sm overflow-hidden" onclick="event.stopPropagation()">
-                    <div class="relative h-24 theme-bg-primary bg-[#006400] flex items-center justify-center">
-                        <i class="fas fa-qrcode text-6xl text-white opacity-50"></i>
-                        <h3 class="absolute bottom-2 text-white font-black uppercase tracking-widest">Pagamento Pix</h3>
-                        <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-white"><i class="fas fa-times"></i></button>
+            <div id="pixArea" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="if(event.target === this) this.classList.add('hidden')">
+                <div class="relative bg-white rounded-lg w-full max-w-sm overflow-hidden shadow-2xl border border-gray-200">
+                    <div class="absolute inset-0 z-0">
+                        <img src="bg_pix.jpeg" class="w-full h-full object-cover opacity-50">
                     </div>
-                    <div class="p-6 text-center space-y-4">
-                         <div>
-                            <p class="text-xs text-gray-500 font-bold uppercase">Valor da Mensalidade</p>
-                            <p class="text-4xl font-black theme-text-primary text-[#006400]">R$ 15,00</p>
-                         </div>
-                         <div class="bg-gray-100 p-3 rounded text-left">
-                            <p class="text-[10px] font-bold text-gray-500">Chave Pix (E-mail):</p>
-                            <div class="flex gap-2">
-                                <input type="text" value="admin@bolao112.com" readonly class="flex-1 bg-white border rounded px-2 text-xs font-bold text-gray-700" id="pixKeyInput">
-                                <button onclick="navigator.clipboard.writeText('admin@bolao112.com'); alert('Chave copiada!')" class="bg-[#006400] text-white px-3 rounded shadow"><i class="fas fa-copy"></i></button>
+                    
+                    <div class="relative z-10 p-6 pt-8 text-center">
+                        <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-[#006400] p-2 hover:scale-110 transition-transform"><i class="fas fa-times text-xl"></i></button>
+                        
+                        <div class="mb-4">
+                            <i class="fas fa-qrcode text-4xl text-[#006400] drop-shadow-sm"></i>
+                            <p class="font-black text-[#006400] text-xl mt-2 uppercase">PAGAMENTO PIX</p>
+                            <div class="h-1 w-16 bg-[#FFD700] mx-auto rounded-full mt-2"></div>
+                        </div>
+
+                        <div class="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-gray-100 shadow-sm mb-4">
+                            <p class="text-xs font-bold text-gray-800 uppercase mb-1">Valor da Mensalidade</p>
+                            <p class="text-4xl font-black text-black tracking-tight">R$ 15,00</p>
+                            <p class="text-[10px] text-gray-600 mt-2 font-bold">Beneficiário: <span class="text-[#006400]">MATHEUS FERREIRA ALVES</span></p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <button onclick="navigator.clipboard.writeText('admin@bolao112.com'); alert('Chave PIX copiada!')" class="w-full bg-[#32BCAD] hover:bg-[#2aa89a] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex items-center justify-center gap-2 transition-colors">
+                                <i class="fas fa-copy text-lg"></i> PIX COPIA E COLA (E-mail)
+                            </button>
+                            
+                            <div class="bg-white/90 border rounded px-3 py-2 flex justify-between items-center">
+                                <input type="text" value="admin@bolao112.com" readonly class="bg-transparent text-xs font-bold text-gray-600 w-full outline-none">
                             </div>
-                            <p class="text-[9px] text-gray-400 mt-1">Beneficiário: Matheus Ferreira</p>
-                         </div>
-                         <button onclick="window.open('https://wa.me/5585988837389?text=Segue%20o%20comprovante!', '_blank')" class="w-full bg-[#25D366] text-white py-3 rounded font-bold shadow-lg btn-press flex items-center justify-center gap-2">
-                            <i class="fab fa-whatsapp text-lg"></i> ENVIAR COMPROVANTE
-                         </button>
+                        </div>
+
+                        <div class="border-t border-gray-300/50 pt-4 mt-4">
+                            <p class="text-[10px] font-bold text-gray-700 mb-2">Já fez o pagamento?</p>
+                            <button onclick="window.open('https://wa.me/5585988837389?text=Segue%20o%20comprovante!', '_blank')" class="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex items-center justify-center gap-2 transition-colors">
+                                <i class="fab fa-whatsapp text-lg"></i> ENVIAR COMPROVANTE
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>`;
 
+            // HTML DA TELA DE PERFIL
             const profileHTML = `
             <div id="profileScreen" class="animate-fade-in p-4">
                 ${pixModalHTML}
@@ -2711,7 +2726,7 @@ async function loadProfile() {
                 <div class="space-y-3 mb-8">
                      <div id="financialCard" class="p-4 rounded-lg border shadow-sm cursor-pointer btn-press flex justify-between items-center transition-colors ${finCardClass}" onclick="document.getElementById('pixArea').classList.remove('hidden')">
                         <div class="text-left">
-                            <p class="font-black text-sm">${finStatusText}</p>
+                            <p class="font-black text-sm theme-text-primary">${finStatusText}</p>
                             <p class="text-[10px] font-bold opacity-70">Toque para detalhes</p>
                         </div>
                         <i class="fas ${finIcon} text-2xl"></i>
@@ -3566,6 +3581,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
