@@ -1075,7 +1075,7 @@
             </div>`;
         };
 
-        // 3. Renderiza Enquete (Correção de Clique Definitiva)
+        // 3. Renderiza Enquete (CORRIGIDO: Clique e Visual)
         const renderPoll = (poll) => {
             if (!poll || !poll.active) return '';
             const totalVotes = Object.keys(poll.votes || {}).length;
@@ -1097,10 +1097,9 @@
                 const textColor = isSelected ? 'text-[#006400]' : 'text-gray-700';
                 const border = isSelected ? 'border-[#FFD700] border-2' : 'border-gray-200 border';
                 
-                // Z-Index e Pointer Events corrigidos para garantir o clique
+                // CORREÇÃO: pointer-events-none nos filhos garante que o clique vá para a div pai
                 optionsHtml += `
                 <div onclick="window.votePoll('${poll.id}', ${idx})" class="mb-2 relative rounded-lg overflow-hidden ${border} bg-white h-10 px-3 cursor-pointer btn-press shadow-sm select-none flex items-center justify-between group hover:bg-gray-50">
-                    
                     <div class="absolute top-0 left-0 bottom-0 ${barColor} opacity-30 transition-all duration-500 pointer-events-none" style="width: ${pct}%; z-index: 0;"></div>
                     
                     <span class="relative z-10 text-xs font-bold ${textColor} pointer-events-none flex items-center">
@@ -1122,46 +1121,36 @@
             </div>`;
         };
 
-        // Função de Voto
+        // Função de Voto (Limpa e Única)
         window.votePoll = async (pid, idx) => {
             if(!currentUser) { alert("Faça login para votar."); return; }
-            
-            // Verifica se enquete expirou
-            const pData = activePolls[pid]; // Tenta pegar do cache local se possível
-            // (Opcional: lógica de expiração aqui, mas o Firestore resolve)
-
             try {
-                // Atualiza UI instantaneamente (Otimista)
-                // ... (Poderíamos atualizar o DOM aqui, mas o reload é rápido o suficiente)
-                
                 const ref = doc(db, "polls", pid);
                 await setDoc(ref, { [`votes.${currentUser.uid}`]: idx }, { merge: true });
-                
-                // Recarrega para atualizar as barras
-                loadMatches(); 
+                loadMatches(); // Atualiza a tela para ver o voto computado
             } catch(e) {
                 console.error("Erro ao votar:", e);
-                alert("Erro ao registrar voto. Tente novamente.");
+                alert("Erro ao registrar voto.");
             }
         };
 
-        window.votePoll = async (pid, idx) => {
-            if(!currentUser) { alert("Faça login para votar."); return; }
+        // --- FUNÇÃO DE NOTÍCIAS (LETREIRO) ---
+        const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users) => {
+            let segments = [];
+            const addSegment = (text, color) => segments.push(`<span style="color: ${color}; font-weight: 900; margin: 0 10px;">${text}</span>`);
             
-            // Feedback tátil/visual imediato (opcional, pode remover o alert depois)
-            // alert("Computando voto..."); 
-            
-            try {
-                const ref = doc(db, "polls", pid);
-                await setDoc(ref, { [`votes.${currentUser.uid}`]: idx }, { merge: true });
-                
-                // Recarrega apenas para atualizar a barra visualmente
-                // (Em um app ideal usaríamos onSnapshot, mas loadMatches serve aqui)
-                await loadMatches(); 
-            } catch(e) {
-                console.error("Erro ao votar:", e);
-                alert("Erro ao salvar voto.");
+            if (newsSnap && newsSnap.exists()) {
+                (newsSnap.data().items || []).forEach(item => {
+                    if (typeof item === 'object') addSegment(item.text, `#${item.color.replace('FF','')}`);
+                    else addSegment(item, "#EF6C00");
+                });
             }
+            if (finishedMatches.length > 0) {
+                 addSegment("🏆 QUEM SERÁ O REI DESTE MÊS?", "#FFD700");
+                 addSegment("⚽ CONFIRA A TABELA ATUALIZADA!", "#00E676");
+            }
+            if (segments.length === 0) addSegment("⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!", "#FFD700");
+            return segments.join(' | ') + " | " + segments.join(' | ');
         };
         async function loadMatches() {
         const container = document.getElementById('matchesScreen');
@@ -3356,6 +3345,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
