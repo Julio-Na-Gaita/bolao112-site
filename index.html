@@ -976,14 +976,7 @@
         };
       
             return `
-            <div class="card-cut bg-white border-t-4 border-blue-600 mb-4 p-4 shadow-md relative overflow-hidden">
-                <div class="flex justify-between items-start mb-3">
-                    <h3 class="font-black text-blue-800 text-sm uppercase"><i class="fas fa-poll-h mr-2"></i>${poll.question}</h3>
-                    ${isExpired ? '<span class="bg-red-100 text-red-600 text-[8px] font-bold px-2 py-1 rounded">ENCERRADA</span>' : ''}
-                </div>
-                <div>${optionsHtml}</div>
-                <p class="text-[9px] text-gray-400 text-right mt-2 font-bold">${totalVotes} votos • ${isExpired ? 'Finalizada' : 'Toque para votar'}</p>
-            </div>`;
+            
         };
 
        // --- GERADORES DE COMPONENTES SDUI (Banners, Enquetes, Letreiro) ---
@@ -3261,6 +3254,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
