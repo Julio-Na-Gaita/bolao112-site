@@ -468,72 +468,74 @@
         let activePolls = {}; // Cache das enquetes
         // --- MOTOR DE TEMA E ÁUDIO ---
     
-    // Configuração Padrão
     let userPreferences = {
         primaryColor: '#006400',
         secondaryColor: '#FFD700',
-        skin: 'padrao', // padrao, ceara, fortaleza
+        skin: 'padrao', 
         font: "'PT Serif', serif",
-        audioPack: 'default' // default, estadio, memes
+        audioPack: 'som_pop.mp3' // Padrão agora é o arquivo direto
     };
 
-    // Sons (Você deve ter esses arquivos na pasta assets ou url externa)
-    const audioLibrary = {
-        default: new Audio('assets/sounds/pop.mp3'), // Som curto de "ploc"
-        estadio: new Audio('assets/sounds/whistle.mp3'), // Apito de juiz
-        memes: new Audio('assets/sounds/uepa.mp3') // Uepa!
+    // Lista de Sons (Arquivos na Raiz)
+    const audioFiles = {
+        'som_pop.mp3': 'Padrão (Pop)',
+        'som_apito.mp3': 'Estádio (Apito)',
+        'som_mario.mp3': 'Game (Mario)',
+        'som_metalgear.mp3': 'Alerta (Metal Gear)',
+        'som_tada.mp3': 'Sucesso (Tada)',
+        'som_teleporte.mp3': 'Sci-Fi (Teleporte)',
+        'som_tiro.mp3': 'Ação (Tiro)',
+        'som_uepa.mp3': 'Meme (Uepa)',
+        'som_receba.mp3': 'Meme (Receba)',
+        'som_aipaipara.mp3': 'Meme (Ai Pai Para)',
+        'som_error.mp3': 'Erro (Windows)'
     };
 
-    // Carregar Preferências Salvas
     const loadTheme = () => {
         const saved = localStorage.getItem('bolao_theme_v1');
-        if (saved) {
-            userPreferences = JSON.parse(saved);
-        }
+        if (saved) { userPreferences = JSON.parse(saved); }
         applyThemeVisuals();
     };
 
-    // Aplicar Visual
     const applyThemeVisuals = () => {
         const root = document.documentElement;
         
-        // 1. Lógica de Skins (Sobrescreve cores se for time específico)
+        // Aplica Skin
         if (userPreferences.skin === 'ceara') {
             root.style.setProperty('--primary', '#000000');
             root.style.setProperty('--secondary', '#FFFFFF');
-            root.style.setProperty('--watermark', "url('assets/images/escudo_ceara.png')"); // Caminho da imagem
+            // Como a imagem não existe, usamos um gradiente ou cor sólida por enquanto para garantir feedback
+            document.body.style.backgroundImage = "none"; 
+            document.body.style.backgroundColor = "#e0e0e0"; 
         } else if (userPreferences.skin === 'fortaleza') {
-            root.style.setProperty('--primary', '#1155cc'); // Azul Fortaleza
-            root.style.setProperty('--secondary', '#bb0a1e'); // Vermelho Fortaleza
-            root.style.setProperty('--watermark', "url('assets/images/escudo_fortaleza.png')");
+            root.style.setProperty('--primary', '#1155cc');
+            root.style.setProperty('--secondary', '#bb0a1e');
+            document.body.style.backgroundImage = "none";
+            document.body.style.backgroundColor = "#e3f2fd";
         } else {
-            // Modo Personalizado ou Padrão
             root.style.setProperty('--primary', userPreferences.primaryColor);
             root.style.setProperty('--secondary', userPreferences.secondaryColor);
-            root.style.setProperty('--watermark', 'none');
+            document.body.style.backgroundImage = "none"; // Reseta fundo
+            document.body.style.backgroundColor = "#f3f4f6";
         }
 
-        // 2. Fonte
         root.style.setProperty('--app-font', userPreferences.font);
     };
 
-    // Salvar Preferências
     const saveTheme = (newPrefs) => {
         userPreferences = { ...userPreferences, ...newPrefs };
         localStorage.setItem('bolao_theme_v1', JSON.stringify(userPreferences));
         applyThemeVisuals();
     };
 
-    // Tocar Som de Voto
-    const playVoteSound = () => {
-        const sound = audioLibrary[userPreferences.audioPack];
-        if (sound) {
-            sound.currentTime = 0; // Reinicia o som se já estiver tocando
-            sound.play().catch(e => console.log("Interação de áudio bloqueada pelo navegador", e));
-        }
+    // Tocar Som (Cria o objeto Audio na hora para evitar erros de carregamento)
+    const playVoteSound = (previewFile) => {
+        const file = previewFile || userPreferences.audioPack;
+        const audio = new Audio(file);
+        audio.volume = 0.5;
+        audio.play().catch(e => console.log("Áudio bloqueado:", e));
     };
 
-    // INICIALIZA O TEMA AO CARREGAR
     loadTheme();
         // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
         const getAvatarUrl = (base64, name) => {
@@ -2598,8 +2600,38 @@ async function loadProfile() {
             const u = snap.data(); 
             const avatar = getAvatarUrl(u.photoBase64, u.name || u.username);
 
+            // HTML DO MODAL PIX (Escondido) - Injetado aqui para garantir que exista
+            const pixModalHTML = `
+            <div id="pixArea" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onclick="this.classList.add('hidden')">
+                <div class="bg-white rounded-lg w-full max-w-sm overflow-hidden" onclick="event.stopPropagation()">
+                    <div class="relative h-24 bg-[#006400] flex items-center justify-center">
+                        <i class="fas fa-qrcode text-6xl text-white opacity-50"></i>
+                        <h3 class="absolute bottom-2 text-white font-black uppercase tracking-widest">Pagamento Pix</h3>
+                        <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-white"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="p-6 text-center space-y-4">
+                         <div>
+                            <p class="text-xs text-gray-500 font-bold uppercase">Valor da Mensalidade</p>
+                            <p class="text-4xl font-black text-[#006400]">R$ 15,00</p>
+                         </div>
+                         <div class="bg-gray-100 p-3 rounded text-left">
+                            <p class="text-[10px] font-bold text-gray-500">Chave Pix (E-mail):</p>
+                            <div class="flex gap-2">
+                                <input type="text" value="admin@bolao112.com" readonly class="flex-1 bg-white border rounded px-2 text-xs font-bold text-gray-700" id="pixKeyInput">
+                                <button onclick="navigator.clipboard.writeText('admin@bolao112.com'); alert('Chave copiada!')" class="bg-[#006400] text-white px-3 rounded shadow"><i class="fas fa-copy"></i></button>
+                            </div>
+                            <p class="text-[9px] text-gray-400 mt-1">Beneficiário: Matheus Ferreira</p>
+                         </div>
+                         <button onclick="window.open('https://wa.me/5585988837389?text=Segue%20o%20comprovante!', '_blank')" class="w-full bg-[#25D366] text-white py-3 rounded font-bold shadow-lg btn-press flex items-center justify-center gap-2">
+                            <i class="fab fa-whatsapp text-lg"></i> ENVIAR COMPROVANTE
+                         </button>
+                    </div>
+                </div>
+            </div>`;
+
             const profileHTML = `
             <div id="profileScreen" class="animate-fade-in p-4">
+                ${pixModalHTML}
                 
                 <div class="card-cut relative overflow-hidden bg-white shadow-lg mb-6 border-l-4 theme-border-primary">
                     <div class="absolute right-0 top-0 p-2 opacity-10">
@@ -2621,31 +2653,23 @@ async function loadProfile() {
 
                 <div class="grid grid-cols-2 gap-3 mb-6">
                     <button onclick="openThemeEditor()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
-                        <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                            <i class="fas fa-palette text-lg"></i>
-                        </div>
+                        <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600"><i class="fas fa-palette text-lg"></i></div>
                         <span class="text-xs font-bold text-gray-700">Personalizar</span>
                     </button>
 
                     <label class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press cursor-pointer">
-                        <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-                            <i class="fas fa-camera text-lg"></i>
-                        </div>
+                        <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600"><i class="fas fa-camera text-lg"></i></div>
                         <span class="text-xs font-bold text-gray-700">Mudar Foto</span>
                         <input type="file" id="uploadPhoto" accept="image/*" class="hidden" onchange="handlePhotoUpload(this)">
                     </label>
 
                     <button onclick="changePassword()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
-                        <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
-                            <i class="fas fa-lock text-lg"></i>
-                        </div>
+                        <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600"><i class="fas fa-lock text-lg"></i></div>
                         <span class="text-xs font-bold text-gray-700">Senha</span>
                     </button>
 
                     <button onclick="showAppGuide()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
-                        <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
-                            <i class="fas fa-book text-lg"></i>
-                        </div>
+                        <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600"><i class="fas fa-book text-lg"></i></div>
                         <span class="text-xs font-bold text-gray-700">Guia/Regras</span>
                     </button>
                 </div>
@@ -2655,31 +2679,22 @@ async function loadProfile() {
                         <div class="flex justify-between items-center">
                             <div>
                                 <p class="font-black text-sm theme-text-primary">FINANCEIRO</p>
-                                <p class="text-[10px] text-gray-500 font-bold">Gerenciar Mensalidade</p>
+                                <p class="text-[10px] text-gray-500 font-bold">Toque para pagar</p>
                             </div>
                             <i class="fas fa-wallet text-2xl text-gray-300"></i>
                         </div>
                     </div>
-
                     ${u.isAdmin ? `<button onclick="openAdminMenu()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold text-xs shadow-lg btn-press"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>` : ''}
                 </div>
 
                 <div class="text-center pb-safe">
-                    <div class="version-chip">
-                        Web v1.7.0
-                    </div>
+                    <div class="version-chip">Web v1.6.6</div>
                     <p class="text-[9px] text-gray-400 mt-2 font-bold uppercase">Bolão 112 F.C • 2026</p>
                 </div>
-            </div>
-            `;
+            </div>`;
 
-            // Injeta na tela (certifique-se de que a div profileScreen no HTML esteja vazia inicialmente)
             document.getElementById('profileScreen').innerHTML = profileHTML;
-            // Mostra a tela
             document.getElementById('profileScreen').classList.remove('hidden');
-
-            // Atualiza status financeiro (lógica existente adaptada)
-            // ... (Adicione aqui sua lógica de verificar pagamentos e mudar a cor do card financeiro) ...
 
         } catch (error) { console.error("Erro no loadProfile:", error); } 
     }
@@ -2687,6 +2702,19 @@ window.openThemeEditor = () => {
         const modal = document.getElementById('modalOverlay');
         const cont = document.getElementById('modalContainer');
         modal.classList.remove('hidden');
+        
+        // Gera HTML dos Sons dinamicamente
+        let soundsHtml = '';
+        for (const [file, label] of Object.entries(audioFiles)) {
+            const isSelected = userPreferences.audioPack === file;
+            soundsHtml += `
+            <button onclick="saveTheme({audioPack: '${file}'}); playVoteSound('${file}')" class="w-full text-left p-3 bg-white border rounded flex justify-between items-center mb-2 ${isSelected ? 'border-green-500 bg-green-50 ring-1 ring-green-500' : ''}">
+                <span class="text-xs font-bold flex items-center gap-2">
+                    <i class="fas fa-music text-gray-400"></i> ${label}
+                </span>
+                ${isSelected ? '<i class="fas fa-check text-green-600"></i>' : ''}
+            </button>`;
+        }
 
         cont.innerHTML = `
         <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden h-[80vh] flex flex-col">
@@ -2717,40 +2745,19 @@ window.openThemeEditor = () => {
                             <label class="text-[9px] font-bold mb-1">Secundária</label>
                             <input type="color" value="${userPreferences.secondaryColor}" onchange="saveTheme({secondaryColor: this.value})">
                         </div>
-                        <p class="text-[9px] text-gray-400 ml-2">Selecione para mudar botões e barras.</p>
                     </div>
-                </div>
-
-                <div>
-                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Tipografia</h4>
-                    <select onchange="saveTheme({font: this.value})" class="w-full p-2 text-xs border rounded bg-white">
-                        <option value="'PT Serif', serif" ${userPreferences.font.includes('PT Serif')?'selected':''}>Clássica (Serif)</option>
-                        <option value="'Roboto', sans-serif" ${userPreferences.font.includes('Roboto')?'selected':''}>Moderna (Sans)</option>
-                        <option value="'Bebas Neue', cursive" ${userPreferences.font.includes('Bebas')?'selected':''}>Manchete (Bebas)</option>
-                        <option value="'Pacifico', cursive" ${userPreferences.font.includes('Pacifico')?'selected':''}>Handwritten (Pacifico)</option>
-                        <option value="'Press Start 2P', cursive" ${userPreferences.font.includes('Press Start')?'selected':''}>Gamer (Pixel)</option>
-                         <option value="'Creepster', cursive" ${userPreferences.font.includes('Creepster')?'selected':''}>Terror</option>
-                    </select>
                 </div>
 
                 <div>
                     <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Game Feel (Sons de Voto)</h4>
-                    <div class="space-y-2">
-                        <button onclick="saveTheme({audioPack: 'default'}); playVoteSound()" class="w-full text-left p-3 bg-white border rounded flex justify-between items-center ${userPreferences.audioPack === 'default' ? 'border-green-500 bg-green-50' : ''}">
-                            <span class="text-xs font-bold">🎵 Padrão (Pop Suave)</span>
-                            ${userPreferences.audioPack === 'default' ? '<i class="fas fa-check text-green-600"></i>' : ''}
-                        </button>
-                        <button onclick="saveTheme({audioPack: 'estadio'}); playVoteSound()" class="w-full text-left p-3 bg-white border rounded flex justify-between items-center ${userPreferences.audioPack === 'estadio' ? 'border-green-500 bg-green-50' : ''}">
-                            <span class="text-xs font-bold">🏟️ Estádio (Apito)</span>
-                            ${userPreferences.audioPack === 'estadio' ? '<i class="fas fa-check text-green-600"></i>' : ''}
-                        </button>
-                        <button onclick="saveTheme({audioPack: 'memes'}); playVoteSound()" class="w-full text-left p-3 bg-white border rounded flex justify-between items-center ${userPreferences.audioPack === 'memes' ? 'border-green-500 bg-green-50' : ''}">
-                            <span class="text-xs font-bold">🤣 Memes (Uepa/Receba)</span>
-                            ${userPreferences.audioPack === 'memes' ? '<i class="fas fa-check text-green-600"></i>' : ''}
-                        </button>
+                    <div class="max-h-40 overflow-y-auto pr-1">
+                        ${soundsHtml}
                     </div>
                 </div>
-
+            </div>
+            
+            <div class="p-3 bg-white border-t">
+                <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-bold shadow btn-press text-sm">SALVAR E FECHAR</button>
             </div>
         </div>
         `;
@@ -3527,6 +3534,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
