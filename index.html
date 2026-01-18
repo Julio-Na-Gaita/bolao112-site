@@ -1011,39 +1011,74 @@
             }
             return url;
         };
-        // 2. Banner de Propaganda
-       const renderBanner = (bannerData) => {
+      // 2. Renderiza Banner (Com suporte a Duplo e Pequeno)
+        const renderBanner = (bannerData) => {
             if (!bannerData || !bannerData.active) return '';
             
-            // Aplica a correção no link da imagem
-            let imgUrl = fixDriveUrl(bannerData.imageUrl || "");
-            let targetUrl = bannerData.targetUrl || "#";
-            
+            // Corrige URLs do Drive
+            const fixDriveUrl = (u) => {
+                if (!u) return "";
+                if (u.includes("drive.google.com") && u.includes("id=")) {
+                    const m = u.match(/id=([a-zA-Z0-9_-]+)/);
+                    if (m && m[1]) return `https://lh3.googleusercontent.com/d/${m[1]}=s1000?authuser=0`;
+                }
+                return u;
+            };
+
+            const type = bannerData.type || "full"; // full, double, small
+            const img1 = fixDriveUrl(bannerData.imageUrl);
+            const link1 = bannerData.targetUrl || "#";
+
+            // LAYOUT DUPLO (Dois quadrados lado a lado)
+            if (type === "double" && bannerData.imageUrl2) {
+                const img2 = fixDriveUrl(bannerData.imageUrl2);
+                const link2 = bannerData.targetUrl2 || "#";
+                return `
+                <div class="card-container mb-4 animate-fade-in grid grid-cols-2 gap-2">
+                    <a href="${link1}" target="_blank" class="block rounded-xl overflow-hidden shadow-md border border-gray-200 relative group aspect-square">
+                        <img src="${img1}" referrerpolicy="no-referrer" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                    </a>
+                    <a href="${link2}" target="_blank" class="block rounded-xl overflow-hidden shadow-md border border-gray-200 relative group aspect-square">
+                        <img src="${img2}" referrerpolicy="no-referrer" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                    </a>
+                </div>`;
+            }
+
+            // LAYOUT PEQUENO (Faixa estreita)
+            if (type === "small") {
+                 return `
+                <div class="card-container mb-4 animate-fade-in">
+                    <a href="${link1}" target="_blank" class="block rounded-lg overflow-hidden shadow-sm border border-gray-200 relative group h-24">
+                        <img src="${img1}" referrerpolicy="no-referrer" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                    </a>
+                </div>`;
+            }
+
+            // LAYOUT PADRÃO (Grande)
             return `
             <div class="card-container mb-4 animate-fade-in">
-                <a href="${targetUrl}" target="_blank" class="block rounded-xl overflow-hidden shadow-lg border border-gray-200 relative group">
-                    <img src="${imgUrl}" referrerpolicy="no-referrer" class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.style.display='none'">
-                    <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                <a href="${link1}" target="_blank" class="block rounded-xl overflow-hidden shadow-lg border border-gray-200 relative group">
+                    <img src="${img1}" referrerpolicy="no-referrer" class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.style.display='none'">
                     ${bannerData.name ? `<div class="absolute bottom-0 right-0 bg-black/60 text-white text-[8px] px-2 py-1 font-bold rounded-tl-lg">${bannerData.name}</div>` : ''}
                 </a>
             </div>`;
         };
 
-        // 3. Enquete
+        // 3. Renderiza Enquete (Correção de Clique)
         const renderPoll = (poll) => {
             if (!poll || !poll.active) return '';
             const totalVotes = Object.keys(poll.votes || {}).length;
             const myVote = poll.votes ? poll.votes[currentUser.uid] : null;
-            // Verificação de segurança para data
-            const now = new Date();
+            
+            // Verificação segura de data
             let isExpired = false;
             if(poll.deadline) {
-                try { isExpired = now > poll.deadline.toDate(); } catch(e) { isExpired = false; }
+                try { isExpired = new Date() > poll.deadline.toDate(); } catch(e) {}
             }
-            
+
             let optionsHtml = '';
             (poll.options || []).forEach((opt, idx) => {
-                let count = 0; 
+                let count = 0;
                 if (poll.votes) Object.values(poll.votes).forEach(v => { if(v == idx) count++; });
                 const pct = totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
                 
@@ -1052,14 +1087,14 @@
                 const textColor = isSelected ? 'text-[#006400]' : 'text-gray-700';
                 const border = isSelected ? 'border-[#FFD700] border-2' : 'border-gray-200 border';
                 
-                // Adiciona preventDefault para garantir o clique
-                const clickAction = isExpired ? '' : `onclick="event.stopPropagation(); window.votePoll('${poll.id}', ${idx})"`;
+                // Força o evento de clique direto na div pai
+                const clickAttr = isExpired ? '' : `onclick="window.votePoll('${poll.id}', ${idx})"`;
 
                 optionsHtml += `
-                <div ${clickAction} class="mb-2 relative rounded-lg overflow-hidden ${border} bg-white p-3 cursor-pointer btn-press shadow-sm group">
-                    <div class="absolute top-0 left-0 bottom-0 ${barColor} opacity-20 transition-all duration-500" style="width: ${pct}%; z-index: 0;"></div>
+                <div ${clickAttr} class="mb-2 relative rounded-lg overflow-hidden ${border} bg-white h-10 flex items-center px-3 cursor-pointer btn-press shadow-sm select-none">
+                    <div class="absolute top-0 left-0 bottom-0 ${barColor} opacity-30 transition-all duration-500" style="width: ${pct}%; z-index: 0;"></div>
                     
-                    <div class="relative flex justify-between items-center z-10 pointer-events-none">
+                    <div class="relative z-10 flex justify-between items-center w-full pointer-events-none">
                         <span class="text-xs font-bold ${textColor}">${opt} ${isSelected ? '<i class="fas fa-check-circle ml-1"></i>' : ''}</span>
                         <span class="text-[10px] font-black text-gray-500">${pct}%</span>
                     </div>
@@ -1072,7 +1107,7 @@
                     <h3 class="font-black text-blue-800 text-sm uppercase"><i class="fas fa-poll-h mr-2"></i>${poll.question}</h3>
                     ${isExpired ? '<span class="bg-red-100 text-red-600 text-[8px] font-bold px-2 py-1 rounded">ENCERRADA</span>' : ''}
                 </div>
-                <div class="flex flex-col gap-1">${optionsHtml}</div>
+                <div class="flex flex-col">${optionsHtml}</div>
                 <p class="text-[9px] text-gray-400 text-right mt-2 font-bold">${totalVotes} votos • ${isExpired ? 'Finalizada' : 'Toque para votar'}</p>
             </div>`;
         };
@@ -3288,6 +3323,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
