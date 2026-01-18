@@ -1011,11 +1011,11 @@
             }
             return url;
         };
-      // 2. Renderiza Banner (Com suporte a Duplo e Pequeno)
+      // 2. Renderiza Banner (Correção de Link e Tamanho)
         const renderBanner = (bannerData) => {
             if (!bannerData || !bannerData.active) return '';
             
-            // Corrige URLs do Drive
+            // 1. Corrige imagem do Drive
             const fixDriveUrl = (u) => {
                 if (!u) return "";
                 if (u.includes("drive.google.com") && u.includes("id=")) {
@@ -1025,57 +1025,67 @@
                 return u;
             };
 
+            // 2. Corrige Link de Destino (Adiciona https:// se faltar)
+            const fixLink = (u) => {
+                if (!u || u === "#") return "#";
+                if (!u.startsWith("http://") && !u.startsWith("https://")) {
+                    return "https://" + u;
+                }
+                return u;
+            };
+
             const type = bannerData.type || "full"; // full, double, small
             const img1 = fixDriveUrl(bannerData.imageUrl);
-            const link1 = bannerData.targetUrl || "#";
+            const link1 = fixLink(bannerData.targetUrl);
 
-            // LAYOUT DUPLO (Dois quadrados lado a lado)
-            if (type === "double" && bannerData.imageUrl2) {
+            // --- LAYOUT DUPLO (Dois quadrados lado a lado 4:3) ---
+            if (type === "double") {
                 const img2 = fixDriveUrl(bannerData.imageUrl2);
-                const link2 = bannerData.targetUrl2 || "#";
+                const link2 = fixLink(bannerData.targetUrl2);
                 return `
                 <div class="card-container mb-4 animate-fade-in grid grid-cols-2 gap-2">
-                    <a href="${link1}" target="_blank" class="block rounded-xl overflow-hidden shadow-md border border-gray-200 relative group aspect-square">
+                    <a href="${link1}" target="_blank" class="block rounded-xl overflow-hidden shadow-md border border-gray-200 relative group aspect-[4/3]">
                         <img src="${img1}" referrerpolicy="no-referrer" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </a>
-                    <a href="${link2}" target="_blank" class="block rounded-xl overflow-hidden shadow-md border border-gray-200 relative group aspect-square">
+                    ${img2 ? `
+                    <a href="${link2}" target="_blank" class="block rounded-xl overflow-hidden shadow-md border border-gray-200 relative group aspect-[4/3]">
                         <img src="${img2}" referrerpolicy="no-referrer" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                    </a>
+                    </a>` : ''}
                 </div>`;
             }
 
-            // LAYOUT PEQUENO (Faixa estreita)
+            // --- LAYOUT PEQUENO (Faixa Estreita 6:1) ---
             if (type === "small") {
                  return `
                 <div class="card-container mb-4 animate-fade-in">
-                    <a href="${link1}" target="_blank" class="block rounded-lg overflow-hidden shadow-sm border border-gray-200 relative group h-24">
+                    <a href="${link1}" target="_blank" class="block rounded-lg overflow-hidden shadow-sm border border-gray-200 relative group aspect-[6/1]">
                         <img src="${img1}" referrerpolicy="no-referrer" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </a>
                 </div>`;
             }
 
-            // LAYOUT PADRÃO (Grande)
+            // --- LAYOUT GRANDE (Padrão ~2.7:1) ---
+            // Se a imagem for muito alta, o 'aspect' vai cortar o excesso para manter o padrão
             return `
             <div class="card-container mb-4 animate-fade-in">
-                <a href="${link1}" target="_blank" class="block rounded-xl overflow-hidden shadow-lg border border-gray-200 relative group">
-                    <img src="${img1}" referrerpolicy="no-referrer" class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.style.display='none'">
+                <a href="${link1}" target="_blank" class="block rounded-xl overflow-hidden shadow-lg border border-gray-200 relative group aspect-[2.7/1]">
+                    <img src="${img1}" referrerpolicy="no-referrer" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.style.display='none'">
                     ${bannerData.name ? `<div class="absolute bottom-0 right-0 bg-black/60 text-white text-[8px] px-2 py-1 font-bold rounded-tl-lg">${bannerData.name}</div>` : ''}
                 </a>
             </div>`;
         };
 
-        // 3. Renderiza Enquete (Correção de Clique)
+        // 3. Renderiza Enquete (Correção de Clique Definitiva)
         const renderPoll = (poll) => {
             if (!poll || !poll.active) return '';
             const totalVotes = Object.keys(poll.votes || {}).length;
             const myVote = poll.votes ? poll.votes[currentUser.uid] : null;
             
-            // Verificação segura de data
             let isExpired = false;
             if(poll.deadline) {
                 try { isExpired = new Date() > poll.deadline.toDate(); } catch(e) {}
             }
-
+            
             let optionsHtml = '';
             (poll.options || []).forEach((opt, idx) => {
                 let count = 0;
@@ -1087,17 +1097,17 @@
                 const textColor = isSelected ? 'text-[#006400]' : 'text-gray-700';
                 const border = isSelected ? 'border-[#FFD700] border-2' : 'border-gray-200 border';
                 
-                // Força o evento de clique direto na div pai
-                const clickAttr = isExpired ? '' : `onclick="window.votePoll('${poll.id}', ${idx})"`;
-
+                // Z-Index e Pointer Events corrigidos para garantir o clique
                 optionsHtml += `
-                <div ${clickAttr} class="mb-2 relative rounded-lg overflow-hidden ${border} bg-white h-10 flex items-center px-3 cursor-pointer btn-press shadow-sm select-none">
-                    <div class="absolute top-0 left-0 bottom-0 ${barColor} opacity-30 transition-all duration-500" style="width: ${pct}%; z-index: 0;"></div>
+                <div onclick="window.votePoll('${poll.id}', ${idx})" class="mb-2 relative rounded-lg overflow-hidden ${border} bg-white h-10 px-3 cursor-pointer btn-press shadow-sm select-none flex items-center justify-between group hover:bg-gray-50">
                     
-                    <div class="relative z-10 flex justify-between items-center w-full pointer-events-none">
-                        <span class="text-xs font-bold ${textColor}">${opt} ${isSelected ? '<i class="fas fa-check-circle ml-1"></i>' : ''}</span>
-                        <span class="text-[10px] font-black text-gray-500">${pct}%</span>
-                    </div>
+                    <div class="absolute top-0 left-0 bottom-0 ${barColor} opacity-30 transition-all duration-500 pointer-events-none" style="width: ${pct}%; z-index: 0;"></div>
+                    
+                    <span class="relative z-10 text-xs font-bold ${textColor} pointer-events-none flex items-center">
+                        ${opt} ${isSelected ? '<i class="fas fa-check-circle ml-2 text-green-600"></i>' : ''}
+                    </span>
+                    
+                    <span class="relative z-10 text-[10px] font-black text-gray-500 pointer-events-none">${pct}%</span>
                 </div>`;
             });
 
@@ -1108,8 +1118,31 @@
                     ${isExpired ? '<span class="bg-red-100 text-red-600 text-[8px] font-bold px-2 py-1 rounded">ENCERRADA</span>' : ''}
                 </div>
                 <div class="flex flex-col">${optionsHtml}</div>
-                <p class="text-[9px] text-gray-400 text-right mt-2 font-bold">${totalVotes} votos • ${isExpired ? 'Finalizada' : 'Toque para votar'}</p>
+                <p class="text-[9px] text-gray-400 text-right mt-2 font-bold">${totalVotes} votos • ${isExpired ? 'Finalizada' : 'Toque na opção para votar'}</p>
             </div>`;
+        };
+
+        // Função de Voto
+        window.votePoll = async (pid, idx) => {
+            if(!currentUser) { alert("Faça login para votar."); return; }
+            
+            // Verifica se enquete expirou
+            const pData = activePolls[pid]; // Tenta pegar do cache local se possível
+            // (Opcional: lógica de expiração aqui, mas o Firestore resolve)
+
+            try {
+                // Atualiza UI instantaneamente (Otimista)
+                // ... (Poderíamos atualizar o DOM aqui, mas o reload é rápido o suficiente)
+                
+                const ref = doc(db, "polls", pid);
+                await setDoc(ref, { [`votes.${currentUser.uid}`]: idx }, { merge: true });
+                
+                // Recarrega para atualizar as barras
+                loadMatches(); 
+            } catch(e) {
+                console.error("Erro ao votar:", e);
+                alert("Erro ao registrar voto. Tente novamente.");
+            }
         };
 
         window.votePoll = async (pid, idx) => {
@@ -3323,6 +3356,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
