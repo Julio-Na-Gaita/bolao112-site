@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -1075,7 +1076,7 @@
             </div>`;
         };
 
-        // 3. Renderiza Enquete (CORRIGIDO: Clique e Visual)
+       // 3. Renderiza Enquete (CORRIGIDO: Clique e Visual)
         const renderPoll = (poll) => {
             if (!poll || !poll.active) return '';
             const totalVotes = Object.keys(poll.votes || {}).length;
@@ -1152,6 +1153,7 @@
             if (segments.length === 0) addSegment("⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!", "#FFD700");
             return segments.join(' | ') + " | " + segments.join(' | ');
         };
+
         async function loadMatches() {
         const container = document.getElementById('matchesScreen');
         document.getElementById('progressBar').classList.remove('hidden');
@@ -3345,22 +3347,4 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
