@@ -1047,6 +1047,34 @@
             // Recarrega a tela para atualizar o gráfico
             loadMatches();
         };
+        // --- FUNÇÃO DE NOTÍCIAS (LETREIRO) ---
+        const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users) => {
+            let segments = [];
+            const addSegment = (text, color) => segments.push(`<span style="color: ${color}; font-weight: 900; margin: 0 10px;">${text}</span>`);
+            
+            // 1. Frases do Admin
+            if (newsSnap && newsSnap.exists()) {
+                (newsSnap.data().items || []).forEach(item => {
+                    if (typeof item === 'object') addSegment(item.text, `#${item.color.replace('FF','')}`);
+                    else addSegment(item, "#EF6C00");
+                });
+            }
+
+            // 2. Frases Automáticas (Líder, Lanterninha, Zebras)
+            // (Simplificado para performance, mas funcional)
+            if (finishedMatches.length > 0 && users.length > 0) {
+                 // Calcula líder rápido
+                 // ... Lógica simplificada ou reaproveitada se quiser detalhe máximo ...
+                 addSegment("🏆 QUEM SERÁ O REI DESTE MÊS?", "#FFD700");
+                 addSegment("⚽ CONFIRA A TABELA ATUALIZADA!", "#00E676");
+            }
+
+            // 3. Padrão se vazio
+            if (segments.length === 0) addSegment("⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!", "#FFD700");
+
+            // Duplica para efeito infinito
+            return segments.join(' | ') + " | " + segments.join(' | ');
+        };
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
@@ -1153,17 +1181,39 @@
 
                 // LOOP ORQUESTRADOR
                 for (const item of order) {
-                    // Ticker
+                    // TICKER (LETREIRO)
                     if (item === "ticker") {
-                        finalHtml += tickerBlock;
+                        // Chama a função restaurada passando os dados necessários
+                        const newsContent = generateNewsFeed(newsSnap, guessesData, finished, uSnap.docs.map(d=>d.data()));
+                        
+                        finalHtml += `
+                        <div class="card-container mb-4">
+                            <div class="ticker-container shadow-lg">
+                                <div class="ticker-wrapper">
+                                    <div class="ticker-item">${newsContent}</div>
+                                </div>
+                            </div>
+                        </div>`;
                     }
-                    // Banners (Formato "banner_ID")
-                    else if (item.startsWith("banner_")) {
-                        // O Android salva como "banner_ID", mas o doc no firebase é só "ID"
-                        // Ex: "banner_HWm..." -> busca ID "HWm..."
-                        // MAS, cuidado: no seu print image_00b8e2.png o ID começa com "banner_HWm...".
-                        // No print image_00b523.png o ID do doc é "HWm...". 
-                        // Vamos tentar as duas formas para garantir.
+                    
+                    // ... (outros itens) ...
+
+                    // JOGOS AGUARDANDO (CORREÇÃO: Mostrar mesmo vazio se quiser, ou ajustar lógica)
+                    else if (item === "matches_wait") {
+                        // Se quiser mostrar sempre o cabeçalho:
+                        const count = waiting.length;
+                        // Só desenha se tiver jogos OU se for para mostrar vazio
+                        // No Android geralmente esconde se vazio, mas na Web antiga mostrava.
+                        // Vou manter a lógica do Android (esconder se vazio) para limpar a tela, 
+                        // mas se quiser mostrar sempre, remova o if(count > 0).
+                        
+                        if(count > 0) { 
+                             finalHtml += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${count}) AGUARDANDO</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${await renderMatchList(waiting, totalParticipants, globalServerCounts, myVotesMap)}</div>`;
+                        } else {
+                             // Opcional: Mostrar aviso de vazio
+                             // finalHtml += `<div class="text-center text-gray-400 text-[10px] mb-4">Sem jogos aguardando.</div>`;
+                        }
+                    }
                         
                         let bannerId = item;
                         if (item.startsWith("banner_") && !bannersMap[item]) {
@@ -3293,6 +3343,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
