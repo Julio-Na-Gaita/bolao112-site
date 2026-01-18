@@ -1082,8 +1082,10 @@
             if(setSnap.exists()) (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo);
             
             const statsMap = {}; const myVotesMap = {};
+            const guessesData = []; // <--- VARIÁVEL QUE FALTAVA
             guessesSnap.forEach(d => {
                 const g = d.data();
+                guessesData.push(g); // <--- PREENCHENDO A VARIÁVEL
                 if(g.userId === currentUser.uid) myVotesMap[g.matchId] = g.teamSelected;
                 if(!statsMap[g.matchId]) statsMap[g.matchId] = { teamA: 0, teamB: 0, total: 0 };
                 if(!statsMap[g.matchId][g.teamSelected]) statsMap[g.matchId][g.teamSelected] = 0;
@@ -3251,6 +3253,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
