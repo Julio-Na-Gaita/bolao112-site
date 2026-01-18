@@ -415,6 +415,9 @@
         let globalServerCounts = {};
         // NOVO: Objeto para guardar as regras do Android
         let appConfig = { chat: true, scout: true, vote: true };
+        // --- NOVAS VARIÁVEIS AQUI ---
+        let layoutOrder = []; // Vai guardar a ordem da tela ["ticker", "banner_X", "matches_open"...]
+        let activePolls = {}; // Cache das enquetes
         // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
         const getAvatarUrl = (base64, name) => {
             // 1. Se tem foto real, usa ela
@@ -971,54 +974,120 @@
                 newBell.onclick = () => alert("Nenhuma nova mensagem.");
             }
         };
-        
+        // --- GERADORES DE COMPONENTES (SDUI) ---
+
+        // 1. Renderiza Banner
+        const renderBanner = (bannerData) => {
+            if (!bannerData || !bannerData.active) return '';
+            // Ajuste para links do Google Drive
+            let imgUrl = bannerData.imageUrl || "";
+            let targetUrl = bannerData.targetUrl || "#";
+            
+            return `
+            <div class="card-container mb-4 animate-fade-in">
+                <a href="${targetUrl}" target="_blank" class="block rounded-xl overflow-hidden shadow-lg border border-gray-200 relative group">
+                    <img src="${imgUrl}" class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105">
+                    <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                    ${bannerData.name ? `<div class="absolute bottom-0 right-0 bg-black/60 text-white text-[8px] px-2 py-1 font-bold rounded-tl-lg">${bannerData.name}</div>` : ''}
+                </a>
+            </div>`;
+        };
+
+        // 2. Renderiza Enquete
+        const renderPoll = (poll) => {
+            if (!poll || !poll.active) return '';
+            const totalVotes = Object.keys(poll.votes || {}).length;
+            const myVote = poll.votes ? poll.votes[currentUser.uid] : null;
+            const now = new Date();
+            const isExpired = poll.deadline ? now > poll.deadline.toDate() : false;
+
+            let optionsHtml = '';
+            (poll.options || []).forEach((opt, idx) => {
+                // Calcula porcentagem
+                let count = 0;
+                if (poll.votes) Object.values(poll.votes).forEach(v => { if(v == idx) count++; });
+                const pct = totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
+                
+                const isSelected = myVote === idx;
+                const barColor = isSelected ? 'bg-[#006400]' : 'bg-gray-400';
+                const textColor = isSelected ? 'text-[#006400]' : 'text-gray-600';
+                const border = isSelected ? 'border-[#FFD700] border-2' : 'border-gray-200 border';
+
+                // Se expirou ou já votou, mostra resultado. Senão, mostra botão.
+                // Mas você disse que pode alterar o voto, então sempre permite clique se não expirou.
+                const clickAction = isExpired ? '' : `onclick="window.votePoll('${poll.id}', ${idx})"`;
+
+                optionsHtml += `
+                <div ${clickAction} class="mb-2 relative rounded-lg overflow-hidden ${border} bg-white p-2 cursor-pointer btn-press shadow-sm">
+                    <div class="absolute top-0 left-0 bottom-0 ${barColor} opacity-20" style="width: ${pct}%"></div>
+                    <div class="relative flex justify-between items-center z-10">
+                        <span class="text-xs font-bold ${textColor}">${opt} ${isSelected ? '<i class="fas fa-check-circle ml-1"></i>' : ''}</span>
+                        <span class="text-[10px] font-black text-gray-500">${pct}%</span>
+                    </div>
+                </div>`;
+            });
+
+            return `
+            <div class="card-cut bg-white border-t-4 border-blue-600 mb-4 p-4 shadow-md relative overflow-hidden">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="font-black text-blue-800 text-sm uppercase"><i class="fas fa-poll-h mr-2"></i>${poll.question}</h3>
+                    ${isExpired ? '<span class="bg-red-100 text-red-600 text-[8px] font-bold px-2 py-1 rounded">ENCERRADA</span>' : ''}
+                </div>
+                <div>${optionsHtml}</div>
+                <p class="text-[9px] text-gray-400 text-right mt-2 font-bold">${totalVotes} votos • ${isExpired ? 'Finalizada' : 'Toque para votar'}</p>
+            </div>`;
+        };
+
+        // Função para votar na enquete
+        window.votePoll = async (pollId, optionIdx) => {
+            if(!currentUser) return;
+            const ref = doc(db, "polls", pollId);
+            // Usamos merge true para não apagar outros votos
+            await setDoc(ref, { [`votes.${currentUser.uid}`]: optionIdx }, { merge: true });
+            // Recarrega a tela para atualizar o gráfico
+            loadMatches();
+        };
         async function loadMatches() {
             const container = document.getElementById('matchesScreen');
             document.getElementById('progressBar').classList.remove('hidden');
             
             try {
-                // 1. Busca TUDO de uma vez
-                const [setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap, newsSnap] = await Promise.all([
+                // 1. Busca TUDO (Adicionado: Layout, Banners, Enquetes)
+                const [setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap, newsSnap, layoutSnap, bannersSnap, pollsSnap] = await Promise.all([
                     getDoc(doc(db, "settings", "competitions")),
                     getDocs(collection(db, "matches")),
                     getDocs(collection(db, "guesses")),
                     getDocs(collection(db, "users")),
                     getDocs(collection(db, "match_comments")),
-                    getDoc(doc(db, "settings", "news"))
+                    getDoc(doc(db, "settings", "news")),
+                    getDoc(doc(db, "settings", "home_layout")), // Layout SDUI
+                    getDocs(collection(db, "banners")),        // Banners
+                    getDocs(collection(db, "polls"))           // Enquetes
                 ]);
 
-                const totalParticipants = uSnap.size || 1; 
-
-                if(setSnap.exists()) { (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo); }
-
-                // Mapas de Estatísticas e Votos
+                // --- PROCESSAMENTO DE DADOS (Igual ao anterior) ---
+                const totalParticipants = uSnap.size || 1;
+                if(setSnap.exists()) (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo);
+                
+                // Mapas de Votos e Estatísticas
                 const statsMap = {};
-                const guessesData = []; 
-                // CRIAÇÃO DO MAPA DE VOTOS DO USUÁRIO (CORREÇÃO AQUI)
-                const myVotesMap = {}; 
-
+                const myVotesMap = {};
                 guessesSnap.forEach(d => {
                     const g = d.data();
-                    guessesData.push(g);
-                    
-                    // Se o palpite for MEU, salva no mapa para acesso rápido
-                    if (g.userId === currentUser.uid) {
-                        myVotesMap[g.matchId] = g.teamSelected;
-                    }
-
-                    if (!statsMap[g.matchId]) statsMap[g.matchId] = { teamA: 0, teamB: 0, total: 0 };
-                    if (!statsMap[g.matchId][g.teamSelected]) statsMap[g.matchId][g.teamSelected] = 0;
+                    if(g.userId === currentUser.uid) myVotesMap[g.matchId] = g.teamSelected;
+                    if(!statsMap[g.matchId]) statsMap[g.matchId] = { teamA: 0, teamB: 0, total: 0 };
+                    if(!statsMap[g.matchId][g.teamSelected]) statsMap[g.matchId][g.teamSelected] = 0;
                     statsMap[g.matchId][g.teamSelected]++;
                     statsMap[g.matchId].total++;
                 });
 
-                const serverCounts = {};
-                commentsSnap.forEach(doc => { const mid = doc.data().matchId; serverCounts[mid] = (serverCounts[mid] || 0) + 1; });
-                globalServerCounts = serverCounts;
-                
-                const now = new Date();
-                let allMatchesList = [];
+                // Chat
+                globalServerCounts = {};
+                commentsSnap.forEach(d => { const mid = d.data().matchId; globalServerCounts[mid] = (globalServerCounts[mid]||0)+1; });
 
+                // Jogos
+                const now = new Date();
+                let matches = [];
                 matchesSnap.forEach(d => {
                     const m = {id:d.id, ...d.data()};
                     if(m.deadline) {
@@ -1026,227 +1095,131 @@
                         m.expired = now > m.deadlineDate;
                         m.final = (m.round || "").toLowerCase() === 'final';
                         m.stats = statsMap[m.id] || {};
-                        allMatchesList.push(m);
+                        matches.push(m);
                     }
                 });
-
-                // Ordenação Mestra
-                allMatchesList.sort((a,b) => {
+                // Ordenação Mestra por Data
+                matches.sort((a,b) => {
                     const timeDiff = a.deadlineDate - b.deadlineDate;
                     if (timeDiff !== 0) return timeDiff;
                     return a.id.localeCompare(b.id);
                 });
+                window.cachedMatches = matches;
 
-                window.cachedMatches = allMatchesList; 
-
+                // Separação
                 let open = [], waiting = [], finished = [];
                 let totalUnread = 0;
-                let unreadInOpen = false, unreadInWaiting = false, unreadInFinished = false;
-
-                allMatchesList.forEach((m, index) => {
-                    m.matchNumber = index + 1;
-                    const sCount = serverCounts[m.id] || 0;
+                matches.forEach((m, idx) => {
+                    m.matchNumber = idx + 1;
+                    const sCount = globalServerCounts[m.id] || 0;
                     const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
-                    if (sCount > lCount) {
-                        totalUnread++;
-                        if (m.winner) unreadInFinished = true; else if (m.expired) unreadInWaiting = true; else unreadInOpen = true;
-                    }
+                    if (sCount > lCount) totalUnread++;
+                    
                     if(m.winner) finished.push(m); else if(m.expired) waiting.push(m); else open.push(m);
                 });
-
                 waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate);
-                finished.sort((a,b)=>b.deadlineDate-a.deadlineDate); 
+                finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
+
+                // --- PROCESSAMENTO SDUI (NOVO) ---
                 
-                // MANTENHA AQUI O BLOCO DO "generateNewsFeed" QUE JÁ EXISTE NO SEU CÓDIGO
-                // VOU PULAR DIRETO PARA A MONTAGEM DO HTML COM A CORREÇÃO:
+                // 1. Prepara Layout
+                let order = ["ticker", "matches_open", "matches_wait", "matches_done"]; // Fallback
+                if (layoutSnap.exists() && layoutSnap.data().order) {
+                    order = layoutSnap.data().order;
+                }
+
+                // 2. Prepara Banners (Mapa ID -> Dados)
+                const bannersMap = {};
+                bannersSnap.forEach(d => bannersMap[d.id] = d.data());
+
+                // 3. Prepara Enquetes (Mapa ID -> Dados)
+                const pollsMap = {};
+                pollsSnap.forEach(d => pollsMap[d.id] = {id: d.id, ...d.data()});
+
+                // 4. Monta o HTML com base na ORDEM
+                let finalHtml = "";
                 
-                // --- INÍCIO DO CÓDIGO DO LETREIRO QUE VOCÊ JÁ TEM ---
-                const generateNewsFeed = () => {
-                    let newsSegments = []; 
-                    const addSegment = (text, colorHex) => { newsSegments.push(`<span style="color: ${colorHex}; font-weight: 900;">${text}</span>`); };
-                    
-                    const C_GOLD = "#FFD700"; const C_BLUE_LIGHT = "#4FC3F7"; const C_GRAY = "#808080"; 
-                    const C_ORANGE = "#FF6D00"; const C_RED = "#FF5252"; const C_ALIEN = "#64DD17"; 
-                    const C_FIRE = "#00E676"; const C_DIAMOND = "#00E5FF"; const C_MAGIC = "#E040FB"; 
-                    const C_WHITE = "#FFFFFF"; const C_SILVER = "#C0C0C0"; const C_BRONZE = "#CD7F32";
-
-                    // 1. ZEBRA (<20%)
-                    const zebraMatchIds = [];
-                    if (totalParticipants > 0) {
-                        finished.forEach(m => {
-                            const winnerVotes = guessesData.filter(g => g.matchId === m.id && g.teamSelected === m.winner).length;
-                            if ((winnerVotes / totalParticipants) < 0.20) zebraMatchIds.push(m.id);
-                        });
-                    }
-
-                    // 2. Dados Usuários
-                    const baseUsers = [];
-                    uSnap.forEach(u => baseUsers.push({ id: u.id, name: u.data().name || u.data().username || "Anônimo", debts: u.data().debts || 0 }));
-
-                    // 3. Ranking Snapshot
-                    const rankingSnapshot = baseUsers.map(u => {
-                        let pts = 0; let victories = 0; let finalsWon = 0; let simStreak = 0; let userMedals = []; 
-                        const userGuesses = guessesData.filter(g => g.userId === u.id);
-                        const matchesChronological = [...finished].reverse();
-
-                        matchesChronological.forEach(m => {
-                            const g = userGuesses.find(ug => ug.matchId === m.id);
-                            const isHit = g && g.teamSelected === m.winner;
-                            if (isHit) {
-                                pts += (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
-                                victories++; simStreak++; if (m.round && m.round.toLowerCase() === 'final') finalsWon++;
-                                if (simStreak === 3) userMedals.push("🔥"); if (simStreak === 5) userMedals.push("🎯"); if (simStreak === 10) userMedals.push("👽");
-                                if (zebraMatchIds.includes(m.id)) userMedals.push("🦓");
-                            } else { simStreak = 0; }
-                        });
-
-                        const oitavasMatches = finished.filter(m => m.round === "Oitavas de final");
-                        const oitavasByComp = {}; oitavasMatches.forEach(m => { if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = []; oitavasByComp[m.competition].push(m); });
-                        Object.values(oitavasByComp).forEach(matches => { 
-                            if (matches.length === 8) { 
-                                const hits = matches.filter(m => { const g = userGuesses.find(ug => ug.matchId === m.id); return g && g.teamSelected === m.winner; }).length; 
-                                if (hits === 8) { pts += 3; userMedals.push("💎"); } 
-                            } 
-                        });
-
-                        if (finalsWon > 0) userMedals.push("🔮");
-                        if (victories >= 50) { const qtd = Math.floor(victories/50); for(let k=0; k<qtd; k++) userMedals.push("🎓"); }
-                        pts -= (u.debts * 3);
-
-                        return { name: u.name.split(' ')[0].toUpperCase(), pts: pts, debts: u.debts, medals: userMedals, id: u.id };
-                    }).sort((a, b) => {
-                        if (b.pts !== a.pts) return b.pts - a.pts;
-                        if (a.debts !== b.debts) return a.debts - b.debts;
-                        const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
-                        for (let icon of hierarchy) {
-                            const countA = a.medals.filter(m => m === icon).length;
-                            const countB = b.medals.filter(m => m === icon).length;
-                            if (countB !== countA) return countB - countA;
-                        }
-                        return 0;
-                    });
-
-                    // Strings Automáticas
-                    if (finished.length > 0 && rankingSnapshot.length > 0) {
-                        const lider = rankingSnapshot[0];
-                        const lanterna = rankingSnapshot[rankingSnapshot.length - 1];
-                        addSegment(`   👑 SEGUE O LÍDER! O ${lider.name} TÁ TRANQUILO COM SEUS ${lider.pts} PTS!   |`, C_GOLD);
-                        if (rankingSnapshot.length >= 2) addSegment(`   🥈 O ${rankingSnapshot[1].name} TÁ NA COLA DO LÍDER!   |`, C_SILVER);
-                        if (rankingSnapshot.length >= 3) addSegment(`   🥉 ${rankingSnapshot[2].name} FECHA O PÓDIO!   |`, C_BRONZE);
-                        if (rankingSnapshot.length >= 4) addSegment(`   👀 OLHO NO ${rankingSnapshot[3].name}! TÁ CHEGANDO NO G3!   |`, C_BLUE_LIGHT);
-                        if (rankingSnapshot.length >= 7) addSegment(`   😐 ${rankingSnapshot[Math.floor(rankingSnapshot.length/2)].name} TÁ NO MARASMO...   |`, C_GRAY);
-                        if (rankingSnapshot.length >= 3) {
-                            const porteiro = rankingSnapshot[rankingSnapshot.length-3];
-                            addSegment(`   ⚓ CUIDADO ${porteiro.name}! O Z-2 TÁ TE PUXANDO!   |`, C_ORANGE);
-                        }
-                        if (rankingSnapshot.length > 1) addSegment(`   🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA?   |`, C_RED);
-
-                        const recent10 = finished.slice(0, 10);
-                        baseUsers.forEach(u => {
-                            let streak = 0; let isNegative = false;
-                            for (let i = 0; i < recent10.length; i++) {
-                                const m = recent10[i]; const g = guessesData.find(x => x.userId === u.id && x.matchId === m.id); const vote = g ? g.teamSelected : null;
-                                if (vote && vote === m.winner) { if (isNegative) break; streak++; } else { if (streak > 0 && !isNegative) break; isNegative = true; streak++; }
-                            }
-                            const name = u.name.split(' ')[0].toUpperCase();
-                            if (!isNegative) {
-                                if (streak >= 10) addSegment(`   👽 CHAMEM A NASA! O ${name} É DE OUTRO MUNDO (${streak} ACERTOS)!   |`, C_ALIEN);
-                                else if (streak >= 5) addSegment(`   🎯 TEM UM MITO ENTRE NÓS! ${name} CRAVOU ${streak} SEGUIDAS!   |`, C_GOLD);
-                                else if (streak >= 3) addSegment(`   🔥 ${name} TÁ CRUEL, DOIDO! (${streak} ACERTOS SEGUIDOS)   |`, C_FIRE);
-                            } else {
-                                if (streak >= 3) addSegment(`   🥬 ${name} TÁ COM MÃO DE ALFACE! (${streak} ERROS SEGUIDOS)   |`, C_RED);
-                            }
-                            if (finished.length > 0) {
-                                const lastM = finished[0];
-                                const voted = guessesData.some(x => x.userId === u.id && x.matchId === lastM.id);
-                                if (!voted) addSegment(`   💤 O BURRÃO DO ${name} NÃO VOTOU NO ÚLTIMO JOGO!   |`, C_GRAY);
-                            }
-                        });
-                        
-                        if (zebraMatchIds.isNotEmpty && finished.length > 0) {
-                            const lastM = finished[0];
-                            if (zebraMatchIds.includes(lastM.id)) {
-                                const matchGuesses = guessesData.filter(g => g.matchId === lastM.id);
-                                const winners = matchGuesses.filter(g => g.teamSelected === lastM.winner).map(g => { const user = baseUsers.find(u => u.id === g.userId); return user ? user.name.split(' ')[0].toUpperCase() : null; }).filter(n => n);
-                                if (winners.length > 0 && winners.length <= 4) {
-                                    addSegment(`   🦓 OLHA A ZEBRA! O ${winners.join(', ')} ACERTOU ${lastM.teamA} x ${lastM.teamB}!   |`, C_GOLD);
-                                }
-                            }
-                        }
-                    }
-
-                   // --- 4. CARREGA FRASES DO ADMIN ---
-                    if (newsSnap.exists()) {
-                        const rawItems = newsSnap.data().items || [];
-                        rawItems.forEach(item => {
-                            if (typeof item === 'object' && item !== null) {
-                                // Formato NOVO: {text: "...", color: "FF..."}
-                                let hex = item.color || "FFEF6C00";
-                                // Remove o FF do alfa se vier do Android para ficar #RRGGBB
-                                if(hex.length === 8) hex = hex.substring(2);
-                                addSegment(`   ${item.text}   |`, `#${hex}`);
-                            } else {
-                                // Formato ANTIGO
-                                addSegment(`   ${item}   |`, "#EF6C00");
-                            }
-                        });
-                    }
-
-                    // 5. Frases Aleatórias
-                    const frasesPadrao = [
-                        { t: "   💎 QUEM VAI GABARITAR AS OITAVAS E LEVAR O DIAMANTE?   |", c: C_DIAMOND },
-                        { t: "   🔮 MÃE DINAH: ACERTE O CAMPEÃO E DOBRE SEUS PONTOS NA FINAL!   |", c: C_MAGIC },
-                        { t: "   🚀 FOGUETE NÃO TEM RÉ! QUEM VAI DISPARAR NA PRÓXIMA RODADA?   |", c: C_WHITE }
-                    ];
-                    // Shuffle manual
-                    const shuffledExtras = frasesPadrao.sort(() => 0.5 - Math.random()).slice(0, 3);
-                    shuffledExtras.forEach(item => addSegment(item.t, item.c));
-
-                    if (newsSegments.length === 0) {
-                        addSegment("   ⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!   |", C_GOLD);
-                    }
-
-                    // Embaralha tudo
-                    for (let i = newsSegments.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [newsSegments[i], newsSegments[j]] = [newsSegments[j], newsSegments[i]]; }
-                    return newsSegments.join('') + newsSegments.join('');
-                };
-
-                const newsHTML = generateNewsFeed();
-                // --- FIM DO CÓDIGO DO LETREIRO ---
-
-                const pulseOpen = unreadInOpen ? '<span class="pulse-dot"></span>' : '';
-                // AQUI ESTÁ A MUDANÇA: Passamos myVotesMap como argumento extra
-                let html = `
+                // Função auxiliar para gerar Ticker (Reaproveitando seu código antigo se necessário, ou um simples)
+                // Para manter simples e funcional, vou usar um ticker padrão aqui, mas se tiver a função generateNewsFeed, usamos ela.
+                let newsHTML = "⚽ BEM-VINDO AO BOLÃO 112 F.C!";
+                if (typeof generateNewsFeed === "function") newsHTML = generateNewsFeed(); // Usa a sua função se existir
+                
+                const tickerBlock = `
                     <div class="card-container mb-4">
                         <div class="ticker-container shadow-lg">
-                            <div class="ticker-wrapper">
-                                <div class="ticker-item">
-                                    ${newsHTML}
-                                </div>
-                            </div>
+                            <div class="ticker-wrapper"><div class="ticker-item">${newsHTML}</div></div>
                         </div>
-                    </div>
-                `;
-                html += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ (${open.length}) DISPONÍVEIS ✅${pulseOpen}</h4><i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i></div></div><div id="openContainer">${open.length > 0 ? await renderMatchList(open, totalParticipants, serverCounts, myVotesMap) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}</div>`;
-                
-                const pulseWait = unreadInWaiting ? '<span class="pulse-dot"></span>' : '';
-                html += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${waiting.length}) AGUARDANDO ⏳${pulseWait}</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${waiting.length ? await renderMatchList(waiting, totalParticipants, serverCounts, myVotesMap) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando.</div>`}</div>`;
-                
-                if(finished.length) {
-                    const pulseFin = unreadInFinished ? '<span class="pulse-dot"></span>' : '';
-                    html += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS 🚫${pulseFin}</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, serverCounts, myVotesMap)}</div>`;
-                }
-                
-                container.innerHTML = html;
-                window.updateBadges(); 
+                    </div>`;
 
-                // Badge Navegação
-                let pendingCount = 0; 
-                open.forEach(m => { if (!myVotesMap[m.id]) pendingCount++; });
-                const navBtn = document.getElementById('nav-matches'); 
-                const oldBadge = document.getElementById('matches-badge'); 
-                if(oldBadge) oldBadge.remove(); 
-                if (pendingCount > 0) { navBtn.style.position = 'relative'; navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`; }
+                // LOOP ORQUESTRADOR
+                for (const item of order) {
+                    // Ticker
+                    if (item === "ticker") {
+                        finalHtml += tickerBlock;
+                    }
+                    // Banners (Formato "banner_ID")
+                    else if (item.startsWith("banner_")) {
+                        // O Android salva como "banner_ID", mas o doc no firebase é só "ID"
+                        // Ex: "banner_HWm..." -> busca ID "HWm..."
+                        // MAS, cuidado: no seu print image_00b8e2.png o ID começa com "banner_HWm...".
+                        // No print image_00b523.png o ID do doc é "HWm...". 
+                        // Vamos tentar as duas formas para garantir.
+                        
+                        let bannerId = item;
+                        if (item.startsWith("banner_") && !bannersMap[item]) {
+                             // Se não achou com o prefixo, tenta sem (caso o ID real seja só o código)
+                             bannerId = item.replace("banner_", "");
+                        }
+                        
+                        // Se no print image_00b8e2.png o item é "banner_HWm...", e no image_00b523.png o ID é "HWm...",
+                        // então precisamos remover o prefixo.
+                        
+                        const bannerData = bannersMap[bannerId] || bannersMap[item]; // Tenta sem prefixo, depois com
+                        if (bannerData) finalHtml += renderBanner(bannerData);
+                    }
+                    // Voto Rápido (Se existir lógica separada, senão ignora ou põe um atalho)
+                    else if (item === "fast_vote") {
+                         // Pode ser um botão especial ou apenas um marcador. Vou deixar vazio por enquanto se não tiver UI especifica.
+                    }
+                    // Jogos Abertos
+                    else if (item === "matches_open") {
+                         const pulse = open.some(m => !myVotesMap[m.id]) ? '<span class="pulse-dot"></span>' : '';
+                         finalHtml += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ (${open.length}) DISPONÍVEIS ${pulse}</h4><i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i></div></div><div id="openContainer">${open.length > 0 ? await renderMatchList(open, totalParticipants, globalServerCounts, myVotesMap) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}</div>`;
+                    }
+                    // Jogos Aguardando
+                    else if (item === "matches_wait") {
+                        if(waiting.length > 0) {
+                            finalHtml += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${waiting.length}) AGUARDANDO</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="hidden">${await renderMatchList(waiting, totalParticipants, globalServerCounts, myVotesMap)}</div>`;
+                        }
+                    }
+                    // Jogos Finalizados
+                    else if (item === "matches_done") {
+                        if(finished.length > 0) {
+                            finalHtml += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, totalParticipants, globalServerCounts, myVotesMap)}</div>`;
+                        }
+                    }
+                    // Enquetes
+                    else if (item === "poll") {
+                        // Pega a primeira enquete ativa (ou a marcada como ativa)
+                        // Como o "poll" no array layout não tem ID, vou iterar sobre todas as enquetes ativas
+                        const activePollsList = Object.values(pollsMap).filter(p => p.active);
+                        activePollsList.forEach(p => {
+                            finalHtml += renderPoll(p);
+                        });
+                    }
+                }
+
+                container.innerHTML = finalHtml;
+                window.updateBadges();
+
+                // Badges de navegação
+                const bell = document.getElementById('btnBell');
+                const old = bell.querySelector('.bell-badge'); if(old) old.remove();
+                if(totalUnread > 0) bell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
+
+                let pendingCount = 0; open.forEach(m => { if (!myVotesMap[m.id]) pendingCount++; });
+                const navBtn = document.getElementById('nav-matches'); const oldBadge = document.getElementById('matches-badge'); if(oldBadge) oldBadge.remove();
+                if (pendingCount > 0) navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`;
 
             } catch(e) { console.error("Erro loadMatches:", e); }
             document.getElementById('progressBar').classList.add('hidden');
@@ -3320,6 +3293,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
