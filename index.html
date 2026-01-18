@@ -2096,6 +2096,7 @@ window.showKingModal = () => {
        window.showModalPhoto = (idx) => { 
             const u = currentRankingData[idx]; 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
+           const scoutClass = appConfig.scout ? "flex" : "hidden";
             
             let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-contain bg-black">`;
             
@@ -2177,7 +2178,6 @@ window.showKingModal = () => {
                             <button id="btnInstaAction" onclick="window.generateWebCard()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
                                 <i class="fab fa-instagram text-xl"></i> GERAR CARD STORIES
                             </button>
-                            const scoutClass = appConfig.scout ? "flex" : "hidden";
                             <button id="btnStatsAction" class="${scoutClass} w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg items-center justify-center gap-2 btn-press">
                  <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
             </button>
@@ -3320,6 +3320,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
