@@ -21,6 +21,37 @@
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700&family=Roboto:wght@400;700&family=Bebas+Neue&family=Pacifico&family=Press+Start+2P&family=Creepster&display=swap');
+        /* --- VARIÁVEIS DINÂMICAS (THEME ENGINE) --- */
+    :root {
+        --primary: #006400;       /* Cor Padrão */
+        --secondary: #FFD700;     /* Cor Padrão */
+        --bg-color: #f3f4f6;
+        --text-main: #111827;
+        --app-font: 'PT Serif', serif;
+        --watermark: none;        /* Para as Skins */
+        --watermark-opacity: 0.15;
+    }
+
+    body {
+        font-family: var(--app-font);
+        background-color: var(--bg-color);
+        /* Aplicação da Marca D'água (Skins) */
+        background-image: var(--watermark);
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 80%;
+        background-attachment: fixed;
+    }
+
+    /* Utilitários para usar as variáveis do tema no Tailwind via style inline ou classes custom */
+    .theme-bg-primary { background-color: var(--primary) !important; }
+    .theme-text-primary { color: var(--primary) !important; }
+    .theme-border-primary { border-color: var(--primary) !important; }
+    
+    .theme-bg-secondary { background-color: var(--secondary) !important; }
+    .theme-text-secondary { color: var(--secondary) !important; }
+    .theme-border-secondary { border-color: var(--secondary) !important; }
 
         /* --- CORREÇÕES CRÍTICAS IOS (Flickering & Scroll) --- */
         html {
@@ -131,6 +162,19 @@
         .txt-lama { color: #FF5252; text-shadow: 0 0 5px rgba(255, 82, 82, 0.3); } /* Vermelho Neon */
         .txt-info { color: #4FC3F7; } /* Azul Claro */
         .txt-gold { color: #FFD700; } /* Dourado */
+        .version-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        background: var(--primary);
+        color: var(--secondary);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
     </style>
 </head>
 <body class="h-full w-full overflow-hidden relative text-gray-900 flex flex-col">
@@ -422,6 +466,75 @@
         // --- NOVAS VARIÁVEIS AQUI ---
         let layoutOrder = []; // Vai guardar a ordem da tela ["ticker", "banner_X", "matches_open"...]
         let activePolls = {}; // Cache das enquetes
+        // --- MOTOR DE TEMA E ÁUDIO ---
+    
+    // Configuração Padrão
+    let userPreferences = {
+        primaryColor: '#006400',
+        secondaryColor: '#FFD700',
+        skin: 'padrao', // padrao, ceara, fortaleza
+        font: "'PT Serif', serif",
+        audioPack: 'default' // default, estadio, memes
+    };
+
+    // Sons (Você deve ter esses arquivos na pasta assets ou url externa)
+    const audioLibrary = {
+        default: new Audio('assets/sounds/pop.mp3'), // Som curto de "ploc"
+        estadio: new Audio('assets/sounds/whistle.mp3'), // Apito de juiz
+        memes: new Audio('assets/sounds/uepa.mp3') // Uepa!
+    };
+
+    // Carregar Preferências Salvas
+    const loadTheme = () => {
+        const saved = localStorage.getItem('bolao_theme_v1');
+        if (saved) {
+            userPreferences = JSON.parse(saved);
+        }
+        applyThemeVisuals();
+    };
+
+    // Aplicar Visual
+    const applyThemeVisuals = () => {
+        const root = document.documentElement;
+        
+        // 1. Lógica de Skins (Sobrescreve cores se for time específico)
+        if (userPreferences.skin === 'ceara') {
+            root.style.setProperty('--primary', '#000000');
+            root.style.setProperty('--secondary', '#FFFFFF');
+            root.style.setProperty('--watermark', "url('assets/images/escudo_ceara.png')"); // Caminho da imagem
+        } else if (userPreferences.skin === 'fortaleza') {
+            root.style.setProperty('--primary', '#1155cc'); // Azul Fortaleza
+            root.style.setProperty('--secondary', '#bb0a1e'); // Vermelho Fortaleza
+            root.style.setProperty('--watermark', "url('assets/images/escudo_fortaleza.png')");
+        } else {
+            // Modo Personalizado ou Padrão
+            root.style.setProperty('--primary', userPreferences.primaryColor);
+            root.style.setProperty('--secondary', userPreferences.secondaryColor);
+            root.style.setProperty('--watermark', 'none');
+        }
+
+        // 2. Fonte
+        root.style.setProperty('--app-font', userPreferences.font);
+    };
+
+    // Salvar Preferências
+    const saveTheme = (newPrefs) => {
+        userPreferences = { ...userPreferences, ...newPrefs };
+        localStorage.setItem('bolao_theme_v1', JSON.stringify(userPreferences));
+        applyThemeVisuals();
+    };
+
+    // Tocar Som de Voto
+    const playVoteSound = () => {
+        const sound = audioLibrary[userPreferences.audioPack];
+        if (sound) {
+            sound.currentTime = 0; // Reinicia o som se já estiver tocando
+            sound.play().catch(e => console.log("Interação de áudio bloqueada pelo navegador", e));
+        }
+    };
+
+    // INICIALIZA O TEMA AO CARREGAR
+    loadTheme();
         // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
         const getAvatarUrl = (base64, name) => {
             // 1. Se tem foto real, usa ela
@@ -1396,7 +1509,7 @@
             if(clickedBtn) {
                 clickedBtn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#006400] text-white border-2 border-[#FFD700]`;
             }
-
+playVoteSound();
             // 2. SALVA NO BANCO
             await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { 
                 matchId: mid, 
@@ -1894,7 +2007,7 @@
 
                 html += users.map((u, i) => {
                     const pos = i + 1;
-                    const isRelegation = (i >= users.length - 2) && (users.length > 2);
+                    const isRelegation = (i >= users.length - 4) && (users.length > 4);
                     let bgColor = 'bg-white';
                     let borderColor = 'border-transparent';
                     let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`;
@@ -2475,98 +2588,185 @@ async function loadAdminMatches() {
         };
         window.checkDelays = async () => { const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const now = new Date(); const currMonth = months[now.getMonth()]; const day = now.getDate(); if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; } const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const snap = await getDocs(collection(db, "users")); let late = []; snap.forEach(d => { const u = d.data(); if (!u.payments || !u.payments[currMonth]) { late.push({id: d.id, name: u.name, debts: u.debts || 0}); } }); let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`; if (late.length === 0) { html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`; } else { html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`; late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; }); html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`; } html += `</div>`; cont.innerHTML = html; window.applyBatchPenalty = async () => { if(!confirm("Confirmar aplicação de multa em massa?")) return; const batch = writeBatch(db); late.forEach(l => { const ref = doc(db, "users", l.id); batch.update(ref, { debts: l.debts + 1 }); }); await batch.commit(); alert("Penalidades aplicadas!"); openFinancialScreen(); }; };
 async function loadProfile() { 
-            if (!currentUser) return; 
-            try { 
-                const docRef = doc(db, "users", currentUser.uid); 
-                const snap = await getDoc(docRef); 
-                if (!snap.exists()) return; 
+        if (!currentUser) return; 
+        
+        try { 
+            const docRef = doc(db, "users", currentUser.uid); 
+            const snap = await getDoc(docRef); 
+            if (!snap.exists()) return; 
+            
+            const u = snap.data(); 
+            const avatar = getAvatarUrl(u.photoBase64, u.name || u.username);
+
+            const profileHTML = `
+            <div id="profileScreen" class="animate-fade-in p-4">
                 
-                const u = snap.data(); 
-                // AVISO DE TESTE
-                if (u.isTrial && u.trialValidUntil) {
-                    const validDate = u.trialValidUntil.toDate().toLocaleDateString();
-                    // Injeta um aviso vermelho no topo do perfil
-                    const profileArea = document.getElementById('profileScreen');
-                    let warningDiv = document.getElementById('trialWarning');
-                    if(!warningDiv) {
-                        warningDiv = document.createElement('div');
-                        warningDiv.id = 'trialWarning';
-                        profileArea.prepend(warningDiv);
-                    }
-                    warningDiv.innerHTML = `
-                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow-sm">
-                            <p class="font-bold text-xs uppercase"><i class="fas fa-clock"></i> CONTA DE TESTE</p>
-                            <p class="text-xs">Seu acesso gratuito expira em: <b>${validDate}</b></p>
-                            <p class="text-[10px] mt-1">Pague a mensalidade para não perder o acesso.</p>
+                <div class="card-cut relative overflow-hidden bg-white shadow-lg mb-6 border-l-4 theme-border-primary">
+                    <div class="absolute right-0 top-0 p-2 opacity-10">
+                        <i class="fas fa-id-card text-6xl theme-text-primary"></i>
+                    </div>
+                    <div class="p-6 flex items-center gap-4 relative z-10">
+                        <div class="w-20 h-20 rounded-full border-4 theme-border-secondary shadow-md overflow-hidden bg-gray-200">
+                            <img src="${avatar}" class="w-full h-full object-cover">
                         </div>
-                    `;
-                }
-                document.getElementById('profileName').innerText = u.name || "MEMBRO"; 
-                document.getElementById('profileUser').innerText = `@${u.username || 'user'}`; 
-                
-                // Sempre renderiza a imagem (mesmo que seja a gerada)
-document.getElementById('profileAvatar').innerHTML = `<img src="${getAvatarUrl(u.photoBase64, u.name || u.username)}" class="w-full h-full object-cover">`;
-
-                // --- LÓGICA DA DICA ---
-                const myHint = u.passwordHint || "Sem dica cadastrada";
-                // Cria ou atualiza o container da dica (se não existir, cria abaixo dos botões)
-                let hintDiv = document.getElementById('hintContainer');
-                if (!hintDiv) {
-                    hintDiv = document.createElement('div');
-                    hintDiv.id = 'hintContainer';
-                    // Insere logo após o container dos botões de senha/guia
-                    const btnContainer = document.querySelector('#profileScreen .card-cut .flex.justify-center.gap-4');
-                    btnContainer.insertAdjacentElement('afterend', hintDiv);
-                }
-
-                hintDiv.innerHTML = `
-                    <div class="mt-4 bg-[#FFF3E0] border border-[#FF9800] rounded p-3 flex justify-between items-center text-left mx-4 mb-4">
                         <div>
-                            <p class="text-[10px] font-bold text-[#EF6C00] uppercase"><i class="fas fa-lightbulb mr-1"></i> Dica de Senha</p>
-                            <p class="text-xs font-black text-black mt-1">${myHint}</p>
+                            <h2 class="text-xl font-black theme-text-primary uppercase leading-tight">${u.name || "Membro"}</h2>
+                            <p class="text-sm text-gray-500 font-bold">@${u.username}</p>
+                            <div class="mt-2 inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-[10px] font-bold text-gray-600">
+                                <i class="fas fa-crown text-[#FFD700]"></i> SÓCIO TORCEDOR
+                            </div>
                         </div>
-                        <button onclick="editHint('${myHint.replace(/'/g, "\\'")}')" class="bg-white border border-[#EF6C00] text-[#EF6C00] w-8 h-8 rounded-full flex items-center justify-center shadow-sm btn-press">
-                            <i class="fas fa-pen text-xs"></i>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <button onclick="openThemeEditor()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
+                        <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                            <i class="fas fa-palette text-lg"></i>
+                        </div>
+                        <span class="text-xs font-bold text-gray-700">Personalizar</span>
+                    </button>
+
+                    <label class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press cursor-pointer">
+                        <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+                            <i class="fas fa-camera text-lg"></i>
+                        </div>
+                        <span class="text-xs font-bold text-gray-700">Mudar Foto</span>
+                        <input type="file" id="uploadPhoto" accept="image/*" class="hidden" onchange="handlePhotoUpload(this)">
+                    </label>
+
+                    <button onclick="changePassword()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
+                        <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
+                            <i class="fas fa-lock text-lg"></i>
+                        </div>
+                        <span class="text-xs font-bold text-gray-700">Senha</span>
+                    </button>
+
+                    <button onclick="showAppGuide()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
+                        <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
+                            <i class="fas fa-book text-lg"></i>
+                        </div>
+                        <span class="text-xs font-bold text-gray-700">Guia/Regras</span>
+                    </button>
+                </div>
+
+                <div class="space-y-3 mb-8">
+                     <div id="financialCard" class="p-4 rounded-lg border bg-white shadow-sm cursor-pointer btn-press" onclick="document.getElementById('pixArea').classList.remove('hidden')">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-black text-sm theme-text-primary">FINANCEIRO</p>
+                                <p class="text-[10px] text-gray-500 font-bold">Gerenciar Mensalidade</p>
+                            </div>
+                            <i class="fas fa-wallet text-2xl text-gray-300"></i>
+                        </div>
+                    </div>
+
+                    ${u.isAdmin ? `<button onclick="openAdminMenu()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold text-xs shadow-lg btn-press"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>` : ''}
+                </div>
+
+                <div class="text-center pb-safe">
+                    <div class="version-chip">
+                        Web v1.7.0
+                    </div>
+                    <p class="text-[9px] text-gray-400 mt-2 font-bold uppercase">Bolão 112 F.C • 2026</p>
+                </div>
+            </div>
+            `;
+
+            // Injeta na tela (certifique-se de que a div profileScreen no HTML esteja vazia inicialmente)
+            document.getElementById('profileScreen').innerHTML = profileHTML;
+            // Mostra a tela
+            document.getElementById('profileScreen').classList.remove('hidden');
+
+            // Atualiza status financeiro (lógica existente adaptada)
+            // ... (Adicione aqui sua lógica de verificar pagamentos e mudar a cor do card financeiro) ...
+
+        } catch (error) { console.error("Erro no loadProfile:", error); } 
+    }
+window.openThemeEditor = () => {
+        const modal = document.getElementById('modalOverlay');
+        const cont = document.getElementById('modalContainer');
+        modal.classList.remove('hidden');
+
+        cont.innerHTML = `
+        <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden h-[80vh] flex flex-col">
+            <div class="theme-bg-primary p-4 text-white flex justify-between items-center shrink-0">
+                <h3 class="font-black uppercase text-sm">Personalização</h3>
+                <button onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
+                
+                <div>
+                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Modo Torcedor (Skins)</h4>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="saveTheme({skin: 'padrao'})" class="p-2 border rounded bg-white text-xs font-bold hover:bg-gray-100 ${userPreferences.skin === 'padrao' ? 'border-green-600 ring-1 ring-green-600' : ''}">Padrão</button>
+                        <button onclick="saveTheme({skin: 'ceara'})" class="p-2 border rounded bg-black text-white text-xs font-bold hover:opacity-80 ${userPreferences.skin === 'ceara' ? 'ring-2 ring-gray-400' : ''}">Ceará</button>
+                        <button onclick="saveTheme({skin: 'fortaleza'})" class="p-2 border rounded bg-blue-700 text-white text-xs font-bold hover:opacity-80 ${userPreferences.skin === 'fortaleza' ? 'ring-2 ring-red-500' : ''}">Fortaleza</button>
+                    </div>
+                </div>
+
+                <div class="${userPreferences.skin !== 'padrao' ? 'opacity-50 pointer-events-none' : ''}">
+                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Cores do App</h4>
+                    <div class="flex items-center gap-4 bg-white p-3 rounded border">
+                        <div class="flex flex-col items-center">
+                            <label class="text-[9px] font-bold mb-1">Primária</label>
+                            <input type="color" value="${userPreferences.primaryColor}" onchange="saveTheme({primaryColor: this.value})">
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <label class="text-[9px] font-bold mb-1">Secundária</label>
+                            <input type="color" value="${userPreferences.secondaryColor}" onchange="saveTheme({secondaryColor: this.value})">
+                        </div>
+                        <p class="text-[9px] text-gray-400 ml-2">Selecione para mudar botões e barras.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Tipografia</h4>
+                    <select onchange="saveTheme({font: this.value})" class="w-full p-2 text-xs border rounded bg-white">
+                        <option value="'PT Serif', serif" ${userPreferences.font.includes('PT Serif')?'selected':''}>Clássica (Serif)</option>
+                        <option value="'Roboto', sans-serif" ${userPreferences.font.includes('Roboto')?'selected':''}>Moderna (Sans)</option>
+                        <option value="'Bebas Neue', cursive" ${userPreferences.font.includes('Bebas')?'selected':''}>Manchete (Bebas)</option>
+                        <option value="'Pacifico', cursive" ${userPreferences.font.includes('Pacifico')?'selected':''}>Handwritten (Pacifico)</option>
+                        <option value="'Press Start 2P', cursive" ${userPreferences.font.includes('Press Start')?'selected':''}>Gamer (Pixel)</option>
+                         <option value="'Creepster', cursive" ${userPreferences.font.includes('Creepster')?'selected':''}>Terror</option>
+                    </select>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Game Feel (Sons de Voto)</h4>
+                    <div class="space-y-2">
+                        <button onclick="saveTheme({audioPack: 'default'}); playVoteSound()" class="w-full text-left p-3 bg-white border rounded flex justify-between items-center ${userPreferences.audioPack === 'default' ? 'border-green-500 bg-green-50' : ''}">
+                            <span class="text-xs font-bold">🎵 Padrão (Pop Suave)</span>
+                            ${userPreferences.audioPack === 'default' ? '<i class="fas fa-check text-green-600"></i>' : ''}
+                        </button>
+                        <button onclick="saveTheme({audioPack: 'estadio'}); playVoteSound()" class="w-full text-left p-3 bg-white border rounded flex justify-between items-center ${userPreferences.audioPack === 'estadio' ? 'border-green-500 bg-green-50' : ''}">
+                            <span class="text-xs font-bold">🏟️ Estádio (Apito)</span>
+                            ${userPreferences.audioPack === 'estadio' ? '<i class="fas fa-check text-green-600"></i>' : ''}
+                        </button>
+                        <button onclick="saveTheme({audioPack: 'memes'}); playVoteSound()" class="w-full text-left p-3 bg-white border rounded flex justify-between items-center ${userPreferences.audioPack === 'memes' ? 'border-green-500 bg-green-50' : ''}">
+                            <span class="text-xs font-bold">🤣 Memes (Uepa/Receba)</span>
+                            ${userPreferences.audioPack === 'memes' ? '<i class="fas fa-check text-green-600"></i>' : ''}
                         </button>
                     </div>
-                `;
-                // ---------------------
-                
-                const adminBtn = document.getElementById('btnAdminPanel'); 
-                if (u.isAdmin === true) { adminBtn.classList.remove('hidden'); } else { adminBtn.classList.add('hidden'); } 
-                
-                const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; 
-                const currMonth = months[new Date().getMonth()]; 
-                const payments = u.payments || {}; 
-                const isPaid = payments[currMonth] === true; 
-                const stCard = document.getElementById('financialCard'); 
-                const stText = document.getElementById('financialStatusText'); 
-                const stIcon = document.getElementById('financialIcon'); 
-                
-                if (isPaid || new Date().getFullYear() < 2026) { 
-                    stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-green-50 border-green-200 text-green-800 shadow-sm"; 
-                    stText.innerText = "MENSALIDADE EM DIA"; 
-                    stIcon.className = "fas fa-check-circle text-2xl"; 
-                } else { 
-                    stCard.className = "p-4 rounded-lg border mb-4 cursor-pointer btn-press bg-red-50 border-red-200 text-red-800 shadow-sm"; 
-                    stText.innerText = "PAGAMENTO PENDENTE"; 
-                    stIcon.className = "fas fa-exclamation-circle text-2xl"; 
-                } 
-                
-                try { 
-                    const finSnap = await getDoc(doc(db, "settings", "financial")); 
-                    if (finSnap.exists()) { 
-                        const fin = finSnap.data(); 
-                        document.getElementById('pixKey').value = fin.pixKey || "admin@bolao112.com"; 
-                        document.getElementById('btnSendProof').onclick = () => { 
-                            const msg = encodeURIComponent("Ei Branco! Segue o comprovante da minha mensalidade do Bolão 112."); 
-                            window.open(`https://wa.me/${fin.adminPhone}?text=${msg}`, '_blank'); 
-                        }; 
-                    } 
-                } catch (e) { console.log("Erro ao carregar dados financeiros:", e); } 
-            } catch (error) { console.error("Erro crítico no loadProfile:", error); } 
-        }
+                </div>
 
+            </div>
+        </div>
+        `;
+    };
+
+    // Handler Auxiliar para Upload de Foto na nova tela
+    window.handlePhotoUpload = (input) => {
+         const file = input.files[0]; 
+         if(file) { 
+             compressImage(file).then(async (base64) => { 
+                 await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); 
+                 loadProfile(); 
+                 alert("Foto atualizada!");
+             }).catch(err => { alert("Erro na imagem."); }); 
+         } 
+    };
         // Função Global para Editar Dica (ADICIONE ISSO LOGO APÓS A loadProfile)
         window.editHint = (currentVal) => {
             const val = currentVal === "Sem dica cadastrada" ? "" : currentVal;
@@ -3327,6 +3527,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
