@@ -1152,31 +1152,47 @@
             } catch(e) { console.error("Erro enquete:", e); alert("Erro ao salvar voto."); }
         };
 
-        // --- FUNÇÃO DE NOTÍCIAS (LETREIRO INTELIGENTE - PARIDADE ANDROID) ---
+        // --- FUNÇÃO DE NOTÍCIAS (COM LINHA DO TEMPO) ---
         const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users) => {
             let segments = [];
             const addSegment = (text, color) => segments.push(`<span style="color: ${color}; font-weight: 900; margin: 0 10px;">${text}</span>`);
             
-            // --- 1. ENGINE DE CÁLCULO (Lógica Android Traduzida) ---
+            // --- 1. ENGINE (Lógica Android: Timeline + Zebra Ajustada) ---
             let rankingSnapshot = [];
 
             if (users.length > 0) {
+                // Prepara usuários com data (1970 se nulo)
+                const usersWithDate = users.map(u => ({
+                    ...u,
+                    createdDate: u.createdAt ? u.createdAt.toDate() : new Date(0)
+                }));
+
+                // Zebra: Calcula com base apenas nos usuários VÁLIDOS na data
                 const zebraMatchIds = [];
                 finishedMatches.forEach(m => {
+                    const validUsersCount = usersWithDate.filter(u => u.createdDate < m.deadlineDate).length;
                     const hits = guessesData.filter(g => g.matchId === m.id && g.teamSelected === m.winner).length;
-                    if (users.length > 0 && (hits / users.length) < 0.20) zebraMatchIds.push(m.id);
+                    
+                    // Lógica <= 0.20
+                    if (validUsersCount > 0 && (hits / validUsersCount) <= 0.20) {
+                        zebraMatchIds.push(m.id);
+                    }
                 });
 
-                rankingSnapshot = users.map(u => {
+                rankingSnapshot = usersWithDate.map(u => {
                     if(!u.id) return null;
-                    let pts = 0; let victories = 0; let finalsWon = 0; let simStreak = 0;
+                    let pts = 0, victories = 0, finalsWon = 0, simStreak = 0;
                     const userMedals = [];
                     const userGuesses = guessesData.filter(g => g.userId === u.id);
                     const matchesChronological = [...finishedMatches].sort((a,b) => (a.deadlineDate || 0) - (b.deadlineDate || 0));
 
                     matchesChronological.forEach(m => {
+                        // FILTRO LINHA DO TEMPO: Ignora se jogo foi antes do usuário nascer
+                        if (u.createdDate > m.deadlineDate) return;
+
                         const g = userGuesses.find(x => x.matchId === m.id);
                         const isHit = g && g.teamSelected === m.winner;
+
                         if (isHit) {
                             pts += (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
                             victories++; simStreak++;
@@ -1188,6 +1204,7 @@
                         } else { simStreak = 0; }
                     });
 
+                    // Diamante (Oitavas)
                     const oitavas = matchesChronological.filter(m => m.round === "Oitavas de final");
                     const byComp = {}; oitavas.forEach(m => { if(!byComp[m.competition]) byComp[m.competition]=[]; byComp[m.competition].push(m); });
                     for(const k in byComp) {
@@ -1206,10 +1223,12 @@
                     return {
                         uid: u.id,
                         name: (u.name || u.username || "SemNome").split(" ")[0].toUpperCase(),
-                        pts, debts, victories, userMedals
+                        pts, debts, victories, userMedals,
+                        createdDate: u.createdDate // Passa adiante para o filtro de Dorminhoco
                     };
                 }).filter(u => u !== null);
 
+                // Ordenação (Mantida)
                 rankingSnapshot.sort((a, b) => {
                     if (b.pts !== a.pts) return b.pts - a.pts;
                     if (a.debts !== b.debts) return a.debts - b.debts;
@@ -1244,19 +1263,35 @@
                 if (rankingSnapshot.length > 1) addSegment(`🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA NÃO?`, "#FF5252");
 
                 const recent10 = [...finishedMatches].sort((a,b) => (b.deadlineDate||0)-(a.deadlineDate||0)).slice(0, 10);
-                users.forEach(u => {
-                    const name = (u.name || "User").split(" ")[0].toUpperCase();
+                
+                // Loops de Streaks e Dorminhoco
+                rankingSnapshot.forEach(u => {
+                    // Re-calcula streak recente
                     let streak = 0; let isNegative = false;
                     for (const m of recent10) {
-                        const g = guessesData.find(x => x.userId === u.id && x.matchId === m.id);
-                        if (g && g.teamSelected === m.winner) { if (isNegative) break; streak++; } 
-                        else { if (streak > 0 && !isNegative) break; isNegative = true; streak++; }
+                        if (u.createdDate > m.deadlineDate) continue; // Pula jogo antigo
+
+                        const g = guessesData.find(x => x.userId === u.uid && x.matchId === m.id);
+                        if (g && g.teamSelected === m.winner) { 
+                            if (isNegative) break; streak++; 
+                        } else { 
+                            if (streak > 0 && !isNegative) break; isNegative = true; streak++; 
+                        }
                     }
                     if (!isNegative) {
-                        if (streak >= 10) addSegment(`👽 ${name} É DE OUTRO MUNDO (${streak} ACERTOS)!`, "#64DD17");
-                        else if (streak >= 5) addSegment(`🎯 ${name} VIROU MITO! (${streak} ACERTOS)`, "#FFD700");
-                        else if (streak >= 3) addSegment(`🔥 ${name} TÁ ON FIRE! (${streak} ACERTOS)`, "#00E676");
-                    } else if (streak >= 3) addSegment(`🥬 ${name} TÁ COM MÃO DE ALFACE! (${streak} ERROS)`, "#FF5252");
+                        if (streak >= 10) addSegment(`👽 ${u.name} É DE OUTRO MUNDO (${streak} ACERTOS)!`, "#64DD17");
+                        else if (streak >= 5) addSegment(`🎯 ${u.name} VIROU MITO! (${streak} ACERTOS)`, "#FFD700");
+                        else if (streak >= 3) addSegment(`🔥 ${u.name} TÁ ON FIRE! (${streak} ACERTOS)`, "#00E676");
+                    } else if (streak >= 3) addSegment(`🥬 ${u.name} TÁ COM MÃO DE ALFACE! (${streak} ERROS)`, "#FF5252");
+
+                    // Dorminhoco (Ignora se o usuário é mais novo que o último jogo)
+                    if (recent10.length > 0) {
+                        const lastM = recent10[0];
+                        if (u.createdDate < lastM.deadlineDate) {
+                            const voted = guessesData.some(x => x.userId === u.uid && x.matchId === lastM.id);
+                            if (!voted) addSegment(`💤 O BURRÃO DO ${u.name} NÃO VOTOU NO ÚLTIMO CONFRONTO!`, "#9E9E9E");
+                        }
+                    }
                 });
             }
 
@@ -1768,7 +1803,7 @@ playVoteSound();
         // Variável global para armazenar a info da última atualização
         window.globalLastUpdateInfo = "Aguardando atualização...";
 
-        // --- RANKING ATUALIZADO (Money Zone + Campeão 2025) ---
+        // --- RANKING ATUALIZADO (LÓGICA Z-4 + PARIDADE DE DATA E ZEBRA) ---
         async function loadRanking() {
             const listContainer = document.getElementById('rankingListContent');
             const footer = document.getElementById('lastUpdateRanking');
@@ -1783,327 +1818,149 @@ playVoteSound();
                     getDocs(collection(db, "matches"))
                 ]);
 
-                // 1. Processamento de Jogos
+                // 1. Preparação dos Jogos
                 const matches = [];
                 const validMatchIds = new Set();
                 mSnap.forEach(d => {
                     const data = d.data();
-                    const deadlineDate = data.deadline ? data.deadline.toDate() : null;
-                    const finishedAt = data.finishedAt ? data.finishedAt.toDate() : null;
-
-                    if (deadlineDate) {
-                        matches.push({
-                            id: d.id,
-                            ...data,
-                            deadlineDate: deadlineDate,
-                            finishedAt: finishedAt
-                        });
+                    if (data.deadline) {
+                        matches.push({ id: d.id, ...data, deadlineDate: data.deadline.toDate() });
                         validMatchIds.add(d.id);
                     }
                 });
 
-                const chronoMatches = matches
-                    .filter(m => m.winner)
-                    .sort((a, b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
-
-                const finishedDisplay = [...chronoMatches].reverse();
-
-                // 2. Última Atualização
-                const lastUpdatedMatch = finishedDisplay.reduce((latest, current) => {
-                    const latestTime = latest.finishedAt ? latest.finishedAt.getTime() : (latest.deadlineDate.getTime() || 0);
-                    const currentTime = current.finishedAt ? current.finishedAt.getTime() : (current.deadlineDate.getTime() || 0);
-                    return currentTime > latestTime ? current : latest;
-                }, finishedDisplay[0]);
-
-                if (lastUpdatedMatch) {
-                    const d = lastUpdatedMatch.finishedAt || lastUpdatedMatch.deadlineDate;
-                    const dt = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-                    window.globalLastUpdateInfo = `Última atualização em ${dt}\n${lastUpdatedMatch.teamA} x ${lastUpdatedMatch.teamB}`;
+                const finishedMatches = matches.filter(m => m.winner);
+                
+                // Info Rodapé
+                if (finishedMatches.length > 0) {
+                    finishedMatches.sort((a,b) => (b.finishedAt?.seconds || b.deadlineDate) - (a.finishedAt?.seconds || a.deadlineDate));
+                    const last = finishedMatches[0];
+                    const dt = (last.finishedAt ? last.finishedAt.toDate() : last.deadlineDate)
+                        .toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                    window.globalLastUpdateInfo = `Última atualização: ${dt}\n${last.teamA} x ${last.teamB}`;
                 }
 
-                // 3. Zebras (<20% de acerto)
-                const zebraMatchIds = [];
-                const totalUsersCount = uSnap.size || 1;
+                // 2. Preparação de Usuários (Com Data de Criação)
+                const allGuesses = [];
+                gSnap.forEach(d => allGuesses.push(d.data()));
                 
-                finishedDisplay.forEach(m => {
-                    let winnerVotes = 0;
-                    gSnap.forEach(g => {
-                        if (g.data().matchId === m.id && g.data().teamSelected === m.winner) {
-                            winnerVotes++;
-                        }
+                let users = [];
+                uSnap.forEach(doc => {
+                    const d = doc.data();
+                    users.push({
+                        uid: doc.id,
+                        ...d,
+                        // SE NÃO TIVER DATA, ASSUME 1970 (USUÁRIO ANTIGO)
+                        createdDate: d.createdAt ? d.createdAt.toDate() : new Date(0) 
                     });
-                    if (totalUsersCount > 0 && (winnerVotes / totalUsersCount) < 0.20) {
+                });
+
+                // 3. Identificação de Zebras (Lógica Ajustada: <= 0.20 e Usuários Válidos)
+                const zebraMatchIds = [];
+                finishedMatches.forEach(m => {
+                    // Só conta usuários que JÁ EXISTIAM na data do jogo
+                    const validUsersCount = users.filter(u => u.createdDate < m.deadlineDate).length;
+                    
+                    let winnerVotes = 0;
+                    allGuesses.forEach(g => {
+                        if (g.matchId === m.id && g.teamSelected === m.winner) winnerVotes++;
+                    });
+
+                    // NOVA REGRA: <= 0.20 (Menor ou IGUAL)
+                    if (validUsersCount > 0 && (winnerVotes / validUsersCount) <= 0.20) {
                         zebraMatchIds.push(m.id);
                     }
                 });
 
-                // 4. Loop de Usuários
-                let users = [];
-                let monthlyData = [];
-                const now = new Date();
-                const currentMonthIdx = now.getMonth();
-                const currentYear = now.getFullYear();
-                const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-
-                const allGuesses = [];
-                gSnap.forEach(d => allGuesses.push(d.data()));
-
-                uSnap.forEach(ud => {
-                    const u = ud.data();
-                    let p = 0, v = 0, f = 0, monthlyP = 0;
-                    const hist = [];
-                    const userGuesses = allGuesses.filter(g => g.userId === ud.id && validMatchIds.has(g.matchId));
+                // 4. Loop de Cálculo de Pontos
+                users.forEach(u => {
+                    let p = 0, d = u.debts || 0;
+                    const userGuesses = allGuesses.filter(g => g.userId === u.uid && validMatchIds.has(g.matchId));
                     const trophyRoom = [];
 
-                    // --- INJEÇÃO DA MEDALHA DO AMAURI (OCULTA NA LISTA) ---
-                    // Verifica pelo username para garantir (assumindo que o login dele é 'amauri')
-                    if (u.username === 'amauri') {
-                        trophyRoom.push({ 
-                            icon: "🏆", 
-                            name: "TÍTULO DE 2025", 
-                            desc: "Campeão da Temporada 2025", 
-                            date: "2025",
-                            hiddenInList: true // <--- FLAG IMPORTANTE
-                        });
-                    }
+                    // Troféus manuais/fixos
+                    if(u.username === 'amauri') trophyRoom.push({icon: "🏆", hiddenInList: true}); 
+                    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                    if(u.payments && u.payments[months[new Date().getMonth()]]) trophyRoom.push({icon: "💰", hiddenInList: false});
 
-                    finishedDisplay.forEach(m => {
+                    finishedMatches.forEach(m => {
+                        // FILTRO DE LINHA DO TEMPO:
+                        // Se o usuário foi criado DEPOIS do jogo, ignora este jogo para ele.
+                        if (u.createdDate > m.deadlineDate) return; 
+
                         const g = userGuesses.find(x => x.matchId === m.id);
-                        const isThisMonth = m.deadlineDate.getMonth() === currentMonthIdx && m.deadlineDate.getFullYear() === currentYear;
-                        
-                        if (g) {
-                            const dStr = `📅 ${String(m.deadlineDate.getDate()).padStart(2, '0')}/${String(m.deadlineDate.getMonth() + 1).padStart(2, '0')}`;
-                            if (m.winner === g.teamSelected) {
-                                const isF = (m.round || "").toLowerCase() === 'final';
-                                const pts = isF ? 6 : 3;
-                                p += pts;
-                                if (isThisMonth) monthlyP += pts;
-                                v++;
-                                if (isF) f++;
-                                hist.push({ ts: m.deadlineDate, text: `${dStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})` });
-                            } else {
-                                hist.push({ ts: m.deadlineDate, text: `${dStr} - 👎 Errou: ${m.teamA} x ${m.teamB} (Voto: ${g.teamSelected})`, type: 'bad' });
-                            }
+                        if (g && m.winner === g.teamSelected) {
+                            p += (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
                         }
                     });
 
-                    // Diamante (Oitavas) e Medalhas Padrão
-                    const oitavasMatches = finishedDisplay.filter(m => m.round === "Oitavas de final");
-                    const oitavasByComp = {};
-                    oitavasMatches.forEach(m => {
-                        if (!oitavasByComp[m.competition]) oitavasByComp[m.competition] = [];
-                        oitavasByComp[m.competition].push(m);
-                    });
+                    // Penalidade de débito
+                    p -= (d * 3);
 
-                    for (const [compName, groupMatches] of Object.entries(oitavasByComp)) {
-                        if (groupMatches.length === 8) {
-                            let hits = 0;
-                            groupMatches.forEach(m => {
-                                const g = userGuesses.find(x => x.matchId === m.id);
-                                if (g && g.teamSelected === m.winner) hits++;
-                            });
-                            if (hits === 8) {
-                                p += 3;
-                                const lastDate = groupMatches[0].deadlineDate;
-                                if (lastDate.getMonth() === currentMonthIdx && lastDate.getFullYear() === currentYear) {
-                                    monthlyP += 3;
-                                }
-                                const dStr = lastDate.toLocaleDateString('pt-BR');
-                                trophyRoom.push({ icon: "💎", name: "DIAMANTE", desc: `Gabaritou as Oitavas (8/8) da ${compName}.`, date: dStr });
-                                const histText = `💎 BÔNUS: Gabaritou Oitavas (${compName})`;
-                                if (!hist.some(h => h.text.includes(histText))) {
-                                    hist.push({ ts: lastDate, text: `📅 ${dStr.substring(0, 5)} - ${histText} (+3 pts)`, type: 'good' });
-                                }
-                            }
-                        }
-                    }
-
-                    let simStreak = 0;
-                    let currentVeteranCount = 0;
-                    
-                    chronoMatches.forEach(m => {
-                        const g = userGuesses.find(x => x.matchId === m.id);
-                        const isHit = g && g.teamSelected === m.winner;
-                        const dateStr = m.deadlineDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-
-                        if (isHit && (m.round || "").toLowerCase() === 'final') {
-                            trophyRoom.push({ icon: "🔮", name: "MÃE DINAH", desc: `Cravou o campeão em ${m.teamA} x ${m.teamB}`, date: dateStr });
-                        }
-                        if (isHit && zebraMatchIds.includes(m.id)) {
-                            trophyRoom.push({ icon: "🦓", name: "CAÇADOR DE ZEBRAS", desc: `Acertou a zebra em ${m.teamA} x ${m.teamB}`, date: dateStr });
-                        }
-                        if (isHit) {
-                            currentVeteranCount++;
-                            simStreak++;
-                            if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "Palpitou 3 acertos seguidos.", date: dateStr });
-                            if (simStreak === 5) trophyRoom.push({ icon: "🎯", name: "MITO", desc: "Palpitou 5 acertos seguidos.", date: dateStr });
-                            if (simStreak === 10) trophyRoom.push({ icon: "👽", name: "ALIEN", desc: "Palpitou 10 acertos seguidos!", date: dateStr });
-                            if (currentVeteranCount > 0 && currentVeteranCount % 50 === 0) {
-                                const level = currentVeteranCount / 50;
-                                trophyRoom.push({ icon: "🎓", name: `VETERANO Nvl ${level}`, desc: `Conquistou ${currentVeteranCount} acertos.`, date: dateStr });
-                            }
-                        } else {
-                            simStreak = 0;
-                        }
-                    });
-                    
-                    const last3 = finishedDisplay.slice(0, 3);
-                    let misses = 0; let noShows = 0;
-                    if (finishedDisplay.length >= 3) {
-                        last3.forEach(m => {
-                            const g = userGuesses.find(x => x.matchId === m.id);
-                            if (!g) noShows++;
-                            else if (g.teamSelected !== m.winner) misses++;
-                        });
-                        if (misses === 3) trophyRoom.push({ icon: "🥬", name: "MÃO DE ALFACE", desc: "Atual: 3 erros seguidos.", date: "Atual" });
-                        if (noShows === 3) trophyRoom.push({ icon: "👻", name: "FANTASMA", desc: "Atual: 3 jogos sem votar.", date: "Atual" });
-                    }
-
-                    let allPaid = true;
-                    const payments = u.payments || {};
-                    if (currentYear >= 2026) {
-                        for (let i = 0; i <= currentMonthIdx; i++) {
-                            if (!payments[monthsNames[i]]) { allPaid = false; break; }
-                        }
-                    } else {
-                        if ((u.debts || 0) > 0) allPaid = false;
-                    }
-                    if (allPaid) trophyRoom.unshift({ icon: "💰", name: "PATRÃO", desc: "Mensalidades em dia.", date: "Mês Atual" });
-
-                    matches.forEach(m => {
-                        if (m.deadlineDate < now && !m.winner && !userGuesses.some(g => g.matchId === m.id)) {
-                            const dStr = `📅 ${String(m.deadlineDate.getDate()).padStart(2, '0')}/${String(m.deadlineDate.getMonth() + 1).padStart(2, '0')}`;
-                            hist.push({ ts: m.deadlineDate, text: `${dStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
-                        }
-                    });
-
-                    const deb = u.debts || 0;
-                    if (deb > 0) {
-                        const penalty = deb * 3;
-                        p -= penalty;
-                        const dStr = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
-                        hist.push({ ts: now, text: `📅 ${dStr} - 🔻 PENALIDADE: Inadimplência (-${penalty} pts)`, type: 'bad' });
-                    }
-
-                    hist.sort((a, b) => b.ts - a.ts);
-                    monthlyData.push({ name: u.name || "Sem Nome", points: monthlyP, uid: ud.id });
-                    users.push({
-                        uid: ud.id,
-                        name: u.name || u.username || "Sem Nome",
-                        p, v, f,
-                        d: deb,
-                        photo: u.photoBase64,
-                        hist,
-                        lastRank: u.lastRank || 0,
-                        trophyRoom: trophyRoom
-                    });
+                    // Atualiza objeto do usuário na memória local da função
+                    u.p = p; 
+                    u.trophyRoom = trophyRoom;
                 });
 
+                // Ordenação
                 users.sort((a, b) => {
                     if (b.p !== a.p) return b.p - a.p;
-                    if (a.d !== b.d) return a.d - b.d;
-                    const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "🏆"]; // 🏆 adicionado na hierarquia
-                    for (let icon of hierarchy) {
-                        // Importante: No sorting do ranking, a medalha do amauri conta?
-                        // O prompt disse "sem que ela apareça na tabela". Se ela não conta pro desempate, removemos do filtro aqui.
-                        // Assumindo que ela NÃO conta pro desempate geral, filtramos hiddenInList.
-                        const countA = a.trophyRoom.filter(m => m.icon === icon && !m.hiddenInList).length;
-                        const countB = b.trophyRoom.filter(m => m.icon === icon && !m.hiddenInList).length;
-                        if (countB !== countA) return countB - countA;
-                    }
-                    return 0;
+                    return a.debts - b.debts;
                 });
 
-                monthlyData.sort((a, b) => b.points - a.points);
-
-                if (users.length > 2) {
-                    const z2Users = [users[users.length - 1], users[users.length - 2]];
-                    z2Users.forEach(u => {
-                        if (u) u.trophyRoom.push({ icon: "⚓", name: "ZONA DE REBAIXAMENTO", desc: "Atual: Z-2", date: "Rodada Atual" });
-                    });
+                // Z-4 (Marcação)
+                if (users.length > 4) {
+                    const z4StartIndex = users.length - 4;
+                    for(let i = z4StartIndex; i < users.length; i++) {
+                        if(users[i]) {
+                             users[i].isZ4 = true;
+                             users[i].trophyRoom.push({icon: "⚓", hiddenInList: false});
+                        }
+                    }
                 }
 
-                window.currentMonthlyRanking = monthlyData;
-                currentRankingData = users;
+                currentRankingData = users; // Atualiza global
 
+                // Renderiza HTML
                 let html = `<div class="bg-[#006400] rounded-t-xl p-3 flex justify-between items-center shadow-md"><div><h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3><p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p></div><div class="flex gap-2"><button onclick="window.showKingModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg shadow border border-white/20">🏆</button><button onclick="window.openRankingInfo()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white shadow border border-white/20"><i class="fas fa-info text-xs"></i></button></div></div><div class="bg-[#005000] flex text-white/70 text-[9px] font-bold py-1 px-2 uppercase border-b border-white/10"><div class="w-[35px] text-center">Pos</div><div class="flex-1 pl-2">Participante</div><div class="w-[28px] text-center">D</div><div class="w-[40px] text-center text-white">Pts</div></div><div class="bg-white rounded-b-xl overflow-hidden shadow-sm">`;
 
                 html += users.map((u, i) => {
                     const pos = i + 1;
-                    const isRelegation = (i >= users.length - 4) && (users.length > 4);
+                    
                     let bgColor = 'bg-white';
                     let borderColor = 'border-transparent';
                     let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`;
-                    let nameColorClass = "text-gray-800";
-                    
-                    // --- ZONA DE DESTAQUE (Money Zone) ---
+                    let nameColor = "text-gray-800";
+
                     if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; }
                     else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; }
                     else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; }
-                    
-                    // 4º e 5º Lugar: MONEY ZONE (Verde)
-                    else if (i === 3 || i === 4) { 
-                        bgColor = 'bg-green-50'; // Fundo Verde Claro
-                        borderColor = 'border-green-600'; // Borda Verde Escura
-                        posIcon = `<span class="text-green-700 font-black">${pos}º</span>`; // Texto Verde
-                    }
-                    
-                    else if (isRelegation) { bgColor = 'bg-[#FFEBEE]'; nameColorClass = "text-[#8B0000]"; }
-
-                    let diffHtml = '';
-                    if (u.lastRank > 0) {
-                        if (pos < u.lastRank) diffHtml = `<div class="text-green-600 text-[8px] font-bold mt-1 flex justify-center"><i class="fas fa-caret-up mr-1"></i> ${u.lastRank - pos}</div>`;
-                        else if (pos > u.lastRank) diffHtml = `<div class="text-red-600 text-[8px] font-bold mt-1 flex justify-center"><i class="fas fa-caret-down mr-1"></i> ${pos - u.lastRank}</div>`;
-                        else diffHtml = `<div class="text-gray-300 text-[8px] font-bold mt-1 text-center">=</div>`;
-                    } else { diffHtml = `<div class="text-blue-500 text-[7px] font-bold mt-1 text-center">NOVO</div>`; }
-
-                    const counts = {};
-                    // FILTRO: Só conta medalhas que NÃO tenham hiddenInList: true
-                    u.trophyRoom.forEach(m => { 
-                        if(!m.hiddenInList) {
-                            const icon = m.icon.trim(); 
-                            counts[icon] = (counts[icon] || 0) + 1; 
-                        }
-                    });
-
-                    const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰", "👻", "🥬", "⚓"];
-                    const uniqueIcons = Object.keys(counts).sort((a, b) => {
-                        let iA = hierarchy.indexOf(a); if (iA === -1) iA = 999;
-                        let iB = hierarchy.indexOf(b); if (iB === -1) iB = 999;
-                        return iA - iB;
-                    });
-
-                    const maxVisible = 6;
-                    const visible = uniqueIcons.slice(0, maxVisible);
-                    const remain = uniqueIcons.length - maxVisible;
+                    else if (i === 3 || i === 4) { bgColor = 'bg-green-50'; borderColor = 'border-green-600'; posIcon = `<span class="text-green-700 font-black">${pos}º</span>`; }
+                    else if (u.isZ4) { bgColor = 'bg-[#FFEBEE]'; nameColor = "text-[#8B0000]"; }
 
                     let medalsHtml = "";
-                    if (visible.length > 0) {
-                        medalsHtml = `<div class="flex items-center mt-1 space-x-1">` + visible.map(icon => {
-                            const qty = counts[icon];
-                            const qtyHtml = qty > 1 ? `<sup class="text-[8px] text-gray-500 font-bold ml-[1px]">${qty}</sup>` : '';
-                            return `<span class="text-[14px] leading-none">${icon}${qtyHtml}</span>`;
-                        }).join('') + (remain > 0 ? `<span class="text-[9px] text-gray-400 font-bold ml-1">+${remain}</span>` : '') + `</div>`;
+                    const visibleMedals = u.trophyRoom.filter(m => !m.hiddenInList).slice(0, 5);
+                    if (visibleMedals.length > 0) {
+                        medalsHtml = `<div class="flex items-center mt-1 space-x-1">` + visibleMedals.map(m => `<span class="text-[12px] leading-none">${m.icon}</span>`).join('') + `</div>`;
                     }
+
+                    let diffHtml = u.lastRank > 0 
+                        ? (pos < u.lastRank ? `<div class="text-green-600 text-[8px] font-bold mt-1 flex justify-center"><i class="fas fa-caret-up mr-1"></i> ${u.lastRank - pos}</div>` 
+                        : (pos > u.lastRank ? `<div class="text-red-600 text-[8px] font-bold mt-1 flex justify-center"><i class="fas fa-caret-down mr-1"></i> ${pos - u.lastRank}</div>` : `<div class="text-gray-300 text-[8px] font-bold mt-1 text-center">=</div>`)) 
+                        : `<div class="text-blue-500 text-[7px] font-bold mt-1 text-center">NOVO</div>`;
 
                     return `<div class="${bgColor} border-b border-gray-100 flex items-center py-1 px-2 ${i < 5 ? 'border-l-4' : ''}" style="${i < 5 ? `border-left-color: ${borderColor.replace('border-[', '').replace(']', '')}` : ''}">
                         <div class="w-[35px] text-center flex flex-col items-center justify-center h-full"><div class="text-sm">${posIcon}</div>${diffHtml}</div>
-                        
                         <div class="flex-1 flex flex-col justify-center pl-2 overflow-hidden shrink-0 cursor-pointer h-full py-1" onclick="showModalPhoto(${i})">
                             <div class="flex items-center gap-2">
-                                <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0">
-                                    <img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-cover">
-                                </div>
+                                <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0"><img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-full h-full object-cover"></div>
                                 <div class="flex flex-col w-full overflow-hidden">
-                                    <div class="flex items-center">
-                                        <span class="text-xs font-bold ${nameColorClass} truncate max-w-[140px]">${u.name}</span>
-                                    </div>
+                                    <div class="flex items-center"><span class="text-xs font-bold ${nameColor} truncate max-w-[140px]">${u.name || u.username}</span></div>
                                     ${medalsHtml}
                                 </div>
                             </div>
                         </div>
-                        
-                        <div class="w-[28px] text-center text-xs font-bold ${u.d > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.d}</div>
+                        <div class="w-[28px] text-center text-xs font-bold ${u.debts > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.debts||0}</div>
                         <div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div>
                     </div>`;
                 }).join('');
@@ -2113,7 +1970,7 @@ playVoteSound();
 
             } catch (e) {
                 console.error(e);
-                listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro ao carregar ranking. Tente recarregar.</div>`;
+                listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro ao carregar ranking.</div>`;
             }
         }
         window.openRankingInfo = () => {
@@ -3213,62 +3070,60 @@ document.getElementById('btnLogout').onclick = () => {
                 document.getElementById('commentInput').focus();
             };
         };
-       // --- NOVO: SCOUT COM GRÁFICO DE EVOLUÇÃO (CHART.JS) ---
+       // --- SCOUT COM GRÁFICO (LINHA DO TEMPO CORRIGIDA) ---
         window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
             const cont = document.getElementById('modalContainer');
-            // Mostra carregando
             document.getElementById('modalOverlay').classList.remove('hidden');
             cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i><p class="text-xs mt-2 font-bold text-gray-500">Calculando trajetória...</p></div>`;
 
             try {
-                // 1. Buscamos TUDO (Matches, Guesses e Users) para calcular o Ranking Real
                 const [mSnap, gSnap, uSnap] = await Promise.all([
                     getDocs(collection(db, "matches")),
                     getDocs(collection(db, "guesses")),
                     getDocs(collection(db, "users"))
                 ]);
 
-                // --- PREPARAÇÃO DOS DADOS ---
-                
-                // Lista de todos os usuários (para o leaderboard)
+                // 1. Dados e Datas
                 const allUsersIds = [];
-                uSnap.forEach(d => allUsersIds.push(d.id));
-                const totalParticipants = allUsersIds.length;
-
-                // Mapa de Palpites: { "matchId_userId": "TimeApostado" } (Acesso O(1) rápido)
-                const guessesMap = {};
-                gSnap.forEach(d => {
-                    const g = d.data();
-                    guessesMap[`${g.matchId}_${g.userId}`] = g.teamSelected;
+                const usersMap = {};
+                uSnap.forEach(d => { 
+                    const dt = d.data().createdAt ? d.data().createdAt.toDate() : new Date(0);
+                    usersMap[d.id] = dt;
+                    allUsersIds.push(d.id); 
                 });
 
-                // Lista de Jogos Finalizados (Ordenados por Data: Antigo -> Novo)
+                const guessesMap = {};
+                gSnap.forEach(d => { guessesMap[`${d.data().matchId}_${d.data().userId}`] = d.data().teamSelected; });
+
                 const matches = [];
                 mSnap.forEach(d => {
                     const m = d.data();
                     if (m.winner) matches.push({ id: d.id, ...m, deadlineDate: m.deadline.toDate() });
                 });
-                matches.sort((a, b) => a.deadlineDate - b.deadlineDate); // Ascendente para o gráfico
+                matches.sort((a, b) => a.deadlineDate - b.deadlineDate);
 
-                // --- CÁLCULO DA TRAJETÓRIA (REPLAY DO CAMPEONATO) ---
-                
-                // Leaderboard volátil { uid: pontos }
+                // 2. Cálculo do Rank Histórico
                 let currentScores = {}; 
                 allUsersIds.forEach(uid => currentScores[uid] = 0);
-
-                let rankHistory = []; // [Posição Jogo 1, Posição Jogo 2...]
+                let rankHistory = [];
                 
-                // Estatísticas Individuais (Acumuladas)
-                let totalGuesses = 0;
-                let totalHits = 0;
-                let currentStreak = 0;
+                // Target Info
+                const targetCreated = usersMap[targetUid] || new Date(0);
+                
+                // Stats
+                let totalGuesses = 0, totalHits = 0, currentStreak = 0;
                 let streakBroken = false;
-                const compStats = {}; 
+                const compStats = {};
 
-                // Loop Jogo a Jogo
                 matches.forEach((m, index) => {
-                    // 1. Atualiza pontuação de TODOS os participantes neste jogo
+                    // Se o jogo aconteceu ANTES do usuário entrar, PULA para o gráfico não ficar zerado
+                    if (targetCreated > m.deadlineDate) return;
+
+                    // Atualiza pontuação de TODOS (para saber o ranking relativo)
                     allUsersIds.forEach(uid => {
+                        // Só conta pontos se o "concorrente" também já existia
+                        if (usersMap[uid] > m.deadlineDate) return;
+
                         const vote = guessesMap[`${m.id}_${uid}`];
                         if (vote && vote === m.winner) {
                             const pts = (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
@@ -3276,35 +3131,30 @@ document.getElementById('btnLogout').onclick = () => {
                         }
                     });
 
-                    // 2. Descobre a posição do alvo AGORA
-                    // Ordena leaderboard (Maior pontuação -> Menor)
-                    const sortedLeaderboard = Object.entries(currentScores).sort((a, b) => b[1] - a[1]);
-                    // Acha índice (+1 para ser 1º, 2º...)
+                    // Descobre posição do alvo
+                    const sortedLeaderboard = Object.entries(currentScores)
+                        .filter(([uid]) => usersMap[uid] <= m.deadlineDate) // Filtra apenas users ativos na data
+                        .sort((a, b) => b[1] - a[1]);
+                    
                     const myRank = sortedLeaderboard.findIndex(item => item[0] === targetUid) + 1;
-                    rankHistory.push(myRank);
+                    if (myRank > 0) rankHistory.push(myRank);
 
-                    // 3. Calcula Scout Individual (apenas do usuário alvo)
+                    // Stats Individuais
                     const myVote = guessesMap[`${m.id}_${targetUid}`];
                     if (myVote) {
                         totalGuesses++;
                         const isHit = myVote === m.winner;
                         if (isHit) totalHits++;
-
-                        // Stats Competição
                         if (!compStats[m.competition]) compStats[m.competition] = { hits: 0, total: 0 };
                         compStats[m.competition].total++;
                         if (isHit) compStats[m.competition].hits++;
                     }
-
-                    // 4. Streak (Calculado de trás pra frente geralmente, mas aqui vamos manter simples no loop reverso depois ou acumular)
-                    // Para simplificar e bater com o Android, vamos recalcular o Streak APENAS no final usando a ordem inversa
                 });
 
-                // Recálculo do Streak (Recente -> Antigo) para ser preciso
+                // Streak (Reversa)
                 const matchesDesc = [...matches].reverse();
-                streakBroken = false;
-                currentStreak = 0;
                 matchesDesc.forEach(m => {
+                    if (targetCreated > m.deadlineDate) return;
                     const myVote = guessesMap[`${m.id}_${targetUid}`];
                     if (myVote) {
                         const hit = myVote === m.winner;
@@ -3317,7 +3167,7 @@ document.getElementById('btnLogout').onclick = () => {
                     } else streakBroken = true;
                 });
 
-                // Especialidade / Ponto Fraco
+                // Render (Mantido igual, só muda os dados calculados acima)
                 let bestComp = "---"; let bestPct = -1;
                 let worstComp = "---"; let worstPct = 101;
                 for (const [comp, stat] of Object.entries(compStats)) {
@@ -3328,159 +3178,40 @@ document.getElementById('btnLogout').onclick = () => {
                     }
                 }
                 const acc = totalGuesses > 0 ? Math.round((totalHits / totalGuesses) * 100) : 0;
-
-                // Streak Display HTML
+                
                 let streakDisplay = "";
-                if(currentStreak > 0) streakDisplay = `<div class="text-green-600"><i class="fas fa-fire"></i> +${currentStreak}</div><div class="text-[8px] text-gray-400">VITÓRIAS SEGUIDAS</div>`;
-                else if(currentStreak < 0) streakDisplay = `<div class="text-red-600"><i class="fas fa-snowflake"></i> ${currentStreak}</div><div class="text-[8px] text-gray-400">ERROS SEGUIDOS</div>`;
+                if(currentStreak > 0) streakDisplay = `<div class="text-green-600"><i class="fas fa-fire"></i> +${currentStreak}</div><div class="text-[8px] text-gray-400">VITÓRIAS</div>`;
+                else if(currentStreak < 0) streakDisplay = `<div class="text-red-600"><i class="fas fa-snowflake"></i> ${currentStreak}</div><div class="text-[8px] text-gray-400">ERROS</div>`;
                 else streakDisplay = `<div class="text-gray-400">-</div><div class="text-[8px] text-gray-400">NEUTRO</div>`;
 
-                // --- RENDERIZAÇÃO DO MODAL ---
                 const html = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 90vh; overflow-y: auto;">
                     <div class="absolute inset-0 bg-gradient-to-br from-gray-900 via-[#006400] to-black opacity-90"></div>
                     <img src="bg_ranking.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-10 mix-blend-overlay">
-                    
                     <div class="relative z-10 p-5 text-white">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="font-black italic text-[#FFD700] text-lg tracking-widest">SCOUT 2026</h3>
-                            <button onclick="closeModal()" class="text-white/50 hover:text-white"><i class="fas fa-times"></i></button>
-                        </div>
-
-                        <div class="flex items-center gap-4 mb-6">
-                            <div class="w-20 h-20 rounded-full border-4 border-[#FFD700] overflow-hidden bg-black shadow-lg shrink-0">
-                                <img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-full h-full object-cover">
-                            </div>
-                            <div>
-                                <h2 class="font-black text-2xl uppercase leading-none mb-1">${targetName}</h2>
-                                <div class="inline-block bg-[#FFD700] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase">Atleta Oficial</div>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div class="bg-white/10 rounded-lg p-3 text-center border border-white/10 backdrop-blur-sm">
-                                <div class="text-3xl font-black text-[#FFD700]">${acc}<span class="text-sm">%</span></div>
-                                <div class="text-[8px] uppercase font-bold text-gray-300 tracking-wider">Aproveitamento</div>
-                            </div>
-                            <div class="bg-white/10 rounded-lg p-3 text-center border border-white/10 backdrop-blur-sm flex flex-col justify-center items-center font-black text-xl">
-                                ${streakDisplay}
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-lg p-2 mb-4 shadow-lg">
-                            <p class="text-[10px] text-gray-500 font-bold mb-2 text-center uppercase">Trajetória no Ranking</p>
-                            <div class="h-40 w-full">
-                                <canvas id="scoutChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="space-y-2">
-                            <div class="bg-gradient-to-r from-green-900/50 to-transparent p-2 rounded border-l-4 border-green-500 flex justify-between items-center">
-                                <div class="text-xs">
-                                    <p class="text-gray-400 text-[9px] uppercase font-bold">Especialidade</p>
-                                    <p class="font-bold text-white text-sm">${bestComp} (${Math.round(bestPct)}%)</p>
-                                </div>
-                                <i class="fas fa-star text-green-400 text-xl opacity-50"></i>
-                            </div>
-
-                            <div class="bg-gradient-to-r from-red-900/50 to-transparent p-2 rounded border-l-4 border-red-500 flex justify-between items-center">
-                                <div class="text-xs">
-                                    <p class="text-gray-400 text-[9px] uppercase font-bold">Ponto Fraco</p>
-                                    <p class="font-bold text-white text-sm">${worstComp} (${Math.round(worstPct)}%)</p>
-                                </div>
-                                <i class="fas fa-skull text-red-400 text-xl opacity-50"></i>
-                            </div>
-                        </div>
-
-                        <div class="mt-6 pt-4 border-t border-white/10 grid grid-cols-2 gap-4 text-center">
-                             <div>
-                                 <p class="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Confrontos</p>
-                                 <p class="text-white font-black text-xl">${totalGuesses}<span class="text-gray-500 text-xs">/${matches.length}</span></p>
-                             </div>
-                             <div>
-                                 <p class="text-[9px] text-gray-400 uppercase tracking-widest font-bold">Total Acertos</p>
-                                 <p class="text-[#FFD700] font-black text-xl">${totalHits}</p>
-                             </div>
-                        </div>
-                        
+                        <div class="flex justify-between items-start mb-2"><h3 class="font-black italic text-[#FFD700] text-lg tracking-widest">SCOUT 2026</h3><button onclick="closeModal()" class="text-white/50 hover:text-white"><i class="fas fa-times"></i></button></div>
+                        <div class="flex items-center gap-4 mb-6"><div class="w-20 h-20 rounded-full border-4 border-[#FFD700] overflow-hidden bg-black shadow-lg shrink-0"><img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-full h-full object-cover"></div><div><h2 class="font-black text-2xl uppercase leading-none mb-1">${targetName}</h2><div class="inline-block bg-[#FFD700] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase">Atleta Oficial</div></div></div>
+                        <div class="grid grid-cols-2 gap-3 mb-4"><div class="bg-white/10 rounded-lg p-3 text-center border border-white/10 backdrop-blur-sm"><div class="text-3xl font-black text-[#FFD700]">${acc}<span class="text-sm">%</span></div><div class="text-[8px] uppercase font-bold text-gray-300 tracking-wider">Aproveitamento</div></div><div class="bg-white/10 rounded-lg p-3 text-center border border-white/10 backdrop-blur-sm flex flex-col justify-center items-center font-black text-xl">${streakDisplay}</div></div>
+                        <div class="bg-white rounded-lg p-2 mb-4 shadow-lg"><p class="text-[10px] text-gray-500 font-bold mb-2 text-center uppercase">Trajetória no Ranking</p><div class="h-40 w-full"><canvas id="scoutChart"></canvas></div></div>
+                        <div class="space-y-2"><div class="bg-gradient-to-r from-green-900/50 to-transparent p-2 rounded border-l-4 border-green-500 flex justify-between items-center"><div class="text-xs"><p class="text-gray-400 text-[9px] uppercase font-bold">Especialidade</p><p class="font-bold text-white text-sm">${bestComp} (${Math.round(bestPct)}%)</p></div><i class="fas fa-star text-green-400 text-xl opacity-50"></i></div><div class="bg-gradient-to-r from-red-900/50 to-transparent p-2 rounded border-l-4 border-red-500 flex justify-between items-center"><div class="text-xs"><p class="text-gray-400 text-[9px] uppercase font-bold">Ponto Fraco</p><p class="font-bold text-white text-sm">${worstComp} (${Math.round(worstPct)}%)</p></div><i class="fas fa-skull text-red-400 text-xl opacity-50"></i></div></div>
                         <button onclick="closeModal()" class="mt-4 w-full bg-[#FFD700] text-black font-black py-3 rounded shadow-lg btn-press text-xs">FECHAR CARD</button>
                     </div>
-                </div>
-                `;
+                </div>`;
                 cont.innerHTML = html;
 
-                // --- INICIALIZAÇÃO DO CHART.JS ---
-                // Destroi gráfico anterior se existir
                 if (window.myScoutChart) { window.myScoutChart.destroy(); }
-
                 const ctx = document.getElementById('scoutChart').getContext('2d');
-                
-                // Gradiente Verde para o Fundo
-                const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-                gradient.addColorStop(0, 'rgba(0, 100, 0, 0.5)'); // Verde escuro
-                gradient.addColorStop(1, 'rgba(0, 100, 0, 0.0)'); // Transparente
-
-                // Labels do Eixo X (Jogos 1, 2, 3...)
+                const gradient = ctx.createLinearGradient(0, 0, 0, 200); gradient.addColorStop(0, 'rgba(0, 100, 0, 0.5)'); gradient.addColorStop(1, 'rgba(0, 100, 0, 0.0)');
                 const labels = rankHistory.map((_, i) => (i + 1).toString());
-
                 window.myScoutChart = new Chart(ctx, {
                     type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Posição',
-                            data: rankHistory,
-                            borderColor: '#006400', // Linha Verde Escura
-                            backgroundColor: gradient,
-                            borderWidth: 2,
-                            pointBackgroundColor: '#FFD700', // Pontos Dourados
-                            pointRadius: 3,
-                            fill: true,
-                            tension: 0.3 // Suavização da linha
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return `Posição: ${context.parsed.y}º`;
-                                    },
-                                    title: function(context) {
-                                        return `Jogo #${context[0].label}`;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                reverse: true, // INVERTE O EIXO: 1º LUGAR NO TOPO
-                                beginAtZero: false,
-                                min: 1, // Começa em 1º
-                                // Sugere o máximo dinamicamente ou fixo
-                                suggestedMax: totalParticipants, 
-                                grid: { color: '#f3f4f6' },
-                                ticks: { 
-                                    stepSize: 1,
-                                    callback: function(value) { return value + 'º'; } 
-                                }
-                            },
-                            x: {
-                                grid: { display: false },
-                                ticks: {
-                                    maxTicksLimit: 6 // Não lotar o eixo X
-                                }
-                            }
-                        }
-                    }
+                    data: { labels: labels, datasets: [{ label: 'Posição', data: rankHistory, borderColor: '#006400', backgroundColor: gradient, borderWidth: 2, pointBackgroundColor: '#FFD700', pointRadius: 3, fill: true, tension: 0.3 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { reverse: true, beginAtZero: false, min: 1, suggestedMax: totalParticipants, grid: { color: '#f3f4f6' }, ticks: { stepSize: 1, callback: function(value) { return value + 'º'; } } }, x: { grid: { display: false }, ticks: { maxTicksLimit: 6 } } } }
                 });
 
             } catch (e) {
                 console.error(e);
-                cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro ao carregar scout.<br><span class="text-xs font-normal text-black">${e.message}</span></div>`;
+                cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro.<br><span class="text-xs font-normal text-black">${e.message}</span></div>`;
             }
         };
         // --- FUNÇÕES PARA ABRIR/FECHAR AS LISTAS (TOGGLE) ---
@@ -3532,6 +3263,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
