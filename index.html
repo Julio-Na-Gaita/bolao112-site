@@ -2173,9 +2173,10 @@ window.showKingModal = () => {
        window.showModalPhoto = (idx) => { 
             const u = currentRankingData[idx]; 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
-           const scoutClass = appConfig.scout ? "flex" : "hidden";
+            const scoutClass = appConfig.scout ? "flex" : "hidden";
             
-            let imageContent = `<img src="${getAvatarUrl(u.photo, u.name)}" class="w-full h-full object-contain bg-black">`;
+            // CORREÇÃO 1: Mudado de u.photo para u.photoBase64
+            let imageContent = `<img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-full h-full object-contain bg-black">`;
             
             // --- LÓGICA DE STACKING E ORDENAÇÃO DE MEDALHAS ---
             let medalsHtml = "";
@@ -2268,7 +2269,8 @@ window.showKingModal = () => {
                     </div>
                 </div>`;
             
-            const btnStats = document.getElementById('btnStatsAction'); if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photo);
+            // CORREÇÃO 2: Mudado de u.photo para u.photoBase64 aqui também para o botão do scout
+            const btnStats = document.getElementById('btnStatsAction'); if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photoBase64);
             const btnCompare = document.getElementById('btnCompareAction'); if (btnCompare && !isMe) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
         };
 
@@ -3430,6 +3432,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
