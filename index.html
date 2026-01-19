@@ -18,22 +18,48 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style id="theme-override">
-        /* Força as cores dinâmicas sobre as cores fixas do Tailwind */
-        :root { --primary: #006400; --secondary: #FFD700; --bg-image: url('bg_jogos.jpeg'); }
+        /* --- PONTE DE TEMAS (CSS Variables) --- */
+        :root { 
+            --primary: #006400; 
+            --secondary: #FFD700; 
+            --bg-image: url('bg_jogos.jpeg');
+            --app-font: 'PT Serif', serif;
+        }
         
-        /* Aplica ao Header e Botões Principais */
-        #mainHeader, .bg-\[\#006400\], .bg-green-600 { background-color: var(--primary) !important; }
-        .text-\[\#006400\], .text-green-600 { color: var(--primary) !important; }
-        .border-\[\#006400\] { border-color: var(--primary) !important; }
-        
-        /* Aplica aos Destaques Secundários */
-        .text-\[\#FFD700\], .text-yellow-400 { color: var(--secondary) !important; }
-        .border-\[\#FFD700\] { border-color: var(--secondary) !important; }
+        /* 1. Força a Fonte em TUDO */
+        body, button, input, select, textarea, h1, h2, h3, p, span, div {
+            font-family: var(--app-font) !important;
+        }
 
-        /* Fundo com Marca D'água */
+        /* 2. Força o Background Dinâmico */
         #bgLayer {
             background-image: var(--bg-image) !important;
-            opacity: 1 !important; /* Controlado via JS */
+            opacity: 1 !important;
+            background-size: cover !important;
+            background-position: center !important;
+        }
+
+        /* 3. Substitui as cores fixas VERDES pela variável PRIMÁRIA */
+        .bg-\[\#006400\], .bg-green-600, .bg-green-700, .bg-green-800, .theme-bg-primary { 
+            background-color: var(--primary) !important; 
+        }
+        .text-\[\#006400\], .text-green-600, .text-green-700, .text-green-800, .theme-text-primary { 
+            color: var(--primary) !important; 
+        }
+        .border-\[\#006400\], .border-green-600, .theme-border-primary { 
+            border-color: var(--primary) !important; 
+        }
+
+        /* 4. Substitui as cores fixas DOURADAS pela variável SECUNDÁRIA */
+        .text-\[\#FFD700\], .text-yellow-400, .text-yellow-500, .theme-text-secondary { 
+            color: var(--secondary) !important; 
+        }
+        .border-\[\#FFD700\], .border-yellow-400, .theme-border-secondary { 
+            border-color: var(--secondary) !important; 
+        }
+        /* Nota: Ícones dourados/amarelos também pegam a cor secundária */
+        .fa-crown, .fa-trophy, .fa-star {
+            color: var(--secondary) !important;
         }
     </style>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -154,7 +180,7 @@
         .ticker-wrapper {
             display: flex;
             white-space: nowrap;
-            animation: ticker-scroll 120s linear infinite; /* Velocidade do letreiro */
+            animation: ticker-scroll 110s linear infinite; /* Velocidade do letreiro */
         }
         
         .ticker-wrapper:hover {
@@ -485,7 +511,7 @@
         // --- NOVAS VARIÁVEIS AQUI ---
         let layoutOrder = []; // Vai guardar a ordem da tela ["ticker", "banner_X", "matches_open"...]
         let activePolls = {}; // Cache das enquetes
-        // --- MOTOR DE TEMA E ÁUDIO ---
+       // --- MOTOR DE TEMA E ÁUDIO (CORRIGIDO) ---
     
     let userPreferences = {
         primaryColor: '#006400',
@@ -495,7 +521,7 @@
         audioPack: 'som_pop.mp3'
     };
 
-    // Lista de Sons (Arquivos na Raiz)
+    // Lista de Sons (Nomes exatos dos arquivos na raiz)
     const audioFiles = {
         'som_pop.mp3': 'Padrão (Pop)',
         'som_apito.mp3': 'Estádio (Apito)',
@@ -521,28 +547,37 @@
         
         // 1. Aplica Fontes
         root.style.setProperty('--app-font', userPreferences.font);
-        document.body.style.fontFamily = userPreferences.font;
 
         // 2. Aplica Skins (Cores e Fundo)
         if (userPreferences.skin === 'ceara') {
+            // TEMA CEARÁ: Preto e Branco + Escudo
             root.style.setProperty('--primary', '#000000');
             root.style.setProperty('--secondary', '#FFFFFF');
-            root.style.setProperty('--bg-image', "linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('escudo_ceara.png')");
-        } else if (userPreferences.skin === 'fortaleza') {
-            root.style.setProperty('--primary', '#1155cc');
-            root.style.setProperty('--secondary', '#bb0a1e');
-            root.style.setProperty('--bg-image', "linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url('escudo_fortaleza.png')");
-        } else {
-            // Modo Personalizado
+            // Como não temos a imagem escudo_ceara.png, usamos um gradiente preto/cinza
+            root.style.setProperty('--bg-image', "linear-gradient(to bottom, #424242, #000000)");
+        } 
+        else if (userPreferences.skin === 'fortaleza') {
+            // TEMA FORTALEZA: Azul e Vermelho + Escudo
+            root.style.setProperty('--primary', '#1155cc');   // Azul
+            root.style.setProperty('--secondary', '#bb0a1e'); // Vermelho
+            // Gradiente Azul/Vermelho
+            root.style.setProperty('--bg-image', "linear-gradient(to bottom, #1e3c72, #2a5298)");
+        } 
+        else {
+            // TEMA PADRÃO / PERSONALIZADO
             root.style.setProperty('--primary', userPreferences.primaryColor);
             root.style.setProperty('--secondary', userPreferences.secondaryColor);
+            // Volta para a imagem padrão do estádio
             root.style.setProperty('--bg-image', "linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg')");
         }
     };
 
     const saveTheme = (newPrefs) => {
+        // Atualiza o objeto de preferências
         userPreferences = { ...userPreferences, ...newPrefs };
+        // Salva no navegador
         localStorage.setItem('bolao_theme_v1', JSON.stringify(userPreferences));
+        // Aplica imediatamente
         applyThemeVisuals();
     };
 
@@ -552,9 +587,10 @@
         // Cria o áudio e força o play
         const audio = new Audio(file);
         audio.volume = 0.5;
-        audio.play().catch(e => console.log("Áudio bloqueado:", e));
+        audio.play().catch(e => console.log("Áudio bloqueado (interaja com a página primeiro):", e));
     };
 
+    // Inicializa assim que o script carregar
     loadTheme();
         // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
         const getAvatarUrl = (base64, name) => {
@@ -3681,6 +3717,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
