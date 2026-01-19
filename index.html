@@ -17,17 +17,17 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <style id="theme-override">
+   <style id="theme-override">
         /* --- PONTE DE TEMAS (CSS Variables) --- */
         :root { 
             --primary: #006400; 
             --secondary: #FFD700; 
-            --bg-image: url('bg_jogos.jpeg');
+            --bg-image: linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg');
             --app-font: 'PT Serif', serif;
         }
         
         /* 1. Força a Fonte em TUDO */
-        body, button, input, select, textarea, h1, h2, h3, p, span, div {
+        body, button, input, select, textarea, h1, h2, h3, p, span, div, a {
             font-family: var(--app-font) !important;
         }
 
@@ -37,28 +37,40 @@
             opacity: 1 !important;
             background-size: cover !important;
             background-position: center !important;
+            background-attachment: fixed !important;
         }
 
-        /* 3. Substitui as cores fixas VERDES pela variável PRIMÁRIA */
-        .bg-\[\#006400\], .bg-green-600, .bg-green-700, .bg-green-800, .theme-bg-primary { 
+        /* 3. SUBSTITUIÇÃO DE CORES (A Mágica acontece aqui) */
+        
+        /* Cor Primária (Verdes originais viram a cor do tema) */
+        #mainHeader, 
+        .bg-\[\#006400\], .bg-green-600, .bg-green-700, .bg-green-800,
+        .bg-\[\#1565C0\], /* Botão azul vira tema */
+        .theme-bg-primary { 
             background-color: var(--primary) !important; 
         }
-        .text-\[\#006400\], .text-green-600, .text-green-700, .text-green-800, .theme-text-primary { 
+        
+        .text-\[\#006400\], .text-green-600, .text-green-700, .text-green-800,
+        .theme-text-primary { 
             color: var(--primary) !important; 
         }
-        .border-\[\#006400\], .border-green-600, .theme-border-primary { 
+        
+        .border-\[\#006400\], .border-green-600, .border-green-200,
+        .theme-border-primary { 
             border-color: var(--primary) !important; 
         }
 
-        /* 4. Substitui as cores fixas DOURADAS pela variável SECUNDÁRIA */
+        /* Cor Secundária (Dourados originais viram a cor secundária do tema) */
         .text-\[\#FFD700\], .text-yellow-400, .text-yellow-500, .theme-text-secondary { 
             color: var(--secondary) !important; 
         }
+        
         .border-\[\#FFD700\], .border-yellow-400, .theme-border-secondary { 
             border-color: var(--secondary) !important; 
         }
-        /* Nota: Ícones dourados/amarelos também pegam a cor secundária */
-        .fa-crown, .fa-trophy, .fa-star {
+        
+        /* Ícones especiais */
+        .fa-crown, .fa-trophy, .fa-star, .fa-check-circle {
             color: var(--secondary) !important;
         }
     </style>
@@ -511,8 +523,9 @@
         // --- NOVAS VARIÁVEIS AQUI ---
         let layoutOrder = []; // Vai guardar a ordem da tela ["ticker", "banner_X", "matches_open"...]
         let activePolls = {}; // Cache das enquetes
-       // --- MOTOR DE TEMA E ÁUDIO (CORRIGIDO) ---
+       // --- MOTOR DE TEMA E ÁUDIO (FINAL) ---
     
+    // Configuração Inicial
     let userPreferences = {
         primaryColor: '#006400',
         secondaryColor: '#FFD700',
@@ -521,7 +534,6 @@
         audioPack: 'som_pop.mp3'
     };
 
-    // Lista de Sons (Nomes exatos dos arquivos na raiz)
     const audioFiles = {
         'som_pop.mp3': 'Padrão (Pop)',
         'som_apito.mp3': 'Estádio (Apito)',
@@ -536,62 +548,145 @@
         'som_error.mp3': 'Erro (Windows)'
     };
 
+    // Carrega do LocalStorage
     const loadTheme = () => {
-        const saved = localStorage.getItem('bolao_theme_v1');
-        if (saved) { userPreferences = JSON.parse(saved); }
-        applyThemeVisuals();
+        try {
+            const saved = localStorage.getItem('bolao_theme_v1');
+            if (saved) { userPreferences = JSON.parse(saved); }
+            applyThemeVisuals();
+        } catch(e) { console.error("Erro ao carregar tema", e); }
     };
 
+    // Aplica as variáveis CSS
     const applyThemeVisuals = () => {
         const root = document.documentElement;
         
-        // 1. Aplica Fontes
+        // 1. Fontes
         root.style.setProperty('--app-font', userPreferences.font);
 
-        // 2. Aplica Skins (Cores e Fundo)
+        // 2. Skins (Cores e Fundo)
         if (userPreferences.skin === 'ceara') {
-            // TEMA CEARÁ: Preto e Branco + Escudo
             root.style.setProperty('--primary', '#000000');
             root.style.setProperty('--secondary', '#FFFFFF');
-            // Como não temos a imagem escudo_ceara.png, usamos um gradiente preto/cinza
-            root.style.setProperty('--bg-image', "linear-gradient(to bottom, #424242, #000000)");
+            // Tenta carregar imagem, se falhar fica preto
+            root.style.setProperty('--bg-image', "linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('escudo_ceara.png')");
         } 
         else if (userPreferences.skin === 'fortaleza') {
-            // TEMA FORTALEZA: Azul e Vermelho + Escudo
-            root.style.setProperty('--primary', '#1155cc');   // Azul
-            root.style.setProperty('--secondary', '#bb0a1e'); // Vermelho
-            // Gradiente Azul/Vermelho
-            root.style.setProperty('--bg-image', "linear-gradient(to bottom, #1e3c72, #2a5298)");
+            root.style.setProperty('--primary', '#1155cc');   
+            root.style.setProperty('--secondary', '#bb0a1e'); 
+            root.style.setProperty('--bg-image', "linear-gradient(rgba(17,85,204,0.7), rgba(187,10,30,0.7)), url('escudo_fortaleza.png')");
         } 
         else {
-            // TEMA PADRÃO / PERSONALIZADO
+            // Padrão / Custom
             root.style.setProperty('--primary', userPreferences.primaryColor);
             root.style.setProperty('--secondary', userPreferences.secondaryColor);
-            // Volta para a imagem padrão do estádio
             root.style.setProperty('--bg-image', "linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg')");
         }
     };
 
+    // Salva e Reaplica
     const saveTheme = (newPrefs) => {
-        // Atualiza o objeto de preferências
         userPreferences = { ...userPreferences, ...newPrefs };
-        // Salva no navegador
         localStorage.setItem('bolao_theme_v1', JSON.stringify(userPreferences));
-        // Aplica imediatamente
         applyThemeVisuals();
+        // Se o modal estiver aberto, recarrega ele para mostrar a seleção
+        if(document.getElementById('modalContainer').innerHTML.includes('Personalização')) {
+            window.openThemeEditor();
+        }
     };
 
-    // Tocar Som (Direto da Raiz)
+    // Tocar Som
     const playVoteSound = (previewFile) => {
         const file = previewFile || userPreferences.audioPack;
-        // Cria o áudio e força o play
         const audio = new Audio(file);
         audio.volume = 0.5;
-        audio.play().catch(e => console.log("Áudio bloqueado (interaja com a página primeiro):", e));
+        audio.play().catch(e => console.log("Áudio:", e));
     };
 
-    // Inicializa assim que o script carregar
+    // Inicializa
     loadTheme();
+
+    // --- MODAL DE PERSONALIZAÇÃO (REATIVO) ---
+    window.openThemeEditor = () => {
+        const modal = document.getElementById('modalOverlay');
+        const cont = document.getElementById('modalContainer');
+        modal.classList.remove('hidden');
+        
+        // Gera HTML dos Sons
+        let soundsHtml = '';
+        for (const [file, label] of Object.entries(audioFiles)) {
+            const isSelected = userPreferences.audioPack === file;
+            // O truque: onclick salva e a função saveTheme chama openThemeEditor de novo para atualizar o "check"
+            soundsHtml += `
+            <div onclick="saveTheme({audioPack: '${file}'}); playVoteSound('${file}')" class="w-full text-left p-3 bg-white border rounded flex justify-between items-center mb-2 cursor-pointer btn-press ${isSelected ? 'border-green-500 bg-green-50 ring-1 ring-green-500' : ''}">
+                <span class="text-xs font-bold flex items-center gap-2">
+                    <i class="fas fa-music text-gray-400"></i> ${label}
+                </span>
+                ${isSelected ? '<i class="fas fa-check text-green-600"></i>' : ''}
+            </div>`;
+        }
+
+        const skin = userPreferences.skin;
+
+        cont.innerHTML = `
+        <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden h-[80vh] flex flex-col">
+            <div class="theme-bg-primary bg-[#006400] p-4 text-white flex justify-between items-center shrink-0">
+                <h3 class="font-black uppercase text-sm">Personalização</h3>
+                <button onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
+                
+                <div>
+                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Modo Torcedor (Skins)</h4>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div onclick="saveTheme({skin: 'padrao'})" class="cursor-pointer p-2 border rounded bg-white text-xs font-bold text-center ${skin === 'padrao' ? 'border-green-600 ring-2 ring-green-600' : ''}">Padrão</div>
+                        <div onclick="saveTheme({skin: 'ceara'})" class="cursor-pointer p-2 border rounded bg-black text-white text-xs font-bold text-center ${skin === 'ceara' ? 'ring-2 ring-gray-400' : ''}">Ceará</div>
+                        <div onclick="saveTheme({skin: 'fortaleza'})" class="cursor-pointer p-2 border rounded bg-blue-700 text-white text-xs font-bold text-center ${skin === 'fortaleza' ? 'ring-2 ring-red-500' : ''}">Fortaleza</div>
+                    </div>
+                </div>
+
+                <div class="${skin !== 'padrao' ? 'opacity-50 pointer-events-none grayscale' : ''} transition-all">
+                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Cores do App</h4>
+                    <div class="flex items-center gap-4 bg-white p-3 rounded border">
+                        <div class="flex flex-col items-center">
+                            <label class="text-[9px] font-bold mb-1">Primária</label>
+                            <input type="color" value="${userPreferences.primaryColor}" onchange="saveTheme({primaryColor: this.value})">
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <label class="text-[9px] font-bold mb-1">Secundária</label>
+                            <input type="color" value="${userPreferences.secondaryColor}" onchange="saveTheme({secondaryColor: this.value})">
+                        </div>
+                        <div class="text-[9px] text-gray-400 leading-tight ml-2">Toque na cor para alterar.<br>Válido no modo Padrão.</div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Tipografia</h4>
+                    <select onchange="saveTheme({font: this.value})" class="w-full p-2 text-xs border rounded bg-white font-bold text-gray-700">
+                        <option value="'PT Serif', serif" ${userPreferences.font.includes('PT Serif')?'selected':''}>Clássica (Serif)</option>
+                        <option value="'Roboto', sans-serif" ${userPreferences.font.includes('Roboto')?'selected':''}>Moderna (Sans)</option>
+                        <option value="'Bebas Neue', cursive" ${userPreferences.font.includes('Bebas')?'selected':''}>Manchete (Bebas)</option>
+                        <option value="'Pacifico', cursive" ${userPreferences.font.includes('Pacifico')?'selected':''}>Handwritten (Pacifico)</option>
+                        <option value="'Press Start 2P', cursive" ${userPreferences.font.includes('Press Start')?'selected':''}>Gamer (Pixel)</option>
+                        <option value="'Creepster', cursive" ${userPreferences.font.includes('Creepster')?'selected':''}>Terror</option>
+                    </select>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Game Feel (Sons de Voto)</h4>
+                    <div class="max-h-48 overflow-y-auto pr-1 space-y-1">
+                        ${soundsHtml}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-3 bg-white border-t">
+                <button onclick="closeModal()" class="w-full bg-[#006400] theme-bg-primary text-white py-3 rounded font-bold shadow btn-press text-sm uppercase">Salvar e Fechar</button>
+            </div>
+        </div>
+        `;
+    };
         // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
         const getAvatarUrl = (base64, name) => {
             // 1. Se tem foto real, usa ela
@@ -2881,70 +2976,6 @@ async function loadProfile() {
 
         } catch (error) { console.error("Erro no loadProfile:", error); } 
     }
-window.openThemeEditor = () => {
-        const modal = document.getElementById('modalOverlay');
-        const cont = document.getElementById('modalContainer');
-        modal.classList.remove('hidden');
-        
-        // Gera HTML dos Sons dinamicamente
-        let soundsHtml = '';
-        for (const [file, label] of Object.entries(audioFiles)) {
-            const isSelected = userPreferences.audioPack === file;
-            soundsHtml += `
-            <button onclick="saveTheme({audioPack: '${file}'}); playVoteSound('${file}')" class="w-full text-left p-3 bg-white border rounded flex justify-between items-center mb-2 ${isSelected ? 'border-green-500 bg-green-50 ring-1 ring-green-500' : ''}">
-                <span class="text-xs font-bold flex items-center gap-2">
-                    <i class="fas fa-music text-gray-400"></i> ${label}
-                </span>
-                ${isSelected ? '<i class="fas fa-check text-green-600"></i>' : ''}
-            </button>`;
-        }
-
-        cont.innerHTML = `
-        <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden h-[80vh] flex flex-col">
-            <div class="theme-bg-primary p-4 text-white flex justify-between items-center shrink-0">
-                <h3 class="font-black uppercase text-sm">Personalização</h3>
-                <button onclick="closeModal()"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <div class="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50">
-                
-                <div>
-                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Modo Torcedor (Skins)</h4>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="saveTheme({skin: 'padrao'})" class="p-2 border rounded bg-white text-xs font-bold hover:bg-gray-100 ${userPreferences.skin === 'padrao' ? 'border-green-600 ring-1 ring-green-600' : ''}">Padrão</button>
-                        <button onclick="saveTheme({skin: 'ceara'})" class="p-2 border rounded bg-black text-white text-xs font-bold hover:opacity-80 ${userPreferences.skin === 'ceara' ? 'ring-2 ring-gray-400' : ''}">Ceará</button>
-                        <button onclick="saveTheme({skin: 'fortaleza'})" class="p-2 border rounded bg-blue-700 text-white text-xs font-bold hover:opacity-80 ${userPreferences.skin === 'fortaleza' ? 'ring-2 ring-red-500' : ''}">Fortaleza</button>
-                    </div>
-                </div>
-
-                <div class="${userPreferences.skin !== 'padrao' ? 'opacity-50 pointer-events-none' : ''}">
-                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Cores do App</h4>
-                    <div class="flex items-center gap-4 bg-white p-3 rounded border">
-                        <div class="flex flex-col items-center">
-                            <label class="text-[9px] font-bold mb-1">Primária</label>
-                            <input type="color" value="${userPreferences.primaryColor}" onchange="saveTheme({primaryColor: this.value})">
-                        </div>
-                        <div class="flex flex-col items-center">
-                            <label class="text-[9px] font-bold mb-1">Secundária</label>
-                            <input type="color" value="${userPreferences.secondaryColor}" onchange="saveTheme({secondaryColor: this.value})">
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Game Feel (Sons de Voto)</h4>
-                    <div class="max-h-40 overflow-y-auto pr-1">
-                        ${soundsHtml}
-                    </div>
-                </div>
-            </div>
-            
-            <div class="p-3 bg-white border-t">
-                <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-bold shadow btn-press text-sm">SALVAR E FECHAR</button>
-            </div>
-        </div>
-        `;
-    };
 
     // Handler Auxiliar para Upload de Foto na nova tela
     window.handlePhotoUpload = (input) => {
@@ -3717,6 +3748,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
