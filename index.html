@@ -1803,7 +1803,7 @@ playVoteSound();
         // Variável global para armazenar a info da última atualização
         window.globalLastUpdateInfo = "Aguardando atualização...";
 
-        // --- RANKING CORRIGIDO (MEDALHAS + REI DO MÊS + EXTRATO + TIMELINE) ---
+        // --- RANKING (DATA CORRIGIDA + PARIDADE TOTAL) ---
         async function loadRanking() {
             const listContainer = document.getElementById('rankingListContent');
             const footer = document.getElementById('lastUpdateRanking');
@@ -1831,16 +1831,28 @@ playVoteSound();
 
                 const finishedMatches = matches.filter(m => m.winner);
                 
-                // Info Rodapé
+                // --- CORREÇÃO DA DATA DE ATUALIZAÇÃO ---
+                // Ordena do mais recente para o mais antigo baseado no fim do jogo (finishedAt) ou deadline
                 if (finishedMatches.length > 0) {
-                    finishedMatches.sort((a,b) => (b.finishedAt?.seconds || b.deadlineDate) - (a.finishedAt?.seconds || a.deadlineDate));
-                    const last = finishedMatches[0];
-                    const dt = (last.finishedAt ? last.finishedAt.toDate() : last.deadlineDate)
-                        .toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+                    finishedMatches.sort((a,b) => {
+                        const dateA = a.finishedAt ? a.finishedAt.toDate() : a.deadlineDate;
+                        const dateB = b.finishedAt ? b.finishedAt.toDate() : b.deadlineDate;
+                        return dateB - dateA; // Decrescente (Mais novo primeiro)
+                    });
+                    
+                    const last = finishedMatches[0]; // Pega o mais recente
+                    const d = last.finishedAt ? last.finishedAt.toDate() : last.deadlineDate;
+                    
+                    // Formato idêntico ao Android: DD/MM HH:mm
+                    const dt = d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + " " + 
+                               d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                               
                     window.globalLastUpdateInfo = `Última atualização: ${dt}\n${last.teamA} x ${last.teamB}`;
+                } else {
+                    window.globalLastUpdateInfo = "Aguardando jogos...";
                 }
 
-                // 2. Preparação de Usuários e Palpites
+                // 2. Preparação de Usuários
                 const allGuesses = [];
                 gSnap.forEach(d => allGuesses.push(d.data()));
                 
@@ -1850,46 +1862,40 @@ playVoteSound();
                     users.push({
                         uid: doc.id,
                         ...d,
-                        createdDate: d.createdAt ? d.createdAt.toDate() : new Date(0) // 1970 se nulo
+                        createdDate: d.createdAt ? d.createdAt.toDate() : new Date(0)
                     });
                 });
 
-                // 3. Identificação de Zebras (Regra <= 0.20 com filtro de data)
+                // 3. Zebras (<= 0.20)
                 const zebraMatchIds = [];
                 finishedMatches.forEach(m => {
-                    // Total de usuários válidos NA DATA do jogo
                     const validUsersCount = users.filter(u => u.createdDate < m.deadlineDate).length;
-                    
                     let winnerVotes = 0;
                     allGuesses.forEach(g => {
                         if (g.matchId === m.id && g.teamSelected === m.winner) winnerVotes++;
                     });
-
                     if (validUsersCount > 0 && (winnerVotes / validUsersCount) <= 0.20) {
                         zebraMatchIds.push(m.id);
                     }
                 });
 
-                // 4. Variáveis de Tempo para Rei do Mês
+                // 4. Cálculo de Pontos
                 const now = new Date();
                 const currentMonthIdx = now.getMonth();
                 const currentYear = now.getFullYear();
                 let monthlyData = [];
 
-                // 5. Loop Principal de Cálculo
                 users.forEach(u => {
-                    let p = 0, monthlyP = 0, victories = 0, finalsWon = 0;
-                    let simStreak = 0;
+                    let p = 0, monthlyP = 0, victories = 0, finalsWon = 0, simStreak = 0;
                     const d = u.debts || 0;
                     const trophyRoom = [];
                     const hist = [];
                     const userGuesses = allGuesses.filter(g => g.userId === u.uid && validMatchIds.has(g.matchId));
 
-                    // Ordena jogos cronologicamente para calcular sequências
-                    const chronoMatches = [...finishedMatches].sort((a,b) => a.deadlineDate - b.deadlineDate);
+                    // Jogos cronológicos para sequência
+                    const chronoMatches = [...finishedMatches].sort((a,b) => a.deadlineDate - b.deadlineDate); // Antigo -> Novo
 
                     chronoMatches.forEach(m => {
-                        // REGRA DE OURO: Ignora jogos antes do cadastro do usuário
                         if (u.createdDate > m.deadlineDate) return;
 
                         const g = userGuesses.find(x => x.matchId === m.id);
@@ -1900,7 +1906,6 @@ playVoteSound();
                             if (m.winner === g.teamSelected) {
                                 const isFinal = (m.round && m.round.toLowerCase() === 'final');
                                 const pts = isFinal ? 6 : 3;
-                                
                                 p += pts;
                                 if (isThisMonth) monthlyP += pts;
                                 victories++;
@@ -1909,32 +1914,23 @@ playVoteSound();
 
                                 hist.push({ ts: m.deadlineDate, text: `${dateStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`, type: 'good' });
 
-                                // Medalhas de Sequência (Acumulativas na Sala de Troféus)
-                                if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "3 acertos seguidos.", date: dateStr });
-                                if (simStreak === 5) trophyRoom.push({ icon: "🎯", name: "MITO", desc: "5 acertos seguidos.", date: dateStr });
-                                if (simStreak === 10) trophyRoom.push({ icon: "👽", name: "ALIEN", desc: "10 acertos seguidos!", date: dateStr });
-
-                                // Zebra
-                                if (zebraMatchIds.includes(m.id)) {
-                                    trophyRoom.push({ icon: "🦓", name: "CAÇADOR DE ZEBRAS", desc: `Acertou a zebra em ${m.teamA} x ${m.teamB}`, date: dateStr });
-                                }
-                                // Mãe Dinah
-                                if (isFinal) {
-                                    trophyRoom.push({ icon: "🔮", name: "MÃE DINAH", desc: `Cravou o campeão ${m.winner}`, date: dateStr });
-                                }
+                                if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "3 acertos seguidos.", date: dateStr, hiddenInList: false });
+                                if (simStreak === 5) trophyRoom.push({ icon: "🎯", name: "MITO", desc: "5 acertos seguidos.", date: dateStr, hiddenInList: false });
+                                if (simStreak === 10) trophyRoom.push({ icon: "👽", name: "ALIEN", desc: "10 acertos seguidos!", date: dateStr, hiddenInList: false });
+                                if (zebraMatchIds.includes(m.id)) trophyRoom.push({ icon: "🦓", name: "CAÇADOR DE ZEBRAS", desc: "Acertou a zebra!", date: dateStr, hiddenInList: false });
+                                if (isFinal) trophyRoom.push({ icon: "🔮", name: "MÃE DINAH", desc: "Cravou o campeão.", date: dateStr, hiddenInList: false });
 
                             } else {
                                 simStreak = 0;
                                 hist.push({ ts: m.deadlineDate, text: `${dateStr} - 👎 Errou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
                             }
                         } else {
-                            // Não votou (Mas já existia)
                             hist.push({ ts: m.deadlineDate, text: `${dateStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
                             simStreak = 0;
                         }
                     });
 
-                    // Diamante (Oitavas)
+                    // Diamante
                     const oitavas = chronoMatches.filter(m => m.round === "Oitavas de final");
                     const byComp = {}; oitavas.forEach(m => { if(!byComp[m.competition]) byComp[m.competition]=[]; byComp[m.competition].push(m); });
                     for(const k in byComp) {
@@ -1943,64 +1939,40 @@ playVoteSound();
                             const hits = matches.filter(m => userGuesses.find(g=>g.matchId===m.id && g.teamSelected===m.winner)).length;
                             if(hits === 8) { 
                                 p += 3; 
-                                // Verifica se o bônus cai no mês atual (baseado no último jogo das oitavas)
                                 const lastOitava = matches[matches.length-1].deadlineDate;
                                 if(lastOitava.getMonth() === currentMonthIdx && lastOitava.getFullYear() === currentYear) monthlyP += 3;
-                                
-                                trophyRoom.push({ icon: "💎", name: "DIAMANTE", desc: `Gabaritou Oitavas (${k})`, date: "Oitavas" });
+                                trophyRoom.push({ icon: "💎", name: "DIAMANTE", desc: "Gabaritou Oitavas.", date: "Bônus", hiddenInList: false });
                                 hist.push({ ts: new Date(), text: `💎 BÔNUS: Gabarito Oitavas (+3 pts)`, type: 'good' });
                             }
                         }
                     }
 
-                    // Veterano
                     if (victories >= 50) {
                         const level = Math.floor(victories / 50);
-                        trophyRoom.push({ icon: "🎓", name: `VETERANO Nvl ${level}`, desc: `${victories} vitórias acumuladas.`, date: "Carreira" });
+                        trophyRoom.push({ icon: "🎓", name: `VETERANO Nvl ${level}`, desc: `${victories} vitórias.`, date: "Carreira", hiddenInList: false });
                     }
 
-                    // Mão de Alface / Fantasma (Últimos 3 jogos VÁLIDOS)
-                    // Filtra jogos válidos para este usuário
-                    const validHistory = chronoMatches.filter(m => u.createdDate < m.deadlineDate);
-                    const last3 = validHistory.slice(-3);
-                    if (last3.length === 3) {
-                        let misses = 0, noshows = 0;
-                        last3.forEach(m => {
-                            const g = userGuesses.find(x => x.matchId === m.id);
-                            if (!g) noshows++;
-                            else if (g.teamSelected !== m.winner) misses++;
-                        });
-                        if (misses === 3) trophyRoom.push({ icon: "🥬", name: "MÃO DE ALFACE", desc: "3 erros seguidos atuais.", date: "Atual" });
-                        if (noshows === 3) trophyRoom.push({ icon: "👻", name: "FANTASMA", desc: "3 ausências seguidas atuais.", date: "Atual" });
+                    // Patrão
+                    const monthsList = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                    if ((new Date().getFullYear() < 2026) || (u.payments && u.payments[monthsList[currentMonthIdx]])) {
+                        trophyRoom.unshift({ icon: "💰", name: "PATRÃO", desc: "Mensalidade OK.", date: "Mês Atual", hiddenInList: false });
                     }
 
-                    // Patrão (Pagamento)
-                    const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-                    const isPaid = (new Date().getFullYear() < 2026) || (u.payments && u.payments[monthsNames[currentMonthIdx]]);
-                    if (isPaid) trophyRoom.unshift({ icon: "💰", name: "PATRÃO", desc: "Mensalidade em dia.", date: "Mês Atual" });
-
-                    // Penalidade Débitos
                     if (d > 0) {
                         p -= (d * 3);
                         hist.push({ ts: new Date(), text: `🔻 PENALIDADE: Inadimplência (-${d*3} pts)`, type: 'bad' });
                     }
 
-                    // Amauri
                     if (u.username === 'amauri') trophyRoom.push({icon: "🏆", name:"Campeão 2025", desc:"Lenda.", hiddenInList: true});
 
-                    // Salva dados processados
-                    u.p = p; 
-                    u.trophyRoom = trophyRoom;
-                    u.hist = hist.sort((a,b) => b.ts - a.ts); // Extrato reverso (novo em cima)
-                    
+                    u.p = p; u.trophyRoom = trophyRoom; u.hist = hist.sort((a,b) => b.ts - a.ts);
                     monthlyData.push({ name: u.name, points: monthlyP, uid: u.uid });
                 });
 
-                // Ordenação Geral
+                // Ordenação
                 users.sort((a, b) => {
                     if (b.p !== a.p) return b.p - a.p;
                     if (a.debts !== b.debts) return a.debts - b.debts;
-                    // Desempate por Medalhas (Sem contar as ocultas e Patrão)
                     const hierarchy = ["👽", "💎", "🎯", "🦓", "🔥", "🔮", "🎓"];
                     for (let icon of hierarchy) {
                         const countA = a.trophyRoom.filter(m => m.icon === icon && !m.hiddenInList).length;
@@ -2010,7 +1982,7 @@ playVoteSound();
                     return 0;
                 });
 
-                // Atualiza Z-4
+                // Z-4
                 if (users.length > 4) {
                     const z4StartIndex = users.length - 4;
                     for(let i = z4StartIndex; i < users.length; i++) {
@@ -2021,11 +1993,10 @@ playVoteSound();
                     }
                 }
 
-                // Salva Globais
                 currentRankingData = users;
                 window.currentMonthlyRanking = monthlyData.sort((a,b) => b.points - a.points);
 
-                // Renderiza
+                // HTML Construction
                 let html = `<div class="bg-[#006400] rounded-t-xl p-3 flex justify-between items-center shadow-md"><div><h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3><p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p></div><div class="flex gap-2"><button onclick="window.showKingModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg shadow border border-white/20">🏆</button><button onclick="window.openRankingInfo()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white shadow border border-white/20"><i class="fas fa-info text-xs"></i></button></div></div><div class="bg-[#005000] flex text-white/70 text-[9px] font-bold py-1 px-2 uppercase border-b border-white/10"><div class="w-[35px] text-center">Pos</div><div class="flex-1 pl-2">Participante</div><div class="w-[28px] text-center">D</div><div class="w-[40px] text-center text-white">Pts</div></div><div class="bg-white rounded-b-xl overflow-hidden shadow-sm">`;
 
                 html += users.map((u, i) => {
@@ -2041,38 +2012,26 @@ playVoteSound();
                     else if (i === 3 || i === 4) { bgColor = 'bg-green-50'; borderColor = 'border-green-600'; posIcon = `<span class="text-green-700 font-black">${pos}º</span>`; }
                     else if (u.isZ4) { bgColor = 'bg-[#FFEBEE]'; nameColor = "text-[#8B0000]"; }
 
-                    // Renderiza Medalhas (Máximo 5 visíveis)
+                    // Medalhas Visíveis
                     let medalsHtml = "";
-                    // Filtra ocultas (como título de 2025) e exibe as outras
                     const visibleMedals = u.trophyRoom.filter(m => !m.hiddenInList);
-                    // Agrupa ícones iguais
                     const counts = {};
                     visibleMedals.forEach(m => counts[m.icon] = (counts[m.icon]||0)+1);
-                    const uniqueIcons = Object.keys(counts).slice(0, 6); // Top 6 tipos
-                    
+                    const uniqueIcons = Object.keys(counts).slice(0, 6);
                     if (uniqueIcons.length > 0) {
                         medalsHtml = `<div class="flex items-center mt-1 space-x-1">` + 
-                            uniqueIcons.map(icon => {
-                                const qtd = counts[icon];
-                                return `<span class="text-[12px] leading-none">${icon}${qtd>1 ? `<sup class="text-[8px] text-gray-500">${qtd}</sup>`:''}</span>`;
-                            }).join('') + 
+                            uniqueIcons.map(icon => `<span class="text-[12px] leading-none">${icon}${counts[icon]>1 ? `<sup class="text-[8px] text-gray-500">${counts[icon]}</sup>`:''}</span>`).join('') + 
                         `</div>`;
                     }
 
-                    let diffHtml = u.lastRank > 0 
-                        ? (pos < u.lastRank ? `<div class="text-green-600 text-[8px] font-bold mt-1 flex justify-center"><i class="fas fa-caret-up mr-1"></i> ${u.lastRank - pos}</div>` 
-                        : (pos > u.lastRank ? `<div class="text-red-600 text-[8px] font-bold mt-1 flex justify-center"><i class="fas fa-caret-down mr-1"></i> ${pos - u.lastRank}</div>` : `<div class="text-gray-300 text-[8px] font-bold mt-1 text-center">=</div>`)) 
-                        : `<div class="text-blue-500 text-[7px] font-bold mt-1 text-center">NOVO</div>`;
+                    let diffHtml = u.lastRank > 0 ? (pos < u.lastRank ? `<div class="text-green-600 text-[8px] font-bold mt-1 flex justify-center"><i class="fas fa-caret-up mr-1"></i> ${u.lastRank - pos}</div>` : (pos > u.lastRank ? `<div class="text-red-600 text-[8px] font-bold mt-1 flex justify-center"><i class="fas fa-caret-down mr-1"></i> ${pos - u.lastRank}</div>` : `<div class="text-gray-300 text-[8px] font-bold mt-1 text-center">=</div>`)) : `<div class="text-blue-500 text-[7px] font-bold mt-1 text-center">NOVO</div>`;
 
                     return `<div class="${bgColor} border-b border-gray-100 flex items-center py-1 px-2 ${i < 5 ? 'border-l-4' : ''}" style="${i < 5 ? `border-left-color: ${borderColor.replace('border-[', '').replace(']', '')}` : ''}">
                         <div class="w-[35px] text-center flex flex-col items-center justify-center h-full"><div class="text-sm">${posIcon}</div>${diffHtml}</div>
                         <div class="flex-1 flex flex-col justify-center pl-2 overflow-hidden shrink-0 cursor-pointer h-full py-1" onclick="showModalPhoto(${i})">
                             <div class="flex items-center gap-2">
                                 <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0"><img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-full h-full object-cover"></div>
-                                <div class="flex flex-col w-full overflow-hidden">
-                                    <div class="flex items-center"><span class="text-xs font-bold ${nameColor} truncate max-w-[140px]">${u.name || u.username}</span></div>
-                                    ${medalsHtml}
-                                </div>
+                                <div class="flex flex-col w-full overflow-hidden"><div class="flex items-center"><span class="text-xs font-bold ${nameColor} truncate max-w-[140px]">${u.name || u.username}</span></div>${medalsHtml}</div>
                             </div>
                         </div>
                         <div class="w-[28px] text-center text-xs font-bold ${u.debts > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.debts||0}</div>
@@ -2126,7 +2085,7 @@ playVoteSound();
                             <div class="flex justify-around bg-gray-50 p-2 rounded border border-gray-200">
                                 <div class="text-center"><span class="text-red-600 font-bold block">D</span><span class="text-[9px]">Débitos</span></div>
                                 <div class="text-center"><span class="text-[#006400] font-black block">PTS</span><span class="text-[9px]">Pontos</span></div>
-                                <div class="text-center"><span class="text-black text-lg block">⚓</span><span class="text-[9px]">Z-2</span></div>
+                                <div class="text-center"><span class="text-black text-lg block">⚓</span><span class="text-[9px]">Z-4</span></div>
                             </div>
                         </div>
 
@@ -3204,14 +3163,14 @@ document.getElementById('btnLogout').onclick = () => {
                 document.getElementById('commentInput').focus();
             };
         };
-       // --- SCOUT CORRIGIDO (PREVINE ERRO DE DADOS VAZIOS) ---
+      // --- SCOUT DETALHADO (ESTATÍSTICAS + GRÁFICO CORRIGIDO) ---
         window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
             const cont = document.getElementById('modalContainer');
             document.getElementById('modalOverlay').classList.remove('hidden');
             cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i><p class="text-xs mt-2 font-bold text-gray-500">Calculando trajetória...</p></div>`;
 
             try {
-                // 1. Busca Dados Frescos
+                // 1. Coleta Dados
                 const [mSnap, gSnap, uSnap] = await Promise.all([
                     getDocs(collection(db, "matches")),
                     getDocs(collection(db, "guesses")),
@@ -3220,9 +3179,11 @@ document.getElementById('btnLogout').onclick = () => {
 
                 // 2. Mapeamento
                 const usersMap = {};
+                const allUsersIds = [];
                 uSnap.forEach(d => { 
                     const dt = d.data().createdAt ? d.data().createdAt.toDate() : new Date(0);
                     usersMap[d.id] = dt; 
+                    allUsersIds.push(d.id);
                 });
                 
                 const targetCreated = usersMap[targetUid] || new Date(0);
@@ -3231,44 +3192,43 @@ document.getElementById('btnLogout').onclick = () => {
 
                 const matches = [];
                 mSnap.forEach(d => { if(d.data().winner) matches.push({id: d.id, ...d.data(), deadlineDate: d.data().deadline.toDate()}); });
-                matches.sort((a,b) => a.deadlineDate - b.deadlineDate); // Antigo -> Novo
+                matches.sort((a,b) => a.deadlineDate - b.deadlineDate);
 
-                // 3. Simulação da Temporada
+                // 3. Simulação
                 let rankHistory = [];
                 let currentScores = {};
-                Object.keys(usersMap).forEach(uid => currentScores[uid] = 0);
+                allUsersIds.forEach(uid => currentScores[uid] = 0);
 
-                let totalGuesses = 0, totalHits = 0, currentStreak = 0;
-                let streakBroken = false;
+                let totalEligible = 0; // Confrontos que ele PODERIA votar (já existia)
+                let totalVoted = 0;    // Confrontos que ele VOTOU
+                let totalHits = 0;
+                let currentStreak = 0, streakBroken = false;
                 const compStats = {};
 
                 matches.forEach(m => {
-                    // Ignora se alvo não existia
                     if (targetCreated > m.deadlineDate) return;
+                    
+                    totalEligible++; // Jogo válido
 
-                    // Atualiza pontuação global neste jogo
-                    Object.keys(currentScores).forEach(uid => {
-                        // Só pontua quem existia
+                    // Atualiza Global
+                    allUsersIds.forEach(uid => {
                         if (usersMap[uid] > m.deadlineDate) return;
-                        
                         const vote = allGuesses.find(g => g.matchId === m.id && g.userId === uid);
                         if (vote && vote.teamSelected === m.winner) {
                             currentScores[uid] += (m.round?.toLowerCase()==='final' ? 6 : 3);
                         }
                     });
 
-                    // Calcula Ranking do Alvo Neste Momento
-                    // Filtra apenas users existentes na data para o ranking ser justo
-                    const activeUsers = Object.keys(currentScores).filter(uid => usersMap[uid] <= m.deadlineDate);
+                    // Posição Histórica
+                    const activeUsers = allUsersIds.filter(uid => usersMap[uid] <= m.deadlineDate);
                     activeUsers.sort((a,b) => currentScores[b] - currentScores[a]);
-                    
                     const myPos = activeUsers.indexOf(targetUid) + 1;
                     if(myPos > 0) rankHistory.push(myPos);
 
-                    // Stats Pessoais
+                    // Stats Individuais
                     const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
                     if(myVote) {
-                        totalGuesses++;
+                        totalVoted++;
                         if(myVote.teamSelected === m.winner) {
                             totalHits++;
                             if(!compStats[m.competition]) compStats[m.competition] = {h:0, t:0};
@@ -3281,10 +3241,9 @@ document.getElementById('btnLogout').onclick = () => {
                     }
                 });
 
-                // Streak Recente (Reverso)
-                const matchesDesc = [...matches].reverse();
-                for(const m of matchesDesc) {
-                    if (targetCreated > m.deadlineDate) break;
+                // Streak Recente
+                [...matches].reverse().forEach(m => {
+                    if (targetCreated > m.deadlineDate) return;
                     const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
                     if(myVote) {
                         const hit = myVote.teamSelected === m.winner;
@@ -3294,44 +3253,59 @@ document.getElementById('btnLogout').onclick = () => {
                             else if (currentStreak < 0 && !hit) currentStreak--;
                             else streakBroken = true;
                         }
-                    } else { streakBroken = true; } // Não votou quebra streak
-                }
-
-                // Melhores/Piores
-                let bestC = "-", bestP = -1;
-                let worstC = "-", worstP = 101;
-                Object.entries(compStats).forEach(([comp, st]) => {
-                    if(st.t >= 3) {
-                        const pct = (st.h/st.t)*100;
-                        if(pct > bestP) { bestP = pct; bestC = comp; }
-                        if(pct < worstP) { worstP = pct; worstC = comp; }
-                    }
+                    } else { streakBroken = true; }
                 });
-                const acc = totalGuesses > 0 ? Math.round((totalHits/totalGuesses)*100) : 0;
 
-                // Renderiza
-                let streakDisplay = currentStreak > 0 ? `<span class="text-green-600">+${currentStreak}</span>` : (currentStreak < 0 ? `<span class="text-red-600">${currentStreak}</span>` : `<span class="text-gray-400">-</span>`);
-                
+                // Renderização
+                const acc = totalVoted > 0 ? Math.round((totalHits/totalVoted)*100) : 0;
+                let streakDisplay = currentStreak > 0 ? `<span class="text-green-400">+${currentStreak}</span>` : (currentStreak < 0 ? `<span class="text-red-400">${currentStreak}</span>` : `<span class="text-gray-400">-</span>`);
+
                 const html = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 90vh; overflow-y: auto;">
                     <div class="absolute inset-0 bg-gray-900"></div>
                     <div class="relative z-10 p-5 text-white">
-                        <div class="flex justify-between items-start mb-4"><h3 class="font-black italic text-[#FFD700] text-lg tracking-widest">SCOUT 2026</h3><button onclick="closeModal()" class="text-white"><i class="fas fa-times"></i></button></div>
-                        <div class="flex items-center gap-4 mb-6"><img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-16 h-16 rounded-full border-2 border-[#FFD700]"><h2 class="font-black text-2xl uppercase">${targetName}</h2></div>
+                        <div class="flex justify-between items-start mb-4">
+                            <h3 class="font-black italic text-[#FFD700] text-lg tracking-widest">SCOUT 2026</h3>
+                            <button onclick="closeModal()" class="text-white"><i class="fas fa-times"></i></button>
+                        </div>
+                        
+                        <div class="flex items-center gap-4 mb-6">
+                            <img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-16 h-16 rounded-full border-2 border-[#FFD700]">
+                            <div>
+                                <h2 class="font-black text-xl uppercase">${targetName}</h2>
+                                <p class="text-[10px] text-gray-400 font-bold">Resumo da Temporada</p>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div class="bg-white/10 rounded p-3 text-center"><div class="text-2xl font-black text-[#FFD700]">${acc}%</div><div class="text-[9px] uppercase font-bold text-gray-400">Precisão</div></div>
-                            <div class="bg-white/10 rounded p-3 text-center"><div class="text-2xl font-black text-white">${streakDisplay}</div><div class="text-[9px] uppercase font-bold text-gray-400">Sequência</div></div>
+                            <div class="bg-white/10 rounded p-2 text-center">
+                                <p class="text-[9px] uppercase text-gray-400 font-bold">Confrontos (Votados)</p>
+                                <p class="text-lg font-black text-white">${totalEligible} <span class="text-sm text-gray-400">(${totalVoted})</span></p>
+                            </div>
+                            <div class="bg-white/10 rounded p-2 text-center">
+                                <p class="text-[9px] uppercase text-gray-400 font-bold">Total Acertos</p>
+                                <p class="text-lg font-black text-[#FFD700]">${totalHits}</p>
+                            </div>
+                            <div class="bg-white/10 rounded p-2 text-center">
+                                <p class="text-[9px] uppercase text-gray-400 font-bold">Precisão</p>
+                                <p class="text-lg font-black text-blue-400">${acc}%</p>
+                            </div>
+                            <div class="bg-white/10 rounded p-2 text-center">
+                                <p class="text-[9px] uppercase text-gray-400 font-bold">Sequência</p>
+                                <p class="text-lg font-black">${streakDisplay}</p>
+                            </div>
                         </div>
-                        <div class="bg-white rounded p-2 mb-4"><canvas id="scoutChart" height="150"></canvas></div>
-                        <div class="space-y-2 text-xs">
-                            <div class="flex justify-between bg-white/5 p-2 rounded"><span class="text-gray-400">Melhor Liga</span><span class="font-bold text-[#FFD700]">${bestC} (${Math.round(bestP>0?bestP:0)}%)</span></div>
-                            <div class="flex justify-between bg-white/5 p-2 rounded"><span class="text-gray-400">Pior Liga</span><span class="font-bold text-red-400">${worstC} (${Math.round(worstP<100?worstP:0)}%)</span></div>
+
+                        <div class="bg-white rounded p-2 mb-4">
+                            <p class="text-[10px] text-gray-500 font-bold mb-2 text-center uppercase">Evolução no Ranking</p>
+                            <div class="h-40 w-full"><canvas id="scoutChart"></canvas></div>
                         </div>
+
+                        <button onclick="closeModal()" class="w-full bg-[#FFD700] text-black font-black py-3 rounded shadow-lg btn-press text-xs">FECHAR</button>
                     </div>
                 </div>`;
                 cont.innerHTML = html;
 
-                // Gráfico
                 if (window.myScoutChart) window.myScoutChart.destroy();
                 if (rankHistory.length > 0) {
                     const ctx = document.getElementById('scoutChart').getContext('2d');
@@ -3339,25 +3313,37 @@ document.getElementById('btnLogout').onclick = () => {
                         type: 'line',
                         data: {
                             labels: rankHistory.map((_, i) => i + 1),
-                            datasets: [{ label: 'Posição', data: rankHistory, borderColor: '#006400', backgroundColor: 'rgba(0,100,0,0.1)', tension: 0.3, fill: true, pointRadius: 2 }]
+                            datasets: [{
+                                label: 'Posição',
+                                data: rankHistory,
+                                borderColor: '#006400',
+                                backgroundColor: 'rgba(0,100,0,0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                pointRadius: 2
+                            }]
                         },
                         options: { 
                             responsive: true, 
+                            maintainAspectRatio: false,
                             scales: { 
                                 y: { reverse: true, beginAtZero: false, min: 1, grid: {display:false} },
-                                x: { display: false } 
+                                x: { 
+                                    display: true, // EXIBE O EIXO X
+                                    grid: { display: false },
+                                    ticks: { 
+                                        color: '#666',
+                                        font: { size: 9 },
+                                        maxTicksLimit: 8
+                                    }
+                                } 
                             },
                             plugins: { legend: { display: false } }
                         }
                     });
-                } else {
-                    document.getElementById('scoutChart').style.display = 'none';
                 }
 
-            } catch (e) {
-                console.error(e);
-                cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600">Erro no Scout.</div>`;
-            }
+            } catch (e) { console.error(e); cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600">Erro no Scout.</div>`; }
         };
         // --- FUNÇÕES PARA ABRIR/FECHAR AS LISTAS (TOGGLE) ---
         window.toggleOpen = () => {
@@ -3408,6 +3394,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
