@@ -1610,8 +1610,10 @@ playVoteSound();
                 
                 uSnap.forEach(doc => {
                     const d = doc.data();
-                    // Importante: Captura a data de criação ou assume antiga (1970)
-                    const created = d.createdAt ? d.createdAt.toDate() : new Date(0);
+                   // --- CORREÇÃO CRÍTICA AQUI ---
+                    // Se não tiver data, assume AGORA (new Date()), para não aparecer em jogos velhos.
+                    // Antes estava new Date(0) [1970], o que causava o bug.
+                    const created = d.createdAt ? d.createdAt.toDate() : new Date();
                     
                     const u = { 
                         id: doc.id, 
@@ -3544,6 +3546,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
