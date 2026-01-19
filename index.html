@@ -480,16 +480,22 @@
         // (Nota: As funções window.vote e window.votePoll já chamam playVoteSound(), 
         // então só precisamos definir ela aqui em cima e tudo volta a funcionar).
         // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
+        // --- GERADOR DE AVATAR (CORRIGIDO PARA FOTO REAL) ---
         const getAvatarUrl = (base64, name) => {
-            // 1. Se tem foto real, usa ela
-            if (base64 && base64.trim() !== "") {
-                return `data:image/jpeg;base64,${base64}`;
+            // Verifica se existe, se não é texto "null"/"undefined" e se é longo o suficiente para ser imagem
+            if (base64 && typeof base64 === 'string' && base64.length > 50 && base64 !== "null" && base64 !== "undefined") {
+                // Se já vier com o cabeçalho 'data:image', usa como está. Se não, adiciona.
+                if (base64.startsWith('data:image')) {
+                    return base64;
+                } else {
+                    return `data:image/jpeg;base64,${base64}`;
+                }
             }
-            // 2. Se não tem, gera o DiceBear
+            
+            // Fallback: DiceBear (Avatar Desenhado)
             const seed = (name || "user").trim();
-            // Cores de fundo suaves (azul, roxo, verde, laranja)
             const bgColors = ["b6e3f4", "c0aede", "d1d4f9", "ffdfbf", "fdcdc5"]; 
-            const bg = bgColors[seed.length % bgColors.length]; // Escolhe cor baseada no tamanho do nome
+            const bg = bgColors[seed.length % bgColors.length];
             return `https://api.dicebear.com/7.x/adventurer/png?seed=${seed}&backgroundColor=${bg}`;
         };
 
@@ -1963,7 +1969,7 @@ playVoteSound();
                         hist.push({ ts: new Date(), text: `🔻 PENALIDADE: Inadimplência (-${d*3} pts)`, type: 'bad' });
                     }
 
-                    if (u.username === 'amauri') trophyRoom.push({icon: "🏆", name:"Campeão 2025", desc:"Lenda.", hiddenInList: true});
+                    if (u.username === 'amauri') trophyRoom.push({icon: "🏆", name:"Campeão em 2025", desc:"Temporada 2025.", hiddenInList: true});
 
                     u.p = p; u.trophyRoom = trophyRoom; u.hist = hist.sort((a,b) => b.ts - a.ts);
                     monthlyData.push({ name: u.name, points: monthlyP, uid: u.uid });
@@ -2573,8 +2579,8 @@ async function loadProfile() {
             if (!userSnap.exists()) return; 
             
             const u = userSnap.data(); 
+// AQUI: Usa a função corrigida para decidir entre Foto Real ou Avatar
             const avatar = getAvatarUrl(u.photoBase64, u.name || u.username);
-
             // 2. Configura dados do PIX
             let pixKey = "5585998523009"; 
             let pixCode = "00020126360014BR.GOV.BCB.PIX0114+5585998523009520400005303986540515.005802BR5922Matheus Ferreira Alves6009SAO PAULO62140510Txvo4IewB56304C78B";
@@ -3163,7 +3169,7 @@ document.getElementById('btnLogout').onclick = () => {
                 document.getElementById('commentInput').focus();
             };
         };
-      // --- SCOUT DETALHADO (ESTATÍSTICAS + GRÁFICO CORRIGIDO) ---
+      // --- SCOUT FINAL (ESTATÍSTICAS + GRÁFICO + ESPECIALIDADES) ---
         window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
             const cont = document.getElementById('modalContainer');
             document.getElementById('modalOverlay').classList.remove('hidden');
@@ -3199,18 +3205,18 @@ document.getElementById('btnLogout').onclick = () => {
                 let currentScores = {};
                 allUsersIds.forEach(uid => currentScores[uid] = 0);
 
-                let totalEligible = 0; // Confrontos que ele PODERIA votar (já existia)
-                let totalVoted = 0;    // Confrontos que ele VOTOU
+                let totalEligible = 0; 
+                let totalVoted = 0;    
                 let totalHits = 0;
                 let currentStreak = 0, streakBroken = false;
-                const compStats = {};
+                const compStats = {}; // Estatísticas por competição
 
                 matches.forEach(m => {
                     if (targetCreated > m.deadlineDate) return;
                     
-                    totalEligible++; // Jogo válido
+                    totalEligible++; 
 
-                    // Atualiza Global
+                    // Atualiza Global (Ranking)
                     allUsersIds.forEach(uid => {
                         if (usersMap[uid] > m.deadlineDate) return;
                         const vote = allGuesses.find(g => g.matchId === m.id && g.userId === uid);
@@ -3229,14 +3235,13 @@ document.getElementById('btnLogout').onclick = () => {
                     const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
                     if(myVote) {
                         totalVoted++;
+                        // Inicializa estatística da competição se não existir
+                        if(!compStats[m.competition]) compStats[m.competition] = {h:0, t:0};
+                        compStats[m.competition].t++;
+
                         if(myVote.teamSelected === m.winner) {
                             totalHits++;
-                            if(!compStats[m.competition]) compStats[m.competition] = {h:0, t:0};
-                            compStats[m.competition].t++;
                             compStats[m.competition].h++;
-                        } else {
-                            if(!compStats[m.competition]) compStats[m.competition] = {h:0, t:0};
-                            compStats[m.competition].t++;
                         }
                     }
                 });
@@ -3255,6 +3260,23 @@ document.getElementById('btnLogout').onclick = () => {
                         }
                     } else { streakBroken = true; }
                 });
+
+                // CÁLCULO DE ESPECIALIDADE / PONTO FRACO
+                let bestComp = "---"; let bestPct = -1;
+                let worstComp = "---"; let worstPct = 101;
+
+                Object.entries(compStats).forEach(([comp, st]) => {
+                    // Só considera se tiver pelo menos 3 jogos na competição para ter relevância estatística
+                    if (st.t >= 3) {
+                        const pct = (st.h / st.t) * 100;
+                        if (pct > bestPct) { bestPct = pct; bestComp = comp; }
+                        if (pct < worstPct) { worstPct = pct; worstComp = comp; }
+                    }
+                });
+
+                // Ajuste visual se não tiver dados suficientes
+                const bestDisplay = bestPct === -1 ? "Insuficiente" : `${bestComp} (${Math.round(bestPct)}%)`;
+                const worstDisplay = worstPct === 101 ? "Insuficiente" : `${worstComp} (${Math.round(worstPct)}%)`;
 
                 // Renderização
                 const acc = totalVoted > 0 ? Math.round((totalHits/totalVoted)*100) : 0;
@@ -3301,6 +3323,24 @@ document.getElementById('btnLogout').onclick = () => {
                             <div class="h-40 w-full"><canvas id="scoutChart"></canvas></div>
                         </div>
 
+                        <div class="space-y-2 mb-4">
+                            <div class="bg-gradient-to-r from-green-900/50 to-transparent p-2 rounded border-l-4 border-green-500 flex justify-between items-center">
+                                <div class="text-xs">
+                                    <p class="text-gray-400 text-[9px] uppercase font-bold">Especialidade</p>
+                                    <p class="font-bold text-white text-sm">${bestDisplay}</p>
+                                </div>
+                                <i class="fas fa-star text-green-400 text-xl opacity-50"></i>
+                            </div>
+
+                            <div class="bg-gradient-to-r from-red-900/50 to-transparent p-2 rounded border-l-4 border-red-500 flex justify-between items-center">
+                                <div class="text-xs">
+                                    <p class="text-gray-400 text-[9px] uppercase font-bold">Ponto Fraco</p>
+                                    <p class="font-bold text-white text-sm">${worstDisplay}</p>
+                                </div>
+                                <i class="fas fa-skull text-red-400 text-xl opacity-50"></i>
+                            </div>
+                        </div>
+
                         <button onclick="closeModal()" class="w-full bg-[#FFD700] text-black font-black py-3 rounded shadow-lg btn-press text-xs">FECHAR</button>
                     </div>
                 </div>`;
@@ -3329,13 +3369,9 @@ document.getElementById('btnLogout').onclick = () => {
                             scales: { 
                                 y: { reverse: true, beginAtZero: false, min: 1, grid: {display:false} },
                                 x: { 
-                                    display: true, // EXIBE O EIXO X
+                                    display: true, 
                                     grid: { display: false },
-                                    ticks: { 
-                                        color: '#666',
-                                        font: { size: 9 },
-                                        maxTicksLimit: 8
-                                    }
+                                    ticks: { color: '#666', font: { size: 9 }, maxTicksLimit: 8 }
                                 } 
                             },
                             plugins: { legend: { display: false } }
@@ -3394,6 +3430,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
