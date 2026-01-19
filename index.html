@@ -1436,11 +1436,10 @@
         document.getElementById('progressBar').classList.add('hidden');
     }
 
-        // Recebe myVotesMap como 4º parâmetro
+        // --- RENDERIZA LISTA DE JOGOS (COM DATA NO BOTÃO DE VOTANTES) ---
         async function renderMatchList(list, totalParticipants, serverCounts, myVotesMap) {
             let html = "";
             for (const m of list) {
-                // CORREÇÃO: Pega o voto direto do mapa, sem await extra
                 let userVote = myVotesMap[m.id] || ""; 
                 
                 const dl = m.deadlineDate; 
@@ -1502,7 +1501,7 @@
                                         <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="text-gray-500 hover:text-[#006400] transition-colors relative">
                                             <i class="fas fa-comment-dots text-xl"></i>${chatBadge}
                                         </button>
-                                        <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}')" class="text-[#006400] hover:scale-110 transition-transform">
+                                        <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}', '${dl.toISOString()}')" class="text-[#006400] hover:scale-110 transition-transform">
                                             <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-xl"></i>
                                         </button>
                                     </div>
@@ -1583,8 +1582,9 @@ playVoteSound();
             }); 
         };
         
-        // --- FUNÇÃO QUEM VOTOU / QUEM FALTA (ATUALIZADA) ---
-        window.openVoters = async (matchId, ta, tb, taUrl, tbUrl, isExpired, winner) => {
+       // --- FUNÇÃO QUEM VOTOU / QUEM FALTA (CORRIGIDA COM FILTRO DE DATA) ---
+        // Recebe deadlineIso como último argumento
+        window.openVoters = async (matchId, ta, tb, taUrl, tbUrl, isExpired, winner, deadlineIso) => {
             const container = document.getElementById('modalContainer');
             document.getElementById('modalOverlay').classList.remove('hidden');
             
@@ -1595,18 +1595,31 @@ playVoteSound();
                 </div>`;
 
             try {
+                // Converte a data do prazo para objeto Date
+                const matchDeadline = new Date(deadlineIso);
+
                 // 1. Busca Usuários e Palpites
                 const [uSnap, gSnap] = await Promise.all([
                     getDocs(collection(db, "users")),
                     getDocs(query(collection(db, "guesses"), where("matchId", "==", matchId)))
                 ]);
 
-                // 2. Mapeia Usuários e Palpites
+                // 2. Mapeia Usuários (Com Data de Criação)
                 const userMap = {};
                 const allUsers = [];
+                
                 uSnap.forEach(doc => {
                     const d = doc.data();
-                    const u = { id: doc.id, name: d.name || "Anônimo", photo: d.photoBase64 || "" };
+                    // Importante: Captura a data de criação ou assume antiga (1970)
+                    const created = d.createdAt ? d.createdAt.toDate() : new Date(0);
+                    
+                    const u = { 
+                        id: doc.id, 
+                        name: d.name || "Anônimo", 
+                        photo: d.photoBase64 || "",
+                        createdAt: created 
+                    };
+                    
                     userMap[doc.id] = u;
                     allUsers.push(u);
                 });
@@ -1622,7 +1635,6 @@ playVoteSound();
                     const user = userMap[uid] || { name: "Desconhecido", photo: "" };
                     let imgShow = "";
                     
-                    // Lógica de exibir escudo ou sigilo
                     if(isExpired) {
                         const voted = (g.teamSelected||"").trim().toLowerCase();
                         if(voted === ta.trim().toLowerCase()) imgShow = taUrl;
@@ -1638,8 +1650,18 @@ playVoteSound();
                     });
                 });
 
-                // 3. Identifica quem FALTOU
-                const missingList = allUsers.filter(u => !votedIds.has(u.id));
+                // 3. Identifica quem FALTOU (Com Filtro de Data)
+                // AQUI ESTÁ A CORREÇÃO: Só entra na lista se criado ANTES do jogo
+                const missingList = allUsers.filter(u => {
+                    // Se já votou, não é faltoso
+                    if (votedIds.has(u.id)) return false;
+                    
+                    // Se entrou DEPOIS do jogo, não é faltoso (ignora)
+                    if (u.createdAt > matchDeadline) return false;
+
+                    // Caso contrário, é faltoso
+                    return true;
+                });
 
                 // Ordenação
                 if(winner) {
@@ -3522,6 +3544,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
