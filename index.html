@@ -154,7 +154,7 @@
         .ticker-wrapper {
             display: flex;
             white-space: nowrap;
-            animation: ticker-scroll 100s linear infinite; /* Velocidade do letreiro */
+            animation: ticker-scroll 50s linear infinite; /* Velocidade do letreiro */
         }
         
         .ticker-wrapper:hover {
@@ -1250,21 +1250,201 @@
         };
 
         // --- FUNÇÃO DE NOTÍCIAS (LETREIRO) ---
+        // --- FUNÇÃO DE NOTÍCIAS (LETREIRO INTELIGENTE - PARIDADE ANDROID) ---
         const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users) => {
             let segments = [];
             const addSegment = (text, color) => segments.push(`<span style="color: ${color}; font-weight: 900; margin: 0 10px;">${text}</span>`);
             
+            // --- 1. ENGINE DE CÁLCULO (Igual ao Android) ---
+            // Calcula pontos, medalhas e ordena para saber quem é quem
+            let rankingSnapshot = [];
+
+            if (users.length > 0) {
+                // Identifica Zebras (Jogos onde < 20% acertaram)
+                const zebraMatchIds = [];
+                finishedMatches.forEach(m => {
+                    const hits = guessesData.filter(g => g.matchId === m.id && g.teamSelected === m.winner).length;
+                    if (users.length > 0 && (hits / users.length) < 0.20) zebraMatchIds.push(m.id);
+                });
+
+                rankingSnapshot = users.map(u => {
+                    let pts = 0;
+                    let victories = 0;
+                    let finalsWon = 0;
+                    let simStreak = 0;
+                    let alienCount = 0, mitoCount = 0, fireCount = 0, zebraCount = 0, maeDinahCount = 0, diamondCount = 0, vetCount = 0;
+
+                    const userGuesses = guessesData.filter(g => g.userId === u.id);
+                    
+                    // Ordena cronologicamente para streak
+                    const chronoMatches = [...finishedMatches].sort((a,b) => (a.deadlineDate || 0) - (b.deadlineDate || 0));
+
+                    chronoMatches.forEach(m => {
+                        const g = userGuesses.find(x => x.matchId === m.id);
+                        const isHit = g && g.teamSelected === m.winner;
+
+                        if (isHit) {
+                            pts += (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
+                            victories++;
+                            simStreak++;
+                            if (m.round && m.round.toLowerCase() === 'final') finalsWon++;
+
+                            // Medalhas de Sequência
+                            if (simStreak === 3) fireCount++;
+                            if (simStreak === 5) mitoCount++;
+                            if (simStreak === 10) alienCount++;
+
+                            // Zebra
+                            if (zebraMatchIds.includes(m.id)) zebraCount++;
+                        } else {
+                            simStreak = 0;
+                        }
+                    });
+
+                    // Diamante (Oitavas)
+                    const oitavas = chronoMatches.filter(m => m.round === "Oitavas de final");
+                    const oitavasByComp = {};
+                    oitavas.forEach(m => {
+                        if(!oitavasByComp[m.competition]) oitavasByComp[m.competition] = [];
+                        oitavasByComp[m.competition].push(m);
+                    });
+                    
+                    for (const comp in oitavasByComp) {
+                        const matches = oitavasByComp[comp];
+                        if (matches.length === 8) {
+                            const hits = matches.filter(m => {
+                                const g = userGuesses.find(x => x.matchId === m.id);
+                                return g && g.teamSelected === m.winner;
+                            }).length;
+                            if (hits === 8) { pts += 3; diamondCount++; }
+                        }
+                    }
+
+                    if (finalsWon > 0) maeDinahCount = finalsWon;
+                    if (victories >= 50) vetCount = Math.floor(victories / 50);
+
+                    // Desconto de Débito
+                    const debts = u.debts || 0;
+                    pts -= (debts * 3);
+
+                    return {
+                        uid: u.id,
+                        name: (u.name || u.username || "SemNome").split(" ")[0].toUpperCase(),
+                        pts, debts, victories,
+                        medals: { alien: alienCount, diamond: diamondCount, mito: mitoCount, zebra: zebraCount, fire: fireCount, dinah: maeDinahCount, vet: vetCount }
+                    };
+                });
+
+                // Ordenação Complexa (Igual ao Android)
+                rankingSnapshot.sort((a, b) => {
+                    if (b.pts !== a.pts) return b.pts - a.pts; // 1. Pontos
+                    if (a.debts !== b.debts) return a.debts - b.debts; // 2. Menos Débitos
+                    if (b.medals.alien !== a.medals.alien) return b.medals.alien - a.medals.alien;
+                    if (b.medals.diamond !== a.medals.diamond) return b.medals.diamond - a.medals.diamond;
+                    if (b.medals.mito !== a.medals.mito) return b.medals.mito - a.medals.mito;
+                    return 0;
+                });
+            }
+
+            // --- 2. GERAÇÃO DE FRASES (Lógica Android) ---
+            if (finishedMatches.length > 0 && rankingSnapshot.length > 0) {
+                const lider = rankingSnapshot[0];
+                const lanterna = rankingSnapshot[rankingSnapshot.length - 1];
+
+                // 1º Lugar
+                addSegment(`👑 SEGUE O LÍDER! O ${lider.name} TÁ TRANQUILO COM SEUS ${lider.pts} PTS!`, "#FFD700");
+
+                // 2º Lugar
+                if (rankingSnapshot.length >= 2) {
+                    const vice = rankingSnapshot[1];
+                    addSegment(`🥈 O ${vice.name} TÁ NA COLA DO LÍDER! SE VACILAR, É VAPO!`, "#C0C0C0");
+                }
+
+                // 3º Lugar
+                if (rankingSnapshot.length >= 3) {
+                    const terceiro = rankingSnapshot[2];
+                    addSegment(`🥉 ${terceiro.name} FECHA O PÓDIO! JÁ TÁ GARANTINDO O DA MERENDA!`, "#CD7F32");
+                }
+
+                // 4º Lugar
+                if (rankingSnapshot.length >= 4) {
+                    const quarto = rankingSnapshot[3];
+                    addSegment(`👀 OLHO NO ${quarto.name}! TÁ CHEGANDO NO G3, HEIN?`, "#4FC3F7");
+                }
+
+                // Meio de Tabela
+                if (rankingSnapshot.length >= 8) {
+                    const meio = rankingSnapshot[Math.floor(rankingSnapshot.length / 2)];
+                    addSegment(`😐 ${meio.name} TÁ QUE NEM ÁGUA DE SALSICHA... NEM FEDE NEM CHEIRA NA TABELA!`, "#9E9E9E");
+                }
+
+                // Porteiro do Z-4 (Antes era Z-2, ajustado conforme pedido anterior, mas mantendo lógica Android Z-2 se preferir, ou ajustando para Z-4)
+                // O Android usa Z-2 na lógica (size - 5), vamos manter a paridade lógica:
+                if (rankingSnapshot.length >= 6) { // Precisa ter gente suficiente
+                    const indexPorteiro = rankingSnapshot.length - 5; // O 5º de baixo pra cima
+                    if(indexPorteiro >= 0) {
+                        const porteiro = rankingSnapshot[indexPorteiro];
+                        addSegment(`⚓ CUIDADO ${porteiro.name}! O Z-4 TÁ TE PUXANDO, TONTEIRA!`, "#FF6D00");
+                    }
+                }
+
+                // Lanterna
+                if (rankingSnapshot.length > 1) {
+                    addSegment(`🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA NÃO, ARROMBADO?`, "#FF5252");
+                }
+
+                // --- STREAKS RECENTES (Últimos 10 jogos) ---
+                const recent10 = [...finishedMatches].sort((a,b) => (b.deadlineDate||0)-(a.deadlineDate||0)).slice(0, 10);
+                
+                users.forEach(u => {
+                    const name = (u.name || "User").split(" ")[0].toUpperCase();
+                    let streak = 0;
+                    let isNegative = false;
+
+                    for (const m of recent10) {
+                        const g = guessesData.find(x => x.userId === u.id && x.matchId === m.id);
+                        const isHit = g && g.teamSelected === m.winner;
+                        
+                        if (isHit) {
+                            if (isNegative) break; 
+                            streak++;
+                        } else {
+                            if (streak > 0 && !isNegative) break; 
+                            isNegative = true; 
+                            streak++;
+                        }
+                    }
+
+                    if (!isNegative) {
+                        if (streak >= 10) addSegment(`👽 CHAMEM A NASA! O ${name} É DE OUTRO MUNDO (${streak} ACERTOS)!`, "#64DD17");
+                        else if (streak >= 5) addSegment(`🎯 TEM UM MITO ENTRE NÓS! ${name} CRAVOU ${streak} SEGUIDAS!`, "#FFD700");
+                        else if (streak >= 3) addSegment(`🔥 ${name} TÁ CRUEL, DOIDO! (${streak} ACERTOS SEGUIDOS)`, "#00E676");
+                    } else {
+                        if (streak >= 3) addSegment(`🥬 ${name} TÁ COM MÃO DE ALFACE! (${streak} ERROS SEGUIDOS)`, "#FF5252");
+                    }
+
+                    // Dorminhoco (Não votou no último)
+                    if (recent10.length > 0) {
+                        const lastM = recent10[0]; // O mais recente
+                        const voted = guessesData.some(x => x.userId === u.id && x.matchId === lastM.id);
+                        if (!voted) addSegment(`💤 O BURRÃO DO ${name} NÃO VOTOU NO ÚLTIMO CONFRONTO!`, "#9E9E9E");
+                    }
+                });
+            }
+
+            // --- 3. MENSAGENS DO ADMIN (Mistura no final) ---
             if (newsSnap && newsSnap.exists()) {
                 (newsSnap.data().items || []).forEach(item => {
                     if (typeof item === 'object') addSegment(item.text, `#${item.color.replace('FF','')}`);
                     else addSegment(item, "#EF6C00");
                 });
             }
-            if (finishedMatches.length > 0) {
-                 addSegment("🏆 QUEM SERÁ O REI DESTE MÊS?", "#FFD700");
-                 addSegment("⚽ CONFIRA A TABELA ATUALIZADA!", "#00E676");
-            }
+
             if (segments.length === 0) addSegment("⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!", "#FFD700");
+
+            // Embaralha para dar dinamismo (opcional, como no Android)
+            // segments.sort(() => Math.random() - 0.5); 
+
             return segments.join(' | ') + " | " + segments.join(' | ');
         };
 
@@ -3602,6 +3782,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
