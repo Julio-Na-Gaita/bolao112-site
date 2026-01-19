@@ -192,7 +192,7 @@
         .ticker-wrapper {
             display: flex;
             white-space: nowrap;
-            animation: ticker-scroll 110s linear infinite; /* Velocidade do letreiro */
+            animation: ticker-scroll 100s linear infinite; /* Velocidade do letreiro */
         }
         
         .ticker-wrapper:hover {
@@ -523,17 +523,28 @@
         // --- NOVAS VARIÁVEIS AQUI ---
         let layoutOrder = []; // Vai guardar a ordem da tela ["ticker", "banner_X", "matches_open"...]
         let activePolls = {}; // Cache das enquetes
-       // --- MOTOR DE TEMA E ÁUDIO (FINAL) ---
+       // --- MOTOR DE TEMA E ÁUDIO (VERSÃO FINAL V3) ---
     
-    // Configuração Inicial
+    // Configuração Padrão
     let userPreferences = {
         primaryColor: '#006400',
         secondaryColor: '#FFD700',
         skin: 'padrao', 
-        font: "'PT Serif', serif",
+        fontKey: 'serif', // Usamos uma chave simples agora
         audioPack: 'som_pop.mp3'
     };
 
+    // Mapa de Fontes (Chave Simples -> CSS Real)
+    const fontMap = {
+        'serif': "'PT Serif', serif",
+        'sans': "'Roboto', sans-serif",
+        'bebas': "'Bebas Neue', cursive",
+        'pacifico': "'Pacifico', cursive",
+        'pixel': "'Press Start 2P', cursive",
+        'terror': "'Creepster', cursive"
+    };
+
+    // Lista de Sons
     const audioFiles = {
         'som_pop.mp3': 'Padrão (Pop)',
         'som_apito.mp3': 'Estádio (Apito)',
@@ -548,54 +559,58 @@
         'som_error.mp3': 'Erro (Windows)'
     };
 
-    // Carrega do LocalStorage
     const loadTheme = () => {
         try {
             const saved = localStorage.getItem('bolao_theme_v1');
-            if (saved) { userPreferences = JSON.parse(saved); }
+            if (saved) { 
+                const parsed = JSON.parse(saved);
+                // Migração segura para quem tinha versão antiga
+                if (!parsed.fontKey) parsed.fontKey = 'serif';
+                userPreferences = parsed; 
+            }
             applyThemeVisuals();
-        } catch(e) { console.error("Erro ao carregar tema", e); }
+        } catch(e) { console.error("Erro tema:", e); }
     };
 
-    // Aplica as variáveis CSS
     const applyThemeVisuals = () => {
         const root = document.documentElement;
         
-        // 1. Fontes
-        root.style.setProperty('--app-font', userPreferences.font);
+        // 1. Aplica Fonte (Busca do Mapa)
+        const fontCSS = fontMap[userPreferences.fontKey] || fontMap['serif'];
+        root.style.setProperty('--app-font', fontCSS);
 
-        // 2. Skins (Cores e Fundo)
+        // 2. Aplica Skins
         if (userPreferences.skin === 'ceara') {
             root.style.setProperty('--primary', '#000000');
             root.style.setProperty('--secondary', '#FFFFFF');
-            // Tenta carregar imagem, se falhar fica preto
-            root.style.setProperty('--bg-image', "linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('escudo_ceara.png')");
+            root.style.setProperty('--bg-image', "linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('escudo_ceara.png')");
         } 
         else if (userPreferences.skin === 'fortaleza') {
             root.style.setProperty('--primary', '#1155cc');   
             root.style.setProperty('--secondary', '#bb0a1e'); 
-            root.style.setProperty('--bg-image', "linear-gradient(rgba(17,85,204,0.7), rgba(187,10,30,0.7)), url('escudo_fortaleza.png')");
+            root.style.setProperty('--bg-image', "linear-gradient(rgba(17,85,204,0.8), rgba(187,10,30,0.8)), url('escudo_fortaleza.png')");
         } 
         else {
-            // Padrão / Custom
             root.style.setProperty('--primary', userPreferences.primaryColor);
             root.style.setProperty('--secondary', userPreferences.secondaryColor);
             root.style.setProperty('--bg-image', "linear-gradient(rgba(255,255,255,0.85), rgba(255,255,255,0.85)), url('bg_jogos.jpeg')");
         }
     };
 
-    // Salva e Reaplica
     const saveTheme = (newPrefs) => {
         userPreferences = { ...userPreferences, ...newPrefs };
         localStorage.setItem('bolao_theme_v1', JSON.stringify(userPreferences));
         applyThemeVisuals();
-        // Se o modal estiver aberto, recarrega ele para mostrar a seleção
-        if(document.getElementById('modalContainer').innerHTML.includes('Personalização')) {
-            window.openThemeEditor();
-        }
+        
+        // Força a atualização visual do Modal se ele estiver aberto
+        // Pequeno delay para garantir que a UI não pisque estranho
+        setTimeout(() => {
+            if(document.getElementById('modalContainer').innerHTML.includes('Personalização')) {
+                window.openThemeEditor();
+            }
+        }, 50);
     };
 
-    // Tocar Som
     const playVoteSound = (previewFile) => {
         const file = previewFile || userPreferences.audioPack;
         const audio = new Audio(file);
@@ -606,17 +621,16 @@
     // Inicializa
     loadTheme();
 
-    // --- MODAL DE PERSONALIZAÇÃO (REATIVO) ---
+    // --- MODAL EDITOR (REFEITO PARA FUNCIONAR O SELECT) ---
     window.openThemeEditor = () => {
         const modal = document.getElementById('modalOverlay');
         const cont = document.getElementById('modalContainer');
         modal.classList.remove('hidden');
         
-        // Gera HTML dos Sons
+        // Gera Lista de Sons
         let soundsHtml = '';
         for (const [file, label] of Object.entries(audioFiles)) {
             const isSelected = userPreferences.audioPack === file;
-            // O truque: onclick salva e a função saveTheme chama openThemeEditor de novo para atualizar o "check"
             soundsHtml += `
             <div onclick="saveTheme({audioPack: '${file}'}); playVoteSound('${file}')" class="w-full text-left p-3 bg-white border rounded flex justify-between items-center mb-2 cursor-pointer btn-press ${isSelected ? 'border-green-500 bg-green-50 ring-1 ring-green-500' : ''}">
                 <span class="text-xs font-bold flex items-center gap-2">
@@ -627,6 +641,7 @@
         }
 
         const skin = userPreferences.skin;
+        const currentFont = userPreferences.fontKey;
 
         cont.innerHTML = `
         <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden h-[80vh] flex flex-col">
@@ -657,19 +672,19 @@
                             <label class="text-[9px] font-bold mb-1">Secundária</label>
                             <input type="color" value="${userPreferences.secondaryColor}" onchange="saveTheme({secondaryColor: this.value})">
                         </div>
-                        <div class="text-[9px] text-gray-400 leading-tight ml-2">Toque na cor para alterar.<br>Válido no modo Padrão.</div>
+                        <div class="text-[9px] text-gray-400 leading-tight ml-2">Modo Padrão apenas.</div>
                     </div>
                 </div>
 
                 <div>
                     <h4 class="text-xs font-bold text-gray-500 mb-2 uppercase">Tipografia</h4>
-                    <select onchange="saveTheme({font: this.value})" class="w-full p-2 text-xs border rounded bg-white font-bold text-gray-700">
-                        <option value="'PT Serif', serif" ${userPreferences.font.includes('PT Serif')?'selected':''}>Clássica (Serif)</option>
-                        <option value="'Roboto', sans-serif" ${userPreferences.font.includes('Roboto')?'selected':''}>Moderna (Sans)</option>
-                        <option value="'Bebas Neue', cursive" ${userPreferences.font.includes('Bebas')?'selected':''}>Manchete (Bebas)</option>
-                        <option value="'Pacifico', cursive" ${userPreferences.font.includes('Pacifico')?'selected':''}>Handwritten (Pacifico)</option>
-                        <option value="'Press Start 2P', cursive" ${userPreferences.font.includes('Press Start')?'selected':''}>Gamer (Pixel)</option>
-                        <option value="'Creepster', cursive" ${userPreferences.font.includes('Creepster')?'selected':''}>Terror</option>
+                    <select onchange="saveTheme({fontKey: this.value})" class="w-full p-2 text-xs border rounded bg-white font-bold text-gray-700 outline-none focus:border-[#006400]">
+                        <option value="serif" ${currentFont === 'serif' ? 'selected' : ''}>Clássica (Serif)</option>
+                        <option value="sans" ${currentFont === 'sans' ? 'selected' : ''}>Moderna (Sans)</option>
+                        <option value="bebas" ${currentFont === 'bebas' ? 'selected' : ''}>Manchete (Bebas)</option>
+                        <option value="pacifico" ${currentFont === 'pacifico' ? 'selected' : ''}>Handwritten (Pacifico)</option>
+                        <option value="pixel" ${currentFont === 'pixel' ? 'selected' : ''}>Gamer (Pixel)</option>
+                        <option value="terror" ${currentFont === 'terror' ? 'selected' : ''}>Terror (Creepster)</option>
                     </select>
                 </div>
 
@@ -3748,6 +3763,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
