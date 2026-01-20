@@ -1160,6 +1160,7 @@
         };
 
         // --- FUNÇÃO DE NOTÍCIAS (COM LINHA DO TEMPO) ---
+// Adicionamos 'expiredMatches' no final dos parenteses
 const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expiredMatches = []) => {
     let segments = [];
             const addSegment = (text, color) => segments.push(`<span style="color: ${color}; font-weight: 900; margin: 0 10px;">${text}</span>`);
@@ -1222,32 +1223,40 @@ const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expired
                     }
 // --- INÍCIO DO NOVO TRECHO: FANTASMA E ALFACE ---
                 
-                // 1. FANTASMA 👻 (Verifica sequência de ausência em jogos expirados)
+               // --- FANTASMA 👻 (Versão para Notícias) ---
                 let ghostStreak = 0;
-                // Pega jogos vencidos onde o usuário JÁ EXISTIA, do mais recente para o antigo
-                const validExpiredDesc = expiredMatches
+                // Garante que existe a lista e filtra por data do usuário
+                const safeExpired = (expiredMatches || [])
                     .filter(m => u.createdDate < m.deadlineDate)
-                    .sort((a,b) => b.deadlineDate - a.deadlineDate); 
+                    .sort((a,b) => b.deadlineDate - a.deadlineDate);
 
-                for (const m of validExpiredDesc) {
-                    // Verifica se votou neste jogo
-                    const hasVote = userGuesses.some(g => g.matchId === m.id);
-                    if (!hasVote) {
-                        ghostStreak++;
+                for (const m of safeExpired) {
+                    const hasVote = guessesData.some(g => g.userId === u.uid && g.matchId === m.id);
+                    if (!hasVote) ghostStreak++;
+                    else break;
+                }
+                if (ghostStreak >= 3) {
+                    addSegment(`👻 ${u.name.toUpperCase()} VIROU FANTASMA! NÃO VOTA HÁ ${ghostStreak} JOGOS!`, "#9E9E9E");
+                }
+
+                // --- MÃO DE ALFACE 🥬 (Versão para Notícias) ---
+                let lettuceStreak = 0;
+                const safeFinished = finishedMatches
+                    .filter(m => u.createdDate < m.deadlineDate)
+                    .sort((a,b) => b.deadlineDate - a.deadlineDate);
+
+                for (const m of safeFinished) {
+                    const g = guessesData.find(x => x.userId === u.uid && x.matchId === m.id);
+                    if (g) {
+                        if (g.teamSelected !== m.winner) lettuceStreak++;
+                        else break;
                     } else {
-                        break; // Se votou, quebra a sequência de fantasma
+                        break;
                     }
                 }
-               if (ghostStreak >= 3) {
-                // CORREÇÃO: Usa addSegment para mostrar no letreiro
-                addSegment(`👻 ${u.name.toUpperCase()} TÁ FANTASMA! NÃO VOTA HÁ ${ghostStreak} JOGOS!`, "#9E9E9E");
-            }
-
-                // 2. MÃO DE ALFACE 🥬 (Verifica sequência de erros em jogos finalizados)
-if (lettuceStreak >= 3) {
-                // CORREÇÃO:
-                addSegment(`🥬 ${u.name.toUpperCase()} TÁ COM MÃO DE ALFACE! ERROU ${lettuceStreak} SEGUIDOS!`, "#EF5350");
-            }
+                if (lettuceStreak >= 3) {
+                    addSegment(`🥬 ${u.name.toUpperCase()} TÁ COM MÃO DE ALFACE! ERROU ${lettuceStreak} SEGUIDOS!`, "#EF5350");
+                }
                     // Pega jogos finalizados onde o usuário JÁ EXISTIA, do mais recente para o antigo
                 const validFinishedDesc = finishedMatches
                     .filter(m => u.createdDate < m.deadlineDate)
@@ -1445,13 +1454,14 @@ if (lettuceStreak >= 3) {
             // 1. Cria a lista de jogos expirados (para o Fantasma aparecer no letreiro)
             const expiredMatchesList = matches.filter(m => m.deadlineDate < new Date());
 
-            // 2. Passa essa lista como 5º parâmetro
+           // 2. Passa essa lista como 5º parâmetro
             const newsContent = generateNewsFeed(
                 newsSnap, 
                 guessesData, 
                 finished, 
-                uSnap.docs.map(d => ({id: d.id, ...d.data()})),
-                expiredMatchesList // <--- Enviando a lista aqui
+                // CORREÇÃO: Usar allUsersData em vez de uSnap.docs... para garantir datas corretas
+                allUsersData, 
+                expiredMatches // <--- LISTA DE JOGOS EXPIRADOS AQUI
             );
             // ---------------------------------------
             const tickerBlock = `<div class="card-container mb-4"><div class="ticker-container shadow-lg"><div class="ticker-wrapper"><div class="ticker-item">${newsContent}</div></div></div></div>`;
@@ -3623,6 +3633,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
