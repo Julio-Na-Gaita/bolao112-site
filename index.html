@@ -1446,13 +1446,23 @@ const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expired
             if (layoutSnap.exists() && layoutSnap.data().order) order = layoutSnap.data().order;
             
             const bannersMap = {}; bannersSnap.forEach(d => bannersMap[d.id] = d.data());
-           const pollsMap = {}; pollsSnap.forEach(d => pollsMap[d.id] = {id: d.id, ...d.data()});
+          const pollsMap = {}; pollsSnap.forEach(d => pollsMap[d.id] = {id: d.id, ...d.data()});
 
             let finalHtml = "";
-            
-            // --- CORREÇÃO DO ERRO EXPIREDMATCHES ---
-            // 1. Cria a lista de jogos expirados (para o Fantasma aparecer no letreiro)
-            const expiredMatchesList = matches.filter(m => m.deadlineDate < new Date());
+
+            // --- CORREÇÃO: CRIAR A VARIÁVEL QUE FALTAVA ---
+            const expiredMatches = matches.filter(m => m.deadlineDate < new Date());
+            // ----------------------------------------------
+
+            // Agora a variável existe e pode ser passada
+            const newsContent = generateNewsFeed(
+                newsSnap, 
+                guessesData, 
+                finished, 
+                // Garante que passa a lista correta de usuários
+                allUsersData, 
+                expiredMatches // <--- Agora ela existe!
+            );
 
            // 2. Passa essa lista como 5º parâmetro
             const newsContent = generateNewsFeed(
@@ -3633,6 +3643,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
