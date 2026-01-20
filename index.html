@@ -1449,21 +1449,7 @@ const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expired
           const pollsMap = {}; pollsSnap.forEach(d => pollsMap[d.id] = {id: d.id, ...d.data()});
 
             let finalHtml = "";
-
-            // --- CORREÇÃO: CRIAR A VARIÁVEL QUE FALTAVA ---
-            const expiredMatches = matches.filter(m => m.deadlineDate < new Date());
-            // ----------------------------------------------
-
-            // Agora a variável existe e pode ser passada
-            const newsContent = generateNewsFeed(
-                newsSnap, 
-                guessesData, 
-                finished, 
-                // Garante que passa a lista correta de usuários
-                allUsersData, 
-                expiredMatches // <--- Agora ela existe!
-            );
-
+           
            // 2. Passa essa lista como 5º parâmetro
             const newsContent = generateNewsFeed(
                 newsSnap, 
@@ -3643,6 +3629,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
