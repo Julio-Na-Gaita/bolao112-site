@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -1160,9 +1161,8 @@
         };
 
         // --- FUNÇÃO DE NOTÍCIAS (COM LINHA DO TEMPO) ---
-// Adicionamos 'expiredMatches' no final dos parenteses
-const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expiredMatches = []) => {
-    let segments = [];
+        const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users) => {
+            let segments = [];
             const addSegment = (text, color) => segments.push(`<span style="color: ${color}; font-weight: 900; margin: 0 10px;">${text}</span>`);
             
             // --- 1. ENGINE (Lógica Android: Timeline + Zebra Ajustada) ---
@@ -1221,64 +1221,7 @@ const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expired
                             if(hits === 8) { pts += 3; userMedals.push("💎"); }
                         }
                     }
-// --- INÍCIO DO NOVO TRECHO: FANTASMA E ALFACE ---
-                
-               // --- FANTASMA 👻 (Versão para Notícias) ---
-                let ghostStreak = 0;
-                // Garante que existe a lista e filtra por data do usuário
-                const safeExpired = (expiredMatches || [])
-                    .filter(m => u.createdDate < m.deadlineDate)
-                    .sort((a,b) => b.deadlineDate - a.deadlineDate);
 
-                for (const m of safeExpired) {
-                    const hasVote = guessesData.some(g => g.userId === u.uid && g.matchId === m.id);
-                    if (!hasVote) ghostStreak++;
-                    else break;
-                }
-                if (ghostStreak >= 3) {
-                    addSegment(`👻 ${u.name.toUpperCase()} VIROU FANTASMA! NÃO VOTA HÁ ${ghostStreak} JOGOS!`, "#9E9E9E");
-                }
-
-                // --- MÃO DE ALFACE 🥬 (Versão para Notícias) ---
-                let lettuceStreak = 0;
-                const safeFinished = finishedMatches
-                    .filter(m => u.createdDate < m.deadlineDate)
-                    .sort((a,b) => b.deadlineDate - a.deadlineDate);
-
-                for (const m of safeFinished) {
-                    const g = guessesData.find(x => x.userId === u.uid && x.matchId === m.id);
-                    if (g) {
-                        if (g.teamSelected !== m.winner) lettuceStreak++;
-                        else break;
-                    } else {
-                        break;
-                    }
-                }
-                if (lettuceStreak >= 3) {
-                    addSegment(`🥬 ${u.name.toUpperCase()} TÁ COM MÃO DE ALFACE! ERROU ${lettuceStreak} SEGUIDOS!`, "#EF5350");
-                }
-                    // Pega jogos finalizados onde o usuário JÁ EXISTIA, do mais recente para o antigo
-                const validFinishedDesc = finishedMatches
-                    .filter(m => u.createdDate < m.deadlineDate)
-                    .sort((a,b) => b.deadlineDate - a.deadlineDate);
-
-                for (const m of validFinishedDesc) {
-                    const g = userGuesses.find(x => x.matchId === m.id);
-                    if (g) {
-                        if (g.teamSelected !== m.winner) {
-                            lettuceStreak++; // Votou e errou
-                        } else {
-                            break; // Acertou, quebra a sequência de alface
-                        }
-                    } else {
-                        break; // Não votou, conta como fantasma, não alface
-                    }
-                }
-                if (lettuceStreak >= 3) {
-                    trophyRoom.push({ icon: "🥬", name: "MÃO DE ALFACE", desc: `Errou os últimos ${lettuceStreak} palpites.`, date: "Atual", hiddenInList: false });
-                }
-                // --- FIM DO NOVO TRECHO ---
-                    
                     if (finalsWon > 0) userMedals.push("🔮");
                     if (victories >= 50) { const qtd = Math.floor(victories / 50); for(let i=0; i<qtd; i++) userMedals.push("🎓"); }
 
@@ -1387,6 +1330,8 @@ const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expired
                 getDocs(collection(db, "polls"))
             ]);
 
+            // ... (Processamento de dados padrão - mantido para brevidade) ...
+            const totalParticipants = uSnap.size || 1;
             // --- NOVO TRECHO (LINHA DO TEMPO) ---
             // Cria uma lista com a data de entrada de cada usuário para o cálculo correto
             const allUsersData = uSnap.docs.map(doc => ({
@@ -1446,22 +1391,11 @@ const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expired
             if (layoutSnap.exists() && layoutSnap.data().order) order = layoutSnap.data().order;
             
             const bannersMap = {}; bannersSnap.forEach(d => bannersMap[d.id] = d.data());
-          const pollsMap = {}; pollsSnap.forEach(d => pollsMap[d.id] = {id: d.id, ...d.data()});
+            const pollsMap = {}; pollsSnap.forEach(d => pollsMap[d.id] = {id: d.id, ...d.data()});
 
             let finalHtml = "";
-           // --- CORREÇÃO: CRIAR A VARIÁVEL QUE FALTA ---
-            const expiredMatches = matches.filter(m => m.deadlineDate < new Date());
-            // --------------------------------------------
-           // 2. Passa essa lista como 5º parâmetro
-            const newsContent = generateNewsFeed(
-                newsSnap, 
-                guessesData, 
-                finished, 
-                // CORREÇÃO: Usar allUsersData em vez de uSnap.docs... para garantir datas corretas
-                allUsersData, 
-                expiredMatches // <--- LISTA DE JOGOS EXPIRADOS AQUI
-            );
-            // ---------------------------------------
+            // CORREÇÃO CRÍTICA: Passamos ({id: d.id, ...d.data()}) para garantir que o ID chegue no letreiro
+            const newsContent = generateNewsFeed(newsSnap, guessesData, finished, uSnap.docs.map(d => ({id: d.id, ...d.data()})));
             const tickerBlock = `<div class="card-container mb-4"><div class="ticker-container shadow-lg"><div class="ticker-wrapper"><div class="ticker-item">${newsContent}</div></div></div></div>`;
 
             for (const item of order) {
@@ -1942,9 +1876,7 @@ playVoteSound();
                     }
                 });
                 const finishedMatches = matches.filter(m => m.winner);
-                // --- NOVO: LISTA PARA MEDALHA FANTASMA ---
-                const expiredMatches = matches.filter(m => m.deadlineDate < new Date());
-                // -----------------------------------------
+                
                 // 1.1 Info Rodapé (Última Atualização Real)
                 if (finishedMatches.length > 0) {
                     finishedMatches.sort((a,b) => {
@@ -2995,7 +2927,7 @@ async function loadProfile() {
                                 <div class="flex items-start gap-2"><span class="text-lg">💰</span> <div><b>Patrão:</b> Mensalidade rigorosamente em dia.</div></div>
                                 <div class="flex items-start gap-2"><span class="text-lg">👻</span> <div><b>Fantasma:</b> Deixou de votar em 3 jogos seguidos.</div></div>
                                 <div class="flex items-start gap-2"><span class="text-lg">🥬</span> <div><b>Mão de Alface:</b> Errou 3 palpites seguidos.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg text-[#8B0000]">⚓</span> <div class="text-[#8B0000]"><b>Zona de Rebaixamento:</b> Os 4 últimos colocados.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg text-[#8B0000]">⚓</span> <div class="text-[#8B0000]"><b>Zona de Rebaixamento:</b> Os 2 últimos colocados.</div></div>
                             </div>
                     </div>
 
@@ -3631,15 +3563,6 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
 
 
 
