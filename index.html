@@ -1238,13 +1238,17 @@ const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expired
                         break; // Se votou, quebra a sequência de fantasma
                     }
                 }
-                if (ghostStreak >= 3) {
-                    trophyRoom.push({ icon: "👻", name: "FANTASMA", desc: `Não votou nos últimos ${ghostStreak} jogos.`, date: "Atual", hiddenInList: false });
-                }
+               if (ghostStreak >= 3) {
+                // CORREÇÃO: Usa addSegment para mostrar no letreiro
+                addSegment(`👻 ${u.name.toUpperCase()} TÁ FANTASMA! NÃO VOTA HÁ ${ghostStreak} JOGOS!`, "#9E9E9E");
+            }
 
                 // 2. MÃO DE ALFACE 🥬 (Verifica sequência de erros em jogos finalizados)
-                let lettuceStreak = 0;
-                // Pega jogos finalizados onde o usuário JÁ EXISTIA, do mais recente para o antigo
+if (lettuceStreak >= 3) {
+                // CORREÇÃO:
+                addSegment(`🥬 ${u.name.toUpperCase()} TÁ COM MÃO DE ALFACE! ERROU ${lettuceStreak} SEGUIDOS!`, "#EF5350");
+            }
+                    // Pega jogos finalizados onde o usuário JÁ EXISTIA, do mais recente para o antigo
                 const validFinishedDesc = finishedMatches
                     .filter(m => u.createdDate < m.deadlineDate)
                     .sort((a,b) => b.deadlineDate - a.deadlineDate);
@@ -3619,6 +3623,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
