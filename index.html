@@ -1220,7 +1220,52 @@
                             if(hits === 8) { pts += 3; userMedals.push("💎"); }
                         }
                     }
+// --- INÍCIO DO NOVO TRECHO: FANTASMA E ALFACE ---
+                
+                // 1. FANTASMA 👻 (Verifica sequência de ausência em jogos expirados)
+                let ghostStreak = 0;
+                // Pega jogos vencidos onde o usuário JÁ EXISTIA, do mais recente para o antigo
+                const validExpiredDesc = expiredMatches
+                    .filter(m => u.createdDate < m.deadlineDate)
+                    .sort((a,b) => b.deadlineDate - a.deadlineDate); 
 
+                for (const m of validExpiredDesc) {
+                    // Verifica se votou neste jogo
+                    const hasVote = userGuesses.some(g => g.matchId === m.id);
+                    if (!hasVote) {
+                        ghostStreak++;
+                    } else {
+                        break; // Se votou, quebra a sequência de fantasma
+                    }
+                }
+                if (ghostStreak >= 3) {
+                    trophyRoom.push({ icon: "👻", name: "FANTASMA", desc: `Não votou nos últimos ${ghostStreak} jogos.`, date: "Atual", hiddenInList: false });
+                }
+
+                // 2. MÃO DE ALFACE 🥬 (Verifica sequência de erros em jogos finalizados)
+                let lettuceStreak = 0;
+                // Pega jogos finalizados onde o usuário JÁ EXISTIA, do mais recente para o antigo
+                const validFinishedDesc = finishedMatches
+                    .filter(m => u.createdDate < m.deadlineDate)
+                    .sort((a,b) => b.deadlineDate - a.deadlineDate);
+
+                for (const m of validFinishedDesc) {
+                    const g = userGuesses.find(x => x.matchId === m.id);
+                    if (g) {
+                        if (g.teamSelected !== m.winner) {
+                            lettuceStreak++; // Votou e errou
+                        } else {
+                            break; // Acertou, quebra a sequência de alface
+                        }
+                    } else {
+                        break; // Não votou, conta como fantasma, não alface
+                    }
+                }
+                if (lettuceStreak >= 3) {
+                    trophyRoom.push({ icon: "🥬", name: "MÃO DE ALFACE", desc: `Errou os últimos ${lettuceStreak} palpites.`, date: "Atual", hiddenInList: false });
+                }
+                // --- FIM DO NOVO TRECHO ---
+                    
                     if (finalsWon > 0) userMedals.push("🔮");
                     if (victories >= 50) { const qtd = Math.floor(victories / 50); for(let i=0; i<qtd; i++) userMedals.push("🎓"); }
 
@@ -1875,7 +1920,9 @@ playVoteSound();
                     }
                 });
                 const finishedMatches = matches.filter(m => m.winner);
-                
+                // --- NOVO: LISTA PARA MEDALHA FANTASMA ---
+                const expiredMatches = matches.filter(m => m.deadlineDate < new Date());
+                // -----------------------------------------
                 // 1.1 Info Rodapé (Última Atualização Real)
                 if (finishedMatches.length > 0) {
                     finishedMatches.sort((a,b) => {
@@ -2926,7 +2973,7 @@ async function loadProfile() {
                                 <div class="flex items-start gap-2"><span class="text-lg">💰</span> <div><b>Patrão:</b> Mensalidade rigorosamente em dia.</div></div>
                                 <div class="flex items-start gap-2"><span class="text-lg">👻</span> <div><b>Fantasma:</b> Deixou de votar em 3 jogos seguidos.</div></div>
                                 <div class="flex items-start gap-2"><span class="text-lg">🥬</span> <div><b>Mão de Alface:</b> Errou 3 palpites seguidos.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg text-[#8B0000]">⚓</span> <div class="text-[#8B0000]"><b>Zona de Rebaixamento:</b> Os 2 últimos colocados.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg text-[#8B0000]">⚓</span> <div class="text-[#8B0000]"><b>Zona de Rebaixamento:</b> Os 4 últimos colocados.</div></div>
                             </div>
                     </div>
 
@@ -3562,6 +3609,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
