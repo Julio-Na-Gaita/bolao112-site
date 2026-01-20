@@ -1160,8 +1160,8 @@
         };
 
         // --- FUNÇÃO DE NOTÍCIAS (COM LINHA DO TEMPO) ---
-        const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users) => {
-            let segments = [];
+const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expiredMatches = []) => {
+    let segments = [];
             const addSegment = (text, color) => segments.push(`<span style="color: ${color}; font-weight: 900; margin: 0 10px;">${text}</span>`);
             
             // --- 1. ENGINE (Lógica Android: Timeline + Zebra Ajustada) ---
@@ -1433,11 +1433,23 @@
             if (layoutSnap.exists() && layoutSnap.data().order) order = layoutSnap.data().order;
             
             const bannersMap = {}; bannersSnap.forEach(d => bannersMap[d.id] = d.data());
-            const pollsMap = {}; pollsSnap.forEach(d => pollsMap[d.id] = {id: d.id, ...d.data()});
+           const pollsMap = {}; pollsSnap.forEach(d => pollsMap[d.id] = {id: d.id, ...d.data()});
 
             let finalHtml = "";
-            // CORREÇÃO CRÍTICA: Passamos ({id: d.id, ...d.data()}) para garantir que o ID chegue no letreiro
-            const newsContent = generateNewsFeed(newsSnap, guessesData, finished, uSnap.docs.map(d => ({id: d.id, ...d.data()})));
+            
+            // --- CORREÇÃO DO ERRO EXPIREDMATCHES ---
+            // 1. Cria a lista de jogos expirados (para o Fantasma aparecer no letreiro)
+            const expiredMatchesList = matches.filter(m => m.deadlineDate < new Date());
+
+            // 2. Passa essa lista como 5º parâmetro
+            const newsContent = generateNewsFeed(
+                newsSnap, 
+                guessesData, 
+                finished, 
+                uSnap.docs.map(d => ({id: d.id, ...d.data()})),
+                expiredMatchesList // <--- Enviando a lista aqui
+            );
+            // ---------------------------------------
             const tickerBlock = `<div class="card-container mb-4"><div class="ticker-container shadow-lg"><div class="ticker-wrapper"><div class="ticker-item">${newsContent}</div></div></div></div>`;
 
             for (const item of order) {
@@ -3607,6 +3619,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
