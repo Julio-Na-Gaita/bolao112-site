@@ -1161,7 +1161,7 @@
         };
 
         // --- FUNÇÃO DE NOTÍCIAS (COM LINHA DO TEMPO) ---
-        const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users) => {
+       const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expiredMatches = []) => {
             let segments = [];
             const addSegment = (text, color) => segments.push(`<span style="color: ${color}; font-weight: 900; margin: 0 10px;">${text}</span>`);
             
@@ -3641,6 +3641,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
