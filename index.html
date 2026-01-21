@@ -1403,11 +1403,12 @@
                 else open.push(m);
             });
 
-            // Reordena as listas específicas (Aguardando e Finalizados geralmente são do mais recente para o antigo)
-            // Mas para manter consistência com o ID, usamos a mesma lógica inversa
-            // Ordenação das abas específicas (CRESCENTE: Jogo #1 no topo, Jogo #100 em baixo)
-            waiting.sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id)); 
-            finished.sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
+           // CORREÇÃO FINAL:
+            // Aguardando: Data Menor 1º (Jogo de hoje no topo)
+            waiting.sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
+            
+            // Finalizados: Data Maior 1º (Jogo que acabou agora no topo) + ID Reverso
+            finished.sort((a,b) => (b.deadlineDate - a.deadlineDate) || b.id.localeCompare(a.id));
             // --- LÓGICA SDUI (NOVA) ---
             let order = ["ticker", "matches_open", "matches_wait", "matches_done"];
             if (layoutSnap.exists() && layoutSnap.data().order) order = layoutSnap.data().order;
@@ -2102,8 +2103,8 @@ playVoteSound();
 
                     u.p = p; 
                     u.trophyRoom = trophyRoom; 
-                   // CORREÇÃO: Ordena Extrato por Data Crescente, desempatando pelo ID
-                    u.hist = hist.sort((a,b) => (a.ts - b.ts) || a.id.localeCompare(b.id));
+                   // CORREÇÃO FINAL: Data Maior 1º (b-a) + ID B antes de A (b.compare.a)
+                    u.hist = hist.sort((a,b) => (b.ts - a.ts) || b.id.localeCompare(a.id));
                     
                     monthlyData.push({ name: u.name, points: monthlyP, uid: u.uid });
                 });
@@ -3594,6 +3595,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
