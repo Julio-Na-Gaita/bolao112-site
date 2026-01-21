@@ -1359,8 +1359,11 @@
 
             const now = new Date();
             let matches = [];
-            // ORDENAÇÃO OFICIAL: 1. Data (Crescente) | 2. ID (Alfabética) para desempate
-            matches.sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
+
+            // --- CORREÇÃO: O LOOP ESTAVA FALTANDO AQUI ---
+            matchesSnap.forEach(d => {
+                const m = {id: d.id, ...d.data()}; // Recupera os dados do jogo
+
                 if(m.deadline) {
                     m.deadlineDate = m.deadline.toDate();
                     m.expired = now > m.deadlineDate;
@@ -1368,15 +1371,17 @@
                     m.stats = statsMap[m.id] || {};
                     matches.push(m);
                 }
-            });
-            matches.sort((a,b) => {
-                const diff = a.deadlineDate - b.deadlineDate;
-                return diff !== 0 ? diff : a.id.localeCompare(b.id);
-            });
+            }); 
+            // ---------------------------------------------
+
+            // ORDENAÇÃO OFICIAL: 1. Data (Crescente) | 2. ID (Alfabética) para desempate
+            matches.sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
+            
             window.cachedMatches = matches;
 
             let open = [], waiting = [], finished = [];
             let totalUnread = 0;
+            
             matches.forEach((m, idx) => {
                 m.matchNumber = idx + 1;
                 const sCount = globalServerCounts[m.id] || 0;
@@ -1384,7 +1389,10 @@
                 if (sCount > lCount) totalUnread++;
                 if(m.winner) finished.push(m); else if(m.expired) waiting.push(m); else open.push(m);
             });
-            waiting.sort((a,b)=>b.deadlineDate-a.deadlineDate); finished.sort((a,b)=>b.deadlineDate-a.deadlineDate);
+
+            // Ordenação das abas específicas
+            waiting.sort((a,b) => (b.deadlineDate - a.deadlineDate) || a.id.localeCompare(b.id)); 
+            finished.sort((a,b) => (b.deadlineDate - a.deadlineDate) || a.id.localeCompare(b.id));
 
             // --- LÓGICA SDUI (NOVA) ---
             let order = ["ticker", "matches_open", "matches_wait", "matches_done"];
@@ -3563,6 +3571,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
