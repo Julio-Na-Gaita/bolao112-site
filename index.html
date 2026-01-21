@@ -2108,7 +2108,7 @@ const chronoMatches = [...finishedMatches].sort(matchComparator);
                                 simStreak++;
                                 if (isFinal) finalsWon++;
 
-                                hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: ..., type: 'good' });
+                                hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`, type: 'good' });
 
                                 // Medalhas de Sequência (Acumula histórico)
                                 if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "3 acertos seguidos.", date: dateStr, hiddenInList: false });
@@ -2122,10 +2122,10 @@ const chronoMatches = [...finishedMatches].sort(matchComparator);
 
                             } else {
                                 simStreak = 0;
-                                hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: ..., type: 'bad' });
+                                hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - 👎 Errou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
                             }
                         } else {
-                            hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: ..., type: 'bad' });
+                            hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
                             simStreak = 0;
                         }
                     });
@@ -3681,6 +3681,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
