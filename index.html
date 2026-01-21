@@ -1244,9 +1244,9 @@
                 }
                 
                 if (ghostStreak >= 3) {
-                    // Adiciona na sala de troféus
-                    trophyRoom.push({ icon: "👻", name: "FANTASMA", desc: `Não votou nos últimos ${ghostStreak} jogos.`, date: "Atual", hiddenInList: false });
-                }
+                // CORREÇÃO: Usa addSegment para aparecer no letreiro
+                addSegment(`👻 ${u.name.toUpperCase()} VIROU FANTASMA! NÃO VOTA HÁ ${ghostStreak} JOGOS!`, "#9E9E9E");
+            }
 
                 // --- MEDALHA MÃO DE ALFACE 🥬 (Mesma Lógica Inversa) ---
                 let lettuceStreak = 0;
@@ -3641,6 +3641,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
