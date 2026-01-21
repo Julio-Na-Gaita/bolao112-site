@@ -812,7 +812,7 @@
                 btn.disabled = false;
             }
         };
-           };
+           
       
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -1225,7 +1225,51 @@
                             if(hits === 8) { pts += 3; userMedals.push("💎"); }
                         }
                     }
+// --- MEDALHA FANTASMA 👻 (Lógica de Sequência Inversa com ID) ---
+                let ghostStreak = 0;
+                // Pega jogos expirados onde o usuário JÁ EXISTIA
+                // Ordena: Data Decrescente (Mais novo 1º) -> Desempate: ID Decrescente (Z->A)
+                // Isso garante que a verificação siga a ordem exata de processamento reverso
+                const validExpiredDesc = expiredMatches
+                    .filter(m => u.createdDate < m.deadlineDate)
+                    .sort((a,b) => (b.deadlineDate - a.deadlineDate) || b.id.localeCompare(a.id)); 
 
+                for (const m of validExpiredDesc) {
+                    const hasVote = userGuesses.some(g => g.matchId === m.id);
+                    if (!hasVote) {
+                        ghostStreak++;
+                    } else {
+                        break; // Votou neste, quebra a sequência imediatamente
+                    }
+                }
+                
+                if (ghostStreak >= 3) {
+                    // Adiciona na sala de troféus
+                    trophyRoom.push({ icon: "👻", name: "FANTASMA", desc: `Não votou nos últimos ${ghostStreak} jogos.`, date: "Atual", hiddenInList: false });
+                }
+
+                // --- MEDALHA MÃO DE ALFACE 🥬 (Mesma Lógica Inversa) ---
+                let lettuceStreak = 0;
+                const validFinishedDesc = finishedMatches
+                    .filter(m => u.createdDate < m.deadlineDate)
+                    .sort((a,b) => (b.deadlineDate - a.deadlineDate) || b.id.localeCompare(a.id));
+
+                for (const m of validFinishedDesc) {
+                    const g = userGuesses.find(x => x.matchId === m.id);
+                    if (g) {
+                        if (g.teamSelected !== m.winner) {
+                            lettuceStreak++; 
+                        } else {
+                            break; 
+                        }
+                    } else {
+                        break; // Ausência conta como fantasma, interrompe alface
+                    }
+                }
+                
+                if (lettuceStreak >= 3) {
+                    trophyRoom.push({ icon: "🥬", name: "MÃO DE ALFACE", desc: `Errou os últimos ${lettuceStreak} palpites.`, date: "Atual", hiddenInList: false });
+                }
                     if (finalsWon > 0) userMedals.push("🔮");
                     if (victories >= 50) { const qtd = Math.floor(victories / 50); for(let i=0; i<qtd; i++) userMedals.push("🎓"); }
 
@@ -3595,6 +3639,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
