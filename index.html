@@ -1169,11 +1169,15 @@
             let rankingSnapshot = [];
 
             if (users.length > 0) {
-                // Prepara usuários com data (1970 se nulo)
-                const usersWithDate = users.map(u => ({
-                    ...u,
-                    createdDate: u.createdAt ? u.createdAt.toDate() : new Date(0)
-                }));
+                // Prepara usuários com data (Verifica se é Timestamp ou Date)
+                const usersWithDate = users.map(u => {
+                    let cDate = new Date(0);
+                    if (u.createdAt) {
+                        // Se tiver .toDate é Firebase, senão já é Data normal
+                        cDate = (typeof u.createdAt.toDate === 'function') ? u.createdAt.toDate() : u.createdAt;
+                    }
+                    return { ...u, createdDate: cDate };
+                });
 
                 // Zebra: Calcula com base apenas nos usuários VÁLIDOS na data
                 const zebraMatchIds = [];
@@ -3589,6 +3593,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
