@@ -453,7 +453,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         // ADICIONADO: enableIndexedDbPersistence
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
         const app = initializeApp(firebaseConfig);
@@ -468,6 +468,35 @@
         // --- NOVAS VARIÁVEIS AQUI ---
         let layoutOrder = []; // Vai guardar a ordem da tela ["ticker", "banner_X", "matches_open"...]
         let activePolls = {}; // Cache das enquetes
+        // --- NOVA FUNÇÃO DE ORDENAÇÃO (PADRÃO ANDROID) ---
+// Regra: 1. Prazo (Crescente) | 2. Criação (Crescente/Antigo 1º) | 3. ID (Fallback)
+const matchComparator = (a, b) => {
+    // 1. Deadline
+    const dateA = a.deadlineDate ? a.deadlineDate.getTime() : 0;
+    const dateB = b.deadlineDate ? b.deadlineDate.getTime() : 0;
+    if (dateA !== dateB) return dateA - dateB;
+
+    // 2. CreatedAt (Desempate: Jogo cadastrado antes recebe # menor)
+    // Tratamento seguro para timestamp do Firestore ou Date convertida
+    let createdA = 0, createdB = 0;
+    
+    if (a.createdAt) {
+        if (typeof a.createdAt.toDate === 'function') createdA = a.createdAt.toDate().getTime();
+        else if (a.createdAt instanceof Date) createdA = a.createdAt.getTime();
+        else if (a.createdAt.seconds) createdA = a.createdAt.seconds * 1000;
+    }
+    
+    if (b.createdAt) {
+        if (typeof b.createdAt.toDate === 'function') createdB = b.createdAt.toDate().getTime();
+        else if (b.createdAt instanceof Date) createdB = b.createdAt.getTime();
+        else if (b.createdAt.seconds) createdB = b.createdAt.seconds * 1000;
+    }
+
+    if (createdA !== createdB) return createdA - createdB;
+
+    // 3. ID (Último recurso)
+    return a.id.localeCompare(b.id);
+};
        // --- ÁUDIO SIMPLES (SOMENTE POP) ---
         const playVoteSound = () => {
             try {
@@ -1232,7 +1261,7 @@
                 // Isso garante que a verificação siga a ordem exata de processamento reverso
                 const validExpiredDesc = expiredMatches
                     .filter(m => u.createdDate < m.deadlineDate)
-                    .sort((a,b) => (b.deadlineDate - a.deadlineDate) || b.id.localeCompare(a.id)); 
+                    .sort((a,b) => matchComparator(b, a)); // Inverso
 
                 for (const m of validExpiredDesc) {
                     const hasVote = userGuesses.some(g => g.matchId === m.id);
@@ -1252,7 +1281,7 @@
                 let lettuceStreak = 0;
                 const validFinishedDesc = finishedMatches
                     .filter(m => u.createdDate < m.deadlineDate)
-                    .sort((a,b) => (b.deadlineDate - a.deadlineDate) || b.id.localeCompare(a.id));
+                    .sort((a,b) => matchComparator(b, a)); // Inverso
 
                 for (const m of validFinishedDesc) {
                     const g = userGuesses.find(x => x.matchId === m.id);
@@ -1423,12 +1452,8 @@
             });
 
             // CORREÇÃO CRÍTICA: Ordenação por Data (Crescente) E ID (Desempate)
-            matches.sort((a,b) => {
-                const diff = a.deadlineDate - b.deadlineDate;
-                if (diff !== 0) return diff;
-                // Se as datas forem iguais, usa o ID para desempatar (ordem alfabética)
-                return a.id.localeCompare(b.id);
-            });
+            // ORDENAÇÃO OFICIAL: 1. Prazo > 2. Criação (Antigo 1º) > 3. ID
+            matches.sort(matchComparator);
             
             window.cachedMatches = matches;
 
@@ -1449,11 +1474,11 @@
             });
 
            // CORREÇÃO FINAL:
-            // Aguardando: Data Menor 1º (Jogo de hoje no topo)
-            waiting.sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
-            
-            // Finalizados: Data Maior 1º (Jogo que acabou agora no topo) + ID Reverso
-            finished.sort((a,b) => (b.deadlineDate - a.deadlineDate) || b.id.localeCompare(a.id));
+           // Aguardando: Usa a mesma lógica padrão (Crescente)
+waiting.sort(matchComparator);
+
+// Finalizados: Inverso (Do mais recente para o mais antigo)
+finished.sort((a,b) => matchComparator(b, a)); // Note o (b, a) para inverter
             // --- LÓGICA SDUI (NOVA) ---
             let order = ["ticker", "matches_open", "matches_wait", "matches_done"];
             if (layoutSnap.exists() && layoutSnap.data().order) order = layoutSnap.data().order;
@@ -2062,8 +2087,8 @@ playVoteSound();
                     const hist = [];
                     const userGuesses = allGuesses.filter(g => g.userId === u.uid && validMatchIds.has(g.matchId));
 
-                    // ORDENAÇÃO OFICIAL (CRONOLÓGICA + ID): Garante a sequência correta para medalhas
-                    const chronoMatches = [...finishedMatches].sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
+                    // ORDENAÇÃO OFICIAL: Usa o comparador padrão (Deadline > CreatedAt > ID)
+const chronoMatches = [...finishedMatches].sort(matchComparator);
                     
                     chronoMatches.forEach(m => {
                         // Linha do Tempo: Ignora jogos antes do user nascer
@@ -2083,7 +2108,7 @@ playVoteSound();
                                 simStreak++;
                                 if (isFinal) finalsWon++;
 
-                                hist.push({ id: m.id, ts: m.deadlineDate, text: `${dateStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`, type: 'good' });
+                                hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: ..., type: 'good' });
 
                                 // Medalhas de Sequência (Acumula histórico)
                                 if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "3 acertos seguidos.", date: dateStr, hiddenInList: false });
@@ -2097,10 +2122,10 @@ playVoteSound();
 
                             } else {
                                 simStreak = 0;
-                                hist.push({ id: m.id, ts: m.deadlineDate, text: `${dateStr} - 👎 Errou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
+                                hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: ..., type: 'bad' });
                             }
                         } else {
-                            hist.push({ id: m.id, ts: m.deadlineDate, text: `${dateStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
+                            hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: ..., type: 'bad' });
                             simStreak = 0;
                         }
                     });
@@ -2150,8 +2175,22 @@ playVoteSound();
 
                     u.p = p; 
                     u.trophyRoom = trophyRoom; 
-                   // CORREÇÃO FINAL: Data Maior 1º (b-a) + ID B antes de A (b.compare.a)
-                    u.hist = hist.sort((a,b) => (b.ts - a.ts) || b.id.localeCompare(a.id));
+                   // ORDENAÇÃO DO EXTRATO: Inversa à lista de jogos (Mais recente no topo)
+                    u.hist = hist.sort((a,b) => {
+                        // 1. Data do Jogo (Decrescente)
+                        const dateA = a.ts ? new Date(a.ts).getTime() : 0;
+                        const dateB = b.ts ? new Date(b.ts).getTime() : 0;
+                        if (dateA !== dateB) return dateB - dateA;
+
+                        // 2. Data de Criação (Decrescente - O jogo criado DEPOIS aparece EM CIMA)
+                        let createdA = 0, createdB = 0;
+                        if (a.created && a.created.seconds) createdA = a.created.seconds;
+                        if (b.created && b.created.seconds) createdB = b.created.seconds;
+                        if (createdA !== createdB) return createdB - createdA;
+
+                        // 3. ID (Decrescente)
+                        return b.id.localeCompare(a.id);
+                    });
                     
                     monthlyData.push({ name: u.name, points: monthlyP, uid: u.uid });
                 });
@@ -2651,7 +2690,7 @@ async function loadAdminMatches() {
             });
 
             // Ordena para numerar
-            all.sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
+            all.sort(matchComparator);
 
             // Gera HTML (Exibindo na ordem inversa para facilitar edição dos recentes, mas com o número certo)
             let html = ""; 
@@ -3642,6 +3681,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
