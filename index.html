@@ -1405,9 +1405,9 @@
 
             // Reordena as listas específicas (Aguardando e Finalizados geralmente são do mais recente para o antigo)
             // Mas para manter consistência com o ID, usamos a mesma lógica inversa
-            waiting.sort((a,b) => (b.deadlineDate - a.deadlineDate) || a.id.localeCompare(b.id));
-            finished.sort((a,b) => (b.deadlineDate - a.deadlineDate) || a.id.localeCompare(b.id));
-
+            // Ordenação das abas específicas (CRESCENTE: Jogo #1 no topo, Jogo #100 em baixo)
+            waiting.sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id)); 
+            finished.sort((a,b) => (a.deadlineDate - b.deadlineDate) || a.id.localeCompare(b.id));
             // --- LÓGICA SDUI (NOVA) ---
             let order = ["ticker", "matches_open", "matches_wait", "matches_done"];
             if (layoutSnap.exists() && layoutSnap.data().order) order = layoutSnap.data().order;
@@ -2035,7 +2035,7 @@ playVoteSound();
                                 simStreak++;
                                 if (isFinal) finalsWon++;
 
-                                hist.push({ ts: m.deadlineDate, text: `${dateStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`, type: 'good' });
+                                hist.push({ id: m.id, ts: m.deadlineDate, text: `${dateStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`, type: 'good' });
 
                                 // Medalhas de Sequência (Acumula histórico)
                                 if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "3 acertos seguidos.", date: dateStr, hiddenInList: false });
@@ -2049,10 +2049,10 @@ playVoteSound();
 
                             } else {
                                 simStreak = 0;
-                                hist.push({ ts: m.deadlineDate, text: `${dateStr} - 👎 Errou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
+                                hist.push({ id: m.id, ts: m.deadlineDate, text: `${dateStr} - 👎 Errou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
                             }
                         } else {
-                            hist.push({ ts: m.deadlineDate, text: `${dateStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
+                            hist.push({ id: m.id, ts: m.deadlineDate, text: `${dateStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
                             simStreak = 0;
                         }
                     });
@@ -2069,7 +2069,7 @@ playVoteSound();
                                 const lastOitava = matches[matches.length-1].deadlineDate;
                                 if(lastOitava.getMonth() === currentMonthIndex && lastOitava.getFullYear() === currentYear) monthlyP += 3;
                                 trophyRoom.push({ icon: "💎", name: "DIAMANTE", desc: "Gabaritou Oitavas.", date: "Bônus", hiddenInList: false });
-                                hist.push({ ts: new Date(), text: `💎 BÔNUS: Gabarito Oitavas (+3 pts)`, type: 'good' });
+                                hist.push({ id: "diamante", ts: new Date(), text: `💎 BÔNUS: Gabarito Oitavas (+3 pts)`, type: 'good' });
                             }
                         }
                     }
@@ -2102,7 +2102,8 @@ playVoteSound();
 
                     u.p = p; 
                     u.trophyRoom = trophyRoom; 
-                    u.hist = hist.sort((a,b) => b.ts - a.ts);
+                   // CORREÇÃO: Ordena Extrato por Data Crescente, desempatando pelo ID
+                    u.hist = hist.sort((a,b) => (a.ts - b.ts) || a.id.localeCompare(b.id));
                     
                     monthlyData.push({ name: u.name, points: monthlyP, uid: u.uid });
                 });
@@ -3593,6 +3594,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
