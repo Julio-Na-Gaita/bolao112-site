@@ -1462,15 +1462,17 @@
 
             let finalHtml = "";
             
-            // CRIA A LISTA DE EXPIRADOS PARA O FANTASMA (CORREÇÃO DE ERRO ANTERIOR)
+            // --- CORREÇÃO: CRIAR A VARIÁVEL QUE FALTA ---
+            // Cria a lista de jogos com prazo vencido (usado para a medalha Fantasma no letreiro)
             const expiredMatches = matches.filter(m => m.deadlineDate < new Date());
+            // --------------------------------------------
 
             const newsContent = generateNewsFeed(
                 newsSnap, 
                 guessesData, 
                 finished, 
-                allUsersData, // Usa a lista corrigida de usuários
-                expiredMatches // Passa a lista para o Fantasma
+                allUsersData, 
+                expiredMatches // Agora a variável existe e o erro sumirá!
             );
             
             const tickerBlock = `<div class="card-container mb-4"><div class="ticker-container shadow-lg"><div class="ticker-wrapper"><div class="ticker-item">${newsContent}</div></div></div></div>`;
@@ -3639,6 +3641,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
