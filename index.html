@@ -1983,21 +1983,23 @@ playVoteSound();
                 // 1.1 Info Rodapé (Última Atualização Real)
                 if (finishedMatches.length > 0) {
                     finishedMatches.sort((a, b) => {
-                        // Converte para TimeStamp (número) para garantir a conta exata
-                        const dateA = a.finishedAt ? a.finishedAt.toDate().getTime() : a.deadlineDate.getTime();
-                        const dateB = b.finishedAt ? b.finishedAt.toDate().getTime() : b.deadlineDate.getTime();
+                        const dateA = a.finishedAt ? a.finishedAt.toDate() : a.deadlineDate;
+                        const dateB = b.finishedAt ? b.finishedAt.toDate() : b.deadlineDate;
 
-                        // 1. Critério Principal: Data mais recente primeiro
-                        const diff = dateB - dateA;
+                        // TRUQUE: Arredonda para segundos para ignorar delay de milissegundos do loop
+                        // Isso força o EMPATE de tempo nos jogos da "Baixa Rápida"
+                        const timeA = Math.floor(dateA.getTime() / 1000);
+                        const timeB = Math.floor(dateB.getTime() / 1000);
+
+                        const diff = timeB - timeA;
                         
-                        // Se as datas forem diferentes, retorna a ordenação por data
+                        // 1. Se a diferença for maior que 0 segundos, respeita a data
                         if (diff !== 0) return diff;
 
-                        // 2. Critério de Desempate (Simultâneo): ID maior primeiro
-                        // Isso resolve o problema da "Baixa Rápida"
-                        if (b.id > a.id) return 1;
-                        if (b.id < a.id) return -1;
-                        return 0;
+                        // 2. Desempate por ID (Modo Numérico Inteligente)
+                        // Garante que 54 > 53 e que 100 > 99
+                        // b.localeCompare(a) faz a ordenação decrescente (Maior ID primeiro)
+                        return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
                     });
 
                     const last = finishedMatches[0];
@@ -3696,6 +3698,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
