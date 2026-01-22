@@ -1982,17 +1982,32 @@ playVoteSound();
                 
                 // 1.1 Info Rodapé (Última Atualização Real)
                 if (finishedMatches.length > 0) {
-                    finishedMatches.sort((a,b) => {
-                        const dateA = a.finishedAt ? a.finishedAt.toDate() : a.deadlineDate;
-                        const dateB = b.finishedAt ? b.finishedAt.toDate() : b.deadlineDate;
-                        return dateB - dateA;
+                    finishedMatches.sort((a, b) => {
+                        // Converte para TimeStamp (número) para garantir a conta exata
+                        const dateA = a.finishedAt ? a.finishedAt.toDate().getTime() : a.deadlineDate.getTime();
+                        const dateB = b.finishedAt ? b.finishedAt.toDate().getTime() : b.deadlineDate.getTime();
+
+                        // 1. Critério Principal: Data mais recente primeiro
+                        const diff = dateB - dateA;
+                        
+                        // Se as datas forem diferentes, retorna a ordenação por data
+                        if (diff !== 0) return diff;
+
+                        // 2. Critério de Desempate (Simultâneo): ID maior primeiro
+                        // Isso resolve o problema da "Baixa Rápida"
+                        if (b.id > a.id) return 1;
+                        if (b.id < a.id) return -1;
+                        return 0;
                     });
+
                     const last = finishedMatches[0];
+                    
+                    // Formata a data para exibir
                     const d = last.finishedAt ? last.finishedAt.toDate() : last.deadlineDate;
                     const dt = d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + " " + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                    
                     window.globalLastUpdateInfo = `Última atualização: ${dt}\n${last.teamA} x ${last.teamB}`;
                 }
-
                 // 2. PREPARAÇÃO DE USUÁRIOS (TIMELINE)
                 const allGuesses = [];
                 gSnap.forEach(d => allGuesses.push(d.data()));
@@ -3681,6 +3696,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
