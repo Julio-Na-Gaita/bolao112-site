@@ -1980,34 +1980,39 @@ playVoteSound();
                 });
                 const finishedMatches = matches.filter(m => m.winner);
                 
-                // 1.1 Info Rodapé (Última Atualização Real)
+               // 1.1 Info Rodapé (Última Atualização Real)
                 if (finishedMatches.length > 0) {
                     finishedMatches.sort((a, b) => {
+                        // Define a data de referência (finishedAt ou deadline se não houver finishedAt)
                         const dateA = a.finishedAt ? a.finishedAt.toDate() : a.deadlineDate;
                         const dateB = b.finishedAt ? b.finishedAt.toDate() : b.deadlineDate;
 
-                        // TRUQUE: Arredonda para segundos para ignorar delay de milissegundos do loop
-                        // Isso força o EMPATE de tempo nos jogos da "Baixa Rápida"
+                        // TRUQUE DO "LOTE": Arredonda para segundos.
+                        // Motivo: Na baixa rápida, o Firebase grava com milissegundos de diferença.
+                        // Ao usar Math.floor, forçamos jogos do mesmo "segundo" a serem considerados simultâneos.
                         const timeA = Math.floor(dateA.getTime() / 1000);
                         const timeB = Math.floor(dateB.getTime() / 1000);
 
-                        const diff = timeB - timeA;
-                        
-                        // 1. Se a diferença for maior que 0 segundos, respeita a data
-                        if (diff !== 0) return diff;
+                        // 1. ORDENAÇÃO POR DATA (Decrescente - Mais recente primeiro)
+                        // Se os segundos forem diferentes, quem tem o horário maior ganha imediatamente.
+                        if (timeB !== timeA) {
+                            return timeB - timeA;
+                        }
 
-                        // 2. Desempate por ID (Modo Numérico Inteligente)
-                        // Garante que 54 > 53 e que 100 > 99
-                        // b.localeCompare(a) faz a ordenação decrescente (Maior ID primeiro)
+                        // 2. CRITÉRIO DE DESEMPATE: ID MAIOR (Decrescente)
+                        // Se caiu aqui, é porque os jogos foram finalizados no mesmo segundo (Lote).
+                        // Quem tem o ID maior (ex: #54 ganha de #53) deve aparecer no topo.
+                        // O {numeric: true} garante que IDs como "100" sejam maiores que "99".
                         return String(b.id).localeCompare(String(a.id), undefined, { numeric: true });
                     });
 
+                    // Pega o primeiro da lista (O Vencedor da ordenação acima)
                     const last = finishedMatches[0];
-                    
-                    // Formata a data para exibir
+
+                    // Formata a string de exibição para o rodapé
                     const d = last.finishedAt ? last.finishedAt.toDate() : last.deadlineDate;
                     const dt = d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + " " + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                    
+
                     window.globalLastUpdateInfo = `Última atualização: ${dt}\n${last.teamA} x ${last.teamB}`;
                 }
                 // 2. PREPARAÇÃO DE USUÁRIOS (TIMELINE)
@@ -3698,6 +3703,7 @@ document.getElementById('btnLogout').onclick = () => {
     </script>
 </body>
 </html>
+
 
 
 
