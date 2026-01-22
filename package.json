@@ -1,17 +1,17 @@
- {
-+  "name": "bolao112-site",
-+  "version": "1.0.0",
-+  "private": true,
-   "dependencies": {
-     "firebase-admin": "^11.11.0"
-+    "protobufjs": "^7.2.6",
-+    "csso": "^5.0.5",
-+    "imagemin": "^9.0.1",
-+    "imagemin-mozjpeg": "^10.0.0",
-+    "imagemin-pngquant": "^9.0.2",
-+    "terser": "^5.31.0"
-+  },
-+  "scripts": {
-+    "build": "node scripts/build.mjs"
-   }
- }
+{
+  "name": "bolao112-site",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "firebase-admin": "^11.11.0",
+    "protobufjs": "^7.2.6",
+    "csso": "^5.0.5",
+    "imagemin": "^9.0.1",
+    "imagemin-mozjpeg": "^10.0.0",
+    "imagemin-pngquant": "^9.0.2",
+    "terser": "^5.31.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  }
+}
