@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { minify } from 'terser';
-import csso from 'csso';
+import { minify as minifyCss } from 'csso';
 import imagemin from 'imagemin';
 import imageminMozjpeg from 'imagemin-mozjpeg';
 import imageminPngquant from 'imagemin-pngquant';
@@ -77,7 +77,7 @@ const build = async () => {
     fs.readFile(path.join(root, 'app.js'), 'utf8')
   ]);
 
-  const minifiedCss = csso.minify(stylesCss).css;
+  const minifiedCss = minifyCss(stylesCss).css;
   const minifiedJs = await minify(appJs, { module: true });
 
   if (!minifiedJs.code) {
