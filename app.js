@@ -3253,4 +3253,121 @@ document.getElementById('btnLogout').onclick = () => {
                 }
             }
         };
-    
+    // ===============================
+// MODAIS: Regras e Info Ranking
+// ===============================
+
+function openModal(html) {
+  const overlay = document.getElementById("modalOverlay");
+  const container = document.getElementById("modalContainer");
+  if (!overlay || !container) return;
+  container.innerHTML = html;
+  overlay.classList.remove("hidden");
+}
+
+function closeModal() {
+  const overlay = document.getElementById("modalOverlay");
+  const container = document.getElementById("modalContainer");
+  if (container) container.innerHTML = "";
+  if (overlay) overlay.classList.add("hidden");
+}
+
+// Regras agora viram MODAL (conteúdo vem do rulesList já carregado)
+function openRulesModal() {
+  const rulesList = document.getElementById("rulesList");
+  const inner = rulesList ? rulesList.innerHTML : `<div class="text-xs font-bold text-gray-600">Carregando regras...</div>`;
+
+  const html = `
+    <div class="w-full max-w-sm">
+      <div class="bg-[#006400] text-white px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-scroll text-[#FFD700]"></i>
+          <span class="font-black uppercase text-sm tracking-wide">Regras</span>
+        </div>
+        <button class="btn-press" onclick="closeModal()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="p-4 space-y-2 max-h-[70vh] overflow-y-auto">
+        ${inner}
+      </div>
+
+      <div class="p-4 pt-0">
+        <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
+          FECHAR
+        </button>
+      </div>
+    </div>
+  `;
+  openModal(html);
+}
+
+function openRankingInfoModal(lastUpdateInfoText) {
+  // Ordem por importância (a mesma da versão Android que você pediu)
+  const medals = [
+    { icon: "👽", name: "Alien", how: "Maior valor: Sequência absurda de 10 acertos seguidos." },
+    { icon: "💎", name: "Diamante", how: "Gabaritar as Oitavas (8/8) de uma competição." },
+    { icon: "👑", name: "Rei do Mês", how: "Maior pontuador daquele mês específico." },
+    { icon: "🎯", name: "Mito", how: "Sequência de 5 acertos seguidos." },
+    { icon: "🦓", name: "Zebra", how: "Acertar onde 80% ou nmais não acertou (errou ou não votou).." },
+    { icon: "🔥", name: "On Fire", how: "Sequência de 3 acertos seguidos." },
+    { icon: "🔮", name: "Mãe Dinah", how: "Acertar o vencedor da Final (Pontos Dobrados)." },
+    { icon: "🎓", name: "Veterano", how: "Fidelidade! Ganha 1 estrela a cada 50 ACERTOS." },
+  ];
+
+  const rows = medals.map(m => `
+    <div class="grid grid-cols-[140px_1fr] gap-3 py-2 border-b border-gray-200 last:border-b-0">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">${m.icon}</span>
+        <span class="font-black text-sm text-gray-800">${m.name}</span>
+      </div>
+      <div class="text-xs font-bold text-gray-600 leading-snug">${m.how}</div>
+    </div>
+  `).join("");
+
+  const html = `
+    <div class="w-full max-w-sm">
+      <div class="bg-[#006400] text-white px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-info-circle text-[#FFD700]"></i>
+          <span class="font-black uppercase text-sm tracking-wide">Sobre o Ranking</span>
+        </div>
+        <button class="btn-press" onclick="closeModal()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="p-4 space-y-4">
+        <!-- ÚLTIMA ATUALIZAÇÃO EM CIMA -->
+        <div>
+          <div class="text-xs font-black text-gray-700 uppercase tracking-wider mb-2">Última atualização</div>
+          <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-center">
+            <div class="text-xs font-black text-[#880E4F] leading-snug">${(lastUpdateInfoText || "Carregando...")}</div>
+          </div>
+        </div>
+
+        <div class="h-px bg-gray-200"></div>
+
+        <!-- TABELA DAS MEDALHAS -->
+        <div>
+          <div class="text-xs font-black text-gray-700 uppercase tracking-wider mb-2">Medalhas (por importância)</div>
+
+          <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
+            <div class="grid grid-cols-[140px_1fr] gap-3 bg-gray-50 px-4 py-2 border-b border-gray-200">
+              <div class="text-[10px] font-black text-gray-600 uppercase">Medalha</div>
+              <div class="text-[10px] font-black text-gray-600 uppercase">Como conquistar</div>
+            </div>
+            <div class="px-4">${rows}</div>
+          </div>
+
+          <div class="text-[10px] text-gray-400 font-bold mt-2 text-center">
+            (Ordem de valor do maior para o menor)
+          </div>
+        </div>
+
+        <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
+          ENTENDI
+        </button>
+      </div>
+    </div>
+  `;
+  openModal(html);
+}
+
