@@ -374,7 +374,7 @@ const matchComparator = (a, b) => {
                     isAdmin: false,
                     debts: 0,
                     payments: {},
-                    appVersion: "Web v1.6.8",
+                    appVersion: "Web v1.6.9",
                     passwordHint: hint,
                     // NOVOS CAMPOS PARA CONTROLE:
                     isTrial: isTrial, 
@@ -436,7 +436,7 @@ const matchComparator = (a, b) => {
                     }
 
                     // ATUALIZANDO VERSÃO
-                    try { await updateDoc(userDocRef, { appVersion: "Web v1.6.8", lastAccess: new Date() // <--- GRAVA A DATA/HORA ATUAL
+                    try { await updateDoc(userDocRef, { appVersion: "Web v1.6.9", lastAccess: new Date() // <--- GRAVA A DATA/HORA ATUAL
                                                        }); } catch(e) {}
                 }
                 // ------------------------------------------
@@ -2587,7 +2587,7 @@ async function loadProfile() {
                 </div>
 
                 <div class="text-center pb-safe">
-                    <div class="version-chip">Web v1.6.8</div>
+                    <div class="version-chip">Web v1.6.9</div>
                     <p class="text-[9px] text-gray-400 mt-2 font-bold uppercase">Bolão 112 F.C • 2026</p>
                 </div>
             </div>`;
@@ -2631,7 +2631,7 @@ async function loadProfile() {
         
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.6.8) ---
+        // --- GUIA DO APP ATUALIZADO (v1.6.9) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
@@ -2639,7 +2639,7 @@ async function loadProfile() {
                 <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
-                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.6.8</p>
+                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.6.9</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
