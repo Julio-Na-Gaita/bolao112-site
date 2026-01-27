@@ -2559,11 +2559,21 @@ async function loadProfile() {
                         <span class="text-xs font-bold text-gray-700">Senha</span>
                     </button>
 
-                    <button onclick="showAppGuide()" class="col-span-2 bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
-                        <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600"><i class="fas fa-book text-lg"></i></div>
-                        <span class="text-xs font-bold text-gray-700">Guia/Regras</span>
-                    </button>
-                </div>
+                    <!-- Linha: REGRAS + GUIA (2 botões como no Android) -->
+<button onclick="openRulesModal()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
+  <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700">
+    <i class="fas fa-scroll text-lg"></i>
+  </div>
+  <span class="text-xs font-bold text-gray-700">Regras</span>
+</button>
+
+<button onclick="showAppGuide()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
+  <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
+    <i class="fas fa-info-circle text-lg"></i>
+  </div>
+  <span class="text-xs font-bold text-gray-700">Guia do App</span>
+</button>
+
 
                 <div class="space-y-3 mb-8">
                      <div id="financialCard" class="p-4 rounded-lg border shadow-sm cursor-pointer btn-press flex justify-between items-center transition-colors ${finCardClass}" onclick="document.getElementById('pixArea').classList.remove('hidden')">
@@ -3505,33 +3515,54 @@ if (!window.closeModal) {
 
 
 // Regras agora viram MODAL (conteúdo vem do rulesList já carregado)
-window.openRulesModal = () => {
-  const rulesList = document.getElementById("rulesList");
-  const inner = rulesList ? rulesList.innerHTML : `<div class="text-xs font-bold text-gray-600">Carregando regras...</div>`;
+window.openRulesModal = async () => {
+  try {
+    // Garante que a lista de regras exista no DOM (ela existe no HTML do app)
+    // e garante que renderRules rode antes de abrir o modal.
+    await renderRules();
 
-  const html = `
-    <div class="w-full max-w-sm">
-      <div class="bg-[#006400] text-white px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i class="fas fa-scroll text-[#FFD700]"></i>
-          <span class="font-black uppercase text-sm tracking-wide">Regras</span>
+    const rulesList = document.getElementById("rulesList");
+    const inner = rulesList
+      ? rulesList.innerHTML
+      : `<div class="text-xs font-bold text-gray-600">Carregando regras...</div>`;
+
+    const html = `
+      <div class="w-full max-w-sm">
+        <div class="bg-[#006400] text-white px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-scroll text-[#FFD700]"></i>
+            <span class="font-black uppercase text-sm tracking-wide">Regras</span>
+          </div>
+          <button class="btn-press" onclick="closeModal()"><i class="fas fa-times"></i></button>
         </div>
-        <button class="btn-press" onclick="closeModal()"><i class="fas fa-times"></i></button>
-      </div>
 
-      <div class="p-4 space-y-2 max-h-[70vh] overflow-y-auto">
-        ${inner}
-      </div>
+        <div class="p-4 space-y-2 max-h-[70vh] overflow-y-auto">
+          ${inner}
+        </div>
 
-      <div class="p-4 pt-0">
-        <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
+        <div class="p-4 pt-0">
+          <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
+            FECHAR
+          </button>
+        </div>
+      </div>
+    `;
+
+    window.openModal(html);
+  } catch (e) {
+    console.error("Erro ao abrir regras:", e);
+    window.openModal(`
+      <div class="w-full max-w-sm bg-white p-4 text-center">
+        <p class="text-sm font-black text-red-600">Erro ao carregar regras</p>
+        <p class="text-xs text-gray-600 mt-1">Tente novamente em instantes.</p>
+        <button onclick="closeModal()" class="w-full mt-4 bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
           FECHAR
         </button>
       </div>
-    </div>
-  `;
-  window.openModal(html);
+    `);
+  }
 };
+
 
 
 
