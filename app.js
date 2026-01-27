@@ -3093,8 +3093,10 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
     let totalVoted = 0;
     let totalHits = 0;
 
-    const compStats = {}; // { comp: {h,t} }
-    const myExtract = []; // [{matchId, status: 'HIT'|'MISS'|'NOVOTE'}]
+   const compStats = {}; // { comp: {h,t} }
+const myExtract = [];       // extrato completo (inclui NOVOTE) para streaks/recordes
+const myVotedExtract = [];  // extrato somente de votos (HIT/MISS) para "Últimos 5" igual ao Extrato de Pontos
+
 
     matches.forEach(m => {
       // Só considera jogos após o usuário existir
@@ -3122,53 +3124,79 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
       const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
 
       if (myVote) {
-        totalVoted++;
-        if (!compStats[m.competition]) compStats[m.competition] = { h: 0, t: 0 };
-        compStats[m.competition].t++;
+  totalVoted++;
+  if (!compStats[m.competition]) compStats[m.competition] = { h: 0, t: 0 };
+  compStats[m.competition].t++;
 
-        if (myVote.teamSelected === m.winner) {
-          totalHits++;
-          compStats[m.competition].h++;
-          myExtract.push({ matchId: m.id, status: 'HIT' });
-        } else {
-          myExtract.push({ matchId: m.id, status: 'MISS' });
-        }
-      } else {
-        myExtract.push({ matchId: m.id, status: 'NOVOTE' });
-      }
+  const status = (myVote.teamSelected === m.winner) ? 'HIT' : 'MISS';
+
+  if (status === 'HIT') {
+    totalHits++;
+    compStats[m.competition].h++;
+  }
+
+  // extrato completo (para streaks/recordes)
+  myExtract.push({ matchId: m.id, status });
+
+  // extrato somente votados (para "Últimos 5" igual ao Extrato de Pontos)
+  myVotedExtract.push({ matchId: m.id, status, deadlineDate: m.deadlineDate });
+
+} else {
+  // Sem voto entra apenas no extrato completo (quebra sequência)
+  myExtract.push({ matchId: m.id, status: 'NOVOTE' });
+}
+
     });
 
     // 5) Sequência atual + recordes (W/L) — NOVOTE quebra
-    let currentStreak = 0;
-    let maxWinStreak = 0;
-    let maxLossStreak = 0; // valor negativo (ex: -4)
+let maxWinStreak = 0;
+let maxLossStreak = 0; // valor negativo (ex: -4)
 
-    myExtract.forEach(it => {
-      if (it.status === 'NOVOTE') {
-        currentStreak = 0;
-        return;
-      }
-      if (it.status === 'HIT') {
-        currentStreak = (currentStreak >= 0) ? currentStreak + 1 : 1;
-        if (currentStreak > maxWinStreak) maxWinStreak = currentStreak;
-      } else if (it.status === 'MISS') {
-        currentStreak = (currentStreak <= 0) ? currentStreak - 1 : -1;
-        if (currentStreak < maxLossStreak) maxLossStreak = currentStreak;
-      }
-    });
+// recordes: varre do começo pro fim (cronológico)
+let running = 0;
+myExtract.forEach(it => {
+  if (it.status === 'NOVOTE') {
+    running = 0;
+    return;
+  }
+  if (it.status === 'HIT') {
+    running = (running >= 0) ? running + 1 : 1;
+    if (running > maxWinStreak) maxWinStreak = running;
+  } else if (it.status === 'MISS') {
+    running = (running <= 0) ? running - 1 : -1;
+    if (running < maxLossStreak) maxLossStreak = running;
+  }
+});
 
-    const streakDisplay = currentStreak > 0
-      ? `<span class="text-green-300 font-black">+${currentStreak}</span>`
-      : (currentStreak < 0
-        ? `<span class="text-red-300 font-black">${currentStreak}</span>`
-        : `<span class="text-gray-300 font-black">0</span>`);
+// sequência atual: varre do fim pro começo (mais recente) até quebrar
+let currentStreak = 0;
+for (let i = myExtract.length - 1; i >= 0; i--) {
+  const it = myExtract[i];
+  if (it.status === 'NOVOTE') break;
 
-    // 6) Últimos 5 resultados (pega do final do extrato)
-    const last5 = myExtract.slice(-5).map(it => {
-      if (it.status === 'HIT') return '✅';
-      if (it.status === 'MISS') return '❌';
-      return '🚫';
-    });
+  if (it.status === 'HIT') {
+    if (currentStreak >= 0) currentStreak++;
+    else break; // mudou de derrota pra vitória, então sequência "atual" já acabou
+  } else if (it.status === 'MISS') {
+    if (currentStreak <= 0) currentStreak--;
+    else break; // mudou de vitória pra derrota
+  }
+}
+
+const streakDisplay = currentStreak > 0
+  ? `<span class="text-green-300 font-black">+${currentStreak}</span>`
+  : (currentStreak < 0
+    ? `<span class="text-red-300 font-black">${currentStreak}</span>`
+    : `<span class="text-gray-300 font-black">0</span>`);
+
+
+   // 6) Últimos 5 resultados (IGUAL ao Extrato: somente jogos votados)
+// Ordena por deadlineDate desc (mais recente primeiro) e pega 5
+const last5 = [...myVotedExtract]
+  .sort((a, b) => b.deadlineDate - a.deadlineDate)
+  .slice(0, 5)
+  .map(it => (it.status === 'HIT' ? '✅' : '❌'));
+
 
     // 7) Precisão, posição atual, melhor posição, % votos
     const acc = totalVoted > 0 ? Math.round((totalHits / totalVoted) * 100) : 0;
@@ -3284,11 +3312,11 @@ const html = `
         <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Recordes</div>
         <div class="grid grid-cols-2 gap-3">
           <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-            <div class="text-[9px] uppercase text-white/60 font-black">Maior W</div>
+            <div class="text-[9px] uppercase text-white/60 font-black">Melhor sequência</div>
             <div class="text-lg font-black text-green-300">+${maxWinStreak}</div>
           </div>
           <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-            <div class="text-[9px] uppercase text-white/60 font-black">Maior L</div>
+            <div class="text-[9px] uppercase text-white/60 font-black">Pior sequência</div>
             <div class="text-lg font-black text-red-300">${maxLossStreak}</div>
           </div>
           <div class="bg-black/20 rounded-lg p-3 border border-white/10">
