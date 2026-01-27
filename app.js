@@ -647,15 +647,6 @@ const matchComparator = (a, b) => {
         const renderBanner = (bannerData) => {
             if (!bannerData || !bannerData.active) return '';
             
-            const fixDriveUrl = (u) => {
-                if (!u) return "";
-                if (u.includes("drive.google.com") && u.includes("id=")) {
-                    const m = u.match(/id=([a-zA-Z0-9_-]+)/);
-                    if (m && m[1]) return `https://lh3.googleusercontent.com/d/${m[1]}=s1000?authuser=0`;
-                }
-                return u;
-            };
-
             const fixLink = (u) => {
                 if (!u || u === "#") return "#";
                 if (!u.startsWith("http://") && !u.startsWith("https://")) return "https://" + u;
@@ -2741,7 +2732,7 @@ async function loadProfile() {
             cardContainer.style.zIndex = "-9999"; cardContainer.style.width = "320px"; cardContainer.style.height = "600px"; // Altura maior
             document.body.appendChild(cardContainer);
 
-            const avatarUrl = getAvatarUrl(user.photo, user.name);
+            const avatarUrl = getAvatarUrl(user.photoBase64, user.name);
             
             // GERAÇÃO DO HTML DA TABELA (AJUSTADO PARA NÃO CORTAR NOMES)
             let tableHtml = "";
@@ -2842,18 +2833,26 @@ async function loadProfile() {
             calculatePot(); // Chama o cálculo
             document.getElementById('potModal').classList.remove('hidden'); // Abre o modal novo
         };
-        window.closeModal = () => document.getElementById('modalOverlay').classList.add('hidden');
+       
         document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
 document.getElementById('btnLogout').onclick = () => {
     document.getElementById('mainHeader').classList.add('hidden'); // Esconde menu
     signOut(auth);
 };
+/* ================================
+   [BLOCO A] GLOBAL: guarda o listener atual do chat
+     ================================ */
+window.currentChatUnsub = null;
        // --- CHAT COM MÚLTIPLAS REAÇÕES ---
         window.openMatchComments = async (mid, ta, tb, winner) => {
             if (!appConfig.chat) {
                 alert("⛔ O Chat está desativado no momento.");
                 return;
             }
+                if (window.currentChatUnsub) {
+  window.currentChatUnsub();
+  window.currentChatUnsub = null;
+}
             const currentCount = globalServerCounts[mid] || 0;
             localStorage.setItem(`read_count_${mid}`, currentCount);
             const matchBtns = document.querySelectorAll(`button[onclick*="${mid}"]`);
@@ -2929,7 +2928,8 @@ document.getElementById('btnLogout').onclick = () => {
                                 <div class="flex ${isMe ? 'justify-end' : 'justify-start'} w-full items-end gap-1">
                                     ${!isMe ? `<button onclick="window.toggleReactMenu('${m.id}')" class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity px-1"><i class="far fa-smile"></i></button>` : ''}
                                     
-                                    <div class="max-w-[80%] bg-${isMe ? '[#DCF8C6]' : 'white'} p-2 rounded-lg shadow text-xs relative">
+                                    <div class="max-w-[80%] ${isMe ? 'bg-[#DCF8C6]' : 'bg-white'} p-2 rounded-lg shadow text-xs relative">
+
                                         ${!isMe ? `<p class="text-[9px] font-bold text-[#006400] mb-1">${m.userName}</p>` : ''}
                                         <p class="text-gray-800 text-sm leading-snug">${m.text}</p>
                                         <p class="text-[8px] text-gray-400 text-right mt-1">${time}</p>
@@ -2966,16 +2966,16 @@ document.getElementById('btnLogout').onclick = () => {
             };
 
             const q = query(collection(db, "match_comments"), where("matchId", "==", mid)); 
-            const unsub = onSnapshot(q, (snap) => {
-                const msgs = [];
-                snap.forEach(d => msgs.push({ id: d.id, ...d.data() }));
-                msgs.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
-                
-                if(msgs.length > currentCount) {
-                    localStorage.setItem(`read_count_${mid}`, msgs.length);
-                }
-                renderChat(msgs);
-            });
+            window.currentChatUnsub = onSnapshot(q, (snap) => {
+  const msgs = [];
+  snap.forEach(d => msgs.push({ id: d.id, ...d.data() }));
+  msgs.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+  
+  if(msgs.length > currentCount) {
+    localStorage.setItem(`read_count_${mid}`, msgs.length);
+  }
+  renderChat(msgs);
+});
             
             window.sendComment = async (matchId) => {
                 const txt = document.getElementById('commentInput').value.trim();
@@ -2988,7 +2988,7 @@ document.getElementById('btnLogout').onclick = () => {
                     userName: uData.name || "Anônimo", 
                     userPhoto: uData.photoBase64 || "", 
                     text: txt, 
-                    timestamp: new Date(), 
+                    timestamp: serverTimestamp(), 
                     reactions: {} // Inicializa vazio
                 });
                 document.getElementById('commentInput').value = "";
@@ -3265,7 +3265,17 @@ function openModal(html) {
   overlay.classList.remove("hidden");
 }
 
+/* ================================
+   [BLOCO B] SUBSTITUIR a function closeModal()
+   Troque sua function closeModal inteira por esta
+   ================================ */
 function closeModal() {
+  // Para o listener do chat (se estiver ativo)
+  if (window.currentChatUnsub) {
+    window.currentChatUnsub();
+    window.currentChatUnsub = null;
+  }
+
   const overlay = document.getElementById("modalOverlay");
   const container = document.getElementById("modalContainer");
   if (container) container.innerHTML = "";
