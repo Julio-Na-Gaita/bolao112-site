@@ -1463,7 +1463,7 @@ playVoteSound();
                         <h3 class="font-black text-xs uppercase text-[#FFD700]">TIRA-TEIMA</h3>
                         <p class="font-bold text-sm">Eu x ${targetName}</p>
                     </div>
-                    <button onclick="closeModal()"><i class="fas fa-times"></i></button>
+                    <button onclick="window.closeModal()"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="flex-1 overflow-y-auto p-2 bg-gray-50 space-y-2">`;
 
@@ -2935,7 +2935,7 @@ window.currentChatUnsub = null;
                             <h3 class="font-black text-[#006400] text-xs uppercase">RESENHA</h3>
                             <p class="text-[10px] text-gray-600 font-bold">${ta} x ${tb}</p>
                         </div>
-                        <button onclick="closeModal()"><i class="fas fa-times text-gray-400"></i></button>
+                        <button onclick="window.closeModal()"><i class="fas fa-times text-gray-400"></i></button>
                     </div>
                     
                     <div id="chatBody" class="flex-1 overflow-y-auto p-3 bg-[#E5DDD5] space-y-3" onclick="if(!event.target.closest('button')) document.querySelectorAll('[id^=react-menu-]').forEach(e=>e.classList.add('hidden'))">
@@ -3308,7 +3308,11 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
     `;
 
     cont.innerHTML = html;
-
+// DEBUG TEMP: mostra o final do HTML renderizado (remover depois)
+setTimeout(() => {
+  const tail = cont.innerHTML.slice(-600);
+  alert("DEBUG Scout (final do HTML):\n\n" + tail);
+}, 300);
     // 10) Gráfico
     if (window.myScoutChart) window.myScoutChart.destroy();
     if (rankHistory.length > 0) {
@@ -3393,8 +3397,8 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
                 }
             }
         };
-   // ===============================
-// MODAIS: Regras e Info Ranking (GLOBAL)
+ // ===============================
+// MODAIS: helpers globais
 // ===============================
 window.openModal = (html) => {
   const overlay = document.getElementById("modalOverlay");
@@ -3408,9 +3412,17 @@ window.openModal = (html) => {
 window.closeModal = () => {
   const overlay = document.getElementById("modalOverlay");
   const container = document.getElementById("modalContainer");
+
+  // ✅ evita travadas/bags do chart quando fecha modal
+  if (window.myScoutChart) {
+    try { window.myScoutChart.destroy(); } catch(e) {}
+    window.myScoutChart = null;
+  }
+
   if (container) container.innerHTML = "";
   if (overlay) overlay.classList.add("hidden");
 };
+
 
 
 // Regras agora viram MODAL (conteúdo vem do rulesList já carregado)
@@ -3439,7 +3451,7 @@ window.openRulesModal = () => {
       </div>
     </div>
   `;
-  openModal(html);
+  window.openModal(html);
 };
 
 window.openRankingInfoModal = (lastUpdateInfoText) => {
@@ -3506,7 +3518,7 @@ window.openRankingInfoModal = (lastUpdateInfoText) => {
       </div>
     </div>
   `;
-  openModal(html);
+  window.openModal(html);
 };
 
 
