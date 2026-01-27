@@ -3393,37 +3393,28 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
                 }
             }
         };
-    // ===============================
-// MODAIS: Regras e Info Ranking
+   // ===============================
+// MODAIS: Regras e Info Ranking (GLOBAL)
 // ===============================
-
-function openModal(html) {
+window.openModal = (html) => {
   const overlay = document.getElementById("modalOverlay");
   const container = document.getElementById("modalContainer");
   if (!overlay || !container) return;
+
   container.innerHTML = html;
   overlay.classList.remove("hidden");
-}
+};
 
-/* ================================
-   [BLOCO B] SUBSTITUIR a function closeModal()
-   Troque sua function closeModal inteira por esta
-   ================================ */
-function closeModal() {
-  // Para o listener do chat (se estiver ativo)
-  if (window.currentChatUnsub) {
-    window.currentChatUnsub();
-    window.currentChatUnsub = null;
-  }
-
+window.closeModal = () => {
   const overlay = document.getElementById("modalOverlay");
   const container = document.getElementById("modalContainer");
   if (container) container.innerHTML = "";
   if (overlay) overlay.classList.add("hidden");
-}
+};
+
 
 // Regras agora viram MODAL (conteúdo vem do rulesList já carregado)
-function openRulesModal() {
+window.openRulesModal = () => {
   const rulesList = document.getElementById("rulesList");
   const inner = rulesList ? rulesList.innerHTML : `<div class="text-xs font-bold text-gray-600">Carregando regras...</div>`;
 
@@ -3449,16 +3440,15 @@ function openRulesModal() {
     </div>
   `;
   openModal(html);
-}
+};
 
-function openRankingInfoModal(lastUpdateInfoText) {
-  // Ordem por importância (a mesma da versão Android que você pediu)
+window.openRankingInfoModal = (lastUpdateInfoText) => {
   const medals = [
     { icon: "👽", name: "Alien", how: "Maior valor: Sequência absurda de 10 acertos seguidos." },
     { icon: "💎", name: "Diamante", how: "Gabaritar as Oitavas (8/8) de uma competição." },
     { icon: "👑", name: "Rei do Mês", how: "Maior pontuador daquele mês específico." },
     { icon: "🎯", name: "Mito", how: "Sequência de 5 acertos seguidos." },
-    { icon: "🦓", name: "Zebra", how: "Acertar onde 80% ou nmais não acertou (errou ou não votou).." },
+    { icon: "🦓", name: "Zebra", how: "Acertar onde 80% ou mais não acertou (errou ou não votou)." },
     { icon: "🔥", name: "On Fire", how: "Sequência de 3 acertos seguidos." },
     { icon: "🔮", name: "Mãe Dinah", how: "Acertar o vencedor da Final (Pontos Dobrados)." },
     { icon: "🎓", name: "Veterano", how: "Fidelidade! Ganha 1 estrela a cada 50 ACERTOS." },
@@ -3485,7 +3475,6 @@ function openRankingInfoModal(lastUpdateInfoText) {
       </div>
 
       <div class="p-4 space-y-4">
-        <!-- ÚLTIMA ATUALIZAÇÃO EM CIMA -->
         <div>
           <div class="text-xs font-black text-gray-700 uppercase tracking-wider mb-2">Última atualização</div>
           <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-center">
@@ -3495,7 +3484,6 @@ function openRankingInfoModal(lastUpdateInfoText) {
 
         <div class="h-px bg-gray-200"></div>
 
-        <!-- TABELA DAS MEDALHAS -->
         <div>
           <div class="text-xs font-black text-gray-700 uppercase tracking-wider mb-2">Medalhas (por importância)</div>
 
@@ -3519,5 +3507,6 @@ function openRankingInfoModal(lastUpdateInfoText) {
     </div>
   `;
   openModal(html);
-}
+};
+
 
