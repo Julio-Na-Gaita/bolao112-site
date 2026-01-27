@@ -3313,11 +3313,6 @@ const html = `
 
 cont.innerHTML = html;
 
-// DEBUG TEMP: mostra o final do HTML renderizado (remover depois)
-setTimeout(() => {
-  const tail = cont.innerHTML.slice(-600);
-  alert("DEBUG Scout (final do HTML):\n\n" + tail);
-}, 300);
     // 10) Gráfico
     if (window.myScoutChart) window.myScoutChart.destroy();
     if (rankHistory.length > 0) {
