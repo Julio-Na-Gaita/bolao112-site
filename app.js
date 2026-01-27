@@ -3190,12 +3190,17 @@ const streakDisplay = currentStreak > 0
     : `<span class="text-gray-300 font-black">0</span>`);
 
 
-   // 6) Últimos 5 resultados (IGUAL ao Extrato: somente jogos votados)
-// Ordena por deadlineDate desc (mais recente primeiro) e pega 5
-const last5 = [...myVotedExtract]
-  .sort((a, b) => b.deadlineDate - a.deadlineDate)
-  .slice(0, 5)
-  .map(it => (it.status === 'HIT' ? '✅' : '❌'));
+ // 6) Últimos 5 resultados (IGUAL ao Extrato: últimos 5 jogos elegíveis, mesmo sem voto)
+// myExtract está em ordem cronológica (foi preenchido no matches.forEach já ordenado por deadlineDate asc)
+// então os "últimos 5" são simplesmente os 5 últimos itens do extrato completo.
+const last5 = myExtract
+  .slice(-5)                 // pega os 5 mais recentes
+  .reverse()                 // mostra do mais recente -> mais antigo (opcional, fica mais intuitivo)
+  .map(it => {
+    if (it.status === 'HIT') return '✅';
+    if (it.status === 'MISS') return '❌';
+    return '🚫';
+  });
 
 
     // 7) Precisão, posição atual, melhor posição, % votos
