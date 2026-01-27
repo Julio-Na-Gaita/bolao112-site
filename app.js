@@ -459,11 +459,44 @@ const matchComparator = (a, b) => {
         });
 
         window.showTab = (tab) => {
-            document.getElementById('appContent').className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
-            ['matches', 'ranking', 'rules', 'profile'].forEach(t => { document.getElementById(`${t}Screen`).classList.add('hidden'); document.getElementById(`nav-${t}`).classList.replace('text-[#006400]', 'text-gray-400'); });
-            document.getElementById(`${tab}Screen`).classList.remove('hidden'); document.getElementById(`nav-${tab}`).classList.replace('text-gray-400', 'text-[#006400]');
-            if(tab === 'matches') loadMatches(); if(tab === 'ranking') loadRanking(); if(tab === 'rules') renderRules(); if(tab === 'profile') loadProfile();
-        };
+  // Atualiza classe do container (se existir)
+  const appContent = document.getElementById('appContent');
+  if (appContent) appContent.className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
+
+  const tabs = ['matches', 'ranking', 'rules', 'profile'];
+
+  // Esconde telas e reseta botões (sem quebrar se algo não existir)
+  tabs.forEach(t => {
+    const screen = document.getElementById(`${t}Screen`);
+    if (screen) screen.classList.add('hidden');
+
+    const navBtn = document.getElementById(`nav-${t}`);
+    if (navBtn) {
+      // garante que só uma fica verde
+      navBtn.classList.remove('text-[#006400]');
+      navBtn.classList.add('text-gray-400');
+    }
+  });
+
+  // Mostra tela e ativa botão selecionado (sem quebrar se algo não existir)
+  const targetScreen = document.getElementById(`${tab}Screen`);
+  if (targetScreen) targetScreen.classList.remove('hidden');
+  else console.warn('showTab: screen não encontrada:', `${tab}Screen`);
+
+  const targetNav = document.getElementById(`nav-${tab}`);
+  if (targetNav) {
+    targetNav.classList.remove('text-gray-400');
+    targetNav.classList.add('text-[#006400]');
+  } else {
+    console.warn('showTab: nav não encontrado:', `nav-${tab}`);
+  }
+
+  // Chama loaders (só se existirem)
+  if (tab === 'matches' && typeof loadMatches === 'function') loadMatches();
+  if (tab === 'ranking' && typeof loadRanking === 'function') loadRanking();
+  if (tab === 'rules'   && typeof renderRules === 'function') renderRules();
+  if (tab === 'profile' && typeof loadProfile === 'function') loadProfile();
+};
        
 
         // --- NOVA LÓGICA DE REGRAS (COM CABEÇALHO E DATA) ---
@@ -2834,7 +2867,15 @@ async function loadProfile() {
             document.getElementById('potModal').classList.remove('hidden'); // Abre o modal novo
         };
        
-        document.getElementById('btnRefresh').onclick = () => { const active = document.querySelector('nav#bottomNav .text-\\[\\#006400\\]').id.replace('nav-',''); showTab(active); };
+        document.getElementById('btnRefresh').onclick = () => {
+  // tenta achar o botão ativo do menu inferior
+  const activeBtn = document.querySelector('#bottomNav .text-\\[\\#006400\\]');
+
+  // fallback: se não achou, assume "matches"
+  const activeTab = activeBtn?.id ? activeBtn.id.replace('nav-', '') : 'matches';
+
+  showTab(activeTab);
+};
 document.getElementById('btnLogout').onclick = () => {
     document.getElementById('mainHeader').classList.add('hidden'); // Esconde menu
     signOut(auth);
