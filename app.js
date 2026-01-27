@@ -459,45 +459,41 @@ const matchComparator = (a, b) => {
         });
 
         window.showTab = (tab) => {
-  // Atualiza classe do container (se existir)
   const appContent = document.getElementById('appContent');
   if (appContent) appContent.className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
 
-  const tabs = ['matches', 'ranking', 'rules', 'profile'];
+  // Pega as tabs que EXISTEM no HTML (evita null)
+  const tabs = ['matches', 'ranking', 'rules', 'shop', 'profile']
+    .filter(t => document.getElementById(`${t}Screen`) && document.getElementById(`nav-${t}`));
 
-  // Esconde telas e reseta botões (sem quebrar se algo não existir)
+  // Esconde todas e “desativa” no menu
   tabs.forEach(t => {
-    const screen = document.getElementById(`${t}Screen`);
-    if (screen) screen.classList.add('hidden');
-
+    document.getElementById(`${t}Screen`).classList.add('hidden');
     const navBtn = document.getElementById(`nav-${t}`);
-    if (navBtn) {
-      // garante que só uma fica verde
-      navBtn.classList.remove('text-[#006400]');
-      navBtn.classList.add('text-gray-400');
-    }
+    navBtn.classList.remove('text-[#006400]');
+    navBtn.classList.add('text-gray-400');
   });
 
-  // Mostra tela e ativa botão selecionado (sem quebrar se algo não existir)
-  const targetScreen = document.getElementById(`${tab}Screen`);
-  if (targetScreen) targetScreen.classList.remove('hidden');
-  else console.warn('showTab: screen não encontrada:', `${tab}Screen`);
-
-  const targetNav = document.getElementById(`nav-${tab}`);
-  if (targetNav) {
-    targetNav.classList.remove('text-gray-400');
-    targetNav.classList.add('text-[#006400]');
-  } else {
-    console.warn('showTab: nav não encontrado:', `nav-${tab}`);
+  // Mostra a tab pedida (se existir)
+  const screen = document.getElementById(`${tab}Screen`);
+  const nav = document.getElementById(`nav-${tab}`);
+  if (!screen || !nav) {
+    console.warn('[showTab] Tab inexistente no HTML:', tab);
+    return;
   }
 
-  // Chama loaders (só se existirem)
+  screen.classList.remove('hidden');
+  nav.classList.remove('text-gray-400');
+  nav.classList.add('text-[#006400]');
+
+  // Chamadas de carregamento por aba (só se existirem)
   if (tab === 'matches' && typeof loadMatches === 'function') loadMatches();
   if (tab === 'ranking' && typeof loadRanking === 'function') loadRanking();
-  if (tab === 'rules'   && typeof renderRules === 'function') renderRules();
+  if (tab === 'rules' && typeof renderRules === 'function') renderRules();
+  if (tab === 'shop' && typeof loadShop === 'function') loadShop();
   if (tab === 'profile' && typeof loadProfile === 'function') loadProfile();
 };
-       
+      
 
         // --- NOVA LÓGICA DE REGRAS (COM CABEÇALHO E DATA) ---
         
@@ -2868,14 +2864,15 @@ async function loadProfile() {
         };
        
         document.getElementById('btnRefresh').onclick = () => {
-  // tenta achar o botão ativo do menu inferior
-  const activeBtn = document.querySelector('#bottomNav .text-\\[\\#006400\\]');
+  const activeBtn =
+    document.querySelector('#bottomNav .nav-btn.text-\\[\\#006400\\]') ||
+    document.querySelector('#bottomNav .nav-btn.text-\\[\\#006400\\]'.replace(/\\/g,'')) ||
+    document.querySelector('#bottomNav .nav-btn');
 
-  // fallback: se não achou, assume "matches"
-  const activeTab = activeBtn?.id ? activeBtn.id.replace('nav-', '') : 'matches';
-
-  showTab(activeTab);
+  const active = activeBtn?.id?.replace('nav-', '') || 'matches';
+  showTab(active);
 };
+
 document.getElementById('btnLogout').onclick = () => {
     document.getElementById('mainHeader').classList.add('hidden'); // Esconde menu
     signOut(auth);
@@ -3037,400 +3034,317 @@ window.currentChatUnsub = null;
             };
         };
         // --- SCOUT PREMIUM (KPIs + ÚLTIMOS 5 + GRÁFICO + COMPETIÇÕES + RECORDES) ---
+// --- SCOUT PREMIUM (ESTATÍSTICAS + GRÁFICO + ÚLTIMOS 5 + TABELA + RECORDES) ---
 window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
-    const cont = document.getElementById('modalContainer');
-    document.getElementById('modalOverlay').classList.remove('hidden');
+  const cont = document.getElementById('modalContainer');
+  const overlay = document.getElementById('modalOverlay');
+  if (!cont || !overlay) return;
 
-    cont.innerHTML = `
-      <div class="bg-white p-6 text-center">
-        <i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i>
-        <p class="text-xs mt-2 font-bold text-gray-500">Calculando Scout Premium...</p>
-      </div>`;
+  overlay.classList.remove('hidden');
+  cont.innerHTML = `
+    <div class="bg-white p-6 text-center">
+      <i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i>
+      <p class="text-xs mt-2 font-bold text-gray-500">Calculando Scout Premium...</p>
+    </div>
+  `;
 
-    try {
-        // 1) Coleta dados (mesma base da sua versão atual)
-        const [mSnap, gSnap, uSnap] = await Promise.all([
-            getDocs(collection(db, "matches")),
-            getDocs(collection(db, "guesses")),
-            getDocs(collection(db, "users"))
-        ]);
+  try {
+    // 1) Coleta Dados
+    const [mSnap, gSnap, uSnap] = await Promise.all([
+      getDocs(collection(db, "matches")),
+      getDocs(collection(db, "guesses")),
+      getDocs(collection(db, "users"))
+    ]);
 
-        // 2) Mapeamentos
-        const usersCreatedAt = {};
-        const allUsersIds = [];
-        uSnap.forEach(d => {
-            const dt = d.data().createdAt ? d.data().createdAt.toDate() : new Date(0);
-            usersCreatedAt[d.id] = dt;
-            allUsersIds.push(d.id);
+    // 2) Mapeamento de criação de usuários
+    const usersCreatedAt = {};
+    const allUsersIds = [];
+    uSnap.forEach(d => {
+      const dt = d.data().createdAt ? d.data().createdAt.toDate() : new Date(0);
+      usersCreatedAt[d.id] = dt;
+      allUsersIds.push(d.id);
+    });
+
+    const targetCreated = usersCreatedAt[targetUid] || new Date(0);
+
+    // 3) Guesses e Matches
+    const allGuesses = [];
+    gSnap.forEach(d => allGuesses.push(d.data()));
+
+    const matches = [];
+    mSnap.forEach(d => {
+      const data = d.data();
+      if (data.winner) {
+        matches.push({
+          id: d.id,
+          ...data,
+          deadlineDate: data.deadline?.toDate ? data.deadline.toDate() : new Date(0)
         });
+      }
+    });
+    matches.sort((a, b) => a.deadlineDate - b.deadlineDate);
 
-        const targetCreated = usersCreatedAt[targetUid] || new Date(0);
+    // 4) Simulação + Coleta do “extrato” do usuário
+    let rankHistory = [];
+    let currentScores = {};
+    allUsersIds.forEach(uid => currentScores[uid] = 0);
 
-        const allGuesses = [];
-        gSnap.forEach(d => allGuesses.push(d.data()));
+    let totalEligible = 0;
+    let totalVoted = 0;
+    let totalHits = 0;
 
-        const matches = [];
-        mSnap.forEach(d => {
-            const md = d.data();
-            if (md.winner) {
-                matches.push({
-                    id: d.id,
-                    ...md,
-                    deadlineDate: md.deadline?.toDate ? md.deadline.toDate() : new Date(0)
-                });
-            }
-        });
-        matches.sort((a, b) => a.deadlineDate - b.deadlineDate);
+    const compStats = {}; // { comp: {h,t} }
+    const myExtract = []; // [{matchId, status: 'HIT'|'MISS'|'NOVOTE'}]
 
-        // 3) Simulação Ranking + Estatísticas (Premium)
-        let rankHistory = [];
-        let currentScores = {};
-        allUsersIds.forEach(uid => currentScores[uid] = 0);
+    matches.forEach(m => {
+      // Só considera jogos após o usuário existir
+      if (targetCreated > m.deadlineDate) return;
 
-        let totalEligible = 0; // jogos após criação do usuário
-        let totalVoted = 0;    // quantos ele votou
-        let totalHits = 0;     // quantos acertou
+      totalEligible++;
 
-        // Para "últimos 5" e para streak/recordes corretos (considerando 🚫 quebra)
-        const myTimeline = []; // [{matchId, comp, voted:bool, hit:bool, deadlineDate}]
-        
-        // Stats por competição
-        const compStats = {}; // comp -> { t, v, h } t=eligible, v=voted, h=hits
+      // Atualiza ranking global até esse jogo
+      allUsersIds.forEach(uid => {
+        if (usersCreatedAt[uid] > m.deadlineDate) return;
 
-        matches.forEach(m => {
-            // Só considera jogos depois que o usuário existe
-            if (targetCreated > m.deadlineDate) return;
-
-            totalEligible++;
-
-            // Atualiza ranking global (igual você já fazia)
-            allUsersIds.forEach(uid => {
-                if (usersCreatedAt[uid] > m.deadlineDate) return;
-                const vote = allGuesses.find(g => g.matchId === m.id && g.userId === uid);
-                if (vote && vote.teamSelected === m.winner) {
-                    currentScores[uid] += (m.round?.toLowerCase() === 'final' ? 6 : 3);
-                }
-            });
-
-            // Guarda posição histórica do target
-            const activeUsers = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
-            activeUsers.sort((a, b) => currentScores[b] - currentScores[a]);
-            const pos = activeUsers.indexOf(targetUid) + 1;
-            if (pos > 0) rankHistory.push(pos);
-
-            // Estatística do target por jogo
-            const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
-
-            if (!compStats[m.competition]) compStats[m.competition] = { t: 0, v: 0, h: 0 };
-            compStats[m.competition].t++;
-
-            const voted = !!myVote;
-            const hit = voted ? (myVote.teamSelected === m.winner) : false;
-
-            if (voted) {
-                totalVoted++;
-                compStats[m.competition].v++;
-                if (hit) {
-                    totalHits++;
-                    compStats[m.competition].h++;
-                }
-            }
-
-            myTimeline.push({
-                matchId: m.id,
-                comp: m.competition || "---",
-                voted,
-                hit,
-                deadlineDate: m.deadlineDate
-            });
-        });
-
-        // 4) Sequência atual (+W ou -L) e recordes (W max / L max)
-        // Regra: sequência conta vitórias OU derrotas; 🚫 quebra imediatamente.
-        let currentStreak = 0;      // positivo wins, negativo losses
-        let maxWinStreak = 0;
-        let maxLoseStreak = 0;
-
-        // percorre do mais recente para trás para "currentStreak"
-        for (let i = myTimeline.length - 1; i >= 0; i--) {
-            const t = myTimeline[i];
-            if (!t.voted) break; // 🚫 quebra
-
-            if (currentStreak === 0) {
-                currentStreak = t.hit ? 1 : -1;
-            } else if (currentStreak > 0 && t.hit) {
-                currentStreak++;
-            } else if (currentStreak < 0 && !t.hit) {
-                currentStreak--;
-            } else {
-                break; // mudou de W pra L ou L pra W -> quebra
-            }
+        const vote = allGuesses.find(g => g.matchId === m.id && g.userId === uid);
+        if (vote && vote.teamSelected === m.winner) {
+          currentScores[uid] += (m.round?.toLowerCase() === 'final' ? 6 : 3);
         }
+      });
 
-        // recordes varrendo do começo ao fim
-        let run = 0;
-        for (let i = 0; i < myTimeline.length; i++) {
-            const t = myTimeline[i];
+      // Posição do target nesse momento
+      const activeUsers = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
+      activeUsers.sort((a, b) => currentScores[b] - currentScores[a]);
+      const myPos = activeUsers.indexOf(targetUid) + 1;
+      if (myPos > 0) rankHistory.push(myPos);
 
-            if (!t.voted) {
-                run = 0; // 🚫 quebra
-                continue;
-            }
+      // Status do target nesse jogo
+      const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
 
-            if (run === 0) {
-                run = t.hit ? 1 : -1;
-            } else if (run > 0 && t.hit) {
-                run++;
-            } else if (run < 0 && !t.hit) {
-                run--;
-            } else {
-                run = t.hit ? 1 : -1; // virou o lado (quebra e reinicia)
-            }
+      if (myVote) {
+        totalVoted++;
+        if (!compStats[m.competition]) compStats[m.competition] = { h: 0, t: 0 };
+        compStats[m.competition].t++;
 
-            maxWinStreak = Math.max(maxWinStreak, run > 0 ? run : 0);
-            maxLoseStreak = Math.max(maxLoseStreak, run < 0 ? Math.abs(run) : 0);
+        if (myVote.teamSelected === m.winner) {
+          totalHits++;
+          compStats[m.competition].h++;
+          myExtract.push({ matchId: m.id, status: 'HIT' });
+        } else {
+          myExtract.push({ matchId: m.id, status: 'MISS' });
         }
+      } else {
+        myExtract.push({ matchId: m.id, status: 'NOVOTE' });
+      }
+    });
 
-        // 5) Últimos 5 resultados (✅ ❌ 🚫) — do mais recente para o mais antigo
-        const last5 = myTimeline.slice(-5).reverse().map(t => {
-            if (!t.voted) return { icon: "🚫", label: "Sem voto" };
-            return t.hit ? { icon: "✅", label: "Acertou" } : { icon: "❌", label: "Errou" };
-        });
+    // 5) Sequência atual + recordes (W/L) — NOVOTE quebra
+    let currentStreak = 0;
+    let maxWinStreak = 0;
+    let maxLossStreak = 0; // valor negativo (ex: -4)
 
-        // 6) Posição atual e melhor posição
-        const bestPosition = rankHistory.length ? Math.min(...rankHistory) : 0;
+    myExtract.forEach(it => {
+      if (it.status === 'NOVOTE') {
+        currentStreak = 0;
+        return;
+      }
+      if (it.status === 'HIT') {
+        currentStreak = (currentStreak >= 0) ? currentStreak + 1 : 1;
+        if (currentStreak > maxWinStreak) maxWinStreak = currentStreak;
+      } else if (it.status === 'MISS') {
+        currentStreak = (currentStreak <= 0) ? currentStreak - 1 : -1;
+        if (currentStreak < maxLossStreak) maxLossStreak = currentStreak;
+      }
+    });
 
-        // Posição "atual" = posição no último jogo considerado (se existir)
-        let currentPosition = 0;
-        if (myTimeline.length > 0) {
-            const lastDeadline = myTimeline[myTimeline.length - 1].deadlineDate;
-            const activeUsers = allUsersIds.filter(uid => usersCreatedAt[uid] <= lastDeadline);
-            activeUsers.sort((a, b) => currentScores[b] - currentScores[a]);
-            currentPosition = activeUsers.indexOf(targetUid) + 1;
-        }
+    const streakDisplay = currentStreak > 0
+      ? `<span class="text-green-300 font-black">+${currentStreak}</span>`
+      : (currentStreak < 0
+        ? `<span class="text-red-300 font-black">${currentStreak}</span>`
+        : `<span class="text-gray-300 font-black">0</span>`);
 
-        // 7) % votos (votou / elegíveis)
-        const votePct = totalEligible > 0 ? Math.round((totalVoted / totalEligible) * 100) : 0;
+    // 6) Últimos 5 resultados (pega do final do extrato)
+    const last5 = myExtract.slice(-5).map(it => {
+      if (it.status === 'HIT') return '✅';
+      if (it.status === 'MISS') return '❌';
+      return '🚫';
+    });
 
-        // 8) Precisão geral
-        const acc = totalVoted > 0 ? Math.round((totalHits / totalVoted) * 100) : 0;
+    // 7) Precisão, posição atual, melhor posição, % votos
+    const acc = totalVoted > 0 ? Math.round((totalHits / totalVoted) * 100) : 0;
+    const currentPos = rankHistory.length ? rankHistory[rankHistory.length - 1] : '-';
+    const bestPos = rankHistory.length ? Math.min(...rankHistory) : '-';
+    const votePct = totalEligible > 0 ? Math.round((totalVoted / totalEligible) * 100) : 0;
 
-        // 9) Desempenho por competição (ordenado por precisão) — só mostra comps com >= 3 votos para não distorcer
-        const compRows = Object.entries(compStats)
-            .map(([comp, st]) => {
-                const compAcc = st.v > 0 ? Math.round((st.h / st.v) * 100) : 0;
-                return { comp, eligible: st.t, voted: st.v, hits: st.h, acc: compAcc };
-            })
-            .filter(r => r.voted >= 3) // ajuste aqui se quiser >=2 ou >=1
-            .sort((a, b) => b.acc - a.acc);
+    // 8) Tabela por competição (ordenada por precisão desc)
+    const compRows = Object.entries(compStats).map(([comp, st]) => {
+      const pct = st.t > 0 ? Math.round((st.h / st.t) * 100) : 0;
+      return { comp, h: st.h, t: st.t, pct };
+    }).sort((a, b) => (b.pct - a.pct) || (b.t - a.t));
 
-        // 10) Badge do topo (posição + precisão)
-        const posBadge = currentPosition > 0 ? `#${currentPosition}` : `—`;
-        const streakBadge = currentStreak > 0 ? `+${currentStreak}` : (currentStreak < 0 ? `${currentStreak}` : `0`);
-
-        // 11) Render HTML premium
-        const streakColor = currentStreak > 0 ? "text-green-500" : (currentStreak < 0 ? "text-red-500" : "text-gray-500");
-
-        const last5Html = last5.length
-            ? last5.map(item => `
-                <div class="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-lg" title="${item.label}">
-                  ${item.icon}
-                </div>
-            `).join("")
-            : `<div class="text-xs font-bold text-gray-400">Sem histórico ainda</div>`;
-
-        const compTableHtml = compRows.length ? `
-          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-            <div class="grid grid-cols-[1fr_70px_70px_70px] gap-2 bg-gray-50 px-4 py-2 border-b border-gray-200">
-              <div class="text-[10px] font-black text-gray-600 uppercase">Competição</div>
-              <div class="text-[10px] font-black text-gray-600 uppercase text-right">Votos</div>
-              <div class="text-[10px] font-black text-gray-600 uppercase text-right">Acertos</div>
-              <div class="text-[10px] font-black text-gray-600 uppercase text-right">%</div>
-            </div>
-            <div class="divide-y divide-gray-100">
-              ${compRows.map(r => `
-                <div class="grid grid-cols-[1fr_70px_70px_70px] gap-2 px-4 py-3">
-                  <div class="text-xs font-black text-gray-800 truncate">${r.comp}</div>
-                  <div class="text-xs font-bold text-gray-600 text-right">${r.voted}</div>
-                  <div class="text-xs font-bold text-gray-600 text-right">${r.hits}</div>
-                  <div class="text-xs font-black text-[#006400] text-right">${r.acc}%</div>
-                </div>
-              `).join("")}
-            </div>
+    const tableHtml = compRows.length ? `
+      <div class="rounded-xl border border-white/10 overflow-hidden">
+        <div class="grid grid-cols-[1fr_70px_70px_70px] bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white/70">
+          <div>Competição</div>
+          <div class="text-center">Jogos</div>
+          <div class="text-center">Acertos</div>
+          <div class="text-center">%</div>
+        </div>
+        ${compRows.map(r => `
+          <div class="grid grid-cols-[1fr_70px_70px_70px] px-3 py-2 text-xs border-t border-white/10">
+            <div class="text-white font-bold truncate">${r.comp}</div>
+            <div class="text-center text-white/90 font-bold">${r.t}</div>
+            <div class="text-center text-[#FFD700] font-black">${r.h}</div>
+            <div class="text-center text-white font-black">${r.pct}%</div>
           </div>
-          <div class="text-[10px] text-gray-400 font-bold mt-2 text-center">
-            Mostrando apenas competições com <b>3+ votos</b> (para não distorcer a precisão)
-          </div>
-        ` : `
-          <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 text-center">
-            <div class="text-xs font-black text-gray-600">Ainda sem dados suficientes por competição</div>
-            <div class="text-[10px] text-gray-500 font-bold mt-1">Precisa de pelo menos 3 votos em uma competição</div>
-          </div>
-        `;
+        `).join('')}
+      </div>
+    ` : `<div class="text-xs text-white/60 font-bold">Sem dados por competição ainda.</div>`;
 
-        const html = `
-        <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 90vh; overflow-y: auto;">
-          <!-- HEADER PREMIUM -->
-          <div class="bg-[#006400] text-white px-4 py-4">
-            <div class="flex items-start justify-between">
-              <div>
-                <div class="text-[10px] font-black uppercase tracking-widest text-white/80">SCOUT DO PALPITEIRO</div>
-                <div class="text-xs font-bold text-white/80 mt-1">Temporada 2026</div>
-              </div>
-              <button onclick="closeModal()" class="btn-press text-white">
-                <i class="fas fa-times"></i>
-              </button>
+    // 9) Render Premium
+    const html = `
+      <div class="w-full max-w-sm rounded-none shadow-2xl overflow-hidden relative" style="max-height: 90vh; overflow-y: auto;">
+        <div class="absolute inset-0 bg-gradient-to-b from-[#071018] via-[#0b1622] to-[#071018]"></div>
+
+        <div class="relative z-10 p-5 text-white">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="font-black italic text-[#FFD700] text-lg tracking-widest">SCOUT DO PALPITEIRO</div>
+              <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Resumo Premium • 2026</div>
             </div>
-
-            <div class="mt-4 flex items-center gap-3">
-              <img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-14 h-14 rounded-full border-2 border-[#FFD700] bg-white shadow"/>
-              <div class="flex-1">
-                <div class="text-lg font-black uppercase leading-tight">${targetName}</div>
-                <div class="mt-2 flex flex-wrap gap-2">
-                  <span class="bg-white/15 border border-white/20 rounded-full px-3 py-1 text-[10px] font-black">
-                    <i class="fas fa-trophy text-[#FFD700] mr-1"></i> ${posBadge}
-                  </span>
-                  <span class="bg-white/15 border border-white/20 rounded-full px-3 py-1 text-[10px] font-black">
-                    <i class="fas fa-bullseye text-[#FFD700] mr-1"></i> ${acc}%
-                  </span>
-                  <span class="bg-white/15 border border-white/20 rounded-full px-3 py-1 text-[10px] font-black">
-                    <i class="fas fa-fire text-[#FFD700] mr-1"></i> ${streakBadge}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- BODY -->
-          <div class="p-4 space-y-4 bg-gray-50">
-            
-            <!-- KPIs 2x2 -->
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-                <div class="text-[10px] font-black text-gray-400 uppercase">Confrontos</div>
-                <div class="text-xl font-black text-gray-900 mt-1">${totalEligible} <span class="text-xs text-gray-400 font-bold">(${totalVoted})</span></div>
-                <div class="text-[10px] text-gray-500 font-bold mt-1">Elegíveis (Votados)</div>
-              </div>
-              <div class="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-                <div class="text-[10px] font-black text-gray-400 uppercase">Acertos</div>
-                <div class="text-xl font-black text-[#006400] mt-1">${totalHits}</div>
-                <div class="text-[10px] text-gray-500 font-bold mt-1">Total de acertos</div>
-              </div>
-              <div class="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-                <div class="text-[10px] font-black text-gray-400 uppercase">Precisão</div>
-                <div class="text-xl font-black text-blue-600 mt-1">${acc}%</div>
-                <div class="text-[10px] text-gray-500 font-bold mt-1">Acertos / Votos</div>
-              </div>
-              <div class="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-                <div class="text-[10px] font-black text-gray-400 uppercase">Sequência</div>
-                <div class="text-xl font-black mt-1 ${streakColor}">${streakBadge}</div>
-                <div class="text-[10px] text-gray-500 font-bold mt-1">W ou L (🚫 quebra)</div>
-              </div>
-            </div>
-
-            <!-- Últimos 5 -->
-            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <div class="flex items-center justify-between">
-                <div class="text-xs font-black text-gray-800 uppercase">Últimos 5</div>
-                <div class="text-[10px] font-bold text-gray-400">Mais recente →</div>
-              </div>
-              <div class="mt-3 flex items-center justify-center gap-2">
-                ${last5Html}
-              </div>
-            </div>
-
-            <!-- Gráfico evolução ranking -->
-            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <div class="text-xs font-black text-gray-800 uppercase text-center">Evolução no Ranking</div>
-              <div class="text-[10px] font-bold text-gray-400 text-center mt-1">Quanto menor, melhor</div>
-              <div class="mt-3 h-44 w-full">
-                <canvas id="scoutChart"></canvas>
-              </div>
-            </div>
-
-            <!-- Desempenho por competição -->
-            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <div class="text-xs font-black text-gray-800 uppercase mb-3">Desempenho por competição</div>
-              ${compTableHtml}
-            </div>
-
-            <!-- Recordes -->
-            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <div class="text-xs font-black text-gray-800 uppercase mb-3">Recordes</div>
-
-              <div class="grid grid-cols-2 gap-3">
-                <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-center">
-                  <div class="text-[10px] font-black text-gray-400 uppercase">Maior W</div>
-                  <div class="text-lg font-black text-green-600 mt-1">${maxWinStreak || 0}</div>
-                  <div class="text-[10px] font-bold text-gray-500 mt-1">vitórias seguidas</div>
-                </div>
-                <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-center">
-                  <div class="text-[10px] font-black text-gray-400 uppercase">Maior L</div>
-                  <div class="text-lg font-black text-red-600 mt-1">${maxLoseStreak || 0}</div>
-                  <div class="text-[10px] font-bold text-gray-500 mt-1">derrotas seguidas</div>
-                </div>
-                <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-center">
-                  <div class="text-[10px] font-black text-gray-400 uppercase">Melhor posição</div>
-                  <div class="text-lg font-black text-[#006400] mt-1">${bestPosition || "—"}</div>
-                  <div class="text-[10px] font-bold text-gray-500 mt-1">pico no ranking</div>
-                </div>
-                <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-center">
-                  <div class="text-[10px] font-black text-gray-400 uppercase">% de votos</div>
-                  <div class="text-lg font-black text-gray-800 mt-1">${votePct}%</div>
-                  <div class="text-[10px] font-bold text-gray-500 mt-1">votou / elegíveis</div>
-                </div>
-              </div>
-            </div>
-
-            <button onclick="closeModal()" class="w-full bg-[#FFD700] text-black font-black py-3 rounded-xl shadow-lg btn-press text-xs">
-              FECHAR
+            <button onclick="closeModal()" class="text-white/80 hover:text-white">
+              <i class="fas fa-times"></i>
             </button>
           </div>
-        </div>`;
 
-        cont.innerHTML = html;
+          <div class="flex items-center gap-3 mt-4">
+            <img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-14 h-14 rounded-full border-2 border-[#FFD700] shadow">
+            <div class="min-w-0">
+              <div class="font-black text-xl uppercase truncate">${targetName}</div>
+              <div class="flex flex-wrap gap-2 mt-1">
+                <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black">
+                  🏆 Posição: <span class="text-[#FFD700]">${currentPos}</span>
+                </span>
+                <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black">
+                  🎯 Precisão: <span class="text-blue-300">${acc}%</span>
+                </span>
+              </div>
+            </div>
+          </div>
 
-        // 12) Gráfico (mantém sua lógica, agora encaixado no layout premium)
-        if (window.myScoutChart) window.myScoutChart.destroy();
+          <!-- KPIs -->
+          <div class="grid grid-cols-2 gap-3 mt-4">
+            <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
+              <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Confrontos</div>
+              <div class="text-lg font-black">${totalEligible} <span class="text-sm text-white/60">(${totalVoted})</span></div>
+            </div>
+            <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
+              <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Acertos</div>
+              <div class="text-lg font-black text-[#FFD700]">${totalHits}</div>
+            </div>
+            <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
+              <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Precisão</div>
+              <div class="text-lg font-black text-blue-300">${acc}%</div>
+            </div>
+            <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
+              <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Sequência</div>
+              <div class="text-lg font-black">${streakDisplay}</div>
+            </div>
+          </div>
 
-        if (rankHistory.length > 0) {
-            const ctx = document.getElementById('scoutChart').getContext('2d');
-            window.myScoutChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: rankHistory.map((_, i) => i + 1),
-                    datasets: [{
-                        label: 'Posição',
-                        data: rankHistory,
-                        borderColor: '#006400',
-                        backgroundColor: 'rgba(0,100,0,0.12)',
-                        tension: 0.3,
-                        fill: true,
-                        pointRadius: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { reverse: true, beginAtZero: false, min: 1, grid: { display: false } },
-                        x: { display: true, grid: { display: false }, ticks: { color: '#666', font: { size: 9 }, maxTicksLimit: 8 } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-        } else {
-            // Se não tiver histórico, mostra um aviso discreto (sem quebrar layout)
-            const chartWrap = document.getElementById('scoutChart')?.parentElement;
-            if (chartWrap) {
-                chartWrap.innerHTML = `<div class="h-full flex items-center justify-center text-xs font-bold text-gray-400">Sem histórico suficiente</div>`;
-            }
+          <!-- Últimos 5 -->
+          <div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
+            <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Últimos 5</div>
+            <div class="flex gap-2">
+              ${last5.map(x => `
+                <div class="w-10 h-10 rounded-full bg-black/30 border border-white/10 flex items-center justify-center text-lg">
+                  ${x}
+                </div>
+              `).join('')}
+            </div>
+            <div class="text-[10px] text-white/50 font-bold mt-2">✅ acerto • ❌ erro • 🚫 sem voto (quebra sequência)</div>
+          </div>
+
+          <!-- Gráfico -->
+          <div class="mt-4 bg-white rounded-lg p-3">
+            <div class="text-[10px] text-gray-600 font-black mb-2 text-center uppercase tracking-wider">Evolução no Ranking</div>
+            <div class="h-40 w-full"><canvas id="scoutChart"></canvas></div>
+          </div>
+
+          <!-- Desempenho por competição -->
+          <div class="mt-4">
+            <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Desempenho por competição</div>
+            ${tableHtml}
+          </div>
+
+          <!-- Recordes -->
+          <div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
+            <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Recordes</div>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+                <div class="text-[9px] uppercase text-white/60 font-black">Maior W</div>
+                <div class="text-lg font-black text-green-300">+${maxWinStreak}</div>
+              </div>
+              <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+                <div class="text-[9px] uppercase text-white/60 font-black">Maior L</div>
+                <div class="text-lg font-black text-red-300">${maxLossStreak}</div>
+              </div>
+              <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+                <div class="text-[9px] uppercase text-white/60 font-black">Melhor posição</div>
+                <div class="text-lg font-black text-[#FFD700]">${bestPos}</div>
+              </div>
+              <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+                <div class="text-[9px] uppercase text-white/60 font-black">% de votos</div>
+                <div class="text-lg font-black text-blue-200">${votePct}%</div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="closeModal()" class="w-full mt-5 bg-[#FFD700] text-black font-black py-3 rounded shadow-lg btn-press text-xs">
+            FECHAR
+          </button>
+        </div>
+      </div>
+    `;
+
+    cont.innerHTML = html;
+
+    // 10) Gráfico
+    if (window.myScoutChart) window.myScoutChart.destroy();
+    if (rankHistory.length > 0) {
+      const canvas = document.getElementById('scoutChart');
+      const ctx = canvas.getContext('2d');
+
+      window.myScoutChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: rankHistory.map((_, i) => i + 1),
+          datasets: [{
+            label: 'Posição',
+            data: rankHistory,
+            borderColor: '#006400',
+            backgroundColor: 'rgba(0,100,0,0.12)',
+            tension: 0.3,
+            fill: true,
+            pointRadius: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { reverse: true, beginAtZero: false, min: 1, grid: { display: false } },
+            x: { grid: { display: false }, ticks: { color: '#666', font: { size: 9 }, maxTicksLimit: 8 } }
+          },
+          plugins: { legend: { display: false } }
         }
-
-    } catch (e) {
-        console.error(e);
-        cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro no Scout Premium.</div>`;
+      });
     }
+
+  } catch (e) {
+    console.error(e);
+    cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro no Scout Premium.</div>`;
+  }
 };
 
         // --- FUNÇÕES PARA ABRIR/FECHAR AS LISTAS (TOGGLE) ---
