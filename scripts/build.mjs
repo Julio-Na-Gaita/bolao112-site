@@ -105,7 +105,63 @@ const build = async () => {
     '/favicon.png'
   ];
 
-  const swContent = `const CACHE_NAME = 'bolao112-site-v1';\nconst ASSETS = ${JSON.stringify(precacheAssets, null, 2)};\n\nself.addEventListener('install', (event) => {\n  event.waitUntil(\n    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))\n  );\n});\n\nself.addEventListener('activate', (event) => {\n  event.waitUntil(\n    caches.keys().then((keys) =>\n      Promise.all(keys.map((key) => (key === CACHE_NAME ? null : caches.delete(key))))\n    )\n  );\n});\n\nself.addEventListener('fetch', (event) => {\n  if (event.request.method !== 'GET') return;\n  const url = new URL(event.request.url);\n  if (url.origin !== self.location.origin) return;\n\n  event.respondWith(\n    caches.match(event.request).then((cached) =>\n      cached || fetch(event.request).then((response) => {\n        const clone = response.clone();\n        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));\n        return response;\n      })\n    )\n  );\n});\n`;
+  const swContent = `const CACHE_NAME = 'bolao112-site-v1';
+const ASSETS = ${JSON.stringify(precacheAssets, null, 2)};
+
+// Arquivos que DEVEM atualizar sempre (network-first)
+const CRITICAL = ['/app.min.js', '/styles.min.css', '/index.html'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    Promise.all([
+      caches.keys().then((keys) =>
+        Promise.all(keys.map((key) => (key === CACHE_NAME ? null : caches.delete(key))))
+      ),
+      self.clients.claim()
+    ])
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  // NETWORK FIRST para arquivos críticos
+  if (CRITICAL.includes(url.pathname)) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // CACHE FIRST para o resto (imagens/assets) com fallback de rede
+  event.respondWith(
+    caches.match(event.request).then((cached) =>
+      cached || fetch(event.request).then((response) => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        return response;
+      })
+    )
+  );
+});
+`;
+
 
   await fs.writeFile(path.join(dist, 'sw.js'), swContent);
 };
