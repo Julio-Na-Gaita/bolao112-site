@@ -3201,113 +3201,118 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
       </div>
     ` : `<div class="text-xs text-white/60 font-bold">Sem dados por competição ainda.</div>`;
 
-    // 9) Render Premium
-    const html = `
-      <div class="w-full max-w-sm rounded-none shadow-2xl overflow-hidden relative" style="max-height: 90vh; overflow-y: auto;">
-        <div class="absolute inset-0 bg-gradient-to-b from-[#071018] via-[#0b1622] to-[#071018]"></div>
+    // 9) Render Premium (FIX: fundo sempre escuro + remove “chuva de números” + close padronizado)
+const html = `
+  <div class="w-full max-w-sm rounded-none shadow-2xl overflow-hidden"
+       style="max-height: 90vh; overflow-y: auto; background: linear-gradient(to bottom, #071018, #0b1622, #071018);">
+       
+    <div class="p-5 text-white">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="font-black italic text-[#FFD700] text-lg tracking-widest">SCOUT DO PALPITEIRO</div>
+          <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Resumo Premium • 2026</div>
+        </div>
 
-        <div class="relative z-10 p-5 text-white">
-          <div class="flex items-start justify-between">
-            <div>
-              <div class="font-black italic text-[#FFD700] text-lg tracking-widest">SCOUT DO PALPITEIRO</div>
-              <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Resumo Premium • 2026</div>
-            </div>
-            <button onclick="closeModal()" class="text-white/80 hover:text-white">
-              <i class="fas fa-times"></i>
-            </button>
+        <!-- FIX: usar window.closeModal -->
+        <button type="button" onclick="window.closeModal()" class="text-white/80 hover:text-white">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-3 mt-4">
+        <img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-14 h-14 rounded-full border-2 border-[#FFD700] shadow">
+        <div class="min-w-0">
+          <div class="font-black text-xl uppercase truncate">${targetName}</div>
+          <div class="flex flex-wrap gap-2 mt-1">
+            <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black">
+              🏆 Posição: <span class="text-[#FFD700]">${currentPos}</span>
+            </span>
+            <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black">
+              🎯 Precisão: <span class="text-blue-300">${acc}%</span>
+            </span>
           </div>
-
-          <div class="flex items-center gap-3 mt-4">
-            <img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-14 h-14 rounded-full border-2 border-[#FFD700] shadow">
-            <div class="min-w-0">
-              <div class="font-black text-xl uppercase truncate">${targetName}</div>
-              <div class="flex flex-wrap gap-2 mt-1">
-                <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black">
-                  🏆 Posição: <span class="text-[#FFD700]">${currentPos}</span>
-                </span>
-                <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black">
-                  🎯 Precisão: <span class="text-blue-300">${acc}%</span>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- KPIs -->
-          <div class="grid grid-cols-2 gap-3 mt-4">
-            <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
-              <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Confrontos</div>
-              <div class="text-lg font-black">${totalEligible} <span class="text-sm text-white/60">(${totalVoted})</span></div>
-            </div>
-            <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
-              <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Acertos</div>
-              <div class="text-lg font-black text-[#FFD700]">${totalHits}</div>
-            </div>
-            <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
-              <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Precisão</div>
-              <div class="text-lg font-black text-blue-300">${acc}%</div>
-            </div>
-            <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
-              <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Sequência</div>
-              <div class="text-lg font-black">${streakDisplay}</div>
-            </div>
-          </div>
-
-          <!-- Últimos 5 -->
-          <div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
-            <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Últimos 5</div>
-            <div class="flex gap-2">
-              ${last5.map(x => `
-                <div class="w-10 h-10 rounded-full bg-black/30 border border-white/10 flex items-center justify-center text-lg">
-                  ${x}
-                </div>
-              `).join('')}
-            </div>
-            <div class="text-[10px] text-white/50 font-bold mt-2">✅ acerto • ❌ erro • 🚫 sem voto (quebra sequência)</div>
-          </div>
-
-          <!-- Gráfico -->
-          <div class="mt-4 bg-white rounded-lg p-3">
-            <div class="text-[10px] text-gray-600 font-black mb-2 text-center uppercase tracking-wider">Evolução no Ranking</div>
-            <div class="h-40 w-full"><canvas id="scoutChart"></canvas></div>
-          </div>
-
-          <!-- Desempenho por competição -->
-          <div class="mt-4">
-            <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Desempenho por competição</div>
-            ${tableHtml}
-          </div>
-
-          <!-- Recordes -->
-          <div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
-            <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Recordes</div>
-            <div class="grid grid-cols-2 gap-3">
-              <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-                <div class="text-[9px] uppercase text-white/60 font-black">Maior W</div>
-                <div class="text-lg font-black text-green-300">+${maxWinStreak}</div>
-              </div>
-              <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-                <div class="text-[9px] uppercase text-white/60 font-black">Maior L</div>
-                <div class="text-lg font-black text-red-300">${maxLossStreak}</div>
-              </div>
-              <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-                <div class="text-[9px] uppercase text-white/60 font-black">Melhor posição</div>
-                <div class="text-lg font-black text-[#FFD700]">${bestPos}</div>
-              </div>
-              <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-                <div class="text-[9px] uppercase text-white/60 font-black">% de votos</div>
-                <div class="text-lg font-black text-blue-200">${votePct}%</div>
-              </div>
-            </div>
-          </div>
-
-          <button onclick="closeModal()" class="w-full mt-5 bg-[#FFD700] text-black font-black py-3 rounded shadow-lg btn-press text-xs">
-            FECHAR
-          </button>
         </div>
       </div>
-    `;
 
-    cont.innerHTML = html;
+      <!-- KPIs -->
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
+          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Confrontos</div>
+          <div class="text-lg font-black">${totalEligible} <span class="text-sm text-white/60">(${totalVoted})</span></div>
+        </div>
+        <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
+          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Acertos</div>
+          <div class="text-lg font-black text-[#FFD700]">${totalHits}</div>
+        </div>
+        <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
+          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Precisão</div>
+          <div class="text-lg font-black text-blue-300">${acc}%</div>
+        </div>
+        <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
+          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Sequência</div>
+          <div class="text-lg font-black">${streakDisplay}</div>
+        </div>
+      </div>
+
+      <!-- Últimos 5 -->
+      <div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
+        <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Últimos 5</div>
+        <div class="flex gap-2">
+          ${last5.map(x => `
+            <div class="w-10 h-10 rounded-full bg-black/30 border border-white/10 flex items-center justify-center text-lg">
+              ${x}
+            </div>
+          `).join('')}
+        </div>
+        <div class="text-[10px] text-white/50 font-bold mt-2">✅ acerto • ❌ erro • 🚫 sem voto (quebra sequência)</div>
+      </div>
+
+      <!-- Gráfico -->
+      <div class="mt-4 bg-white rounded-lg p-3">
+        <div class="text-[10px] text-gray-600 font-black mb-2 text-center uppercase tracking-wider">Evolução no Ranking</div>
+        <div class="h-40 w-full"><canvas id="scoutChart"></canvas></div>
+      </div>
+
+      <!-- Desempenho por competição -->
+      <div class="mt-4">
+        <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Desempenho por competição</div>
+        ${tableHtml}
+      </div>
+
+      <!-- Recordes -->
+      <div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
+        <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Recordes</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+            <div class="text-[9px] uppercase text-white/60 font-black">Maior W</div>
+            <div class="text-lg font-black text-green-300">+${maxWinStreak}</div>
+          </div>
+          <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+            <div class="text-[9px] uppercase text-white/60 font-black">Maior L</div>
+            <div class="text-lg font-black text-red-300">${maxLossStreak}</div>
+          </div>
+          <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+            <div class="text-[9px] uppercase text-white/60 font-black">Melhor posição</div>
+            <div class="text-lg font-black text-[#FFD700]">${bestPos}</div>
+          </div>
+          <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+            <div class="text-[9px] uppercase text-white/60 font-black">% de votos</div>
+            <div class="text-lg font-black text-blue-200">${votePct}%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FIX: usar window.closeModal -->
+      <button type="button" onclick="window.closeModal()"
+              class="w-full mt-5 bg-[#FFD700] text-black font-black py-3 rounded shadow-lg btn-press text-xs">
+        FECHAR
+      </button>
+    </div>
+  </div>
+`;
+
+cont.innerHTML = html;
+
 // DEBUG TEMP: mostra o final do HTML renderizado (remover depois)
 setTimeout(() => {
   const tail = cont.innerHTML.slice(-600);
