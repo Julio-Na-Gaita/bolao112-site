@@ -2995,218 +2995,403 @@ window.currentChatUnsub = null;
                 document.getElementById('commentInput').focus();
             };
         };
-      // --- SCOUT FINAL (ESTATÍSTICAS + GRÁFICO + ESPECIALIDADES) ---
-        window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
-            const cont = document.getElementById('modalContainer');
-            document.getElementById('modalOverlay').classList.remove('hidden');
-            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i><p class="text-xs mt-2 font-bold text-gray-500">Calculando trajetória...</p></div>`;
+        // --- SCOUT PREMIUM (KPIs + ÚLTIMOS 5 + GRÁFICO + COMPETIÇÕES + RECORDES) ---
+window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
+    const cont = document.getElementById('modalContainer');
+    document.getElementById('modalOverlay').classList.remove('hidden');
 
-            try {
-                // 1. Coleta Dados
-                const [mSnap, gSnap, uSnap] = await Promise.all([
-                    getDocs(collection(db, "matches")),
-                    getDocs(collection(db, "guesses")),
-                    getDocs(collection(db, "users"))
-                ]);
+    cont.innerHTML = `
+      <div class="bg-white p-6 text-center">
+        <i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i>
+        <p class="text-xs mt-2 font-bold text-gray-500">Calculando Scout Premium...</p>
+      </div>`;
 
-                // 2. Mapeamento
-                const usersMap = {};
-                const allUsersIds = [];
-                uSnap.forEach(d => { 
-                    const dt = d.data().createdAt ? d.data().createdAt.toDate() : new Date(0);
-                    usersMap[d.id] = dt; 
-                    allUsersIds.push(d.id);
+    try {
+        // 1) Coleta dados (mesma base da sua versão atual)
+        const [mSnap, gSnap, uSnap] = await Promise.all([
+            getDocs(collection(db, "matches")),
+            getDocs(collection(db, "guesses")),
+            getDocs(collection(db, "users"))
+        ]);
+
+        // 2) Mapeamentos
+        const usersCreatedAt = {};
+        const allUsersIds = [];
+        uSnap.forEach(d => {
+            const dt = d.data().createdAt ? d.data().createdAt.toDate() : new Date(0);
+            usersCreatedAt[d.id] = dt;
+            allUsersIds.push(d.id);
+        });
+
+        const targetCreated = usersCreatedAt[targetUid] || new Date(0);
+
+        const allGuesses = [];
+        gSnap.forEach(d => allGuesses.push(d.data()));
+
+        const matches = [];
+        mSnap.forEach(d => {
+            const md = d.data();
+            if (md.winner) {
+                matches.push({
+                    id: d.id,
+                    ...md,
+                    deadlineDate: md.deadline?.toDate ? md.deadline.toDate() : new Date(0)
                 });
-                
-                const targetCreated = usersMap[targetUid] || new Date(0);
-                const allGuesses = [];
-                gSnap.forEach(d => allGuesses.push(d.data()));
+            }
+        });
+        matches.sort((a, b) => a.deadlineDate - b.deadlineDate);
 
-                const matches = [];
-                mSnap.forEach(d => { if(d.data().winner) matches.push({id: d.id, ...d.data(), deadlineDate: d.data().deadline.toDate()}); });
-                matches.sort((a,b) => a.deadlineDate - b.deadlineDate);
+        // 3) Simulação Ranking + Estatísticas (Premium)
+        let rankHistory = [];
+        let currentScores = {};
+        allUsersIds.forEach(uid => currentScores[uid] = 0);
 
-                // 3. Simulação
-                let rankHistory = [];
-                let currentScores = {};
-                allUsersIds.forEach(uid => currentScores[uid] = 0);
+        let totalEligible = 0; // jogos após criação do usuário
+        let totalVoted = 0;    // quantos ele votou
+        let totalHits = 0;     // quantos acertou
 
-                let totalEligible = 0; 
-                let totalVoted = 0;    
-                let totalHits = 0;
-                let currentStreak = 0, streakBroken = false;
-                const compStats = {}; // Estatísticas por competição
+        // Para "últimos 5" e para streak/recordes corretos (considerando 🚫 quebra)
+        const myTimeline = []; // [{matchId, comp, voted:bool, hit:bool, deadlineDate}]
+        
+        // Stats por competição
+        const compStats = {}; // comp -> { t, v, h } t=eligible, v=voted, h=hits
 
-                matches.forEach(m => {
-                    if (targetCreated > m.deadlineDate) return;
-                    
-                    totalEligible++; 
+        matches.forEach(m => {
+            // Só considera jogos depois que o usuário existe
+            if (targetCreated > m.deadlineDate) return;
 
-                    // Atualiza Global (Ranking)
-                    allUsersIds.forEach(uid => {
-                        if (usersMap[uid] > m.deadlineDate) return;
-                        const vote = allGuesses.find(g => g.matchId === m.id && g.userId === uid);
-                        if (vote && vote.teamSelected === m.winner) {
-                            currentScores[uid] += (m.round?.toLowerCase()==='final' ? 6 : 3);
-                        }
-                    });
+            totalEligible++;
 
-                    // Posição Histórica
-                    const activeUsers = allUsersIds.filter(uid => usersMap[uid] <= m.deadlineDate);
-                    activeUsers.sort((a,b) => currentScores[b] - currentScores[a]);
-                    const myPos = activeUsers.indexOf(targetUid) + 1;
-                    if(myPos > 0) rankHistory.push(myPos);
-
-                    // Stats Individuais
-                    const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
-                    if(myVote) {
-                        totalVoted++;
-                        // Inicializa estatística da competição se não existir
-                        if(!compStats[m.competition]) compStats[m.competition] = {h:0, t:0};
-                        compStats[m.competition].t++;
-
-                        if(myVote.teamSelected === m.winner) {
-                            totalHits++;
-                            compStats[m.competition].h++;
-                        }
-                    }
-                });
-
-                // Streak Recente
-                [...matches].reverse().forEach(m => {
-                    if (targetCreated > m.deadlineDate) return;
-                    const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
-                    if(myVote) {
-                        const hit = myVote.teamSelected === m.winner;
-                        if (!streakBroken) {
-                            if (currentStreak === 0) currentStreak = hit ? 1 : -1;
-                            else if (currentStreak > 0 && hit) currentStreak++;
-                            else if (currentStreak < 0 && !hit) currentStreak--;
-                            else streakBroken = true;
-                        }
-                    } else { streakBroken = true; }
-                });
-
-                // CÁLCULO DE ESPECIALIDADE / PONTO FRACO
-                let bestComp = "---"; let bestPct = -1;
-                let worstComp = "---"; let worstPct = 101;
-
-                Object.entries(compStats).forEach(([comp, st]) => {
-                    // Só considera se tiver pelo menos 3 jogos na competição para ter relevância estatística
-                    if (st.t >= 3) {
-                        const pct = (st.h / st.t) * 100;
-                        if (pct > bestPct) { bestPct = pct; bestComp = comp; }
-                        if (pct < worstPct) { worstPct = pct; worstComp = comp; }
-                    }
-                });
-
-                // Ajuste visual se não tiver dados suficientes
-                const bestDisplay = bestPct === -1 ? "Insuficiente" : `${bestComp} (${Math.round(bestPct)}%)`;
-                const worstDisplay = worstPct === 101 ? "Insuficiente" : `${worstComp} (${Math.round(worstPct)}%)`;
-
-                // Renderização
-                const acc = totalVoted > 0 ? Math.round((totalHits/totalVoted)*100) : 0;
-                let streakDisplay = currentStreak > 0 ? `<span class="text-green-400">+${currentStreak}</span>` : (currentStreak < 0 ? `<span class="text-red-400">${currentStreak}</span>` : `<span class="text-gray-400">-</span>`);
-
-                const html = `
-                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 90vh; overflow-y: auto;">
-                    <div class="absolute inset-0 bg-gray-900"></div>
-                    <div class="relative z-10 p-5 text-white">
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="font-black italic text-[#FFD700] text-lg tracking-widest">SCOUT 2026</h3>
-                            <button onclick="closeModal()" class="text-white"><i class="fas fa-times"></i></button>
-                        </div>
-                        
-                        <div class="flex items-center gap-4 mb-6">
-                            <img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-16 h-16 rounded-full border-2 border-[#FFD700]">
-                            <div>
-                                <h2 class="font-black text-xl uppercase">${targetName}</h2>
-                                <p class="text-[10px] text-gray-400 font-bold">Resumo da Temporada</p>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div class="bg-white/10 rounded p-2 text-center">
-                                <p class="text-[9px] uppercase text-gray-400 font-bold">Confrontos (Votados)</p>
-                                <p class="text-lg font-black text-white">${totalEligible} <span class="text-sm text-gray-400">(${totalVoted})</span></p>
-                            </div>
-                            <div class="bg-white/10 rounded p-2 text-center">
-                                <p class="text-[9px] uppercase text-gray-400 font-bold">Total Acertos</p>
-                                <p class="text-lg font-black text-[#FFD700]">${totalHits}</p>
-                            </div>
-                            <div class="bg-white/10 rounded p-2 text-center">
-                                <p class="text-[9px] uppercase text-gray-400 font-bold">Precisão</p>
-                                <p class="text-lg font-black text-blue-400">${acc}%</p>
-                            </div>
-                            <div class="bg-white/10 rounded p-2 text-center">
-                                <p class="text-[9px] uppercase text-gray-400 font-bold">Sequência</p>
-                                <p class="text-lg font-black">${streakDisplay}</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded p-2 mb-4">
-                            <p class="text-[10px] text-gray-500 font-bold mb-2 text-center uppercase">Evolução no Ranking</p>
-                            <div class="h-40 w-full"><canvas id="scoutChart"></canvas></div>
-                        </div>
-
-                        <div class="space-y-2 mb-4">
-                            <div class="bg-gradient-to-r from-green-900/50 to-transparent p-2 rounded border-l-4 border-green-500 flex justify-between items-center">
-                                <div class="text-xs">
-                                    <p class="text-gray-400 text-[9px] uppercase font-bold">Especialidade</p>
-                                    <p class="font-bold text-white text-sm">${bestDisplay}</p>
-                                </div>
-                                <i class="fas fa-star text-green-400 text-xl opacity-50"></i>
-                            </div>
-
-                            <div class="bg-gradient-to-r from-red-900/50 to-transparent p-2 rounded border-l-4 border-red-500 flex justify-between items-center">
-                                <div class="text-xs">
-                                    <p class="text-gray-400 text-[9px] uppercase font-bold">Ponto Fraco</p>
-                                    <p class="font-bold text-white text-sm">${worstDisplay}</p>
-                                </div>
-                                <i class="fas fa-skull text-red-400 text-xl opacity-50"></i>
-                            </div>
-                        </div>
-
-                        <button onclick="closeModal()" class="w-full bg-[#FFD700] text-black font-black py-3 rounded shadow-lg btn-press text-xs">FECHAR</button>
-                    </div>
-                </div>`;
-                cont.innerHTML = html;
-
-                if (window.myScoutChart) window.myScoutChart.destroy();
-                if (rankHistory.length > 0) {
-                    const ctx = document.getElementById('scoutChart').getContext('2d');
-                    window.myScoutChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: rankHistory.map((_, i) => i + 1),
-                            datasets: [{
-                                label: 'Posição',
-                                data: rankHistory,
-                                borderColor: '#006400',
-                                backgroundColor: 'rgba(0,100,0,0.1)',
-                                tension: 0.3,
-                                fill: true,
-                                pointRadius: 2
-                            }]
-                        },
-                        options: { 
-                            responsive: true, 
-                            maintainAspectRatio: false,
-                            scales: { 
-                                y: { reverse: true, beginAtZero: false, min: 1, grid: {display:false} },
-                                x: { 
-                                    display: true, 
-                                    grid: { display: false },
-                                    ticks: { color: '#666', font: { size: 9 }, maxTicksLimit: 8 }
-                                } 
-                            },
-                            plugins: { legend: { display: false } }
-                        }
-                    });
+            // Atualiza ranking global (igual você já fazia)
+            allUsersIds.forEach(uid => {
+                if (usersCreatedAt[uid] > m.deadlineDate) return;
+                const vote = allGuesses.find(g => g.matchId === m.id && g.userId === uid);
+                if (vote && vote.teamSelected === m.winner) {
+                    currentScores[uid] += (m.round?.toLowerCase() === 'final' ? 6 : 3);
                 }
+            });
 
-            } catch (e) { console.error(e); cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600">Erro no Scout.</div>`; }
-        };
+            // Guarda posição histórica do target
+            const activeUsers = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
+            activeUsers.sort((a, b) => currentScores[b] - currentScores[a]);
+            const pos = activeUsers.indexOf(targetUid) + 1;
+            if (pos > 0) rankHistory.push(pos);
+
+            // Estatística do target por jogo
+            const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
+
+            if (!compStats[m.competition]) compStats[m.competition] = { t: 0, v: 0, h: 0 };
+            compStats[m.competition].t++;
+
+            const voted = !!myVote;
+            const hit = voted ? (myVote.teamSelected === m.winner) : false;
+
+            if (voted) {
+                totalVoted++;
+                compStats[m.competition].v++;
+                if (hit) {
+                    totalHits++;
+                    compStats[m.competition].h++;
+                }
+            }
+
+            myTimeline.push({
+                matchId: m.id,
+                comp: m.competition || "---",
+                voted,
+                hit,
+                deadlineDate: m.deadlineDate
+            });
+        });
+
+        // 4) Sequência atual (+W ou -L) e recordes (W max / L max)
+        // Regra: sequência conta vitórias OU derrotas; 🚫 quebra imediatamente.
+        let currentStreak = 0;      // positivo wins, negativo losses
+        let maxWinStreak = 0;
+        let maxLoseStreak = 0;
+
+        // percorre do mais recente para trás para "currentStreak"
+        for (let i = myTimeline.length - 1; i >= 0; i--) {
+            const t = myTimeline[i];
+            if (!t.voted) break; // 🚫 quebra
+
+            if (currentStreak === 0) {
+                currentStreak = t.hit ? 1 : -1;
+            } else if (currentStreak > 0 && t.hit) {
+                currentStreak++;
+            } else if (currentStreak < 0 && !t.hit) {
+                currentStreak--;
+            } else {
+                break; // mudou de W pra L ou L pra W -> quebra
+            }
+        }
+
+        // recordes varrendo do começo ao fim
+        let run = 0;
+        for (let i = 0; i < myTimeline.length; i++) {
+            const t = myTimeline[i];
+
+            if (!t.voted) {
+                run = 0; // 🚫 quebra
+                continue;
+            }
+
+            if (run === 0) {
+                run = t.hit ? 1 : -1;
+            } else if (run > 0 && t.hit) {
+                run++;
+            } else if (run < 0 && !t.hit) {
+                run--;
+            } else {
+                run = t.hit ? 1 : -1; // virou o lado (quebra e reinicia)
+            }
+
+            maxWinStreak = Math.max(maxWinStreak, run > 0 ? run : 0);
+            maxLoseStreak = Math.max(maxLoseStreak, run < 0 ? Math.abs(run) : 0);
+        }
+
+        // 5) Últimos 5 resultados (✅ ❌ 🚫) — do mais recente para o mais antigo
+        const last5 = myTimeline.slice(-5).reverse().map(t => {
+            if (!t.voted) return { icon: "🚫", label: "Sem voto" };
+            return t.hit ? { icon: "✅", label: "Acertou" } : { icon: "❌", label: "Errou" };
+        });
+
+        // 6) Posição atual e melhor posição
+        const bestPosition = rankHistory.length ? Math.min(...rankHistory) : 0;
+
+        // Posição "atual" = posição no último jogo considerado (se existir)
+        let currentPosition = 0;
+        if (myTimeline.length > 0) {
+            const lastDeadline = myTimeline[myTimeline.length - 1].deadlineDate;
+            const activeUsers = allUsersIds.filter(uid => usersCreatedAt[uid] <= lastDeadline);
+            activeUsers.sort((a, b) => currentScores[b] - currentScores[a]);
+            currentPosition = activeUsers.indexOf(targetUid) + 1;
+        }
+
+        // 7) % votos (votou / elegíveis)
+        const votePct = totalEligible > 0 ? Math.round((totalVoted / totalEligible) * 100) : 0;
+
+        // 8) Precisão geral
+        const acc = totalVoted > 0 ? Math.round((totalHits / totalVoted) * 100) : 0;
+
+        // 9) Desempenho por competição (ordenado por precisão) — só mostra comps com >= 3 votos para não distorcer
+        const compRows = Object.entries(compStats)
+            .map(([comp, st]) => {
+                const compAcc = st.v > 0 ? Math.round((st.h / st.v) * 100) : 0;
+                return { comp, eligible: st.t, voted: st.v, hits: st.h, acc: compAcc };
+            })
+            .filter(r => r.voted >= 3) // ajuste aqui se quiser >=2 ou >=1
+            .sort((a, b) => b.acc - a.acc);
+
+        // 10) Badge do topo (posição + precisão)
+        const posBadge = currentPosition > 0 ? `#${currentPosition}` : `—`;
+        const streakBadge = currentStreak > 0 ? `+${currentStreak}` : (currentStreak < 0 ? `${currentStreak}` : `0`);
+
+        // 11) Render HTML premium
+        const streakColor = currentStreak > 0 ? "text-green-500" : (currentStreak < 0 ? "text-red-500" : "text-gray-500");
+
+        const last5Html = last5.length
+            ? last5.map(item => `
+                <div class="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-lg" title="${item.label}">
+                  ${item.icon}
+                </div>
+            `).join("")
+            : `<div class="text-xs font-bold text-gray-400">Sem histórico ainda</div>`;
+
+        const compTableHtml = compRows.length ? `
+          <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <div class="grid grid-cols-[1fr_70px_70px_70px] gap-2 bg-gray-50 px-4 py-2 border-b border-gray-200">
+              <div class="text-[10px] font-black text-gray-600 uppercase">Competição</div>
+              <div class="text-[10px] font-black text-gray-600 uppercase text-right">Votos</div>
+              <div class="text-[10px] font-black text-gray-600 uppercase text-right">Acertos</div>
+              <div class="text-[10px] font-black text-gray-600 uppercase text-right">%</div>
+            </div>
+            <div class="divide-y divide-gray-100">
+              ${compRows.map(r => `
+                <div class="grid grid-cols-[1fr_70px_70px_70px] gap-2 px-4 py-3">
+                  <div class="text-xs font-black text-gray-800 truncate">${r.comp}</div>
+                  <div class="text-xs font-bold text-gray-600 text-right">${r.voted}</div>
+                  <div class="text-xs font-bold text-gray-600 text-right">${r.hits}</div>
+                  <div class="text-xs font-black text-[#006400] text-right">${r.acc}%</div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+          <div class="text-[10px] text-gray-400 font-bold mt-2 text-center">
+            Mostrando apenas competições com <b>3+ votos</b> (para não distorcer a precisão)
+          </div>
+        ` : `
+          <div class="p-4 rounded-xl border border-gray-200 bg-gray-50 text-center">
+            <div class="text-xs font-black text-gray-600">Ainda sem dados suficientes por competição</div>
+            <div class="text-[10px] text-gray-500 font-bold mt-1">Precisa de pelo menos 3 votos em uma competição</div>
+          </div>
+        `;
+
+        const html = `
+        <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 90vh; overflow-y: auto;">
+          <!-- HEADER PREMIUM -->
+          <div class="bg-[#006400] text-white px-4 py-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-[10px] font-black uppercase tracking-widest text-white/80">SCOUT DO PALPITEIRO</div>
+                <div class="text-xs font-bold text-white/80 mt-1">Temporada 2026</div>
+              </div>
+              <button onclick="closeModal()" class="btn-press text-white">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+
+            <div class="mt-4 flex items-center gap-3">
+              <img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-14 h-14 rounded-full border-2 border-[#FFD700] bg-white shadow"/>
+              <div class="flex-1">
+                <div class="text-lg font-black uppercase leading-tight">${targetName}</div>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <span class="bg-white/15 border border-white/20 rounded-full px-3 py-1 text-[10px] font-black">
+                    <i class="fas fa-trophy text-[#FFD700] mr-1"></i> ${posBadge}
+                  </span>
+                  <span class="bg-white/15 border border-white/20 rounded-full px-3 py-1 text-[10px] font-black">
+                    <i class="fas fa-bullseye text-[#FFD700] mr-1"></i> ${acc}%
+                  </span>
+                  <span class="bg-white/15 border border-white/20 rounded-full px-3 py-1 text-[10px] font-black">
+                    <i class="fas fa-fire text-[#FFD700] mr-1"></i> ${streakBadge}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BODY -->
+          <div class="p-4 space-y-4 bg-gray-50">
+            
+            <!-- KPIs 2x2 -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+                <div class="text-[10px] font-black text-gray-400 uppercase">Confrontos</div>
+                <div class="text-xl font-black text-gray-900 mt-1">${totalEligible} <span class="text-xs text-gray-400 font-bold">(${totalVoted})</span></div>
+                <div class="text-[10px] text-gray-500 font-bold mt-1">Elegíveis (Votados)</div>
+              </div>
+              <div class="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+                <div class="text-[10px] font-black text-gray-400 uppercase">Acertos</div>
+                <div class="text-xl font-black text-[#006400] mt-1">${totalHits}</div>
+                <div class="text-[10px] text-gray-500 font-bold mt-1">Total de acertos</div>
+              </div>
+              <div class="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+                <div class="text-[10px] font-black text-gray-400 uppercase">Precisão</div>
+                <div class="text-xl font-black text-blue-600 mt-1">${acc}%</div>
+                <div class="text-[10px] text-gray-500 font-bold mt-1">Acertos / Votos</div>
+              </div>
+              <div class="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
+                <div class="text-[10px] font-black text-gray-400 uppercase">Sequência</div>
+                <div class="text-xl font-black mt-1 ${streakColor}">${streakBadge}</div>
+                <div class="text-[10px] text-gray-500 font-bold mt-1">W ou L (🚫 quebra)</div>
+              </div>
+            </div>
+
+            <!-- Últimos 5 -->
+            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+              <div class="flex items-center justify-between">
+                <div class="text-xs font-black text-gray-800 uppercase">Últimos 5</div>
+                <div class="text-[10px] font-bold text-gray-400">Mais recente →</div>
+              </div>
+              <div class="mt-3 flex items-center justify-center gap-2">
+                ${last5Html}
+              </div>
+            </div>
+
+            <!-- Gráfico evolução ranking -->
+            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+              <div class="text-xs font-black text-gray-800 uppercase text-center">Evolução no Ranking</div>
+              <div class="text-[10px] font-bold text-gray-400 text-center mt-1">Quanto menor, melhor</div>
+              <div class="mt-3 h-44 w-full">
+                <canvas id="scoutChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Desempenho por competição -->
+            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+              <div class="text-xs font-black text-gray-800 uppercase mb-3">Desempenho por competição</div>
+              ${compTableHtml}
+            </div>
+
+            <!-- Recordes -->
+            <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+              <div class="text-xs font-black text-gray-800 uppercase mb-3">Recordes</div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-center">
+                  <div class="text-[10px] font-black text-gray-400 uppercase">Maior W</div>
+                  <div class="text-lg font-black text-green-600 mt-1">${maxWinStreak || 0}</div>
+                  <div class="text-[10px] font-bold text-gray-500 mt-1">vitórias seguidas</div>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-center">
+                  <div class="text-[10px] font-black text-gray-400 uppercase">Maior L</div>
+                  <div class="text-lg font-black text-red-600 mt-1">${maxLoseStreak || 0}</div>
+                  <div class="text-[10px] font-bold text-gray-500 mt-1">derrotas seguidas</div>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-center">
+                  <div class="text-[10px] font-black text-gray-400 uppercase">Melhor posição</div>
+                  <div class="text-lg font-black text-[#006400] mt-1">${bestPosition || "—"}</div>
+                  <div class="text-[10px] font-bold text-gray-500 mt-1">pico no ranking</div>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-center">
+                  <div class="text-[10px] font-black text-gray-400 uppercase">% de votos</div>
+                  <div class="text-lg font-black text-gray-800 mt-1">${votePct}%</div>
+                  <div class="text-[10px] font-bold text-gray-500 mt-1">votou / elegíveis</div>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="closeModal()" class="w-full bg-[#FFD700] text-black font-black py-3 rounded-xl shadow-lg btn-press text-xs">
+              FECHAR
+            </button>
+          </div>
+        </div>`;
+
+        cont.innerHTML = html;
+
+        // 12) Gráfico (mantém sua lógica, agora encaixado no layout premium)
+        if (window.myScoutChart) window.myScoutChart.destroy();
+
+        if (rankHistory.length > 0) {
+            const ctx = document.getElementById('scoutChart').getContext('2d');
+            window.myScoutChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: rankHistory.map((_, i) => i + 1),
+                    datasets: [{
+                        label: 'Posição',
+                        data: rankHistory,
+                        borderColor: '#006400',
+                        backgroundColor: 'rgba(0,100,0,0.12)',
+                        tension: 0.3,
+                        fill: true,
+                        pointRadius: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { reverse: true, beginAtZero: false, min: 1, grid: { display: false } },
+                        x: { display: true, grid: { display: false }, ticks: { color: '#666', font: { size: 9 }, maxTicksLimit: 8 } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        } else {
+            // Se não tiver histórico, mostra um aviso discreto (sem quebrar layout)
+            const chartWrap = document.getElementById('scoutChart')?.parentElement;
+            if (chartWrap) {
+                chartWrap.innerHTML = `<div class="h-full flex items-center justify-center text-xs font-bold text-gray-400">Sem histórico suficiente</div>`;
+            }
+        }
+
+    } catch (e) {
+        console.error(e);
+        cont.innerHTML = `<div class="bg-white p-4 text-center text-red-600 font-bold">Erro no Scout Premium.</div>`;
+    }
+};
+
         // --- FUNÇÕES PARA ABRIR/FECHAR AS LISTAS (TOGGLE) ---
         window.toggleOpen = () => {
             const container = document.getElementById('openContainer');
