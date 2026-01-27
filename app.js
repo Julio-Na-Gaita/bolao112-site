@@ -1894,61 +1894,86 @@ const chronoMatches = [...finishedMatches].sort(matchComparator);
 
             } catch (e) { console.error(e); listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro ao carregar ranking.</div>`; }
         }
-        window.openRankingInfo = () => {
-            const modal = document.getElementById('modalOverlay'); 
-            const cont = document.getElementById('modalContainer'); 
-            modal.classList.remove('hidden');
+        // ===============================
+// NOVO "i" DO RANKING (igual Android) — mantém o mesmo nome para não quebrar chamadas
+// ===============================
+window.openRankingInfo = () => {
+  window.openRankingInfoModal(window.globalLastUpdateInfo || "");
+};
 
-            // Lista de Hierarquia
-            const hierarchy = [
-                {i:"👽", t:"Alien (Maior Valor)"}, {i:"💎", t:"Diamante"}, {i:"👑", t:"Rei do Mês"},
-                {i:"🎯", t:"Mito"}, {i:"🦓", t:"Zebra"}, {i:"🔥", t:"On Fire"},
-                {i:"🔮", t:"Mãe Dinah"}, {i:"🎓", t:"Veterano (Menor Valor)"}
-            ];
+window.openRankingInfoModal = (lastUpdateInfoText = "") => {
+  const medals = [
+    { icon: "👽", name: "Alien", how: "Sequência de 10 acertos seguidos." },
+    { icon: "💎", name: "Diamante", how: "Gabaritar as Oitavas (8/8) de um torneio." },
+    { icon: "👑", name: "Rei do Mês", how: "Maior pontuador do mês (isolado)." },
+    { icon: "🎯", name: "Mito", how: "Sequência de 5 acertos seguidos." },
+    { icon: "🦓", name: "Zebra", how: "Acertar um confronto em que 80% ou mais erraram/não votaram." },
+    { icon: "🔥", name: "On Fire", how: "Sequência de 3 acertos seguidos." },
+    { icon: "🔮", name: "Mãe Dinah", how: "Acertar o campeão numa FINAL." },
+    { icon: "🎓", name: "Veterano", how: "A cada 50 vitórias acumuladas." },
+  ];
 
-            const listHtml = hierarchy.map(x => `
-                <div class="flex items-center py-1 border-b border-gray-100 last:border-0">
-                    <span class="text-xl w-8 text-center">${x.i}</span>
-                    <span class="text-xs font-medium text-gray-700">${x.t}</span>
-                </div>
-            `).join('');
+  const rows = medals.map(m => `
+    <div class="grid grid-cols-[140px_1fr] gap-3 py-3 border-b border-white/10 last:border-b-0">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">${m.icon}</span>
+        <span class="font-black text-sm text-white">${m.name}</span>
+      </div>
+      <div class="text-xs font-bold text-white/80 leading-snug">${m.how}</div>
+    </div>
+  `).join("");
 
-            cont.innerHTML = `
-                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative max-h-[85vh] flex flex-col">
-                    <img src="bg_ajuda.png" class="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none">
-                    
-                    <div class="relative z-10 p-5 flex flex-col items-center overflow-y-auto">
-                        <div class="flex items-center mb-4">
-                            <i class="fas fa-info-circle text-[#006400] text-xl mr-2"></i>
-                            <h3 class="font-black text-[#006400] text-lg uppercase">Sobre o Ranking</h3>
-                        </div>
+  const html = `
+    <div class="w-full max-w-sm rounded-none shadow-2xl overflow-hidden relative" style="max-height: 90vh; overflow-y: auto;">
+      <div class="absolute inset-0 bg-gradient-to-b from-[#071018] via-[#0b1622] to-[#071018]"></div>
 
-                        <div class="w-full text-left mb-4">
-                            <p class="text-xs font-bold text-black mb-2 uppercase">Valor das Medalhas:</p>
-                            <div class="bg-white/80 rounded border border-gray-200 p-2 shadow-sm">
-                                ${listHtml}
-                            </div>
-                        </div>
+      <div class="relative z-10 p-5 text-white">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <i class="fas fa-info-circle text-[#38BDF8]"></i>
+              <div class="font-black uppercase tracking-wider text-lg">SOBRE O RANKING</div>
+            </div>
+            <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Última Atualização</div>
+          </div>
 
-                        <div class="w-full text-left mb-4">
-                            <p class="text-xs font-bold text-black mb-2 uppercase">Legenda:</p>
-                            <div class="flex justify-around bg-gray-50 p-2 rounded border border-gray-200">
-                                <div class="text-center"><span class="text-red-600 font-bold block">D</span><span class="text-[9px]">Débitos</span></div>
-                                <div class="text-center"><span class="text-[#006400] font-black block">PTS</span><span class="text-[9px]">Pontos</span></div>
-                                <div class="text-center"><span class="text-black text-lg block">⚓</span><span class="text-[9px]">Z-4</span></div>
-                            </div>
-                        </div>
+          <button onclick="window.closeModal()" class="text-white/80 hover:text-white">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
 
-                        <div class="w-full bg-[#f5f5f5] p-3 rounded border text-center mb-4">
-                            <p class="text-[10px] text-gray-500 font-bold uppercase mb-1">Status do Sistema</p>
-                            <p class="text-xs font-bold text-gray-800 whitespace-pre-line">${window.globalLastUpdateInfo || "Carregando..."}</p>
-                        </div>
+        <div class="mt-3 rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+          <div class="text-sm font-black text-[#F472B6] leading-snug whitespace-pre-line">
+            ${lastUpdateInfoText || "Carregando..."}
+          </div>
+        </div>
 
-                        <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-bold shadow btn-press text-sm">ENTENDI</button>
-                    </div>
-                </div>
-            `;
-        };
+        <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+          <div class="text-xs font-black text-[#A78BFA] uppercase tracking-wider">Valor das medalhas</div>
+          <div class="text-xs font-bold text-[#60A5FA] mt-1">*Por Ordem de Importância*</div>
+        </div>
+
+        <div class="mt-4 rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+          <div class="grid grid-cols-[140px_1fr] gap-3 bg-white/5 px-4 py-2 border-b border-white/10">
+            <div class="text-[10px] font-black text-white/70 uppercase">Medalha</div>
+            <div class="text-[10px] font-black text-white/70 uppercase">Como conquistar</div>
+          </div>
+          <div class="px-4">
+            ${rows}
+          </div>
+        </div>
+
+        <button onclick="window.closeModal()" class="w-full mt-5 bg-[#0B5F2A] text-white font-black py-3 rounded shadow-lg btn-press text-sm">
+          ENTENDI
+        </button>
+      </div>
+    </div>
+  `;
+
+  // usa a infra do seu site (modalOverlay + modalContainer)
+  window.openModal(html);
+};
+
 window.showKingModal = () => {
             const modal = document.getElementById('modalOverlay');
             const cont = document.getElementById('modalContainer');
@@ -3456,6 +3481,27 @@ window.closeModal = () => {
   if (overlay) overlay.classList.add("hidden");
 };
 
+// ===============================
+// MODAL BASE (garante openModal/closeModal globais)
+// ===============================
+if (!window.openModal) {
+  window.openModal = (html) => {
+    const overlay = document.getElementById("modalOverlay");
+    const container = document.getElementById("modalContainer");
+    if (!overlay || !container) return;
+    container.innerHTML = html;
+    overlay.classList.remove("hidden");
+  };
+}
+
+if (!window.closeModal) {
+  window.closeModal = () => {
+    const overlay = document.getElementById("modalOverlay");
+    const container = document.getElementById("modalContainer");
+    if (container) container.innerHTML = "";
+    if (overlay) overlay.classList.add("hidden");
+  };
+}
 
 
 // Regras agora viram MODAL (conteúdo vem do rulesList já carregado)
@@ -3487,71 +3533,5 @@ window.openRulesModal = () => {
   window.openModal(html);
 };
 
-window.openRankingInfoModal = (lastUpdateInfoText) => {
-  const medals = [
-    { icon: "👽", name: "Alien", how: "Maior valor: Sequência absurda de 10 acertos seguidos." },
-    { icon: "💎", name: "Diamante", how: "Gabaritar as Oitavas (8/8) de uma competição." },
-    { icon: "👑", name: "Rei do Mês", how: "Maior pontuador daquele mês específico." },
-    { icon: "🎯", name: "Mito", how: "Sequência de 5 acertos seguidos." },
-    { icon: "🦓", name: "Zebra", how: "Acertar onde 80% ou mais não acertou (errou ou não votou)." },
-    { icon: "🔥", name: "On Fire", how: "Sequência de 3 acertos seguidos." },
-    { icon: "🔮", name: "Mãe Dinah", how: "Acertar o vencedor da Final (Pontos Dobrados)." },
-    { icon: "🎓", name: "Veterano", how: "Fidelidade! Ganha 1 estrela a cada 50 ACERTOS." },
-  ];
-
-  const rows = medals.map(m => `
-    <div class="grid grid-cols-[140px_1fr] gap-3 py-2 border-b border-gray-200 last:border-b-0">
-      <div class="flex items-center gap-2">
-        <span class="text-xl">${m.icon}</span>
-        <span class="font-black text-sm text-gray-800">${m.name}</span>
-      </div>
-      <div class="text-xs font-bold text-gray-600 leading-snug">${m.how}</div>
-    </div>
-  `).join("");
-
-  const html = `
-    <div class="w-full max-w-sm">
-      <div class="bg-[#006400] text-white px-4 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <i class="fas fa-info-circle text-[#FFD700]"></i>
-          <span class="font-black uppercase text-sm tracking-wide">Sobre o Ranking</span>
-        </div>
-        <button class="btn-press" onclick="closeModal()"><i class="fas fa-times"></i></button>
-      </div>
-
-      <div class="p-4 space-y-4">
-        <div>
-          <div class="text-xs font-black text-gray-700 uppercase tracking-wider mb-2">Última atualização</div>
-          <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-center">
-            <div class="text-xs font-black text-[#880E4F] leading-snug">${(lastUpdateInfoText || "Carregando...")}</div>
-          </div>
-        </div>
-
-        <div class="h-px bg-gray-200"></div>
-
-        <div>
-          <div class="text-xs font-black text-gray-700 uppercase tracking-wider mb-2">Medalhas (por importância)</div>
-
-          <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
-            <div class="grid grid-cols-[140px_1fr] gap-3 bg-gray-50 px-4 py-2 border-b border-gray-200">
-              <div class="text-[10px] font-black text-gray-600 uppercase">Medalha</div>
-              <div class="text-[10px] font-black text-gray-600 uppercase">Como conquistar</div>
-            </div>
-            <div class="px-4">${rows}</div>
-          </div>
-
-          <div class="text-[10px] text-gray-400 font-bold mt-2 text-center">
-            (Ordem de valor do maior para o menor)
-          </div>
-        </div>
-
-        <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
-          ENTENDI
-        </button>
-      </div>
-    </div>
-  `;
-  window.openModal(html);
-};
 
 
