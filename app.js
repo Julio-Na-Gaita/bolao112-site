@@ -3121,9 +3121,50 @@ uSnap.forEach(d => {
 
     const targetCreated = usersCreatedAt[targetUid] || new Date(0);
 
-    // 3) Guesses e Matches
-    const allGuesses = [];
-    gSnap.forEach(d => allGuesses.push(d.data()));
+    // 3) Guesses e Matches (FIX: sempre usar o ÚLTIMO palpite por matchId+userId)
+const latestGuess = new Map(); // key: "matchId|userId" -> { teamSelected, ts }
+
+gSnap.forEach(docSnap => {
+  const g = docSnap.data();
+  if (!g || !g.matchId || !g.userId) return;
+
+  // tenta pegar um timestamp confiável (updatedAt > createdAt > 0)
+  const tsObj = g.updatedAt || g.createdAt || null;
+  const ts =
+    tsObj && typeof tsObj.toMillis === "function"
+      ? tsObj.toMillis()
+      : (tsObj && tsObj.seconds ? tsObj.seconds * 1000 : 0);
+
+  const key = `${g.matchId}|${g.userId}`;
+  const prev = latestGuess.get(key);
+
+  // guarda o mais recente
+  if (!prev || ts >= prev.ts) {
+    latestGuess.set(key, { teamSelected: g.teamSelected, ts });
+  }
+});
+
+// índice por partida (pra contar maioria rápido)
+const votesByMatch = new Map(); // matchId -> Array<{userId, teamSelected}>
+for (const [key, v] of latestGuess.entries()) {
+  const sep = key.indexOf("|");
+  const matchId = key.slice(0, sep);
+  const userId = key.slice(sep + 1);
+
+  if (!votesByMatch.has(matchId)) votesByMatch.set(matchId, []);
+  votesByMatch.get(matchId).push({ userId, teamSelected: v.teamSelected });
+}
+
+// helpers
+const getVoteTeam = (matchId, userId) =>
+  latestGuess.get(`${matchId}|${userId}`)?.teamSelected || null;
+
+const getVotesForMatch = (matchId, activeUsersSet) => {
+  const list = votesByMatch.get(matchId) || [];
+  // só conta votos de usuários “ativos” naquela rodada
+  return list.filter(v => activeUsersSet.has(v.userId));
+};
+
 
     const matches = [];
     mSnap.forEach(d => {
@@ -3167,19 +3208,22 @@ let riskAgainstMajority = 0;  // quantas vezes ele votou diferente do mais votad
       allUsersIds.forEach(uid => {
         if (usersCreatedAt[uid] > m.deadlineDate) return;
 
-        const vote = allGuesses.find(g => g.matchId === m.id && g.userId === uid);
-        if (vote && vote.teamSelected === m.winner) {
-          currentScores[uid] += (m.round?.toLowerCase() === 'final' ? 6 : 3);
-        }
+        const team = getVoteTeam(m.id, uid);
+if (team && team === m.winner) {
+  currentScores[uid] += (m.round?.toLowerCase() === 'final' ? 6 : 3);
+}
+
       });
 
       // Posição do target nesse momento
       const activeUsers = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
 
 activeUsers.sort((a, b) => {
-  // 1) pontos desc
-  const diff = (currentScores[b] || 0) - (currentScores[a] || 0);
+  const diff = currentScores[b] - currentScores[a];
   if (diff !== 0) return diff;
+  return a.localeCompare(b); // desempate estável
+});
+
 
   // 2) desempate por nome/username asc (estável e determinístico)
   const na = userSortName[a] || "";
@@ -3196,14 +3240,14 @@ const myPos = activeUsers.indexOf(targetUid) + 1;
       if (myPos > 0) rankHistory.push(myPos);
 
       // Status do target nesse jogo
-      const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
-            // --- NOVO: calcula maioria e % de concordância (Risco) ---
-const activeUsersAtTime = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
+      const myVoteTeam = getVoteTeam(m.id, targetUid);
 
-// votos válidos desse jogo (só de quem já existia)
-const votesThisMatch = allGuesses.filter(g =>
-  g.matchId === m.id && activeUsersAtTime.includes(g.userId)
-);
+            // --- NOVO: calcula maioria e % de concordância (Risco) ---
+const activeUsersAtTimeArr = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
+const activeUsersAtTimeSet = new Set(activeUsersAtTimeArr);
+
+const votesThisMatch = getVotesForMatch(m.id, activeUsersAtTimeSet);
+
 
 const counts = {};
 votesThisMatch.forEach(v => {
@@ -3218,20 +3262,20 @@ Object.entries(counts).forEach(([team, c]) => {
 });
 
 
-      if (myVote) {
+      if (myVoteTeam) {
               // --- NOVO: registra risco só quando ele vota ---
 const totalVotesThisMatch = votesThisMatch.length || 0;
-const sameCount = counts[myVote.teamSelected] || 0;
+const sameCount = counts[myVoteTeam] || 0;
 const sameShare = totalVotesThisMatch > 0 ? (sameCount / totalVotesThisMatch) : 1;
 
 riskShares.push(sameShare);
-if (majorityTeam && myVote.teamSelected !== majorityTeam) riskAgainstMajority++;
+if (majorityTeam && myVoteTeam !== majorityTeam) riskAgainstMajority++;
 
   totalVoted++;
   if (!compStats[m.competition]) compStats[m.competition] = { h: 0, t: 0 };
   compStats[m.competition].t++;
 
-  const status = (myVote.teamSelected === m.winner) ? 'HIT' : 'MISS';
+  const status = (myVoteTeam === m.winner) ? 'HIT' : 'MISS';
 
   if (status === 'HIT') {
     totalHits++;
