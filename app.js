@@ -3299,6 +3299,33 @@ const streakDisplay = currentStreak > 0
   : (currentStreak < 0
     ? `<span class="text-red-300 font-black">${currentStreak}</span>`
     : `<span class="text-gray-300 font-black">0</span>`);
+          
+// Conta quantas vezes atingiu o recorde (ex: +6 aconteceu 2 vezes)
+let winRecordCount = 0;
+let lossRecordCount = 0;
+
+let run = 0; // sequencia corrente (+ hits / - misses)
+
+myExtract.forEach(it => {
+  if (it.status === 'NOVOTE') {
+    if (run === maxWinStreak && maxWinStreak > 0) winRecordCount++;
+    if (run === maxLossStreak && maxLossStreak < 0) lossRecordCount++;
+    run = 0;
+    return;
+  }
+
+  if (it.status === 'HIT') {
+    run = (run >= 0) ? run + 1 : 1;
+  } else if (it.status === 'MISS') {
+    run = (run <= 0) ? run - 1 : -1;
+  }
+
+  // quando muda de sinal, fecha a sequência anterior (opcional — mas garante contagem perfeita)
+});
+
+// fecha a última sequência ao final
+if (run === maxWinStreak && maxWinStreak > 0) winRecordCount++;
+if (run === maxLossStreak && maxLossStreak < 0) lossRecordCount++;
 
 
  // 6) Últimos 5 resultados (IGUAL ao Extrato: últimos 5 jogos elegíveis, mesmo sem voto)
@@ -3317,8 +3344,17 @@ const last5 = myExtract
     // 7) Precisão, posição atual, melhor posição, % votos
     const acc = totalVoted > 0 ? Math.round((totalHits / totalVoted) * 100) : 0;
     const currentPos = rankHistory.length ? rankHistory[rankHistory.length - 1] : '-';
-    const bestPos = rankHistory.length ? Math.min(...rankHistory) : '-';
-    const votePct = totalEligible > 0 ? Math.round((totalVoted / totalEligible) * 100) : 0;
+const bestPos = rankHistory.length ? Math.min(...rankHistory) : '-';
+const worstPos = rankHistory.length ? Math.max(...rankHistory) : '-';
+
+const bestPosCount = (rankHistory.length && bestPos !== '-') 
+  ? rankHistory.filter(p => p === bestPos).length 
+  : 0;
+
+const worstPosCount = (rankHistory.length && worstPos !== '-') 
+  ? rankHistory.filter(p => p === worstPos).length 
+  : 0;
+
 
     // 8) Tabela por competição (ordenada por precisão desc)
     const compRows = Object.entries(compStats).map(([comp, st]) => {
@@ -3344,6 +3380,11 @@ const last5 = myExtract
         `).join('')}
       </div>
     ` : `<div class="text-xs text-white/60 font-bold">Sem dados por competição ainda.</div>`;
+
+          const badgeIfMany = (n) => (n && n > 1)
+  ? `<span class="ml-2 inline-flex items-center justify-center min-w-[34px] h-7 px-2 rounded-full bg-red-600 text-white text-xs font-black shadow border border-white/20">${n}x</span>`
+  : '';
+
 
     // 9) Render Premium (FIX: fundo sempre escuro + remove “chuva de números” + close padronizado)
 const html = `
@@ -3462,28 +3503,45 @@ const html = `
         ${tableHtml}
       </div>
 
-      <!-- Recordes -->
-      <div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
-        <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Recordes</div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-            <div class="text-[9px] uppercase text-white/60 font-black">Melhor sequência</div>
-            <div class="text-lg font-black text-green-300">+${maxWinStreak}</div>
-          </div>
-          <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-            <div class="text-[9px] uppercase text-white/60 font-black">Pior sequência</div>
-            <div class="text-lg font-black text-red-300">${maxLossStreak}</div>
-          </div>
-          <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-            <div class="text-[9px] uppercase text-white/60 font-black">Melhor posição</div>
-            <div class="text-lg font-black text-[#FFD700]">${bestPos}</div>
-          </div>
-          <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-            <div class="text-[9px] uppercase text-white/60 font-black">% de votos</div>
-            <div class="text-lg font-black text-blue-200">${votePct}%</div>
-          </div>
-        </div>
+      <!-- Recordes & Perfil -->
+<div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
+  <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Recordes & Perfil</div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+      <div class="flex items-center justify-between">
+        <div class="text-[9px] uppercase text-white/60 font-black">🔥 Melhor seq.</div>
+        ${badgeIfMany(winRecordCount)}
       </div>
+      <div class="text-lg font-black text-green-300">+${maxWinStreak}</div>
+    </div>
+
+    <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+      <div class="flex items-center justify-between">
+        <div class="text-[9px] uppercase text-white/60 font-black">❄️ Pior seq.</div>
+        ${badgeIfMany(lossRecordCount)}
+      </div>
+      <div class="text-lg font-black text-red-300">${maxLossStreak}</div>
+    </div>
+
+    <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+      <div class="flex items-center justify-between">
+        <div class="text-[9px] uppercase text-white/60 font-black">🏅 Melhor posição</div>
+        ${badgeIfMany(bestPosCount)}
+      </div>
+      <div class="text-lg font-black text-[#FFD700]">#${bestPos}</div>
+    </div>
+
+    <div class="bg-black/20 rounded-lg p-3 border border-white/10">
+      <div class="flex items-center justify-between">
+        <div class="text-[9px] uppercase text-white/60 font-black">⚠️ Pior posição</div>
+        ${badgeIfMany(worstPosCount)}
+      </div>
+      <div class="text-lg font-black text-white">#${worstPos}</div>
+    </div>
+  </div>
+</div>
+
 
       <!-- FIX: usar window.closeModal -->
       <button type="button" onclick="window.closeModal()"
