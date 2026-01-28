@@ -3221,44 +3221,42 @@ if (majorityTeam && myVote.teamSelected !== majorityTeam) riskAgainstMajority++;
 
     });
 
-// --- NOVO: CONSISTÊNCIA (oscilação do ranking) ---
+// --- CONSISTÊNCIA (PARIDADE ANDROID): média do |Δ| entre rodadas ---
 const mean = (arr) => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : 0;
-const stddev = (arr) => {
-  if (arr.length < 2) return 0;
-  const m = mean(arr);
-  const v = mean(arr.map(x => (x - m) ** 2));
-  return Math.sqrt(v);
-};
-const meanAbsDelta = (arr) => {
-  if (arr.length < 2) return 0;
+
+const avgDeltaAbs = (arrAsc) => {
+  if (arrAsc.length < 3) return null; // Android retorna "-" com <3
   let s = 0;
-  for (let i = 1; i < arr.length; i++) s += Math.abs(arr[i] - arr[i-1]);
-  return s / (arr.length - 1);
+  for (let i = 1; i < arrAsc.length; i++) s += Math.abs(arrAsc[i] - arrAsc[i-1]);
+  return s / (arrAsc.length - 1);
 };
 
-const rankStd = stddev(rankHistory);
-const rankMad = meanAbsDelta(rankHistory);
+// rankHistory já está em ordem cronológica (ASC) porque você faz push no forEach
+const avgDelta = avgDeltaAbs(rankHistory);
 
-// Consistência ALTA = pouca oscilação
-let consistencyLabel = "BAIXA";
+let consistencyLabel = "-";
 let consistencyEmoji = "📊";
-if (rankStd <= 2.2 && rankMad <= 1.4) consistencyLabel = "ALTA";
-else if (rankStd <= 4.0 && rankMad <= 2.4) consistencyLabel = "MÉDIA";
+let consistencyDetail = "Dados insuficientes";
 
-// --- NOVO: RISCO (ir contra maioria) ---
-const avgShare = mean(riskShares); // 0..1
-const againstPct = riskShares.length ? (riskAgainstMajority / riskShares.length) : 0;
+if (avgDelta !== null) {
+  if (avgDelta <= 2.2) consistencyLabel = "ALTA";
+  else if (avgDelta <= 2.5) consistencyLabel = "MÉDIA";
+  else consistencyLabel = "BAIXA";
+
+  consistencyDetail = `Oscilação média: ${avgDelta.toFixed(1)}`;
+}
+
+// --- RISCO (PARIDADE ANDROID): risk = 1 - avgShare ---
+const avgShare = mean(riskShares); // 0..1 (se ele sempre vota com a maioria, tende a 1)
+const risk = 1.0 - avgShare;       // 0 = segue maioria, 1 = sempre contra
 
 let riskLabel = "BAIXO";
 let riskEmoji = "🎲";
-// ALTO: geralmente escolhe o que pouca gente escolhe, ou vive contra a maioria
-if (avgShare <= 0.45 || againstPct >= 0.55) riskLabel = "ALTO";
-else if (avgShare <= 0.60 || againstPct >= 0.35) riskLabel = "MÉDIO";
 
-// Textos auxiliares (pra aparecer no "i")
-const consistencyDetail = `Oscilação (desvio): ${rankStd.toFixed(1)} • Mudança média: ${rankMad.toFixed(1)}`;
-const riskDetail = `Concordância média: ${(avgShare*100).toFixed(0)}% • Contra a maioria: ${(againstPct*100).toFixed(0)}%`;
+if (risk >= 0.50) riskLabel = "ALTO";
+else if (risk >= 0.25) riskLabel = "MÉDIO";
 
+const riskDetail = `Risco: ${(risk*100).toFixed(0)}% • Concordância média: ${(avgShare*100).toFixed(0)}%`;
           
     // 5) Sequência atual + recordes (W/L) — NOVOTE quebra
 let maxWinStreak = 0;
