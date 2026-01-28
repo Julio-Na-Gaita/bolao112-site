@@ -3104,13 +3104,20 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
     ]);
 
     // 2) Mapeamento de criação de usuários
-    const usersCreatedAt = {};
-    const allUsersIds = [];
-    uSnap.forEach(d => {
-      const dt = d.data().createdAt ? d.data().createdAt.toDate() : new Date(0);
-      usersCreatedAt[d.id] = dt;
-      allUsersIds.push(d.id);
-    });
+const usersCreatedAt = {};
+const userSortName = {}; // <- NOVO (para desempate estável)
+const allUsersIds = [];
+
+uSnap.forEach(d => {
+  const data = d.data();
+  const dt = data.createdAt ? data.createdAt.toDate() : new Date(0);
+
+  usersCreatedAt[d.id] = dt;
+  userSortName[d.id] = (data.name || data.username || d.id || "").toString().toLowerCase();
+
+  allUsersIds.push(d.id);
+});
+
 
     const targetCreated = usersCreatedAt[targetUid] || new Date(0);
 
@@ -3168,8 +3175,24 @@ let riskAgainstMajority = 0;  // quantas vezes ele votou diferente do mais votad
 
       // Posição do target nesse momento
       const activeUsers = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
-      activeUsers.sort((a, b) => currentScores[b] - currentScores[a]);
-      const myPos = activeUsers.indexOf(targetUid) + 1;
+
+activeUsers.sort((a, b) => {
+  // 1) pontos desc
+  const diff = (currentScores[b] || 0) - (currentScores[a] || 0);
+  if (diff !== 0) return diff;
+
+  // 2) desempate por nome/username asc (estável e determinístico)
+  const na = userSortName[a] || "";
+  const nb = userSortName[b] || "";
+  const nd = na.localeCompare(nb, "pt-BR");
+  if (nd !== 0) return nd;
+
+  // 3) desempate final por uid asc
+  return (a || "").localeCompare(b || "");
+});
+
+const myPos = activeUsers.indexOf(targetUid) + 1;
+
       if (myPos > 0) rankHistory.push(myPos);
 
       // Status do target nesse jogo
