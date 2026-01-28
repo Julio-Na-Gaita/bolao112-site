@@ -3300,32 +3300,43 @@ const streakDisplay = currentStreak > 0
     ? `<span class="text-red-300 font-black">${currentStreak}</span>`
     : `<span class="text-gray-300 font-black">0</span>`);
           
-// Conta quantas vezes atingiu o recorde (ex: +6 aconteceu 2 vezes)
+// Conta quantas vezes atingiu o recorde (ex: +6 aconteceu 4 vezes)
 let winRecordCount = 0;
 let lossRecordCount = 0;
 
-let run = 0; // sequencia corrente (+ hits / - misses)
+let run = 0;         // sequência corrente (+ hits / - misses)
+let lastType = null; // 'HIT' | 'MISS' | null
+
+const flushRun = () => {
+  if (run === maxWinStreak && maxWinStreak > 0) winRecordCount++;
+  if (run === maxLossStreak && maxLossStreak < 0) lossRecordCount++;
+  run = 0;
+  lastType = null;
+};
 
 myExtract.forEach(it => {
   if (it.status === 'NOVOTE') {
-    if (run === maxWinStreak && maxWinStreak > 0) winRecordCount++;
-    if (run === maxLossStreak && maxLossStreak < 0) lossRecordCount++;
-    run = 0;
+    flushRun();
     return;
   }
 
-  if (it.status === 'HIT') {
-    run = (run >= 0) ? run + 1 : 1;
-  } else if (it.status === 'MISS') {
-    run = (run <= 0) ? run - 1 : -1;
+  // Se mudou de HIT para MISS ou MISS para HIT, fecha a run anterior antes de começar a nova
+  if (lastType && it.status !== lastType) {
+    flushRun();
   }
 
-  // quando muda de sinal, fecha a sequência anterior (opcional — mas garante contagem perfeita)
+  if (it.status === 'HIT') {
+    run = run + 1;         // aqui run sempre positivo dentro de run de HIT
+    lastType = 'HIT';
+  } else if (it.status === 'MISS') {
+    run = run - 1;         // aqui run sempre negativo dentro de run de MISS
+    lastType = 'MISS';
+  }
 });
 
 // fecha a última sequência ao final
-if (run === maxWinStreak && maxWinStreak > 0) winRecordCount++;
-if (run === maxLossStreak && maxLossStreak < 0) lossRecordCount++;
+flushRun();
+
 
 
  // 6) Últimos 5 resultados (IGUAL ao Extrato: últimos 5 jogos elegíveis, mesmo sem voto)
