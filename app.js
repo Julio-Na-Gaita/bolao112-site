@@ -2122,19 +2122,25 @@ window.showKingModal = () => {
                         </div>
                         <div id="medalToast" class="medal-toast"></div>
                         <div class="w-full space-y-2 mt-4">
-                            <button id="btnInstaAction" onclick="window.generateWebCard()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
-                                <i class="fab fa-instagram text-xl"></i> GERAR CARD STORIES
-                            </button>
-                            <button id="btnStatsAction" class="${scoutClass} w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg items-center justify-center gap-2 btn-press">
-                 <i class="fas fa-chart-pie"></i> SCOUT DO PALPITEIRO
-            </button>
-                            
-                            <button id="btnCompareAction" class="${compareBtnClass} w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press flex items-center justify-center gap-2">
-                                <i class="fas fa-exchange-alt"></i> COMPARAR PALPITES
-                            </button>
-                            
-                            <button onclick="closeModal()" class="w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press uppercase text-xs mt-2">FECHAR</button>
-                        </div>
+  <!-- 1) VER ESTATÍSTICAS -->
+  <button id="btnStatsAction" class="${scoutClass} w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg items-center justify-center gap-2 btn-press">
+    <i class="fas fa-chart-pie"></i> VER ESTATÍSTICAS
+  </button>
+
+  <!-- 2) COMPARAR PALPITES -->
+  <button id="btnCompareAction" class="${compareBtnClass} w-full bg-[#1565C0] text-white font-bold py-3 rounded shadow-lg btn-press flex items-center justify-center gap-2">
+    <i class="fas fa-exchange-alt"></i> COMPARAR PALPITES
+  </button>
+
+  <!-- 3) GERAR CARD INSTAGRAM -->
+  <button id="btnInstaAction" onclick="window.generateWebCard()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded shadow-lg flex items-center justify-center gap-2 btn-press">
+    <i class="fab fa-instagram text-xl"></i> GERAR CARD INSTAGRAM
+  </button>
+
+  <!-- 4) FECHAR -->
+  <button onclick="closeModal()" class="w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press uppercase text-xs mt-2">FECHAR</button>
+</div>
+
                     </div>
                 </div>`;
             
