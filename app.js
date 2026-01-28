@@ -3123,7 +3123,8 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
         });
       }
     });
-    matches.sort((a, b) => a.deadlineDate - b.deadlineDate);
+    // usa a mesma ordem "oficial" do ranking (deadline > createdAt > id)
+matches.sort(matchComparator);
 
     // 4) Simulação + Coleta do “extrato” do usuário
     let rankHistory = [];
