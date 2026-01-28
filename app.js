@@ -3414,7 +3414,7 @@ const html = `
       <!-- KPIs -->
       <div class="grid grid-cols-2 gap-3 mt-4">
         <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
-          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Confrontos</div>
+          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Votos/Conf.</div>
           <div class="text-lg font-black">${totalEligible} <span class="text-sm text-white/60">(${totalVoted})</span></div>
         </div>
         <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
@@ -3426,7 +3426,7 @@ const html = `
           <div class="text-lg font-black text-blue-300">${acc}%</div>
         </div>
         <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
-          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Sequência</div>
+          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Seq. Atual</div>
           <div class="text-lg font-black">${streakDisplay}</div>
         </div>
       </div>
@@ -3434,7 +3434,12 @@ const html = `
       <!-- Últimos 5 -->
       <div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
         <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Últimos 5</div>
-        <div class="flex gap-2">
+        <div class="flex items-center justify-between text-[10px] font-black text-white/60 mb-2 px-1">
+  <span>Mais recente</span>
+  <span class="text-white/40">→</span>
+  <span>Mais antigo</span>
+</div>
+        <div class="flex justify-between gap-2">
           ${last5.map(x => `
             <div class="w-10 h-10 rounded-full bg-black/30 border border-white/10 flex items-center justify-center text-lg">
               ${x}
