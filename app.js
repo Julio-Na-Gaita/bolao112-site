@@ -3068,6 +3068,12 @@ window.currentChatUnsub = null;
                 document.getElementById('commentInput').focus();
             };
         };
+window.__toggleScoutInfo = (id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('hidden');
+};
+
         // --- SCOUT PREMIUM (KPIs + ÚLTIMOS 5 + GRÁFICO + COMPETIÇÕES + RECORDES) ---
 // --- SCOUT PREMIUM (ESTATÍSTICAS + GRÁFICO + ÚLTIMOS 5 + TABELA + RECORDES) ---
 window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
@@ -3131,6 +3137,10 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
    const compStats = {}; // { comp: {h,t} }
 const myExtract = [];       // extrato completo (inclui NOVOTE) para streaks/recordes
 const myVotedExtract = [];  // extrato somente de votos (HIT/MISS) para "Últimos 5" igual ao Extrato de Pontos
+          // --- NOVO: métricas de RISCO (perfil de "ir contra a maioria") ---
+const riskShares = [];        // % de votos que bateram com a escolha dele (por jogo votado)
+let riskAgainstMajority = 0;  // quantas vezes ele votou diferente do mais votado
+
 
 
     matches.forEach(m => {
@@ -3157,8 +3167,36 @@ const myVotedExtract = [];  // extrato somente de votos (HIT/MISS) para "Último
 
       // Status do target nesse jogo
       const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
+            // --- NOVO: calcula maioria e % de concordância (Risco) ---
+const activeUsersAtTime = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
+
+// votos válidos desse jogo (só de quem já existia)
+const votesThisMatch = allGuesses.filter(g =>
+  g.matchId === m.id && activeUsersAtTime.includes(g.userId)
+);
+
+const counts = {};
+votesThisMatch.forEach(v => {
+  const k = v.teamSelected;
+  counts[k] = (counts[k] || 0) + 1;
+});
+
+let majorityTeam = null;
+let majorityCount = 0;
+Object.entries(counts).forEach(([team, c]) => {
+  if (c > majorityCount) { majorityCount = c; majorityTeam = team; }
+});
+
 
       if (myVote) {
+              // --- NOVO: registra risco só quando ele vota ---
+const totalVotesThisMatch = votesThisMatch.length || 0;
+const sameCount = counts[myVote.teamSelected] || 0;
+const sameShare = totalVotesThisMatch > 0 ? (sameCount / totalVotesThisMatch) : 1;
+
+riskShares.push(sameShare);
+if (majorityTeam && myVote.teamSelected !== majorityTeam) riskAgainstMajority++;
+
   totalVoted++;
   if (!compStats[m.competition]) compStats[m.competition] = { h: 0, t: 0 };
   compStats[m.competition].t++;
@@ -3183,6 +3221,45 @@ const myVotedExtract = [];  // extrato somente de votos (HIT/MISS) para "Último
 
     });
 
+// --- NOVO: CONSISTÊNCIA (oscilação do ranking) ---
+const mean = (arr) => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : 0;
+const stddev = (arr) => {
+  if (arr.length < 2) return 0;
+  const m = mean(arr);
+  const v = mean(arr.map(x => (x - m) ** 2));
+  return Math.sqrt(v);
+};
+const meanAbsDelta = (arr) => {
+  if (arr.length < 2) return 0;
+  let s = 0;
+  for (let i = 1; i < arr.length; i++) s += Math.abs(arr[i] - arr[i-1]);
+  return s / (arr.length - 1);
+};
+
+const rankStd = stddev(rankHistory);
+const rankMad = meanAbsDelta(rankHistory);
+
+// Consistência ALTA = pouca oscilação
+let consistencyLabel = "BAIXA";
+let consistencyEmoji = "📊";
+if (rankStd <= 2.2 && rankMad <= 1.4) consistencyLabel = "ALTA";
+else if (rankStd <= 4.0 && rankMad <= 2.4) consistencyLabel = "MÉDIA";
+
+// --- NOVO: RISCO (ir contra maioria) ---
+const avgShare = mean(riskShares); // 0..1
+const againstPct = riskShares.length ? (riskAgainstMajority / riskShares.length) : 0;
+
+let riskLabel = "BAIXO";
+let riskEmoji = "🎲";
+// ALTO: geralmente escolhe o que pouca gente escolhe, ou vive contra a maioria
+if (avgShare <= 0.45 || againstPct >= 0.55) riskLabel = "ALTO";
+else if (avgShare <= 0.60 || againstPct >= 0.35) riskLabel = "MÉDIO";
+
+// Textos auxiliares (pra aparecer no "i")
+const consistencyDetail = `Oscilação (desvio): ${rankStd.toFixed(1)} • Mudança média: ${rankMad.toFixed(1)}`;
+const riskDetail = `Concordância média: ${(avgShare*100).toFixed(0)}% • Contra a maioria: ${(againstPct*100).toFixed(0)}%`;
+
+          
     // 5) Sequência atual + recordes (W/L) — NOVOTE quebra
 let maxWinStreak = 0;
 let maxLossStreak = 0; // valor negativo (ex: -4)
@@ -3291,14 +3368,48 @@ const html = `
         <img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-14 h-14 rounded-full border-2 border-[#FFD700] shadow">
         <div class="min-w-0">
           <div class="font-black text-xl uppercase truncate">${targetName}</div>
-          <div class="flex flex-wrap gap-2 mt-1">
-            <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black">
-              🏆 Posição: <span class="text-[#FFD700]">${currentPos}</span>
-            </span>
-            <span class="px-2 py-1 rounded-full bg-white/10 border border-white/10 text-[10px] font-black">
-              🎯 Precisão: <span class="text-blue-300">${acc}%</span>
-            </span>
-          </div>
+          <div class="mt-2 space-y-2">
+
+  <!-- Consistência -->
+  <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-white/10 border border-white/10">
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="text-base">${consistencyEmoji}</span>
+      <div class="min-w-0">
+        <div class="text-[11px] font-black text-white/90 truncate">Consistência: <span class="text-[#FFD700]">${consistencyLabel}</span></div>
+        <div class="text-[10px] text-white/50 font-bold truncate">${consistencyDetail}</div>
+      </div>
+    </div>
+    <button class="w-7 h-7 rounded-full bg-black/30 border border-white/10 flex items-center justify-center"
+      onclick="window.__toggleScoutInfo('scoutInfoConsistency')">
+      <i class="fas fa-info text-[10px] text-white/80"></i>
+    </button>
+  </div>
+
+  <div id="scoutInfoConsistency" class="hidden text-[10px] text-white/70 font-bold bg-black/20 border border-white/10 rounded-xl p-3">
+    Mede o quanto a posição dele “balança” ao longo do tempo. Quanto menor a oscilação, maior a consistência.
+  </div>
+
+  <!-- Risco -->
+  <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-white/10 border border-white/10">
+    <div class="flex items-center gap-2 min-w-0">
+      <span class="text-base">${riskEmoji}</span>
+      <div class="min-w-0">
+        <div class="text-[11px] font-black text-white/90 truncate">Risco: <span class="text-blue-200">${riskLabel}</span></div>
+        <div class="text-[10px] text-white/50 font-bold truncate">${riskDetail}</div>
+      </div>
+    </div>
+    <button class="w-7 h-7 rounded-full bg-black/30 border border-white/10 flex items-center justify-center"
+      onclick="window.__toggleScoutInfo('scoutInfoRisk')">
+      <i class="fas fa-info text-[10px] text-white/80"></i>
+    </button>
+  </div>
+
+  <div id="scoutInfoRisk" class="hidden text-[10px] text-white/70 font-bold bg-black/20 border border-white/10 rounded-xl p-3">
+    Mede se ele costuma votar com a maioria ou “ir contra”. Menor concordância e mais votos contra a maioria = risco mais alto.
+  </div>
+
+</div>
+
         </div>
       </div>
 
