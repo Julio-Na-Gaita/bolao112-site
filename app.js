@@ -3115,8 +3115,66 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
     const targetCreated = usersCreatedAt[targetUid] || new Date(0);
 
     // 3) Guesses e Matches
-    const allGuesses = [];
-    gSnap.forEach(d => allGuesses.push(d.data()));
+   // 3) Guesses (FIX: sempre usar o ÚLTIMO palpite por matchId+userId)
+const latestGuess = new Map(); // key: "matchId|userId" -> { teamSelected, ts, id }
+
+// helper: gera timestamp em ms (createdAt do Firestore -> ms)
+const guessTs = (g) => {
+  const t = g?.createdAt;
+  if (!t) return 0;
+  if (typeof t.toMillis === "function") return t.toMillis();
+  if (t.seconds) return t.seconds * 1000;
+  return 0;
+};
+
+// 1) guarda sempre o mais “recente” (ts maior). Se empatar ts, desempata pelo docId.
+gSnap.forEach((docSnap) => {
+  const g = docSnap.data();
+  if (!g || !g.matchId || !g.userId) return;
+
+  const key = `${g.matchId}|${g.userId}`;
+  const ts = guessTs(g);
+  const id = docSnap.id || "";
+
+  const prev = latestGuess.get(key);
+  if (!prev) {
+    latestGuess.set(key, { teamSelected: g.teamSelected, ts, id });
+    return;
+  }
+
+  // escolhe o mais recente
+  if (ts > prev.ts) {
+    latestGuess.set(key, { teamSelected: g.teamSelected, ts, id });
+    return;
+  }
+
+  // se ts empata (ou ts=0), desempata pelo docId (ordem lexicográfica)
+  // (normalmente ids de doc crescem “no tempo” quando são auto-gerados)
+  if (ts === prev.ts && id > prev.id) {
+    latestGuess.set(key, { teamSelected: g.teamSelected, ts, id });
+  }
+});
+
+// 2) índice por partida (pra maioria/risco) já filtrando por usuários ativos
+const votesByMatch = new Map(); // matchId -> Array<{userId, teamSelected}>
+for (const [key, v] of latestGuess.entries()) {
+  const p = key.indexOf("|");
+  const matchId = key.slice(0, p);
+  const userId = key.slice(p + 1);
+
+  if (!votesByMatch.has(matchId)) votesByMatch.set(matchId, []);
+  votesByMatch.get(matchId).push({ userId, teamSelected: v.teamSelected });
+}
+
+// helpers
+const getVoteTeam = (matchId, userId) =>
+  latestGuess.get(`${matchId}|${userId}`)?.teamSelected || null;
+
+const getVotesForMatch = (matchId, activeUsersSet) => {
+  const list = votesByMatch.get(matchId) || [];
+  return list.filter(v => activeUsersSet.has(v.userId));
+};
+
 
     const matches = [];
     mSnap.forEach(d => {
@@ -3160,27 +3218,32 @@ let riskAgainstMajority = 0;  // quantas vezes ele votou diferente do mais votad
       allUsersIds.forEach(uid => {
         if (usersCreatedAt[uid] > m.deadlineDate) return;
 
-        const vote = allGuesses.find(g => g.matchId === m.id && g.userId === uid);
-        if (vote && vote.teamSelected === m.winner) {
-          currentScores[uid] += (m.round?.toLowerCase() === 'final' ? 6 : 3);
-        }
+       const team = getVoteTeam(m.id, uid);
+if (team && team === m.winner) {
+  currentScores[uid] += (m.round?.toLowerCase() === 'final' ? 6 : 3);
+}
       });
 
       // Posição do target nesse momento
       const activeUsers = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
-      activeUsers.sort((a, b) => currentScores[b] - currentScores[a]);
+      activeUsers.sort((a, b) => {
+  const diff = currentScores[b] - currentScores[a];
+  if (diff !== 0) return diff;
+  return a.localeCompare(b); // desempate estável
+});
+
       const myPos = activeUsers.indexOf(targetUid) + 1;
       if (myPos > 0) rankHistory.push(myPos);
 
       // Status do target nesse jogo
-      const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
-            // --- NOVO: calcula maioria e % de concordância (Risco) ---
-const activeUsersAtTime = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
+     const myVoteTeam = getVoteTeam(m.id, targetUid);
 
-// votos válidos desse jogo (só de quem já existia)
-const votesThisMatch = allGuesses.filter(g =>
-  g.matchId === m.id && activeUsersAtTime.includes(g.userId)
-);
+            // --- NOVO: calcula maioria e % de concordância (Risco) ---
+const activeUsersAtTimeArr = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
+const activeUsersAtTimeSet = new Set(activeUsersAtTimeArr);
+
+const votesThisMatch = getVotesForMatch(m.id, activeUsersAtTimeSet);
+
 
 const counts = {};
 votesThisMatch.forEach(v => {
@@ -3195,7 +3258,7 @@ Object.entries(counts).forEach(([team, c]) => {
 });
 
 
-      if (myVote) {
+      if (myVoteTeam) {
               // --- NOVO: registra risco só quando ele vota ---
 const totalVotesThisMatch = votesThisMatch.length || 0;
 const sameCount = counts[myVote.teamSelected] || 0;
