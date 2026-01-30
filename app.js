@@ -96,7 +96,35 @@ const matchComparator = (a, b) => {
             }
         });
         // ----------------------------------------
-      
+      // --- RULES GATE (3.3) ---
+window.__rulesGateLock = false;
+window.__rulesGate = {
+  requiredVersion: 0,
+  items: [],
+  updatedAt: null,
+  officialStartAt: null,
+  gateRules: false
+};
+
+window.currentUid = null;
+window.currentUser = null;
+
+// Normaliza TS/Date
+const toMillis = (v) => {
+  if (!v) return 0;
+  if (v instanceof Date) return v.getTime();
+  if (typeof v.toDate === "function") return v.toDate().getTime();
+  if (v.seconds) return v.seconds * 1000;
+  return 0;
+};
+
+// Decide se o gate deve valer (considerando officialStartAt opcional)
+const shouldGateBeActiveNow = (officialStartAt) => {
+  if (!officialStartAt) return true; // se não tiver, vale sempre
+  const now = Date.now();
+  return now >= toMillis(officialStartAt);
+};
+
 
         // COLETAR ESTE BLOCO AQUI (INÍCIO)
 // --- 2. SISTEMA DE REMOTE CONFIG (BANNERS E RECURSOS) ---
@@ -441,22 +469,56 @@ const matchComparator = (a, b) => {
                 }
                 // ------------------------------------------
 
-                currentUser = user;
-                document.getElementById('mainHeader').classList.remove('hidden');
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('mainScreens').classList.remove('hidden');
-                document.getElementById('bottomNav').classList.remove('hidden');
-                document.getElementById('btnLogout').classList.remove('hidden');
-                
-                showTab('matches');
-                calculatePot();
+                // define currentUser/uid (global e window)
+currentUser = user;
+window.currentUser = user;
+window.currentUid = user.uid;
+
+// userData (do seu userSnap que você já buscou lá em cima)
+const userData = userSnap.exists() ? userSnap.data() : null;
+
+// --- RULES GATE (3.3) ---
+const mustAccept = await evaluateRulesGate(user.uid, userData);
+
+if (mustAccept) {
+  // Mostra estrutura mínima e trava navegação
+  document.getElementById('mainHeader').classList.remove('hidden');
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('mainScreens').classList.remove('hidden');
+  document.getElementById('bottomNav').classList.add('hidden'); // trava menu
+  document.getElementById('btnLogout').classList.remove('hidden');
+
+  await openRulesGateModal();
+  return; // não libera app ainda
+}
+
+// fluxo normal (liberado)
+finalizeAppEntryAfterLogin();
+
             } else {
-                document.getElementById('mainHeader').classList.add('hidden');
-                document.getElementById('loginScreen').classList.remove('hidden');
-                document.getElementById('mainScreens').classList.add('hidden');
-                document.getElementById('bottomNav').classList.add('hidden');
+                window.currentUser = null;
+window.currentUid = null;
+currentUser = null;
+
+document.getElementById('mainHeader').classList.add('hidden');
+document.getElementById('loginScreen').classList.remove('hidden');
+document.getElementById('mainScreens').classList.add('hidden');
+document.getElementById('bottomNav').classList.add('hidden');
+
             }
         });
+// finaliza a entrada no app (chamar só quando estiver liberado)
+window.finalizeAppEntryAfterLogin = () => {
+  document.getElementById('mainHeader').classList.remove('hidden');
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('mainScreens').classList.remove('hidden');
+  document.getElementById('bottomNav').classList.remove('hidden');
+  document.getElementById('btnLogout').classList.remove('hidden');
+
+  showTab('matches');
+  calculatePot();
+};
+
 
         window.showTab = (tab) => {
   const appContent = document.getElementById('appContent');
@@ -497,87 +559,118 @@ const matchComparator = (a, b) => {
 
         // --- NOVA LÓGICA DE REGRAS (COM CABEÇALHO E DATA) ---
         
-        // Cache guarda objeto completo agora: { items: [], date: "..." }
-        let cachedRulesData = null;
+        // Cache guarda objeto completo agora: { items: [], dateDisplay: "...", version: "...", updatedAt: Date|null, officialStartAt: Date|null }
+let cachedRulesData = null;
 
-        async function renderRules() {
-            const list = document.getElementById('rulesList');
-            
-            // Se já tem conteúdo renderizado visualmente, não faz nada
-            if(list.children.length > 0) return;
+async function renderRules(forceRefresh = false) {
+  const list = document.getElementById('rulesList');
 
-            // Mostra Loading
-            list.innerHTML = `<div class="text-center p-6"><i class="fas fa-circle-notch fa-spin text-[#006400] text-2xl"></i><p class="text-xs text-gray-500 mt-2">Buscando atualizações...</p></div>`;
+  // Se já tem conteúdo renderizado visualmente, não faz nada (exceto se pedir refresh)
+  if (!forceRefresh && list && list.children.length > 0) return;
 
-            try {
-                // Se não temos cache, buscamos no Firebase
-                if (!cachedRulesData) {
-                    const docRef = doc(db, "settings", "rules");
-                    const snap = await getDoc(docRef);
-                    
-                    if (snap.exists()) {
-                        const d = snap.data();
-                        
-                        // Formata a data de atualização
-                        let dateStr = "Data desconhecida";
-                        if (d.updatedAt) {
-                            const dt = d.updatedAt.toDate();
-                            dateStr = dt.toLocaleDateString('pt-BR', {
-                                day: '2-digit', month: '2-digit', year: 'numeric',
-                                hour: '2-digit', minute: '2-digit'
-                            });
-                        }
+  // Mostra Loading
+  if (list) {
+    list.innerHTML = `<div class="text-center p-6"><i class="fas fa-circle-notch fa-spin text-[#006400] text-2xl"></i><p class="text-xs text-gray-500 mt-2">Buscando atualizações...</p></div>`;
+  }
 
-                        cachedRulesData = {
-                            items: d.items || [],
-                            dateDisplay: dateStr
-                        };
-                    } else {
-                        cachedRulesData = { items: [], dateDisplay: "--/--/----" };
-                    }
-                }
+  try {
+    // Se não temos cache ou pedimos refresh, buscamos no Firebase
+    if (!cachedRulesData || forceRefresh) {
+      const docRef = doc(db, "settings", "rules");
+      const snap = await getDoc(docRef);
 
-                // Se a lista estiver vazia
-                if (cachedRulesData.items.length === 0) {
-                    list.innerHTML = `<div class="text-center p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-xs">O regulamento está sendo atualizado pelo Administrador.</div>`;
-                    return;
-                }
+      if (snap.exists()) {
+        const d = snap.data();
 
-                // 1. Gera o HTML do Cabeçalho
-                const headerHtml = `
-                    <div class="flex flex-col items-center justify-center mb-6 pt-2">
-                        <div class="bg-[#006400] text-white px-4 py-1 rounded-full shadow-md border-2 border-[#FFD700] mb-2">
-                            <h3 class="font-black text-xs uppercase tracking-widest">
-                                <i class="fas fa-balance-scale mr-2"></i>REGULAMENTO OFICIAL
-                            </h3>
-                        </div>
-                        <p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-                            <i class="fas fa-sync-alt text-[#006400] mr-1"></i> Atualizado em: <span class="text-black">${cachedRulesData.dateDisplay}</span>
-                        </p>
-                    </div>
-                `;
-
-                // 2. Gera a Lista de Regras
-                const itemsHtml = cachedRulesData.items.map(r => `
-                    <div class="bg-white rounded p-3 shadow-sm border border-gray-100 mb-2">
-                        <button class="w-full text-left font-black text-xs text-[#006400] uppercase tracking-wide flex justify-between items-center py-1" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('i').classList.toggle('fa-chevron-up'); this.querySelector('i').classList.toggle('fa-chevron-down');">
-                            ${r.title || r.t} 
-                            <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
-                        </button>
-                        <div class="hidden mt-2 text-xs text-gray-700 border-t pt-3 whitespace-pre-line leading-relaxed font-medium">
-                            ${r.content || r.c}
-                        </div>
-                    </div>
-                `).join('');
-
-                // 3. Junta tudo
-                list.innerHTML = headerHtml + itemsHtml;
-
-            } catch (e) {
-                console.error("Erro ao buscar regras:", e);
-                list.innerHTML = `<div class="text-center text-red-500 text-xs p-4">Erro ao carregar o regulamento.<br>Verifique sua conexão.</div>`;
-            }
+        // Formata a data de atualização
+        let dateStr = "Data desconhecida";
+        let updatedAtDate = null;
+        if (d.updatedAt) {
+          updatedAtDate = d.updatedAt.toDate();
+          dateStr = updatedAtDate.toLocaleDateString('pt-BR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          });
         }
+
+        cachedRulesData = {
+          items: d.items || [],
+          dateDisplay: dateStr,
+          version: (d.version || "").toString(),
+          updatedAt: updatedAtDate,
+          officialStartAt: d.officialStartAt?.toDate ? d.officialStartAt.toDate() : null,
+        };
+      } else {
+        cachedRulesData = {
+          items: [],
+          dateDisplay: "--/--/----",
+          version: "",
+          updatedAt: null,
+          officialStartAt: null
+        };
+      }
+    }
+
+    // Se a lista estiver vazia
+    if (!cachedRulesData.items || cachedRulesData.items.length === 0) {
+      if (list) {
+        list.innerHTML = `<div class="text-center p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-xs">O regulamento está sendo atualizado pelo Administrador.</div>`;
+      }
+      return;
+    }
+
+    // 1. Gera o HTML do Cabeçalho
+    const headerHtml = `
+      <div class="flex flex-col items-center justify-center mb-6 pt-2">
+        <div class="bg-[#006400] text-white px-4 py-1 rounded-full shadow-md border-2 border-[#FFD700] mb-2">
+          <h3 class="font-black text-xs uppercase tracking-widest">
+            <i class="fas fa-balance-scale mr-2"></i>REGULAMENTO OFICIAL
+          </h3>
+        </div>
+
+        <div class="flex flex-col items-center gap-1">
+          <p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+            <i class="fas fa-sync-alt text-[#006400] mr-1"></i>
+            Atualizado em: <span class="text-black">${cachedRulesData.dateDisplay}</span>
+          </p>
+
+          ${
+            cachedRulesData.version
+              ? `<p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+                   <i class="fas fa-hashtag text-[#006400] mr-1"></i>
+                   Versão: <span class="text-black">${cachedRulesData.version}</span>
+                 </p>`
+              : ``
+          }
+        </div>
+      </div>
+    `;
+
+    // 2. Gera a Lista de Regras
+    const itemsHtml = cachedRulesData.items.map(r => `
+      <div class="bg-white rounded p-3 shadow-sm border border-gray-100 mb-2">
+        <button class="w-full text-left font-black text-xs text-[#006400] uppercase tracking-wide flex justify-between items-center py-1"
+                onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('i').classList.toggle('fa-chevron-up'); this.querySelector('i').classList.toggle('fa-chevron-down');">
+          ${r.title || r.t}
+          <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+        </button>
+        <div class="hidden mt-2 text-xs text-gray-700 border-t pt-3 whitespace-pre-line leading-relaxed font-medium">
+          ${r.content || r.c}
+        </div>
+      </div>
+    `).join('');
+
+    // 3. Junta tudo
+    if (list) list.innerHTML = headerHtml + itemsHtml;
+
+  } catch (e) {
+    console.error("Erro ao buscar regras:", e);
+    if (list) {
+      list.innerHTML = `<div class="text-center text-red-500 text-xs p-4">Erro ao carregar o regulamento.<br>Verifique sua conexão.</div>`;
+    }
+  }
+}
+
 
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
 
@@ -3700,6 +3793,16 @@ window.closeModal = () => {
   if (container) container.innerHTML = "";
   if (overlay) overlay.classList.add("hidden");
 };
+// ====== Bloqueio de fechamento quando Rules Gate estiver ativo ======
+(() => {
+  const __origCloseModal = window.closeModal;
+
+  window.closeModal = function () {
+    // se o gate das regras está ativo, impede fechar
+    if (window.__rulesGateLock) return;
+    return __origCloseModal.apply(this, arguments);
+  };
+})();
 
 // ===============================
 // MODAL BASE (garante openModal/closeModal globais)
@@ -3722,19 +3825,280 @@ if (!window.closeModal) {
     if (overlay) overlay.classList.add("hidden");
   };
 }
+// ===============================
+// MODAL: bloqueia fechar por overlay click e ESC quando gate estiver ativo
+// ===============================
+(() => {
+  // 1) Clique fora (overlay)
+  const overlay = document.getElementById("modalOverlay");
+  if (overlay && !overlay.__rulesGateBound) {
+    overlay.__rulesGateBound = true;
+
+    overlay.addEventListener("click", (e) => {
+      // só fecha se o clique foi no overlay (fora do container)
+      if (e.target !== overlay) return;
+
+      // se gate estiver ativo, não fecha
+      if (window.__rulesGateLock) return;
+
+      window.closeModal();
+    });
+  }
+
+  // 2) ESC
+  if (!document.__rulesGateEscBound) {
+    document.__rulesGateEscBound = true;
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+
+      // se gate estiver ativo, não fecha
+      if (window.__rulesGateLock) return;
+
+      // se não tiver modal aberto, ignora
+      const ov = document.getElementById("modalOverlay");
+      if (ov && !ov.classList.contains("hidden")) {
+        window.closeModal();
+      }
+    });
+  }
+})();
+// --- RULES GATE MODAL (obrigatório / travado) ---
+const openRulesGateModal = async () => {
+  const overlay = document.getElementById('modalOverlay');
+  const cont = document.getElementById('modalContainer');
+  if (!overlay || !cont) {
+    alert("Erro: modalOverlay/modalContainer não encontrado no HTML.");
+    return;
+  }
+
+  overlay.classList.remove('hidden');
+
+  // monta lista de regras
+  const items = Array.isArray(window.__rulesGate.items) ? window.__rulesGate.items : [];
+  const listHtml = items.length
+    ? items.map((t) => `<li class="mb-2 leading-relaxed text-sm text-gray-700">• ${String(t)}</li>`).join('')
+    : `<li class="text-sm text-gray-500">Nenhuma regra cadastrada.</li>`;
+
+  cont.innerHTML = `
+    <div class="bg-white p-6 relative w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100">
+      <div class="text-center mb-4">
+        <div class="text-[#006400] font-black uppercase text-lg">Regulamento Obrigatório</div>
+        <div class="text-[11px] text-gray-500 font-bold mt-1">
+          Versão: <span class="text-black">${window.__rulesGate.requiredVersion || 0}</span>
+        </div>
+      </div>
+
+      <div class="max-h-[55vh] overflow-y-auto p-4 bg-gray-50 rounded-xl border border-gray-200">
+        <ul class="list-none p-0 m-0">
+          ${listHtml}
+        </ul>
+      </div>
+
+      <div class="mt-5 flex gap-3">
+        <button id="btnAcceptRulesGate"
+          class="flex-1 bg-[#006400] text-white py-3 font-black rounded-xl shadow-lg btn-press text-sm">
+          ACEITAR E CONTINUAR
+        </button>
+        <button id="btnLogoutRulesGate"
+          class="px-4 bg-gray-100 text-gray-700 py-3 font-black rounded-xl border border-gray-200 text-sm">
+          SAIR
+        </button>
+      </div>
+
+      <p id="rulesGateMsg" class="text-[11px] text-gray-500 font-bold mt-3 text-center"></p>
+    </div>
+  `;
+
+  // trava: não fecha clicando fora nem ESC (se você tiver handler disso, ignore)
+  // botão sair
+  document.getElementById('btnLogoutRulesGate').onclick = async () => {
+    try { await signOut(auth); } catch(e) {}
+  };
+
+  // botão aceitar
+  document.getElementById('btnAcceptRulesGate').onclick = async () => {
+    const msg = document.getElementById('rulesGateMsg');
+    const btn = document.getElementById('btnAcceptRulesGate');
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i>`;
+
+    try {
+      const uid = window.currentUid;
+      if (!uid) throw new Error("Sem UID");
+
+      const v = Number(window.__rulesGate.requiredVersion || 0);
+
+      await updateDoc(doc(db, "users", uid), {
+        rulesAccepted: true,
+        rulesAcceptedVersion: v,
+        rulesAcceptedAt: serverTimestamp()
+      });
+
+      // libera
+      window.__rulesGate.gateRules = false;
+      window.__rulesGateLock = false;
+
+      // fecha modal e segue
+      overlay.classList.add('hidden');
+
+      // garantir que a UI “entre” corretamente (caso tenhamos segurado a navegação)
+      if (typeof finalizeAppEntryAfterLogin === 'function') {
+        finalizeAppEntryAfterLogin();
+      } else {
+        // fallback: seu fluxo atual
+        showTab('matches');
+        calculatePot();
+      }
+
+    } catch (e) {
+      console.error(e);
+      if (msg) msg.innerText = "Erro ao salvar aceitação. Verifique sua conexão e tente novamente.";
+      btn.disabled = false;
+      btn.innerText = "ACEITAR E CONTINUAR";
+    }
+  };
+};
+// --- RULES GATE EVALUATOR ---
+const evaluateRulesGate = async (uid, userData) => {
+  window.__rulesGateLock = true;
+
+  try {
+    // 1) settings/rules
+    const rulesRef = doc(db, "settings", "rules");
+    const rulesSnap = await getDoc(rulesRef);
+
+    let rules = {
+      version: 0,
+      items: [],
+      updatedAt: null,
+      officialStartAt: null
+    };
+
+    if (rulesSnap.exists()) {
+      const r = rulesSnap.data();
+      rules.version = Number(r.version || 0);
+      rules.items = Array.isArray(r.items) ? r.items : [];
+      rules.updatedAt = r.updatedAt || null;
+      rules.officialStartAt = r.officialStartAt || null;
+    }
+
+    window.__rulesGate.requiredVersion = rules.version;
+    window.__rulesGate.items = rules.items;
+    window.__rulesGate.updatedAt = rules.updatedAt;
+    window.__rulesGate.officialStartAt = rules.officialStartAt;
+
+    // 2) users/{uid} (você já tem userData do getDoc anterior)
+    const accepted = userData?.rulesAccepted === true;
+    const acceptedVersion = Number(userData?.rulesAcceptedVersion || 0);
+
+    // 3) regra do gate
+    const activeNow = shouldGateBeActiveNow(rules.officialStartAt);
+
+    const mustAccept =
+      activeNow &&
+      (rules.version > acceptedVersion || !accepted);
+
+    window.__rulesGate.gateRules = mustAccept;
+
+    return mustAccept;
+  } finally {
+    // NÃO libera lock aqui se gateRules==true,
+    // porque o lock só deve cair quando aceitar.
+    if (!window.__rulesGate.gateRules) window.__rulesGateLock = false;
+  }
+};
 
 
 // Regras agora viram MODAL (conteúdo vem do rulesList já carregado)
-window.openRulesModal = async () => {
+window.openRulesModal = async ({ mandatory = false } = {}) => {
   try {
-    // Garante que a lista de regras exista no DOM (ela existe no HTML do app)
-    // e garante que renderRules rode antes de abrir o modal.
+    // trava fechamento se for obrigatório
+    window.__rulesGateLock = !!mandatory;
+
+    // Garante que renderRules rode antes de abrir o modal.
     await renderRules();
+
+    const uid = window.getCurrentUid();
+    const rulesDoc = await window.getRulesDoc(); // pega version
+    const rulesVersion = (rulesDoc.version || "").toString();
+
+    // marca "abriu tela"
+    if (uid) await window.markRulesOpened(uid);
+
+    // pega estado do usuário pra decidir se mostra botão
+    let gate = true;
+    if (uid) {
+      const userState = await window.getUserRulesState(uid);
+      gate = window.computeGateRules(userState, rulesDoc);
+    }
 
     const rulesList = document.getElementById("rulesList");
     const inner = rulesList
       ? rulesList.innerHTML
       : `<div class="text-xs font-bold text-gray-600">Carregando regras...</div>`;
+
+    const closeBtnHtml = mandatory
+      ? `` // sem X no modo obrigatório
+      : `<button class="btn-press" onclick="closeModal()"><i class="fas fa-times"></i></button>`;
+
+    const footerHtml = (() => {
+      // Se é obrigatório e ainda está pendente: só deixa aceitar
+      if (mandatory && gate) {
+        return `
+          <div class="p-4 pt-0 space-y-2">
+            <button id="btnAcceptRules"
+                    class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
+              LI E CONCORDO ✅
+            </button>
+            <div class="text-[10px] text-gray-500 font-bold text-center">
+              Você precisa aceitar para continuar usando o app.
+            </div>
+          </div>
+        `;
+      }
+
+      // Se não é obrigatório:
+      // - se pendente: mostra aceitar + fechar
+      // - se já aceitou: mostra selo + fechar
+      if (!mandatory) {
+        if (gate) {
+          return `
+            <div class="p-4 pt-0 space-y-2">
+              <button id="btnAcceptRules"
+                      class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
+                LI E CONCORDO ✅
+              </button>
+              <button onclick="closeModal()"
+                      class="w-full bg-white text-[#006400] py-3 rounded font-black text-xs shadow btn-press border border-[#006400]/30">
+                FECHAR
+              </button>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="p-4 pt-0 space-y-2">
+            <div class="w-full bg-green-50 border border-green-200 text-green-800 py-3 rounded font-black text-xs text-center">
+              ✅ você já aceitou este regulamento
+            </div>
+            <button onclick="closeModal()"
+                    class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
+              FECHAR
+            </button>
+          </div>
+        `;
+      }
+
+      // obrigatório mas já aceito (caso raro): pode fechar
+      return `
+        <div class="p-4 pt-0">
+          <div class="w-full bg-green-50 border border-green-200 text-green-800 py-3 rounded font-black text-xs text-center">
+            ✅ você já aceitou este regulamento
+          </div>
+        </div>
+      `;
+    })();
 
     const html = `
       <div class="w-full max-w-sm">
@@ -3743,24 +4107,57 @@ window.openRulesModal = async () => {
             <i class="fas fa-scroll text-[#FFD700]"></i>
             <span class="font-black uppercase text-sm tracking-wide">Regras</span>
           </div>
-          <button class="btn-press" onclick="closeModal()"><i class="fas fa-times"></i></button>
+          ${closeBtnHtml}
         </div>
 
         <div class="p-4 space-y-2 max-h-[70vh] overflow-y-auto">
           ${inner}
         </div>
 
-        <div class="p-4 pt-0">
-          <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
-            FECHAR
-          </button>
-        </div>
+        ${footerHtml}
       </div>
     `;
 
     window.openModal(html);
+
+    // Wire do botão de aceitar (se existir)
+    const btn = document.getElementById("btnAcceptRules");
+    if (btn) {
+      btn.onclick = async () => {
+        try {
+          btn.disabled = true;
+          btn.classList.add("opacity-60");
+
+          const uid2 = window.getCurrentUid();
+          if (!uid2) throw new Error("Sem usuário logado");
+
+          await window.acceptRules(uid2, rulesVersion);
+
+          // atualiza status do botão de regras na profile (se você tiver)
+          if (typeof window.updateRulesButtonStatus === "function") {
+            window.updateRulesButtonStatus(true);
+          }
+
+          // se era obrigatório, destrava e fecha
+          window.__rulesGateLock = false;
+
+          // Reabre o modal já em modo "aceito" (fica bonito e garante paridade)
+          closeModal();
+          window.openRulesModal({ mandatory: false });
+
+        } catch (e) {
+          console.error("Erro ao aceitar regras:", e);
+          btn.disabled = false;
+          btn.classList.remove("opacity-60");
+          alert("Não foi possível salvar seu aceite. Verifique sua conexão e tente novamente.");
+        }
+      };
+    }
+
   } catch (e) {
     console.error("Erro ao abrir regras:", e);
+    window.__rulesGateLock = false;
+
     window.openModal(`
       <div class="w-full max-w-sm bg-white p-4 text-center">
         <p class="text-sm font-black text-red-600">Erro ao carregar regras</p>
@@ -3772,3 +4169,87 @@ window.openRulesModal = async () => {
     `);
   }
 };
+
+// ========= REGRAS: GATE + ACEITE (paridade Android) =========
+
+// Estado do modal obrigatório (impede fechar)
+window.__rulesGateLock = false;
+
+// (você provavelmente já tem o uid atual em algum lugar; ajuste aqui)
+window.getCurrentUid = () => {
+  // opção A: Firebase Auth
+  // return auth?.currentUser?.uid || null;
+
+  // opção B: se você guarda em window/global
+  return window.currentUid || null;
+};
+
+window.getRulesDoc = async () => {
+  await renderRules(true); // força pegar versão/updatedAt novos
+  return cachedRulesData || { items: [], version: "", updatedAt: null, officialStartAt: null };
+};
+
+window.getUserRulesState = async (uid) => {
+  const ref = doc(db, "users", uid);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return { rulesAccepted: false, rulesAcceptedVersion: "" };
+  const d = snap.data() || {};
+  return {
+    rulesAccepted: !!d.rulesAccepted,
+    rulesAcceptedVersion: (d.rulesAcceptedVersion || "").toString(),
+  };
+};
+
+window.markRulesOpened = async (uid) => {
+  try {
+    await setDoc(
+      doc(db, "users", uid),
+      { rulesLastOpenedAt: serverTimestamp() },
+      { merge: true }
+    );
+  } catch (e) {
+    console.warn("Falha ao gravar rulesLastOpenedAt:", e);
+  }
+};
+
+window.acceptRules = async (uid, rulesVersion) => {
+  await setDoc(
+    doc(db, "users", uid),
+    {
+      rulesAccepted: true,
+      rulesAcceptedVersion: (rulesVersion || "").toString(),
+      rulesAcceptedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+};
+
+window.computeGateRules = (userState, rulesDoc) => {
+  const accepted = !!userState.rulesAccepted;
+  const uVer = (userState.rulesAcceptedVersion || "").toString();
+  const rVer = (rulesDoc.version || "").toString();
+  return (!accepted) || (uVer !== rVer);
+};
+
+// Chame isso após login (quando já tiver uid)
+window.enforceRulesGate = async () => {
+  const uid = window.getCurrentUid();
+  if (!uid) return;
+
+  const [rulesDoc, userState] = await Promise.all([
+    window.getRulesDoc(),
+    window.getUserRulesState(uid),
+  ]);
+
+  const gate = window.computeGateRules(userState, rulesDoc);
+  if (gate) {
+    // abre obrigatório e trava fechar
+    await window.openRulesModal({ mandatory: true });
+  } else {
+    // opcional: atualizar status do botão na profile
+    if (typeof window.updateRulesButtonStatus === "function") {
+      window.updateRulesButtonStatus(false);
+    }
+  }
+};
+
