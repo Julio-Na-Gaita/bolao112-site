@@ -3105,12 +3105,17 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
 
     // 2) Mapeamento de criação de usuários
     const usersCreatedAt = {};
-    const allUsersIds = [];
-    uSnap.forEach(d => {
-      const dt = d.data().createdAt ? d.data().createdAt.toDate() : new Date(0);
-      usersCreatedAt[d.id] = dt;
-      allUsersIds.push(d.id);
-    });
+const userDebts = {}; // ✅ NOVO
+const allUsersIds = [];
+
+uSnap.forEach(d => {
+  const data = d.data();
+  const dt = data.createdAt ? data.createdAt.toDate() : new Date(0);
+  usersCreatedAt[d.id] = dt;
+  userDebts[d.id] = Number(data.debts || 0); // ✅ NOVO
+  allUsersIds.push(d.id);
+});
+
 
     const targetCreated = usersCreatedAt[targetUid] || new Date(0);
 
@@ -3168,7 +3173,22 @@ let riskAgainstMajority = 0;  // quantas vezes ele votou diferente do mais votad
 
       // Posição do target nesse momento
       const activeUsers = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
-      activeUsers.sort((a, b) => currentScores[b] - currentScores[a]);
+      activeUsers.sort((a, b) => {
+  const netA = (currentScores[a] || 0) - (userDebts[a] || 0) * 3;
+  const netB = (currentScores[b] || 0) - (userDebts[b] || 0) * 3;
+
+  // 1) Pontos líquidos desc
+  if (netB !== netA) return netB - netA;
+
+  // 2) Menos débitos ganha
+  const da = userDebts[a] || 0;
+  const dbb = userDebts[b] || 0;
+  if (da !== dbb) return da - dbb;
+
+  // 3) Desempate por ID
+  return String(a).localeCompare(String(b));
+});
+
       const myPos = activeUsers.indexOf(targetUid) + 1;
       if (myPos > 0) rankHistory.push(myPos);
 
