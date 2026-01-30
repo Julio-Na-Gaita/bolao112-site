@@ -1543,6 +1543,62 @@ playVoteSound();
                 container.innerHTML = `<div class="bg-white p-6 rounded text-center"><p class="text-red-500 font-bold">Erro ao carregar lista.</p><button onclick="closeModal()" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded">Fechar</button></div>`;
             }
         };
+// --- IR PARA "PALPITES REGISTRADOS" PELO EXTRATO ---
+window.goToMatchRegisteredBets = async (matchId) => {
+  try {
+    if (!matchId) return;
+
+    // Fecha o modal do extrato (se estiver aberto)
+    const overlay = document.getElementById('modalOverlay');
+    if (overlay) overlay.classList.add('hidden');
+
+    // Vai para a aba de confrontos
+    if (typeof showTab === 'function') showTab('matches');
+
+    // Garante que os confrontos estejam em cache
+    if (!Array.isArray(window.cachedMatches) || window.cachedMatches.length === 0) {
+      if (typeof loadMatches === 'function') {
+        await loadMatches();
+      }
+    }
+
+    const m = (window.cachedMatches || []).find(x => x.id === matchId);
+    if (!m) {
+      alert("Confronto não encontrado. Recarregue a página e tente novamente.");
+      return;
+    }
+
+    // Normaliza deadlineDate (no seu loadMatches você já cria m.deadlineDate)
+    const dl = m.deadlineDate instanceof Date
+      ? m.deadlineDate
+      : (m.deadline && typeof m.deadline.toDate === 'function' ? m.deadline.toDate() : null);
+
+    if (!dl) {
+      alert("Confronto sem prazo válido.");
+      return;
+    }
+
+    const now = new Date();
+    const isExpired = now > dl;
+
+    // Abre o modal de "Palpites registrados" do confronto clicado
+    await window.openVoters(
+      m.id,
+      m.teamA,
+      m.teamB,
+      m.teamAUrl || "",
+      m.teamBUrl || "",
+      isExpired,
+      m.winner || "",
+      dl.toISOString()
+    );
+  } catch (e) {
+    console.error("goToMatchRegisteredBets error:", e);
+    alert("Erro ao abrir o confronto. Tente novamente.");
+  }
+};
+
+
         // --- TIRA-TEIMA (WEB) COM ESCUDOS, DATA E SOMA 100% ---
         window.compareGuesses = async (targetUid, targetName) => {
             const modal = document.getElementById('modalOverlay'); 
@@ -2328,9 +2384,33 @@ window.showKingModal = () => {
             const u = currentRankingData[idx]; 
             if(!u) return;
             
-            const html = (u.hist && u.hist.length > 0) 
-                ? u.hist.map(h => `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${h.type==='bad'?'text-red-600':'text-[#2E7D32]'}">${h.text}</div>`).join('') 
-                : "<div class='text-center py-4 text-gray-400 text-xs'>Nenhum registro encontrado.</div>"; 
+            const html = (u.hist && u.hist.length > 0)
+  ? u.hist.map(h => {
+      const colorClass = (h.type === 'bad') ? 'text-red-600' : 'text-[#2E7D32]';
+
+      // Só deixa clicável se tiver id de match e não for item "especial"
+      const isMatch = h.id && h.id !== "diamante";
+
+      if (!isMatch) {
+        return `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${colorClass}">${h.text}</div>`;
+      }
+
+      return `
+        <button
+          type="button"
+          onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}')"
+          class="w-full text-left border-b border-gray-300/50 py-2 text-xs font-bold ${colorClass} hover:bg-black/5 active:bg-black/10 rounded px-1"
+          title="Abrir palpites registrados deste confronto"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="leading-snug">${h.text}</span>
+            <i class="fas fa-chevron-right text-[10px] opacity-60"></i>
+          </div>
+        </button>
+      `;
+    }).join('')
+  : "<div class='text-center py-4 text-gray-400 text-xs'>Nenhum registro encontrado.</div>";
+
             
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
