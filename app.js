@@ -2310,9 +2310,38 @@ window.showKingModal = () => {
                     const badgeSize = isLegendary ? "w-6 h-6 text-[9px]" : "w-5 h-5 text-[8px]";
                     
                     let badgeHtml = "";
-                    if (count > 1) {
-                        badgeHtml = `<div class="absolute -top-2 -right-2 ${badgeBg} ${badgeSize} rounded-full flex items-center justify-center font-black border-2 border-white z-10">${count}x</div>`;
-                    }
+if (count > 1) {
+  badgeHtml = `
+    <span style="
+      position:absolute;
+      top:0;
+      right:0;
+      transform: translate(45%, -45%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      min-width:22px;
+      height:22px;
+      padding:0 6px;
+
+      background:#D32F2F;
+      color:#fff;
+
+      font-weight:900;
+      font-size:12px;
+      line-height:1;
+
+      border-radius:999px;
+      border:2px solid rgba(255,255,255,.95);
+      box-shadow:0 2px 6px rgba(0,0,0,.25);
+
+      font-family: Arial, sans-serif;
+      letter-spacing:-0.2px;
+    ">${count}x</span>
+  `;
+}
+
                     
                     // Click: Se > 1 abre lista, senão Toast
                     const clickAction = count > 1 
