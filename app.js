@@ -2732,6 +2732,7 @@ async function loadAdminMatches() {
             }
         };
         window.checkDelays = async () => { const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const now = new Date(); const currMonth = months[now.getMonth()]; const day = now.getDate(); if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; } const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const snap = await getDocs(collection(db, "users")); let late = []; snap.forEach(d => { const u = d.data(); if (!u.payments || !u.payments[currMonth]) { late.push({id: d.id, name: u.name, debts: u.debts || 0}); } }); let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`; if (late.length === 0) { html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`; } else { html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`; late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; }); html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`; } html += `</div>`; cont.innerHTML = html; window.applyBatchPenalty = async () => { if(!confirm("Confirmar aplicação de multa em massa?")) return; const batch = writeBatch(db); late.forEach(l => { const ref = doc(db, "users", l.id); batch.update(ref, { debts: l.debts + 1 }); }); await batch.commit(); alert("Penalidades aplicadas!"); openFinancialScreen(); }; };
+
 async function loadProfile() { 
         if (!currentUser) return; 
         
@@ -2853,13 +2854,20 @@ async function loadProfile() {
                         <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600"><i class="fas fa-lock text-lg"></i></div>
                         <span class="text-xs font-bold text-gray-700">Senha</span>
                     </button>
-
-                    <!-- Linha: REGRAS + GUIA (2 botões como no Android) -->
-<button onclick="openRulesModal()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
+                    
+<button onclick="openRulesModal()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press col-span-2">
   <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700">
     <i class="fas fa-scroll text-lg"></i>
   </div>
   <span class="text-xs font-bold text-gray-700">Regras</span>
+</button>
+
+                    <!-- Linha: CALENDÁRIO + GUIA -->
+<button onclick="window.openCalendar2026()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
+  <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-700">
+    <i class="fas fa-calendar-alt text-lg"></i>
+  </div>
+  <span class="text-xs font-bold text-gray-700">Calendário</span>
 </button>
 
 <button onclick="showAppGuide()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
@@ -2868,6 +2876,7 @@ async function loadProfile() {
   </div>
   <span class="text-xs font-bold text-gray-700">Guia do App</span>
 </button>
+
 
 
                 <div class="space-y-3 mb-8">
@@ -2923,7 +2932,35 @@ async function loadProfile() {
         window.copyKeyOnly = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
         document.getElementById('btnCopyPix').onclick = () => { alert("Copie a chave manual abaixo por enquanto."); };
         window.changePassword = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_login2.png" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 p-6"><h3 class="font-black text-[#006400] text-center mb-6 text-lg uppercase">Nova Senha</h3><input type="password" id="newPassInput" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnConfirmPass" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CONFIRMAR</button><button onclick="closeModal()" class="w-full text-black font-black text-xs mt-4">CANCELAR</button></div></div>`; document.getElementById('btnConfirmPass').onclick = () => { const newPass = document.getElementById('newPassInput').value; if(newPass && newPass.length >= 6) { updatePassword(currentUser, newPass).then(() => { alert("Senha alterada com sucesso!"); closeModal(); }).catch(e => alert("Erro: Faça logout e login novamente para trocar a senha.")); } else { alert("A senha deve ter no mínimo 6 caracteres."); } }; };
-        
+
+window.openCalendar2026 = () => {
+  const html = `
+    <div class="w-full h-[90vh] max-w-md rounded-none overflow-hidden relative">
+      <div class="absolute inset-0 bg-black"></div>
+
+      <div class="relative z-10 flex items-center justify-between p-3">
+        <div class="text-white font-black text-sm uppercase tracking-wider">
+          Calendário 2026
+        </div>
+
+        <button onclick="closeModal()" class="text-white/80 hover:text-white p-2">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <div class="relative z-10 w-full h-full flex items-center justify-center px-2 pb-6">
+        <img
+          src="calendario_2026.png"
+          class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+          alt="Calendário 2026"
+        />
+      </div>
+    </div>
+  `;
+
+  window.openModal(html);
+};
+
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
         // --- GUIA DO APP ATUALIZADO (v1.6.9) ---
