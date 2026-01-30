@@ -1879,7 +1879,6 @@ const chronoMatches = [...finishedMatches].sort(matchComparator);
 let noVoteStreak = 0;   // 3 seguidos sem votar => 👻
 let wrongStreak  = 0;   // 3 erros seguidos     => 🥬
 let gotGhost     = false;
-let gotLettuce   = false;
 
 chronoMatches.forEach(m => {
   // Linha do Tempo: Ignora jogos antes do user nascer
@@ -1920,17 +1919,6 @@ chronoMatches.forEach(m => {
       wrongStreak++;
       simStreak = 0;
 
-      if (!gotLettuce && wrongStreak >= 3) {
-        gotLettuce = true;
-        trophyRoom.push({
-          icon: "🥬",
-          name: "MÃO DE ALFACE",
-          desc: "Errou 3 palpites seguidos.",
-          date: "Temporada",
-          hiddenInList: false
-        });
-      }
-
       hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - 👎 Errou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
     }
 
@@ -1940,20 +1928,30 @@ chronoMatches.forEach(m => {
     wrongStreak = 0;
     simStreak = 0;
 
-    if (!gotGhost && noVoteStreak >= 3) {
-      gotGhost = true;
-      trophyRoom.push({
-        icon: "👻",
-        name: "FANTASMA",
-        desc: "3 confrontos seguidos sem votar.",
-        date: "Temporada",
-        hiddenInList: false
-      });
-    }
-
     hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
   }
 });
+                        // ✅ STATUS ATUAL (não é conquista): Fantasma só se a sequência ATUAL for >= 3 sem votar
+if (noVoteStreak >= 3) {
+  trophyRoom.push({
+    icon: "👻",
+    name: "FANTASMA",
+    desc: `Está com ${noVoteStreak} jogo(s) seguidos sem votar.`,
+    date: "Atual",
+    hiddenInList: false
+  });
+}
+
+// ✅ STATUS ATUAL (não é conquista): Mão de Alface só se a sequência ATUAL for >= 3 erros seguidos
+if (wrongStreak >= 3) {
+  trophyRoom.push({
+    icon: "🥬",
+    name: "MÃO DE ALFACE",
+    desc: `Está com ${wrongStreak} erro(s) seguidos.`,
+    date: "Atual",
+    hiddenInList: false
+  });
+}
 
 
 
