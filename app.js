@@ -1534,20 +1534,53 @@ playVoteSound();
                         ${missingHtml}
                     </div>
                     <div class="p-4 bg-gray-50/95 border-t border-gray-200 z-10 backdrop-blur-sm">
-                        <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded-lg font-bold shadow-md btn-press text-sm uppercase">Fechar</button>
-                    </div>
+  <div class="flex gap-2">
+    ${
+      (window.__returnToHistoryIdx !== null && window.__returnToHistoryIdx !== undefined)
+        ? `<button id="btnBackToHistory"
+              class="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-bold shadow-md btn-press text-sm uppercase">
+              Voltar
+           </button>`
+        : ''
+    }
+
+    <button onclick="closeModal()" class="${(window.__returnToHistoryIdx !== null && window.__returnToHistoryIdx !== undefined) ? 'flex-1' : 'w-full'} bg-[#006400] text-white py-3 rounded-lg font-bold shadow-md btn-press text-sm uppercase">
+      Fechar
+    </button>
+  </div>
+</div>
+
                 </div>`;
 
             } catch(e) {
                 console.error(e);
                 container.innerHTML = `<div class="bg-white p-6 rounded text-center"><p class="text-red-500 font-bold">Erro ao carregar lista.</p><button onclick="closeModal()" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded">Fechar</button></div>`;
             }
+              // Se veio do extrato, habilita o botão VOLTAR
+const backBtn = document.getElementById('btnBackToHistory');
+if (backBtn) {
+  backBtn.onclick = () => {
+    const idx = window.__returnToHistoryIdx;
+    window.__returnToHistoryIdx = null; // limpa retorno (evita voltar infinito)
+    closeModal(); // fecha lista de palpites
+    if (typeof window.showModalHistory === 'function' && typeof idx === 'number') {
+      window.showModalHistory(idx); // reabre extrato do mesmo usuário
+    }
+  };
+}
+  
         };
 // --- IR PARA "PALPITES REGISTRADOS" PELO EXTRATO ---
-window.goToMatchRegisteredBets = async (matchId) => {
+window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
+
   try {
     if (!matchId) return;
-
+// ✅ COLE ESSE BLOCO AQUI (logo depois do if (!matchId) return;)
+    window.__returnToHistoryIdx =
+      (typeof fromHistoryIdx === 'number')
+        ? fromHistoryIdx
+        : (typeof window.__fromHistoryIdx === 'number' ? window.__fromHistoryIdx : null);
+          
     // Fecha o modal do extrato (se estiver aberto)
     const overlay = document.getElementById('modalOverlay');
     if (overlay) overlay.classList.add('hidden');
@@ -2383,6 +2416,10 @@ window.showKingModal = () => {
        window.showModalHistory = (idx) => { 
             const u = currentRankingData[idx]; 
             if(!u) return;
+               // Guarda de qual extrato estamos vindo (para o botão VOLTAR no modal de palpites)
+window.__fromHistoryIdx = idx;
+window.__fromHistoryUid = u.uid;
+
             
             const html = (u.hist && u.hist.length > 0)
   ? u.hist.map(h => {
@@ -2398,7 +2435,7 @@ window.showKingModal = () => {
       return `
         <button
           type="button"
-          onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}')"
+          onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.__fromHistoryIdx)"
           class="w-full text-left border-b border-gray-300/50 py-2 text-xs font-bold ${colorClass} hover:bg-black/5 active:bg-black/10 rounded px-1"
           title="Abrir palpites registrados deste confronto"
         >
