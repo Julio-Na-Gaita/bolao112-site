@@ -3065,19 +3065,21 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
         <span style="font-size:32px; line-height:1;">${icon}</span>
         ${medalCounts[icon] > 1 ? `
           <span style="
-            position:absolute;
-            top:-7px;
-            right:-9px;
-            background:#D32F2F;
-            color:#fff;
-            font-weight:900;
-            font-size:12px;
-            line-height:1;
-            padding:4px 6px;
-            border-radius:999px;
-            border:2px solid rgba(255,255,255,.95);
-            box-shadow:0 2px 6px rgba(0,0,0,.25);
-          ">${medalCounts[icon]}x</span>
+  position:absolute;
+  top:0;
+  right:0;
+  transform: translate(45%, -45%);
+  background:#D32F2F;
+  color:#fff;
+  font-weight:900;
+  font-size:12px;
+  line-height:1;
+  padding:4px 6px;
+  border-radius:999px;
+  border:2px solid rgba(255,255,255,.95);
+  box-shadow:0 2px 6px rgba(0,0,0,.25);
+">x${medalCounts[icon]}</span>
+
         ` : ``}
       </div>
     `).join("")}
@@ -3086,7 +3088,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
 
             // --- LÓGICA DA TABELA INTELIGENTE ---
             const totalParticipants = currentRankingData.length;
-            const maxRows = 7;
+            const maxRows = 8;
             let displayList = [];
 
             if (totalParticipants <= maxRows) {
@@ -3114,7 +3116,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
             const cardContainer = document.createElement('div');
             cardContainer.id = "instaCardCapture";
             cardContainer.style.position = "fixed"; cardContainer.style.top = "0"; cardContainer.style.left = "0"; 
-            cardContainer.style.zIndex = "-9999"; cardContainer.style.width = "320px"; cardContainer.style.height = "600px"; // Altura maior
+            cardContainer.style.zIndex = "-9999"; cardContainer.style.width = "320px"; cardContainer.style.height = "720px"; // Altura maior
             document.body.appendChild(cardContainer);
 
             const avatarUrl = getAvatarUrl(user.photoBase64, user.name);
@@ -3156,7 +3158,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
 
             // HTML DO CARD FINAL
             cardContainer.innerHTML = `
-                <div style="width: 320px; height: 600px; display: flex; flex-direction: column; padding: 16px; background: linear-gradient(180deg, #004D40 0%, #000000 100%); font-family: serif; text-align: center; position: relative; overflow: hidden;">
+                <div style="width: 320px; height: 720px; display: flex; flex-direction: column; padding: 16px; background: linear-gradient(180deg, #004D40 0%, #000000 100%); font-family: serif; text-align: center; position: relative; overflow: hidden;">
                     <img src="bg_ranking.jpeg" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.15; mix-blend-mode: overlay;">
                     
                     <div style="position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column;">
