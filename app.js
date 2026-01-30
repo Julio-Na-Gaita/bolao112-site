@@ -2333,7 +2333,7 @@ window.showKingModal = () => {
 
             const isMe = currentUser && currentUser.uid === u.uid;
             const compareBtnClass = isMe ? "hidden" : "";
-
+               
             document.getElementById('modalContainer').innerHTML = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" id="profileModal" data-uid="${u.uid}">
                     <img src="bg_dialog_foto.png" class="absolute inset-0 w-full h-full object-cover opacity-100">
@@ -3013,7 +3013,8 @@ async function loadProfile() {
             // 2. ORDENAÇÃO ROBUSTA
             currentRankingData.sort((a,b) => {
                 if (b.p !== a.p) return b.p - a.p;
-                if (a.d !== b.d) return a.d - b.d;
+                if ((a.debts||0) !== (b.debts||0)) return (a.debts||0) - (b.debts||0);
+
                 const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
                 for (let icon of hierarchy) {
                     const countA = (a.trophyRoom || []).filter(m => m.icon === icon).length;
@@ -3028,6 +3029,60 @@ async function loadProfile() {
             if (index === -1) return;
             const user = currentRankingData[index];
             user.lastRank = index + 1;
+// =========================
+// ✅ MEDALHAS NO CARD DO INSTAGRAM (compacto + contador)
+// =========================
+const priorityOrder = ["🏆", "👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰", "👻", "🥬"];
+
+const visibleMedals = (user.trophyRoom || []).filter(m => !m.hiddenInList);
+const medalCounts = {};
+visibleMedals.forEach(m => {
+  medalCounts[m.icon] = (medalCounts[m.icon] || 0) + 1;
+});
+
+const iconsOrdered = Object.keys(medalCounts).sort((a,b) => {
+  let ia = priorityOrder.indexOf(a); if (ia === -1) ia = 999;
+  let ib = priorityOrder.indexOf(b); if (ib === -1) ib = 999;
+  return ia - ib;
+});
+
+// Limita para não “entupir” o card (ajuste se quiser)
+const maxIcons = 8;
+const iconsToShow = iconsOrdered.slice(0, maxIcons);
+
+const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
+  <div style="
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:10px;
+    margin-bottom:6px;
+  ">
+    ${iconsToShow.map(icon => `
+      <div style="position:relative; display:inline-flex; align-items:center; justify-content:center;">
+        <span style="font-size:32px; line-height:1;">${icon}</span>
+        ${medalCounts[icon] > 1 ? `
+          <span style="
+            position:absolute;
+            top:-7px;
+            right:-9px;
+            background:#D32F2F;
+            color:#fff;
+            font-weight:900;
+            font-size:12px;
+            line-height:1;
+            padding:4px 6px;
+            border-radius:999px;
+            border:2px solid rgba(255,255,255,.95);
+            box-shadow:0 2px 6px rgba(0,0,0,.25);
+          ">${medalCounts[icon]}x</span>
+        ` : ``}
+      </div>
+    `).join("")}
+  </div>
+`;
 
             // --- LÓGICA DA TABELA INTELIGENTE ---
             const totalParticipants = currentRankingData.length;
@@ -3121,6 +3176,7 @@ async function loadProfile() {
                                 <div style="color: #FFD700; font-weight: 900; font-size: 14px;">${user.p} PONTOS</div>
                             </div>
                         </div>
+${medalsStripHtml}
 
                         <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 12px; flex: 1;">
                             <div style="display: flex; justify-content: space-between; border-bottom: 2px solid black; padding-bottom: 6px; margin-bottom: 6px;">
