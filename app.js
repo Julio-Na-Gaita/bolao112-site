@@ -1875,117 +1875,87 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
 
                     // ORDENAÇÃO OFICIAL: Usa o comparador padrão (Deadline > CreatedAt > ID)
 const chronoMatches = [...finishedMatches].sort(matchComparator);
-                    // ✅ CONTADORES PARA MEDALHAS "FANTASMA" e "MÃO DE ALFACE"
-let eligibleFinished = 0; // jogos finalizados que o user "existia" na época
-let votedFinished = 0;    // quantos desses ele votou
-let missedFinished = 0;   // quantos desses ele NÃO votou
-
-                    chronoMatches.forEach(m => {
-                            // ✅ STREAKS (Android): Fantasma e Mão de Alface
+                   // ✅ STREAKS (regras oficiais)
 let noVoteStreak = 0;   // 3 seguidos sem votar => 👻
-let wrongStreak = 0;    // 3 erros seguidos => 🥬
-let gotGhost = false;   // evita duplicar medalha no mesmo ranking
-let gotLettuce = false; // evita duplicar medalha no mesmo ranking
+let wrongStreak  = 0;   // 3 erros seguidos     => 🥬
+let gotGhost     = false;
+let gotLettuce   = false;
 
-                        // Linha do Tempo: Ignora jogos antes do user nascer
-                        if (u.createdDate > m.deadlineDate) return;
-eligibleFinished++;
+chronoMatches.forEach(m => {
+  // Linha do Tempo: Ignora jogos antes do user nascer
+  if (u.createdDate > m.deadlineDate) return;
 
-                        const g = userGuesses.find(x => x.matchId === m.id);
-                        const isThisMonth = m.deadlineDate.getMonth() === currentMonthIndex && m.deadlineDate.getFullYear() === currentYear;
-                        const dateStr = `📅 ${m.deadlineDate.getDate()}/${m.deadlineDate.getMonth()+1}`;
+  const g = userGuesses.find(x => x.matchId === m.id);
+  const isThisMonth = m.deadlineDate.getMonth() === currentMonthIndex && m.deadlineDate.getFullYear() === currentYear;
+  const dateStr = `📅 ${m.deadlineDate.getDate()}/${m.deadlineDate.getMonth()+1}`;
 
-                        if (g) {
-                                // ✅ votou => zera sequência de "sem votar"
-noVoteStreak = 0;
+  if (g) {
+    // votou => zera "sem votar"
+    noVoteStreak = 0;
 
-                                votedFinished++;
-                            if (m.winner === g.teamSelected) {
-                                    // ✅ acertou => zera sequência de erros
-wrongStreak = 0;
+    if (m.winner === g.teamSelected) {
+      // acertou => zera erros
+      wrongStreak = 0;
 
-                                const isFinal = (m.round && m.round.toLowerCase() === 'final');
-                                const pts = isFinal ? 6 : 3;
-                                p += pts;
-                                if (isThisMonth) monthlyP += pts;
-                                victories++;
-                                simStreak++;
-                                if (isFinal) finalsWon++;
+      const isFinal = (m.round && m.round.toLowerCase() === 'final');
+      const pts = isFinal ? 6 : 3;
+      p += pts;
+      if (isThisMonth) monthlyP += pts;
+      victories++;
+      simStreak++;
+      if (isFinal) finalsWon++;
 
-                                hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`, type: 'good' });
+      hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`, type: 'good' });
 
-                                // Medalhas de Sequência (Acumula histórico)
-                                if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "3 acertos seguidos.", date: dateStr, hiddenInList: false });
-                                if (simStreak === 5) trophyRoom.push({ icon: "🎯", name: "MITO", desc: "5 acertos seguidos.", date: dateStr, hiddenInList: false });
-                                if (simStreak === 10) trophyRoom.push({ icon: "👽", name: "ALIEN", desc: "10 acertos seguidos!", date: dateStr, hiddenInList: false });
-                                
-                                // Zebra (Usando a lista calculada com a regra nova)
-                                if (zebraMatchIds.includes(m.id)) trophyRoom.push({ icon: "🦓", name: "CAÇADOR DE ZEBRAS", desc: `Acertou a zebra em ${m.teamA} x ${m.teamB}`, date: dateStr, hiddenInList: false });
-                                
-                                if (isFinal) trophyRoom.push({ icon: "🔮", name: "MÃE DINAH", desc: "Cravou o campeão.", date: dateStr, hiddenInList: false });
+      if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "3 acertos seguidos.", date: dateStr, hiddenInList: false });
+      if (simStreak === 5) trophyRoom.push({ icon: "🎯", name: "MITO", desc: "5 acertos seguidos.", date: dateStr, hiddenInList: false });
+      if (simStreak === 10) trophyRoom.push({ icon: "👽", name: "ALIEN", desc: "10 acertos seguidos!", date: dateStr, hiddenInList: false });
 
-                            } else {
-                                    // ✅ errou => acumula sequência de erros
-wrongStreak++;
+      if (zebraMatchIds.includes(m.id)) trophyRoom.push({ icon: "🦓", name: "CAÇADOR DE ZEBRAS", desc: `Acertou a zebra em ${m.teamA} x ${m.teamB}`, date: dateStr, hiddenInList: false });
 
-if (!gotLettuce && wrongStreak >= 3) {
-  gotLettuce = true;
-  trophyRoom.push({
-    icon: "🥬",
-    name: "MÃO DE ALFACE",
-    desc: "Errou 3 palpites seguidos.",
-    date: "Temporada",
-    hiddenInList: false
-  });
-}
+      if (isFinal) trophyRoom.push({ icon: "🔮", name: "MÃE DINAH", desc: "Cravou o campeão.", date: dateStr, hiddenInList: false });
 
-                                simStreak = 0;
-                                hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - 👎 Errou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
-                            }
-                        } else {
-                                // ✅ não votou => acumula sequência sem votar e zera sequência de erros
-noVoteStreak++;
-wrongStreak = 0;
+    } else {
+      // errou => acumula erros
+      wrongStreak++;
+      simStreak = 0;
 
-if (!gotGhost && noVoteStreak >= 3) {
-  gotGhost = true;
-  trophyRoom.push({
-    icon: "👻",
-    name: "FANTASMA",
-    desc: "3 confrontos seguidos sem votar.",
-    date: "Temporada",
-    hiddenInList: false
-  });
-}
+      if (!gotLettuce && wrongStreak >= 3) {
+        gotLettuce = true;
+        trophyRoom.push({
+          icon: "🥬",
+          name: "MÃO DE ALFACE",
+          desc: "Errou 3 palpites seguidos.",
+          date: "Temporada",
+          hiddenInList: false
+        });
+      }
 
-                                missedFinished++;
+      hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - 👎 Errou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
+    }
 
-                            hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
-                            simStreak = 0;
-                        }
-                    });
-// ✅ MEDALHAS ESPECIAIS (Android): Fantasma + Mão de Alface
-// Fantasma = NÃO votou em nenhum jogo finalizado desde que entrou
-if (eligibleFinished > 0 && votedFinished === 0) {
-  trophyRoom.push({
-    icon: "👻",
-    name: "FANTASMA",
-    desc: "Não registrou nenhum palpite em jogos finalizados desde que entrou.",
-    date: "Temporada",
-    hiddenInList: false
-  });
-}
+  } else {
+    // não votou => acumula "sem votar" e zera erros
+    noVoteStreak++;
+    wrongStreak = 0;
+    simStreak = 0;
 
-// Mão de Alface = tem faltas (não votou em jogos finalizados)
-if (missedFinished > 0) {
-  trophyRoom.push({
-    icon: "🥬",
-    name: "MÃO DE ALFACE",
-    desc: `Não votou em ${missedFinished} confronto(s) finalizado(s).`,
-    date: "Temporada",
-    hiddenInList: false
-  });
-}
+    if (!gotGhost && noVoteStreak >= 3) {
+      gotGhost = true;
+      trophyRoom.push({
+        icon: "👻",
+        name: "FANTASMA",
+        desc: "3 confrontos seguidos sem votar.",
+        date: "Temporada",
+        hiddenInList: false
+      });
+    }
+
+    hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
+  }
+});
+
+
 
                     // Diamante
                     const oitavas = chronoMatches.filter(m => m.round === "Oitavas de final");
@@ -2068,11 +2038,11 @@ if (missedFinished > 0) {
                     // 3. Medalhas (Hierarquia Estrita)
                     for (let icon of medalHierarchy) {
                         // Conta medalhas VISÍVEIS (ignora hiddenInList como o troféu do amauri se não estiver na hierarquia)
-                        const countA = a.trophyRoom.filter(m => m.icon === icon).length;
-                        const countB = b.trophyRoom.filter(m => m.icon === icon).length;
-                        
-                        if (countB !== countA) return countB - countA; // Maior quantidade ganha
-                    }
+                        const countA = a.trophyRoom.filter(m => m.icon === icon && !m.hiddenInList).length;
+  const countB = b.trophyRoom.filter(m => m.icon === icon && !m.hiddenInList).length;
+
+  if (countB !== countA) return countB - countA; // Maior quantidade ganha
+}
                     
                     // 4. Ordem Alfabética (Critério final de estabilidade)
                     return (a.name || "").localeCompare(b.name || "");
