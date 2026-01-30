@@ -488,9 +488,18 @@ if (mustAccept) {
   document.getElementById('bottomNav').classList.add('hidden'); // trava menu
   document.getElementById('btnLogout').classList.remove('hidden');
 
-  await openRulesGateModal();
+  // GARANTE que a aba de regras existe/foi renderizada
+  showTab('rules'); // <- importante: força renderRules() via showTab
+  if (typeof renderRules === 'function') renderRules();
+
+  // Dá 1 tick pro DOM aplicar as mudanças antes de abrir o overlay
+  setTimeout(() => {
+    openRulesGateModal();
+  }, 0);
+
   return; // não libera app ainda
 }
+
 
 // fluxo normal (liberado)
 finalizeAppEntryAfterLogin();
@@ -3873,6 +3882,8 @@ const openRulesGateModal = async () => {
   }
 
   overlay.classList.remove('hidden');
+overlay.style.zIndex = '99999';
+document.body.style.overflow = 'hidden';
 
   // monta lista de regras
   const items = Array.isArray(window.__rulesGate.items) ? window.__rulesGate.items : [];
@@ -3941,6 +3952,8 @@ const openRulesGateModal = async () => {
 
       // fecha modal e segue
       overlay.classList.add('hidden');
+document.body.style.overflow = 'auto';
+
 
       // garantir que a UI “entre” corretamente (caso tenhamos segurado a navegação)
       if (typeof finalizeAppEntryAfterLogin === 'function') {
