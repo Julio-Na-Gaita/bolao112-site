@@ -3064,12 +3064,12 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
       <div style="position:relative; display:inline-flex; align-items:center; justify-content:center;">
         <span style="font-size:32px; line-height:1;">${icon}</span>
         ${medalCounts[icon] > 1 ? `
-         const badgeHtml = `
+        const badgeHtml = `
   <span style="
     position:absolute;
     top:0;
     right:0;
-    transform: translate(40%, -40%);
+    transform: translate(45%, -45%);
     display:flex;
     align-items:center;
     justify-content:center;
@@ -3092,8 +3092,6 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
     font-family: Arial, sans-serif;
     letter-spacing:-0.2px;
   ">x${count}</span>
-`;
-
         ` : ``}
       </div>
     `).join("")}
