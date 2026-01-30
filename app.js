@@ -1875,17 +1875,35 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
 
                     // ORDENAÇÃO OFICIAL: Usa o comparador padrão (Deadline > CreatedAt > ID)
 const chronoMatches = [...finishedMatches].sort(matchComparator);
-                    
+                    // ✅ CONTADORES PARA MEDALHAS "FANTASMA" e "MÃO DE ALFACE"
+let eligibleFinished = 0; // jogos finalizados que o user "existia" na época
+let votedFinished = 0;    // quantos desses ele votou
+let missedFinished = 0;   // quantos desses ele NÃO votou
+
                     chronoMatches.forEach(m => {
+                            // ✅ STREAKS (Android): Fantasma e Mão de Alface
+let noVoteStreak = 0;   // 3 seguidos sem votar => 👻
+let wrongStreak = 0;    // 3 erros seguidos => 🥬
+let gotGhost = false;   // evita duplicar medalha no mesmo ranking
+let gotLettuce = false; // evita duplicar medalha no mesmo ranking
+
                         // Linha do Tempo: Ignora jogos antes do user nascer
                         if (u.createdDate > m.deadlineDate) return;
+eligibleFinished++;
 
                         const g = userGuesses.find(x => x.matchId === m.id);
                         const isThisMonth = m.deadlineDate.getMonth() === currentMonthIndex && m.deadlineDate.getFullYear() === currentYear;
                         const dateStr = `📅 ${m.deadlineDate.getDate()}/${m.deadlineDate.getMonth()+1}`;
 
                         if (g) {
+                                // ✅ votou => zera sequência de "sem votar"
+noVoteStreak = 0;
+
+                                votedFinished++;
                             if (m.winner === g.teamSelected) {
+                                    // ✅ acertou => zera sequência de erros
+wrongStreak = 0;
+
                                 const isFinal = (m.round && m.round.toLowerCase() === 'final');
                                 const pts = isFinal ? 6 : 3;
                                 p += pts;
@@ -1907,14 +1925,67 @@ const chronoMatches = [...finishedMatches].sort(matchComparator);
                                 if (isFinal) trophyRoom.push({ icon: "🔮", name: "MÃE DINAH", desc: "Cravou o campeão.", date: dateStr, hiddenInList: false });
 
                             } else {
+                                    // ✅ errou => acumula sequência de erros
+wrongStreak++;
+
+if (!gotLettuce && wrongStreak >= 3) {
+  gotLettuce = true;
+  trophyRoom.push({
+    icon: "🥬",
+    name: "MÃO DE ALFACE",
+    desc: "Errou 3 palpites seguidos.",
+    date: "Temporada",
+    hiddenInList: false
+  });
+}
+
                                 simStreak = 0;
                                 hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - 👎 Errou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
                             }
                         } else {
+                                // ✅ não votou => acumula sequência sem votar e zera sequência de erros
+noVoteStreak++;
+wrongStreak = 0;
+
+if (!gotGhost && noVoteStreak >= 3) {
+  gotGhost = true;
+  trophyRoom.push({
+    icon: "👻",
+    name: "FANTASMA",
+    desc: "3 confrontos seguidos sem votar.",
+    date: "Temporada",
+    hiddenInList: false
+  });
+}
+
+                                missedFinished++;
+
                             hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
                             simStreak = 0;
                         }
                     });
+// ✅ MEDALHAS ESPECIAIS (Android): Fantasma + Mão de Alface
+// Fantasma = NÃO votou em nenhum jogo finalizado desde que entrou
+if (eligibleFinished > 0 && votedFinished === 0) {
+  trophyRoom.push({
+    icon: "👻",
+    name: "FANTASMA",
+    desc: "Não registrou nenhum palpite em jogos finalizados desde que entrou.",
+    date: "Temporada",
+    hiddenInList: false
+  });
+}
+
+// Mão de Alface = tem faltas (não votou em jogos finalizados)
+if (missedFinished > 0) {
+  trophyRoom.push({
+    icon: "🥬",
+    name: "MÃO DE ALFACE",
+    desc: `Não votou em ${missedFinished} confronto(s) finalizado(s).`,
+    date: "Temporada",
+    hiddenInList: false
+  });
+}
 
                     // Diamante
                     const oitavas = chronoMatches.filter(m => m.round === "Oitavas de final");
@@ -2102,6 +2173,9 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
     { icon: "🔥", name: "On Fire", how: "Sequência de 3 acertos seguidos." },
     { icon: "🔮", name: "Mãe Dinah", how: "Acertar o campeão numa FINAL." },
     { icon: "🎓", name: "Veterano", how: "A cada 50 vitórias acumuladas." },
+         { icon: "👻", name: "Fantasma", how: "3 confrontos seguidos sem votar." },
+{ icon: "🥬", name: "Mão de Alface", how: "Errou 3 palpites seguidos." },
+
   ];
 
   const rows = medals.map(m => `
@@ -2242,7 +2316,8 @@ window.showKingModal = () => {
             let medalsHtml = "";
             if (u.trophyRoom && u.trophyRoom.length > 0) {
                 // 1. Ordem de prioridade (TROFÉU ADICIONADO NO INÍCIO)
-                const priorityOrder = ["🏆", "👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰"];
+                const priorityOrder = ["🏆", "👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰", "👻", "🥬"];
+
                 
                 // 2. Ordena
                 u.trophyRoom.sort((a,b) => {
