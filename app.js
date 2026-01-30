@@ -402,7 +402,7 @@ const shouldGateBeActiveNow = (officialStartAt) => {
                     isAdmin: false,
                     debts: 0,
                     payments: {},
-                    appVersion: "Web v1.6.9",
+                    appVersion: "Web v1.7",
                     passwordHint: hint,
                     // NOVOS CAMPOS PARA CONTROLE:
                     isTrial: isTrial, 
@@ -464,7 +464,7 @@ const shouldGateBeActiveNow = (officialStartAt) => {
                     }
 
                     // ATUALIZANDO VERSÃO
-                    try { await updateDoc(userDocRef, { appVersion: "Web v1.6.9", lastAccess: new Date() // <--- GRAVA A DATA/HORA ATUAL
+                    try { await updateDoc(userDocRef, { appVersion: "Web v1.7", lastAccess: new Date() // <--- GRAVA A DATA/HORA ATUAL
                                                        }); } catch(e) {}
                 }
                 // ------------------------------------------
@@ -2891,7 +2891,7 @@ async function loadProfile() {
                 </div>
 
                 <div class="text-center pb-safe">
-                    <div class="version-chip">Web v1.6.9</div>
+                    <div class="version-chip">Web v1.7</div>
                     <p class="text-[9px] text-gray-400 mt-2 font-bold uppercase">Bolão 112 F.C • 2026</p>
                 </div>
             </div>`;
@@ -2963,7 +2963,7 @@ window.openCalendar2026 = () => {
 
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.6.9) ---
+        // --- GUIA DO APP ATUALIZADO (v1.7) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
@@ -2971,7 +2971,7 @@ window.openCalendar2026 = () => {
                 <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
-                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.6.9</p>
+                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.7</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
