@@ -2173,8 +2173,6 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
     { icon: "🔥", name: "On Fire", how: "Sequência de 3 acertos seguidos." },
     { icon: "🔮", name: "Mãe Dinah", how: "Acertar o campeão numa FINAL." },
     { icon: "🎓", name: "Veterano", how: "A cada 50 vitórias acumuladas." },
-         { icon: "👻", name: "Fantasma", how: "3 confrontos seguidos sem votar." },
-{ icon: "🥬", name: "Mão de Alface", how: "Errou 3 palpites seguidos." },
 
   ];
 
@@ -2975,7 +2973,7 @@ async function loadProfile() {
                                 <div class="flex items-start gap-2"><span class="text-lg">💰</span> <div><b>Patrão:</b> Mensalidade rigorosamente em dia.</div></div>
                                 <div class="flex items-start gap-2"><span class="text-lg">👻</span> <div><b>Fantasma:</b> Deixou de votar em 3 jogos seguidos.</div></div>
                                 <div class="flex items-start gap-2"><span class="text-lg">🥬</span> <div><b>Mão de Alface:</b> Errou 3 palpites seguidos.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg text-[#8B0000]">⚓</span> <div class="text-[#8B0000]"><b>Zona de Rebaixamento:</b> Os 2 últimos colocados.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg text-[#8B0000]">⚓</span> <div class="text-[#8B0000]"><b>Zona de Rebaixamento:</b> Os 4 últimos colocados.</div></div>
                             </div>
                     </div>
 
