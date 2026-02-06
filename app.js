@@ -581,28 +581,130 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // --- RECUPERAÇÃO DE SENHA (WEB) ---
         document.getElementById('btnForgotPass').onclick = () => {
-  // pega o que o user digitou no campo de usuário (se existir)
-  const userField = document.getElementById('userInput');
-  const typedUser = userField ? (userField.value || "").trim().toLowerCase() : "";
+  const typedUser =
+    (document.getElementById('userInput')?.value || "").trim().toLowerCase();
 
-  // se ele não digitou nada, ainda assim manda (mas pede o usuário)
-  const when = new Date().toLocaleString('pt-BR');
+  window.openModal(`
+    <div class="bg-white p-6 relative w-full max-w-sm rounded shadow-xl">
+      <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400 p-2">
+        <i class="fas fa-times text-xl"></i>
+      </button>
 
-  const msg = typedUser
-    ? `Olá Lincoln! Preciso de reset de senha no Bolão 112 FC.\n\nUsuário: ${typedUser}\nData/Hora: ${when}\n\n(Enviado pela versão WEB)`
-    : `Olá Lincoln! Preciso de reset de senha no Bolão 112 FC.\n\nNão lembro meu usuário.\nData/Hora: ${when}\n\n(Enviado pela versão WEB)`;
+      <div class="text-center">
+        <i class="fas fa-key text-[#FFD700] text-3xl mb-2"></i>
+        <h3 class="text-[#006400] font-black uppercase text-lg mb-1">Esqueci minha senha</h3>
+        <p class="text-xs text-gray-600 font-bold mb-4">
+          Escolha uma das opções abaixo:
+        </p>
 
-  const phone = "5585988837389"; // 55 + DDD + número (sem espaços)
-  const encoded = encodeURIComponent(msg);
+        <div class="bg-gray-50 border rounded-lg p-3 text-left mb-4">
+          <p class="text-[10px] text-gray-500 font-black uppercase">Seu usuário (login)</p>
+          <input
+            type="text"
+            id="recoverUser"
+            value="${typedUser}"
+            placeholder="Ex: joaosilva"
+            class="w-full mt-2 p-3 bg-white border rounded-lg text-sm outline-none focus:border-[#006400] text-center font-bold"
+          />
+          <p class="text-[10px] text-gray-400 font-bold mt-2">
+            Dica: seu usuário é o que você usa para entrar (sem espaços).
+          </p>
+        </div>
 
-  // mobile abre app / desktop abre web
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  const url = isMobile
-    ? `https://wa.me/${phone}?text=${encoded}`
-    : `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+        <!-- Resultado da dica -->
+        <div id="hintResultArea" class="hidden mb-4 p-3 bg-orange-50 border border-orange-200 rounded">
+          <p class="text-[10px] text-orange-600 font-bold uppercase">💡 SUA DICA:</p>
+          <p id="hintTextDisplay" class="text-sm font-black text-black mt-1"></p>
+        </div>
 
-  window.open(url, "_blank");
+        <p id="recoverMsg" class="text-xs text-red-500 font-bold mt-2"></p>
+
+        <!-- Ações -->
+        <div class="space-y-2 mt-4">
+          <button id="btnSearchHint"
+            class="w-full bg-[#006400] text-white py-3 font-black rounded-lg shadow-lg btn-press text-sm">
+            VER MINHA DICA DE SENHA
+          </button>
+
+          <button id="btnAskAdminReset"
+            class="w-full bg-[#25D366] text-white py-3 font-black rounded-lg shadow-lg btn-press text-sm flex items-center justify-center gap-2">
+            <i class="fab fa-whatsapp text-lg"></i> AVISAR ADMIN (RESET)
+          </button>
+
+          <button onclick="closeModal()"
+            class="w-full bg-gray-100 text-gray-700 py-3 font-black rounded-lg shadow btn-press text-sm">
+            VOLTAR
+          </button>
+        </div>
+
+        <p class="text-[10px] text-gray-400 font-bold mt-4">
+          Se o admin resetar sua senha, ao entrar novamente você será obrigado(a) a criar uma nova senha.
+        </p>
+      </div>
+    </div>
+  `);
+
+  // 1) BOTÃO: buscar dica
+  document.getElementById('btnSearchHint').onclick = async () => {
+    const user = (document.getElementById('recoverUser').value || "").trim().toLowerCase();
+    const msg = document.getElementById('recoverMsg');
+    const area = document.getElementById('hintResultArea');
+
+    msg.innerText = "";
+    area.classList.add('hidden');
+
+    if (!user) {
+      msg.innerText = "Digite seu usuário para buscar a dica.";
+      return;
+    }
+
+    msg.innerText = "Buscando dica...";
+
+    try {
+      const q = query(collection(db, "users"), where("username", "==", user));
+      const snap = await getDocs(q);
+
+      if (!snap.empty) {
+        const data = snap.docs[0].data();
+        const hint = data.passwordHint;
+
+        if (hint) {
+          document.getElementById('hintTextDisplay').innerText = hint;
+          area.classList.remove('hidden');
+          msg.innerText = "";
+        } else {
+          msg.innerText = "Você não cadastrou dica. Use a opção de avisar o admin.";
+        }
+      } else {
+        msg.innerText = "Usuário não encontrado. Confira se digitou corretamente.";
+      }
+    } catch (e) {
+      console.error(e);
+      msg.innerText = "Erro ao buscar a dica. Tente novamente.";
+    }
+  };
+
+  // 2) BOTÃO: avisar admin no WhatsApp (não abre automaticamente ao clicar em 'Esqueci')
+  document.getElementById('btnAskAdminReset').onclick = () => {
+    const user = (document.getElementById('recoverUser').value || "").trim().toLowerCase();
+    const when = new Date().toLocaleString('pt-BR');
+
+    const phone = "5585988837389"; // Lincoln - 85988837389
+    const msg = user
+      ? `Olá Lincoln! Preciso que você resete minha senha no Bolão 112 FC.\n\nUsuário: ${user}\nData/Hora: ${when}\n\n(Enviado pela versão WEB)`
+      : `Olá Lincoln! Preciso que você resete minha senha no Bolão 112 FC.\n\nNão lembro meu usuário.\nData/Hora: ${when}\n\n(Enviado pela versão WEB)`;
+
+    const encoded = encodeURIComponent(msg);
+
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const url = isMobile
+      ? `https://wa.me/${phone}?text=${encoded}`
+      : `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+
+    window.open(url, "_blank");
+  };
 };
+
       
        document.getElementById('btnOpenRegister').onclick = () => {
             const modal = document.getElementById('modalOverlay'); 
