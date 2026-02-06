@@ -163,41 +163,94 @@ window.openForcePasswordModal = (firebaseUser) => {
         </div>
       </div>
 
-      <div class="p-4 space-y-3">
-       <div style="position: relative;">
-  <input id="forcePwCurrent" type="password" class="w-full border rounded px-3 py-2 text-sm pr-10" autocomplete="current-password" />
-  <button id="eyeForceCurrent" type="button"
-    style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#666; font-size:16px; cursor:pointer; padding:6px;">
+<div class="p-4 space-y-3">
+
+  <!-- SENHA ATUAL (TEMPORÁRIA) -->
+  <div>
+    <label for="forcePwCurrent" class="block text-[11px] font-black text-gray-600 uppercase mb-1">
+      Senha atual (temporária)
+    </label>
+
+    <div style="position: relative;">
+      <input
+        id="forcePwCurrent"
+        name="currentPassword"
+        type="password"
+        class="w-full border rounded px-3 py-2 text-sm pr-10"
+        placeholder="Digite a senha usada para entrar"
+        autocomplete="current-password"
+        aria-label="Senha atual (temporária)"
+      />
+      <button
+        id="eyeForceCurrent"
+        type="button"
+        aria-label="Mostrar/ocultar senha atual"
+        style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#666; font-size:16px; cursor:pointer; padding:6px;">
+      </button>
+    </div>
+  </div>
+
+  <!-- NOVA SENHA -->
+  <div>
+    <label for="forcePwNew" class="block text-[11px] font-black text-gray-600 uppercase mb-1">
+      Nova senha
+    </label>
+
+    <div style="position: relative;">
+      <input
+        id="forcePwNew"
+        name="newPassword"
+        type="password"
+        class="w-full border rounded px-3 py-2 text-sm pr-10"
+        placeholder="Mínimo 6 caracteres"
+        autocomplete="new-password"
+        aria-label="Nova senha"
+      />
+      <button
+        id="eyeForceNew"
+        type="button"
+        aria-label="Mostrar/ocultar nova senha"
+        style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#666; font-size:16px; cursor:pointer; padding:6px;">
+      </button>
+    </div>
+  </div>
+
+  <!-- CONFIRMAR NOVA SENHA -->
+  <div>
+    <label for="forcePwConfirm" class="block text-[11px] font-black text-gray-600 uppercase mb-1">
+      Confirmar nova senha
+    </label>
+
+    <div style="position: relative;">
+      <input
+        id="forcePwConfirm"
+        name="confirmPassword"
+        type="password"
+        class="w-full border rounded px-3 py-2 text-sm pr-10"
+        placeholder="Repita a nova senha"
+        autocomplete="new-password"
+        aria-label="Confirmar nova senha"
+      />
+      <button
+        id="eyeForceConfirm"
+        type="button"
+        aria-label="Mostrar/ocultar confirmação"
+        style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#666; font-size:16px; cursor:pointer; padding:6px;">
+      </button>
+    </div>
+  </div>
+
+  <div id="forcePwError" class="text-[11px] font-bold text-red-600 hidden"></div>
+
+  <button id="forcePwSaveBtn" class="w-full bg-[#006400] text-white font-black py-3 rounded shadow btn-press text-sm">
+    SALVAR NOVA SENHA
+  </button>
+
+  <button id="forcePwSignOutBtn" class="w-full bg-gray-100 text-gray-700 font-black py-3 rounded shadow btn-press text-sm">
+    SAIR
   </button>
 </div>
 
-
-       <div style="position: relative;">
-  <input id="forcePwNew" type="password" class="w-full border rounded px-3 py-2 text-sm pr-10" autocomplete="new-password" />
-  <button id="eyeForceNew" type="button"
-    style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#666; font-size:16px; cursor:pointer; padding:6px;">
-  </button>
-</div>
-
-
-       <div style="position: relative;">
-  <input id="forcePwConfirm" type="password" class="w-full border rounded px-3 py-2 text-sm pr-10" autocomplete="new-password" />
-  <button id="eyeForceConfirm" type="button"
-    style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#666; font-size:16px; cursor:pointer; padding:6px;">
-  </button>
-</div>
-
-
-        <div id="forcePwError" class="text-[11px] font-bold text-red-600 hidden"></div>
-
-        <button id="forcePwSaveBtn" class="w-full bg-[#006400] text-white font-black py-3 rounded shadow btn-press text-sm">
-          SALVAR NOVA SENHA
-        </button>
-
-        <button id="forcePwSignOutBtn" class="w-full bg-gray-100 text-gray-700 font-black py-3 rounded shadow btn-press text-sm">
-          SAIR
-        </button>
-      </div>
     </div>
   `);
 
