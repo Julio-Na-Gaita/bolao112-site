@@ -581,67 +581,29 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // --- RECUPERAÇÃO DE SENHA (WEB) ---
         document.getElementById('btnForgotPass').onclick = () => {
-            const modal = document.getElementById('modalOverlay'); 
-            const cont = document.getElementById('modalContainer'); 
-            modal.classList.remove('hidden');
+  // pega o que o user digitou no campo de usuário (se existir)
+  const userField = document.getElementById('userInput');
+  const typedUser = userField ? (userField.value || "").trim().toLowerCase() : "";
 
-            cont.innerHTML = `
-                <div class="bg-white p-6 relative w-full max-w-sm rounded shadow-xl">
-                    <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400 p-2"><i class="fas fa-times text-xl"></i></button>
-                    <div class="text-center">
-                        <i class="fas fa-key text-[#FFD700] text-3xl mb-2"></i>
-                        <h3 class="text-[#006400] font-black uppercase text-lg mb-2">Recuperar Acesso</h3>
-                        <p class="text-xs text-gray-500 mb-4">Digite seu usuário para ver a dica cadastrada.</p>
-                        
-                        <input type="text" id="recoverUser" placeholder="Ex: joaosilva" class="w-full p-3 bg-gray-50 border rounded-lg mb-4 text-sm outline-none focus:border-[#006400] text-center font-bold">
-                        
-                        <div id="hintResultArea" class="hidden mb-4 p-3 bg-orange-50 border border-orange-200 rounded">
-                            <p class="text-[10px] text-orange-600 font-bold uppercase">💡 SUA DICA:</p>
-                            <p id="hintTextDisplay" class="text-sm font-black text-black mt-1"></p>
-                        </div>
+  // se ele não digitou nada, ainda assim manda (mas pede o usuário)
+  const when = new Date().toLocaleString('pt-BR');
 
-                        <button id="btnSearchHint" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press text-sm">BUSCAR DICA</button>
-                        <p id="recoverMsg" class="text-xs text-red-500 font-bold mt-2"></p>
-                    </div>
-                </div>
-            `;
+  const msg = typedUser
+    ? `Olá Lincoln! Preciso de reset de senha no Bolão 112 FC.\n\nUsuário: ${typedUser}\nData/Hora: ${when}\n\n(Enviado pela versão WEB)`
+    : `Olá Lincoln! Preciso de reset de senha no Bolão 112 FC.\n\nNão lembro meu usuário.\nData/Hora: ${when}\n\n(Enviado pela versão WEB)`;
 
-            document.getElementById('btnSearchHint').onclick = async () => {
-                const user = document.getElementById('recoverUser').value.trim();
-                const msg = document.getElementById('recoverMsg');
-                const area = document.getElementById('hintResultArea');
-                
-                if(!user) { msg.innerText = "Digite seu usuário."; return; }
-                
-                msg.innerText = "Buscando...";
-                area.classList.add('hidden');
+  const phone = "5585988837389"; // 55 + DDD + número (sem espaços)
+  const encoded = encodeURIComponent(msg);
 
-                try {
-                    const q = query(collection(db, "users"), where("username", "==", user));
-                    const snap = await getDocs(q);
-                    
-                    if (!snap.empty) {
-                        const data = snap.docs[0].data();
-                        const hint = data.passwordHint;
-                        
-                        if (hint) {
-                            document.getElementById('hintTextDisplay').innerText = hint;
-                            area.classList.remove('hidden');
-                            msg.innerText = "";
-                            document.getElementById('btnSearchHint').innerText = "LEMBREI!";
-                            document.getElementById('btnSearchHint').onclick = closeModal;
-                        } else {
-                            msg.innerText = "Você não cadastrou dica. Contate o Admin.";
-                        }
-                    } else {
-                        msg.innerText = "Usuário não encontrado.";
-                    }
-                } catch(e) {
-                    console.error(e);
-                    msg.innerText = "Erro ao buscar. Tente novamente.";
-                }
-            };
-        };        
+  // mobile abre app / desktop abre web
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const url = isMobile
+    ? `https://wa.me/${phone}?text=${encoded}`
+    : `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+
+  window.open(url, "_blank");
+};
+      
        document.getElementById('btnOpenRegister').onclick = () => {
             const modal = document.getElementById('modalOverlay'); 
             const cont = document.getElementById('modalContainer'); 
