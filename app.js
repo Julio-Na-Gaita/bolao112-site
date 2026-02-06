@@ -453,20 +453,52 @@ const shouldGateBeActiveNow = (officialStartAt) => {
         };
 
 // ===============================
-// LOGIN: adiciona "olho" no campo de senha (passInput)
+// Password Eye Toggle (reutilizável)
 // ===============================
-(() => {
+window.attachPasswordEye = (inputId, eyeBtnId) => {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(eyeBtnId);
+  if (!input || !btn) return;
+
+  const setIcon = () => {
+    const isHidden = input.type === "password";
+    btn.innerHTML = isHidden
+      ? `<i class="fas fa-eye"></i>`
+      : `<i class="fas fa-eye-slash"></i>`;
+  };
+
+  setIcon();
+
+  btn.onclick = () => {
+    input.type = (input.type === "password") ? "text" : "password";
+    setIcon();
+    input.focus();
+  };
+};
+
+// ===============================
+// LOGIN: adiciona "olho" no campo de senha (passInput) - SAFE
+// ===============================
+window.setupLoginPasswordEye = () => {
   const passInput = document.getElementById("passInput");
   if (!passInput) return;
 
-  // evita duplicar
-  if (document.getElementById("loginEyeBtn")) return;
+  // se a função ainda não existe (ordem do arquivo), tenta de novo daqui a pouco
+  if (typeof window.attachPasswordEye !== "function") {
+    setTimeout(window.setupLoginPasswordEye, 50);
+    return;
+  }
 
-  // garante que o pai é relativo pra posicionar o botão
+  // evita duplicar
+  if (document.getElementById("loginEyeBtn")) {
+    // garante que o toggle está ligado
+    window.attachPasswordEye("passInput", "loginEyeBtn");
+    return;
+  }
+
   const parent = passInput.parentElement;
   if (parent) parent.style.position = "relative";
 
-  // cria botão
   const eyeBtn = document.createElement("button");
   eyeBtn.type = "button";
   eyeBtn.id = "loginEyeBtn";
@@ -484,9 +516,14 @@ const shouldGateBeActiveNow = (officialStartAt) => {
 
   parent.appendChild(eyeBtn);
 
-  // liga o toggle
   window.attachPasswordEye("passInput", "loginEyeBtn");
-})();
+};
+
+// roda quando o DOM estiver pronto
+window.addEventListener("DOMContentLoaded", () => {
+  window.setupLoginPasswordEye();
+});
+
 
 
 // --- RECUPERAÇÃO DE SENHA (WEB) ---
@@ -4685,31 +4722,7 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
       </div>
     `;
 
-          // ===============================
-// Password Eye Toggle (reutilizável)
-// ===============================
-window.attachPasswordEye = (inputId, eyeBtnId) => {
-  const input = document.getElementById(inputId);
-  const btn = document.getElementById(eyeBtnId);
-  if (!input || !btn) return;
-
-  const setIcon = () => {
-    const isHidden = input.type === "password";
-    btn.innerHTML = isHidden
-      ? `<i class="fas fa-eye"></i>`
-      : `<i class="fas fa-eye-slash"></i>`;
-  };
-
-  setIcon();
-
-  btn.onclick = () => {
-    input.type = (input.type === "password") ? "text" : "password";
-    setIcon();
-    input.focus();
-  };
-};
-
-
+        
     window.openModal(html);
 
     // Wire do botão de aceitar (se existir)
