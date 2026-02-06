@@ -164,21 +164,29 @@ window.openForcePasswordModal = (firebaseUser) => {
       </div>
 
       <div class="p-4 space-y-3">
-        <div>
-          <label class="block text-[11px] font-black text-gray-600 mb-1 uppercase">Senha atual (temporária)</label>
-          <input id="forcePwCurrent" type="password" class="w-full border rounded px-3 py-2 text-sm" autocomplete="current-password" />
-        </div>
+       <div style="position: relative;">
+  <input id="forcePwCurrent" type="password" class="w-full border rounded px-3 py-2 text-sm pr-10" autocomplete="current-password" />
+  <button id="eyeForceCurrent" type="button"
+    style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#666; font-size:16px; cursor:pointer; padding:6px;">
+  </button>
+</div>
 
-        <div>
-          <label class="block text-[11px] font-black text-gray-600 mb-1 uppercase">Nova senha</label>
-          <input id="forcePwNew" type="password" class="w-full border rounded px-3 py-2 text-sm" autocomplete="new-password" />
-          <div class="text-[10px] text-gray-500 font-bold mt-1">Mínimo 6 caracteres.</div>
-        </div>
 
-        <div>
-          <label class="block text-[11px] font-black text-gray-600 mb-1 uppercase">Confirmar nova senha</label>
-          <input id="forcePwConfirm" type="password" class="w-full border rounded px-3 py-2 text-sm" autocomplete="new-password" />
-        </div>
+       <div style="position: relative;">
+  <input id="forcePwNew" type="password" class="w-full border rounded px-3 py-2 text-sm pr-10" autocomplete="new-password" />
+  <button id="eyeForceNew" type="button"
+    style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#666; font-size:16px; cursor:pointer; padding:6px;">
+  </button>
+</div>
+
+
+       <div style="position: relative;">
+  <input id="forcePwConfirm" type="password" class="w-full border rounded px-3 py-2 text-sm pr-10" autocomplete="new-password" />
+  <button id="eyeForceConfirm" type="button"
+    style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#666; font-size:16px; cursor:pointer; padding:6px;">
+  </button>
+</div>
+
 
         <div id="forcePwError" class="text-[11px] font-bold text-red-600 hidden"></div>
 
@@ -193,6 +201,12 @@ window.openForcePasswordModal = (firebaseUser) => {
     </div>
   `);
 
+// liga olhos nos 3 campos
+window.attachPasswordEye("forcePwCurrent", "eyeForceCurrent");
+window.attachPasswordEye("forcePwNew", "eyeForceNew");
+window.attachPasswordEye("forcePwConfirm", "eyeForceConfirm");
+
+        
   // botão SAIR (única forma de fechar sem trocar)
   document.getElementById("forcePwSignOutBtn").onclick = async () => {
     try { await signOut(auth); } catch(e) {}
@@ -282,6 +296,7 @@ window.startForcePasswordWatcher = (firebaseUser) => {
       // se estava aberto e já foi resolvido, fecha
       if (document.getElementById("forcePwModalRoot")) {
         window.closeForcePasswordModal();
+window.continueAfterLoginGates();
       }
     }
   }, (err) => {
@@ -436,6 +451,44 @@ const shouldGateBeActiveNow = (officialStartAt) => {
                 btn.disabled = false;
             }
         };
+
+// ===============================
+// LOGIN: adiciona "olho" no campo de senha (passInput)
+// ===============================
+(() => {
+  const passInput = document.getElementById("passInput");
+  if (!passInput) return;
+
+  // evita duplicar
+  if (document.getElementById("loginEyeBtn")) return;
+
+  // garante que o pai é relativo pra posicionar o botão
+  const parent = passInput.parentElement;
+  if (parent) parent.style.position = "relative";
+
+  // cria botão
+  const eyeBtn = document.createElement("button");
+  eyeBtn.type = "button";
+  eyeBtn.id = "loginEyeBtn";
+  eyeBtn.setAttribute("aria-label", "Mostrar/ocultar senha");
+  eyeBtn.style.position = "absolute";
+  eyeBtn.style.right = "10px";
+  eyeBtn.style.top = "50%";
+  eyeBtn.style.transform = "translateY(-50%)";
+  eyeBtn.style.background = "transparent";
+  eyeBtn.style.border = "none";
+  eyeBtn.style.color = "#666";
+  eyeBtn.style.fontSize = "16px";
+  eyeBtn.style.cursor = "pointer";
+  eyeBtn.style.padding = "6px";
+
+  parent.appendChild(eyeBtn);
+
+  // liga o toggle
+  window.attachPasswordEye("passInput", "loginEyeBtn");
+})();
+
+
 // --- RECUPERAÇÃO DE SENHA (WEB) ---
         document.getElementById('btnForgotPass').onclick = () => {
             const modal = document.getElementById('modalOverlay'); 
@@ -611,7 +664,68 @@ const shouldGateBeActiveNow = (officialStartAt) => {
             }
         };
          };  
-      
+
+// ===============================
+// CENTRAL: decide gates pós-login (Force PW -> Rules Gate -> App)
+// ===============================
+window.continueAfterLoginGates = async () => {
+  if (!auth.currentUser) return;
+
+  const user = auth.currentUser;
+  const userDocRef = doc(db, "users", user.uid);
+
+  let userSnap = null;
+  try {
+    userSnap = await getDoc(userDocRef);
+  } catch (e) {
+    console.error("continueAfterLoginGates getDoc:", e);
+    // fallback seguro: mostra app mínimo mas sem liberar navegação
+    document.getElementById('mainHeader').classList.remove('hidden');
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('mainScreens').classList.remove('hidden');
+    document.getElementById('bottomNav').classList.add('hidden');
+    document.getElementById('btnLogout').classList.remove('hidden');
+    alert("Erro ao carregar seus dados. Verifique sua conexão.");
+    return;
+  }
+
+  const userData = userSnap.exists() ? userSnap.data() : null;
+
+  // 1) FORCE PASSWORD CHANGE (prioridade máxima)
+  if (userData && userData.forcePasswordChange === true) {
+    // Estrutura mínima (sem liberar menu)
+    document.getElementById('mainHeader').classList.remove('hidden');
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('mainScreens').classList.remove('hidden');
+    document.getElementById('bottomNav').classList.add('hidden');
+    document.getElementById('btnLogout').classList.remove('hidden');
+
+    // abre modal bloqueante
+    window.openForcePasswordModal(user);
+    return;
+  }
+
+  // 2) RULES GATE
+  const mustAccept = await evaluateRulesGate(user.uid, userData);
+  if (mustAccept) {
+    document.getElementById('mainHeader').classList.remove('hidden');
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('mainScreens').classList.remove('hidden');
+    document.getElementById('bottomNav').classList.add('hidden'); // trava menu
+    document.getElementById('btnLogout').classList.remove('hidden');
+
+    showTab('rules');
+    if (typeof renderRules === 'function') renderRules();
+
+    setTimeout(() => openRulesGateModal(), 0);
+    return;
+  }
+
+  // 3) LIBERA APP
+  finalizeAppEntryAfterLogin();
+};
+
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 // --- TRAVA DE SEGURANÇA E TRIAL (NOVO) ---
@@ -663,32 +777,8 @@ window.currentUid = user.uid;
 // userData (do seu userSnap que você já buscou lá em cima)
 const userData = userSnap.exists() ? userSnap.data() : null;
 
-// --- RULES GATE (3.3) ---
-const mustAccept = await evaluateRulesGate(user.uid, userData);
-
-if (mustAccept) {
-  // Mostra estrutura mínima e trava navegação
-  document.getElementById('mainHeader').classList.remove('hidden');
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('mainScreens').classList.remove('hidden');
-  document.getElementById('bottomNav').classList.add('hidden'); // trava menu
-  document.getElementById('btnLogout').classList.remove('hidden');
-
-  // GARANTE que a aba de regras existe/foi renderizada
-  showTab('rules'); // <- importante: força renderRules() via showTab
-  if (typeof renderRules === 'function') renderRules();
-
-  // Dá 1 tick pro DOM aplicar as mudanças antes de abrir o overlay
-  setTimeout(() => {
-    openRulesGateModal();
-  }, 0);
-
-  return; // não libera app ainda
-}
-
-
-// fluxo normal (liberado)
-finalizeAppEntryAfterLogin();
+// ✅ Entra pelo funil único (Force PW -> Rules Gate -> App)
+window.continueAfterLoginGates();
 
             } else {
                 window.currentUser = null;
@@ -4425,13 +4515,8 @@ document.body.style.overflow = 'auto';
 
 
       // garantir que a UI “entre” corretamente (caso tenhamos segurado a navegação)
-      if (typeof finalizeAppEntryAfterLogin === 'function') {
-        finalizeAppEntryAfterLogin();
-      } else {
-        // fallback: seu fluxo atual
-        showTab('matches');
-        calculatePot();
-      }
+      // segue pelo funil central
+window.continueAfterLoginGates();
 
     } catch (e) {
       console.error(e);
@@ -4599,6 +4684,31 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
         ${footerHtml}
       </div>
     `;
+
+          // ===============================
+// Password Eye Toggle (reutilizável)
+// ===============================
+window.attachPasswordEye = (inputId, eyeBtnId) => {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(eyeBtnId);
+  if (!input || !btn) return;
+
+  const setIcon = () => {
+    const isHidden = input.type === "password";
+    btn.innerHTML = isHidden
+      ? `<i class="fas fa-eye"></i>`
+      : `<i class="fas fa-eye-slash"></i>`;
+  };
+
+  setIcon();
+
+  btn.onclick = () => {
+    input.type = (input.type === "password") ? "text" : "password";
+    setIcon();
+    input.focus();
+  };
+};
+
 
     window.openModal(html);
 
