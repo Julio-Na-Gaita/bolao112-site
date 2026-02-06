@@ -1,5 +1,19 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, createUserWithEmailAndPassword, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  onAuthStateChanged, 
+  signOut, 
+  updatePassword, 
+  createUserWithEmailAndPassword, 
+  sendPasswordResetEmail, 
+  setPersistence, 
+  browserLocalPersistence, 
+  browserSessionPersistence,
+  EmailAuthProvider,
+  reauthenticateWithCredential
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
         // ADICIONADO: enableIndexedDbPersistence
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -105,6 +119,176 @@ window.__rulesGate = {
   officialStartAt: null,
   gateRules: false
 };
+
+// ===============================
+// FORCE PASSWORD CHANGE GATE (igual Android)
+// ===============================
+window.__forcePwLock = false;
+window.__forcePwUnsub = null;
+
+// helper pra mostrar erro no modal
+const setForcePwError = (msg) => {
+  const box = document.getElementById("forcePwError");
+  if (!box) return;
+  if (!msg) {
+    box.classList.add("hidden");
+    box.innerText = "";
+    return;
+  }
+  box.classList.remove("hidden");
+  box.innerText = msg;
+};
+
+// fecha modal só quando concluir troca (ou sair)
+window.closeForcePasswordModal = () => {
+  // libera a trava e fecha o modal
+  window.__forcePwLock = false;
+  try { window.closeModal(); } catch(e) {}
+};
+
+// abre modal bloqueante
+window.openForcePasswordModal = (firebaseUser) => {
+  // evita duplicar
+  if (document.getElementById("forcePwModalRoot")) return;
+
+  // trava o fechamento por overlay/ESC/closeModal
+  window.__forcePwLock = true;
+
+  window.openModal(`
+    <div id="forcePwModalRoot" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden">
+      <div class="bg-[#006400] p-4 text-white">
+        <div class="text-sm font-black uppercase tracking-wider">Troca de senha obrigatória</div>
+        <div class="text-[11px] text-white/90 font-bold mt-1">
+          O admin resetou sua senha. Por segurança, você precisa criar uma nova senha agora para que só você saiba.
+        </div>
+      </div>
+
+      <div class="p-4 space-y-3">
+        <div>
+          <label class="block text-[11px] font-black text-gray-600 mb-1 uppercase">Senha atual (temporária)</label>
+          <input id="forcePwCurrent" type="password" class="w-full border rounded px-3 py-2 text-sm" autocomplete="current-password" />
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-black text-gray-600 mb-1 uppercase">Nova senha</label>
+          <input id="forcePwNew" type="password" class="w-full border rounded px-3 py-2 text-sm" autocomplete="new-password" />
+          <div class="text-[10px] text-gray-500 font-bold mt-1">Mínimo 6 caracteres.</div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-black text-gray-600 mb-1 uppercase">Confirmar nova senha</label>
+          <input id="forcePwConfirm" type="password" class="w-full border rounded px-3 py-2 text-sm" autocomplete="new-password" />
+        </div>
+
+        <div id="forcePwError" class="text-[11px] font-bold text-red-600 hidden"></div>
+
+        <button id="forcePwSaveBtn" class="w-full bg-[#006400] text-white font-black py-3 rounded shadow btn-press text-sm">
+          SALVAR NOVA SENHA
+        </button>
+
+        <button id="forcePwSignOutBtn" class="w-full bg-gray-100 text-gray-700 font-black py-3 rounded shadow btn-press text-sm">
+          SAIR
+        </button>
+      </div>
+    </div>
+  `);
+
+  // botão SAIR (única forma de fechar sem trocar)
+  document.getElementById("forcePwSignOutBtn").onclick = async () => {
+    try { await signOut(auth); } catch(e) {}
+    // libera e fecha
+    window.__forcePwLock = false;
+    window.closeModal();
+  };
+
+  // botão SALVAR
+  document.getElementById("forcePwSaveBtn").onclick = async () => {
+    setForcePwError("");
+
+    const currentPw = (document.getElementById("forcePwCurrent").value || "").trim();
+    const newPw = (document.getElementById("forcePwNew").value || "").trim();
+    const confirmPw = (document.getElementById("forcePwConfirm").value || "").trim();
+
+    if (!currentPw) return setForcePwError("Digite sua senha atual (temporária).");
+    if (!newPw || newPw.length < 6) return setForcePwError("A nova senha deve ter no mínimo 6 caracteres.");
+    if (newPw !== confirmPw) return setForcePwError("A confirmação não confere com a nova senha.");
+
+    const btnSave = document.getElementById("forcePwSaveBtn");
+    const btnOut = document.getElementById("forcePwSignOutBtn");
+    btnSave.disabled = true;
+    btnOut.disabled = true;
+    btnSave.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> SALVANDO...`;
+
+    try {
+      const email = firebaseUser?.email;
+      if (!email) throw { code: "missing-email" };
+
+      // 1) Reautenticar com a senha temporária (a usada pra logar)
+      const cred = EmailAuthProvider.credential(email, currentPw);
+      await reauthenticateWithCredential(firebaseUser, cred);
+
+      // 2) Atualizar senha
+      await updatePassword(firebaseUser, newPw);
+
+      // 3) Atualizar Firestore (desliga o gate)
+      await updateDoc(doc(db, "users", firebaseUser.uid), {
+        forcePasswordChange: false,
+        lastPasswordChangedAt: serverTimestamp()
+      });
+
+      // (opcional) se você guardar algo no localStorage relacionado a login, limpe aqui
+      // localStorage.removeItem("SUA_CHAVE_AQUI");
+
+      // 4) fecha e libera
+      window.closeForcePasswordModal();
+
+    } catch (e) {
+      console.error("forcePasswordChange error:", e);
+      const code = e?.code || "";
+
+      if (code === "auth/wrong-password") setForcePwError("Senha atual incorreta.");
+      else if (code === "auth/too-many-requests") setForcePwError("Muitas tentativas. Aguarde e tente novamente.");
+      else if (code === "auth/requires-recent-login") setForcePwError("Por segurança, faça login novamente e tente de novo.");
+      else if (code === "permission-denied") setForcePwError("Sem permissão no Firestore. Contate o admin.");
+      else if (code === "unauthenticated") setForcePwError("Sessão inválida. Faça login novamente.");
+      else setForcePwError("Erro ao trocar senha. Tente novamente.");
+
+      btnSave.disabled = false;
+      btnOut.disabled = false;
+      btnSave.innerHTML = `SALVAR NOVA SENHA`;
+    }
+  };
+};
+
+// listener em tempo real no users/{uid}
+window.startForcePasswordWatcher = (firebaseUser) => {
+  // derruba listener anterior (se trocar usuário)
+  if (window.__forcePwUnsub) {
+    try { window.__forcePwUnsub(); } catch(e) {}
+    window.__forcePwUnsub = null;
+  }
+  if (!firebaseUser) return;
+
+  const userRef = doc(db, "users", firebaseUser.uid);
+
+  window.__forcePwUnsub = onSnapshot(userRef, (snap) => {
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const mustChange = data.forcePasswordChange === true;
+
+    if (mustChange) {
+      window.openForcePasswordModal(firebaseUser);
+    } else {
+      // se estava aberto e já foi resolvido, fecha
+      if (document.getElementById("forcePwModalRoot")) {
+        window.closeForcePasswordModal();
+      }
+    }
+  }, (err) => {
+    console.error("forcePasswordChange snapshot error:", err);
+  });
+};
+
 
 window.currentUid = null;
 window.currentUser = null;
@@ -464,8 +648,10 @@ const shouldGateBeActiveNow = (officialStartAt) => {
                     }
 
                     // ATUALIZANDO VERSÃO
-                    try { await updateDoc(userDocRef, { appVersion: "Web v1.7", lastAccess: new Date() // <--- GRAVA A DATA/HORA ATUAL
-                                                       }); } catch(e) {}
+try { await updateDoc(userDocRef, { appVersion: "Web v1.7", lastAccess: new Date() }); } catch(e) {}
+
+// ✅ NOVO: inicia o gate de troca de senha obrigatória (Android parity)
+window.startForcePasswordWatcher(user);
                 }
                 // ------------------------------------------
 
@@ -4089,11 +4275,12 @@ window.closeModal = () => {
   const __origCloseModal = window.closeModal;
 
   window.closeModal = function () {
-    // se o gate das regras está ativo, impede fechar
-    if (window.__rulesGateLock) return;
+    // se Rules Gate OU Force Password estiver ativo, impede fechar
+    if (window.__rulesGateLock || window.__forcePwLock) return;
     return __origCloseModal.apply(this, arguments);
   };
 })();
+
 
 // ===============================
 // MODAL BASE (garante openModal/closeModal globais)
@@ -4130,9 +4317,9 @@ if (!window.closeModal) {
       if (e.target !== overlay) return;
 
       // se gate estiver ativo, não fecha
-      if (window.__rulesGateLock) return;
+     if (window.__rulesGateLock || window.__forcePwLock) return;
+window.closeModal();
 
-      window.closeModal();
     });
   }
 
@@ -4144,7 +4331,7 @@ if (!window.closeModal) {
       if (e.key !== "Escape") return;
 
       // se gate estiver ativo, não fecha
-      if (window.__rulesGateLock) return;
+if (window.__rulesGateLock || window.__forcePwLock) return;
 
       // se não tiver modal aberto, ignora
       const ov = document.getElementById("modalOverlay");
