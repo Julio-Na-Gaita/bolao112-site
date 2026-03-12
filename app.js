@@ -1,114 +1,37 @@
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { 
-  getAuth, 
-  signInWithEmailAndPassword, 
-  onAuthStateChanged, 
-  signOut, 
-  updatePassword, 
-  createUserWithEmailAndPassword, 
-  sendPasswordResetEmail, 
-  setPersistence, 
-  browserLocalPersistence, 
+       // app.js
+import {
+  app,
+  auth,
+  db,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+  updatePassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence,
   browserSessionPersistence,
   EmailAuthProvider,
-  reauthenticateWithCredential
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  reauthenticateWithCredential,
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  query,
+  where,
+  deleteDoc,
+  writeBatch,
+  addDoc,
+  onSnapshot,
+  orderBy,
+  arrayUnion,
+  arrayRemove,
+  serverTimestamp
+} from "./firebase.js";
 
-        // ADICIONADO: enableIndexedDbPersistence
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        const registerServiceWorker = () => {
-    if (!('serviceWorker' in navigator)) return;
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js');
-    });
-};
-
-registerServiceWorker();
-
-const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", authDomain: "bolao112fc.firebaseapp.com", projectId: "bolao112fc", storageBucket: "bolao112fc.firebasestorage.app", messagingSenderId: "131329454158", appId: "1:131329454158:web:983e4544dd651ec942131f", measurementId: "G-5SGWJE6EKK" };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-         let currentUser = null;
-        let currentRankingData = [];
-        let compMap = {}; 
-        let globalServerCounts = {};
-        // NOVO: Objeto para guardar as regras do Android
-        let appConfig = { chat: true, scout: true, vote: true };
-        // --- NOVAS VARIÁVEIS AQUI ---
-        let layoutOrder = []; // Vai guardar a ordem da tela ["ticker", "banner_X", "matches_open"...]
-        let activePolls = {}; // Cache das enquetes
-        // --- NOVA FUNÇÃO DE ORDENAÇÃO (PADRÃO ANDROID) ---
-// Regra: 1. Prazo (Crescente) | 2. Criação (Crescente/Antigo 1º) | 3. ID (Fallback)
-const matchComparator = (a, b) => {
-    // 1. Deadline
-    const dateA = a.deadlineDate ? a.deadlineDate.getTime() : 0;
-    const dateB = b.deadlineDate ? b.deadlineDate.getTime() : 0;
-    if (dateA !== dateB) return dateA - dateB;
-
-    // 2. CreatedAt (Desempate: Jogo cadastrado antes recebe # menor)
-    // Tratamento seguro para timestamp do Firestore ou Date convertida
-    let createdA = 0, createdB = 0;
-    
-    if (a.createdAt) {
-        if (typeof a.createdAt.toDate === 'function') createdA = a.createdAt.toDate().getTime();
-        else if (a.createdAt instanceof Date) createdA = a.createdAt.getTime();
-        else if (a.createdAt.seconds) createdA = a.createdAt.seconds * 1000;
-    }
-    
-    if (b.createdAt) {
-        if (typeof b.createdAt.toDate === 'function') createdB = b.createdAt.toDate().getTime();
-        else if (b.createdAt instanceof Date) createdB = b.createdAt.getTime();
-        else if (b.createdAt.seconds) createdB = b.createdAt.seconds * 1000;
-    }
-
-    if (createdA !== createdB) return createdA - createdB;
-
-    // 3. ID (Último recurso)
-    return a.id.localeCompare(b.id);
-};
-       // --- ÁUDIO SIMPLES (SOMENTE POP) ---
-        const playVoteSound = () => {
-            try {
-                const audio = new Audio('som_pop.mp3');
-                audio.volume = 0.5;
-                audio.play().catch(e => console.log("Áudio bloqueado:", e));
-            } catch(e) { console.log(e); }
-        };
-        
-        // Garante que o som toque nas funções de voto existentes
-        // (Nota: As funções window.vote e window.votePoll já chamam playVoteSound(), 
-        // então só precisamos definir ela aqui em cima e tudo volta a funcionar).
-        // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
-        // --- GERADOR DE AVATAR (CORRIGIDO PARA FOTO REAL) ---
-        const getAvatarUrl = (base64, name) => {
-            // Verifica se existe, se não é texto "null"/"undefined" e se é longo o suficiente para ser imagem
-            if (base64 && typeof base64 === 'string' && base64.length > 50 && base64 !== "null" && base64 !== "undefined") {
-                // Se já vier com o cabeçalho 'data:image', usa como está. Se não, adiciona.
-                if (base64.startsWith('data:image')) {
-                    return base64;
-                } else {
-                    return `data:image/jpeg;base64,${base64}`;
-                }
-            }
-            
-            // Fallback: DiceBear (Avatar Desenhado)
-            const seed = (name || "user").trim();
-            const bgColors = ["b6e3f4", "c0aede", "d1d4f9", "ffdfbf", "fdcdc5"]; 
-            const bg = bgColors[seed.length % bgColors.length];
-            return `https://api.dicebear.com/7.x/adventurer/png?seed=${seed}&backgroundColor=${bg}`;
-        };
-
-        // --- OTIMIZAÇÃO: ATIVAR CACHE OFFLINE ---
-        // Isso faz o site carregar instantaneamente na 2ª visita
-        enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code == 'failed-precondition') {
-                console.log('Muitas abas abertas. O cache funcionará em apenas uma.');
-            } else if (err.code == 'unimplemented') {
-                console.log('Navegador não suporta persistência.');
-            }
-        });
         // ----------------------------------------
       // --- RULES GATE (3.3) ---
 window.__rulesGateLock = false;
