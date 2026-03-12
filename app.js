@@ -14,7 +14,7 @@
   reauthenticateWithCredential
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // ADICIONADO: enableIndexedDbPersistence
+        // ADICIONADO: enableIndexedDbPersistence (Teste simples)
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const registerServiceWorker = () => {
