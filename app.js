@@ -14,7 +14,7 @@
   reauthenticateWithCredential
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // ADICIONADO: enableIndexedDbPersistence (Teste simples)
+        // ADICIONADO: enableIndexedDbPersistence
         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const registerServiceWorker = () => {
@@ -2334,7 +2334,19 @@ chronoMatches.forEach(m => {
       simStreak++;
       if (isFinal) finalsWon++;
 
-      hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`, type: 'good' });
+      hist.push({
+    id: m.id,
+    ts: m.deadlineDate,
+    created: m.createdAt,
+    text: `${dateStr} - ✅ Acerto ${m.teamA} x ${m.teamB}`,
+    label: `${dateStr} - Acerto`,
+    teamA: m.teamA,
+    teamB: m.teamB,
+    teamAUrl: m.teamAUrl || "",
+    teamBUrl: m.teamBUrl || "",
+    type: 'good'
+});
+
 
       if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "3 acertos seguidos.", date: dateStr, hiddenInList: false });
       if (simStreak === 5) trophyRoom.push({ icon: "🎯", name: "MITO", desc: "5 acertos seguidos.", date: dateStr, hiddenInList: false });
@@ -2349,7 +2361,19 @@ chronoMatches.forEach(m => {
       wrongStreak++;
       simStreak = 0;
 
-      hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - 👎 Errou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
+      hist.push({
+    id: m.id,
+    ts: m.deadlineDate,
+    created: m.createdAt,
+    text: `${dateStr} - 👎 Errou ${m.teamA} x ${m.teamB}`,
+    label: `${dateStr} - Errou`,
+    teamA: m.teamA,
+    teamB: m.teamB,
+    teamAUrl: m.teamAUrl || "",
+    teamBUrl: m.teamBUrl || "",
+    type: 'bad'
+});
+
     }
 
   } else {
@@ -2358,7 +2382,19 @@ chronoMatches.forEach(m => {
     wrongStreak = 0;
     simStreak = 0;
 
-    hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });
+    hist.push({
+    id: m.id,
+    ts: m.deadlineDate,
+    created: m.createdAt,
+    text: `${dateStr} - ❌ Não votou ${m.teamA} x ${m.teamB}`,
+    label: `${dateStr} - Não votou`,
+    teamA: m.teamA,
+    teamB: m.teamB,
+    teamAUrl: m.teamAUrl || "",
+    teamBUrl: m.teamBUrl || "",
+    type: 'bad'
+});
+
   }
 });
                         // ✅ STATUS ATUAL (não é conquista): Fantasma só se a sequência ATUAL for >= 3 sem votar
@@ -2921,32 +2957,58 @@ window.__fromHistoryIdx = idx;
 window.__fromHistoryUid = u.uid;
 
             
-            const html = (u.hist && u.hist.length > 0)
-  ? u.hist.map(h => {
-      const colorClass = (h.type === 'bad') ? 'text-red-600' : 'text-[#2E7D32]';
+            const html = u.hist && u.hist.length > 0 ? u.hist.map(h => {
+    const colorClass = h.type === 'bad' ? 'text-red-600' : 'text-[#2E7D32]';
 
-      // Só deixa clicável se tiver id de match e não for item "especial"
-      const isMatch = h.id && h.id !== "diamante";
+    // Só deixa clicável se tiver id de match e não for item especial
+    const isMatch = h.id && h.id !== 'diamante';
 
-      if (!isMatch) {
+    if (!isMatch) {
         return `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${colorClass}">${h.text}</div>`;
-      }
+    }
 
-      return `
+    const teamALogo = h.teamAUrl
+        ? `<img src="${h.teamAUrl}" class="w-7 h-7 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+        : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;
+
+    const teamBLogo = h.teamBUrl
+        ? `<img src="${h.teamBUrl}" class="w-7 h-7 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+        : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;
+
+    const statusText = h.label || h.text || '';
+
+    return `
         <button
-          type="button"
-          onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.__fromHistoryIdx)"
-          class="w-full text-left border-b border-gray-300/50 py-2 text-xs font-bold ${colorClass} hover:bg-black/5 active:bg-black/10 rounded px-1"
-          title="Abrir palpites registrados deste confronto"
+            type="button"
+            onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.fromHistoryIdx)"
+            class="w-full text-left border-b border-gray-300/50 py-2 hover:bg-black/5 active:bg-black/10 rounded px-1"
+            title="Abrir palpites registrados deste confronto"
         >
-          <div class="flex items-center justify-between gap-2">
-            <span class="leading-snug">${h.text}</span>
-            <i class="fas fa-chevron-right text-[10px] opacity-60"></i>
-          </div>
+            <div class="flex items-center justify-between gap-2">
+                <div class="min-w-0 flex-1">
+                    <div class="text-[11px] font-black leading-snug ${colorClass}">
+                        ${statusText}
+                    </div>
+
+                    <div class="mt-2 flex items-center justify-center gap-2">
+                        <div class="w-8 h-8 flex items-center justify-center shrink-0">
+                            ${teamALogo}
+                        </div>
+
+                        <span class="text-[10px] font-black text-gray-400 uppercase">x</span>
+
+                        <div class="w-8 h-8 flex items-center justify-center shrink-0">
+                            ${teamBLogo}
+                        </div>
+                    </div>
+                </div>
+
+                <i class="fas fa-chevron-right text-[10px] opacity-60 text-gray-500 shrink-0"></i>
+            </div>
         </button>
-      `;
-    }).join('')
-  : "<div class='text-center py-4 text-gray-400 text-xs'>Nenhum registro encontrado.</div>";
+    `;
+}).join('') : `<div class="text-center py-4 text-gray-400 text-xs">Nenhum registro encontrado.</div>`;
+
 
             
             document.getElementById('modalOverlay').classList.remove('hidden'); 
