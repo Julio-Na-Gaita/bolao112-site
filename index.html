@@ -6,12 +6,12 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-       <link rel="icon" type="image/png" href="favicon.png">
+       <link rel="icon" type="image/png" href="favicon.png?v=web-1.7.1">
     <title>Bolão 112 F.C</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png?v=web-1.7.1">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -19,7 +19,12 @@
   
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
-    <link rel="stylesheet" href="styles.css">
+    <script>
+  window.APP_VERSION = 'web-1.7.1';
+</script>
+
+<link rel="stylesheet" href="styles.css?v=web-1.7.1">
+
 </head>
 <body class="h-full w-full overflow-hidden relative text-gray-900 flex flex-col">
    <div id="maintenanceScreen" class="hidden fixed inset-0 z-[100] bg-gray-900 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
@@ -262,14 +267,14 @@
 
                 <button id="btnAdminPanel" onclick="openAdminMenu()" class="hidden w-full bg-gray-800 text-white py-3 rounded font-bold text-xs shadow btn-press mb-4"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>
                 
-                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.6.8</p>
+                <p class="text-center text-[14px] text-gray-400 font-bold mb-10 opacity-70">Versão Web v1.7.1</p>
             </div>
         </div>
     </main>
 
     <div id="modalOverlay" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="closeModal()"><div id="modalContainer" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden" onclick="event.stopPropagation()"></div></div>
   <div id="potModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6" onclick="document.getElementById('potModal').classList.add('hidden')">
-    <div class="card-cut w-full max-w-sm p-6 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.88), rgba(255,255,255,0.88)), url('bg_pote.jpg'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
+    <div class="card-cut w-full max-w-sm p-6 text-center relative border-t-4 border-[#FFD700]" style="background-image: linear-gradient(rgba(255,255,255,0.88), rgba(255,255,255,0.88)), url('bg_pote.png'); background-size: cover; background-position: center;" onclick="event.stopPropagation()">
 
             <i class="fas fa-piggy-bank text-4xl text-[#FFD700] mb-2 drop-shadow-sm"></i>
             <h2 class="text-lg font-bold text-gray-800 uppercase tracking-widest">ACUMULADO!</h2>
@@ -303,7 +308,8 @@
 </nav>
 
 
-    <script type="module" src="app.js" defer></script>
+    <script type="module" src="app.js?v=web-1.7.1" defer></script>
+
 </body>
 </html>
 
