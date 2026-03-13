@@ -3073,20 +3073,32 @@ return `
 
 
             
-            document.getElementById('modalOverlay').classList.remove('hidden'); 
-            document.getElementById('modalContainer').innerHTML = `
-            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
-                <img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-20">
-                <div class="relative z-10 p-6 flex flex-col items-center h-[60vh]">
-                    <i class="fas fa-file-invoice-dollar text-[#006400] text-3xl mb-2"></i>
-                    <div class="bg-white/80 rounded px-3 py-1 mb-1 shadow-sm"><h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3></div>
-                    <div class="bg-white/80 rounded px-2 py-1 mb-4 shadow-sm"><h2 class="font-black text-black text-lg">${u.name}</h2></div>
-                    <div class="w-full bg-white/90 rounded-lg shadow-inner p-3 flex-1 overflow-y-auto border border-gray-200">
-                        ${html}
-                    </div>
-                    <button onclick="closeModal()" class="mt-4 w-full bg-[#006400] text-white font-bold py-3 rounded shadow-lg btn-press">FECHAR</button>
-                </div>
-            </div>`; 
+            document.getElementById("modalOverlay").classList.remove("hidden");
+document.getElementById("modalContainer").innerHTML = `
+    <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+        <img src="bgdialogextrato.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-20">
+        <div class="relative z-10 px-4 pt-4 pb-3 flex flex-col items-center h-[78vh]">
+            <i class="fas fa-file-invoice-dollar text-[#006400] text-2xl mb-1"></i>
+
+            <div class="bg-white/80 rounded px-3 py-1 mb-1 shadow-sm">
+                <h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3>
+            </div>
+
+            <div class="bg-white/80 rounded px-2 py-1 mb-2 shadow-sm">
+                <h2 class="font-black text-black text-lg">${u.name}</h2>
+            </div>
+
+            <div class="w-full bg-white/90 rounded-lg shadow-inner p-2 flex-1 overflow-y-auto border border-gray-200">
+                ${html}
+            </div>
+
+            <button onclick="closeModal()" class="mt-3 w-full bg-[#006400] text-white font-bold py-2.5 rounded shadow-lg btn-press">
+                FECHAR
+            </button>
+        </div>
+    </div>
+`;
+
         };
         
         // --- LEGENDA MEDALHAS ATUALIZADA (MITO, DIAMANTE...) ---
