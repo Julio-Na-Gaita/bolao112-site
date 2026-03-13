@@ -2974,7 +2974,7 @@ window.__fromHistoryIdx = idx;
 window.__fromHistoryUid = u.uid;
 
             
-            const html = u.hist && u.hist.length > 0 ? u.hist.map(h => {
+           const html = u.hist && u.hist.length > 0 ? u.hist.map(h => {
     const colorClass = h.type === 'bad' ? 'text-red-600' : 'text-[#2E7D32]';
 
     // Só deixa clicável se tiver id de match e não for item especial
@@ -2985,62 +2985,77 @@ window.__fromHistoryUid = u.uid;
     }
 
     const votedA = (h.votedTeam || "") === (h.teamA || "");
-const votedB = (h.votedTeam || "") === (h.teamB || "");
+    const votedB = (h.votedTeam || "") === (h.teamB || "");
 
-const teamALogo = h.teamAUrl
-    ? `<img src="${h.teamAUrl}" class="w-7 h-7 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
-    : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;
+    const teamALogo = h.teamAUrl
+        ? `<img src="${h.teamAUrl}" class="w-8 h-8 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+        : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;
 
-const teamBLogo = h.teamBUrl
-    ? `<img src="${h.teamBUrl}" class="w-7 h-7 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
-    : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;
+    const teamBLogo = h.teamBUrl
+        ? `<img src="${h.teamBUrl}" class="w-8 h-8 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+        : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;
 
-const statusText = h.label || h.text || '';
+    const dateText = h.ts instanceof Date
+        ? h.ts.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+        : '';
 
-return `
-    <button
-        type="button"
-        onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.fromHistoryIdx)"
-        class="w-full text-left border-b border-gray-300/50 py-2 hover:bg-black/5 active:bg-black/10 rounded px-1"
-        title="Abrir palpites registrados deste confronto"
-    >
-        <div class="flex items-center justify-between gap-2">
-            <div class="min-w-0 flex-1">
-                <div class="text-[11px] font-black leading-snug ${colorClass}">
-                    ${statusText}
+    const isNoVote = (h.label || '').toLowerCase().includes('não votou');
+    const isHit = h.type === 'good' && !isNoVote;
+
+    const ptsText = isHit ? '+3 pts' : '+0 pts';
+    const ptsColor = isHit ? 'text-[#2E7D32]' : 'text-gray-400';
+
+    const resultIcon = isHit
+        ? `<i class="fas fa-check text-black text-[18px]"></i>`
+        : `<i class="fas fa-times text-black text-[18px]"></i>`;
+
+    const rowBg = isHit ? 'bg-[#EEF6EC]' : 'bg-[#F7EAEA]';
+
+    return `
+        <button
+            type="button"
+            onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.fromHistoryIdx)"
+            class="w-full text-left mb-2 rounded-2xl border border-gray-200 ${rowBg} px-3 py-3 hover:bg-black/5 active:bg-black/10 transition"
+            title="Abrir palpites registrados deste confronto"
+        >
+            <div class="flex items-center gap-3">
+                <div class="w-12 shrink-0 text-center">
+                    <div class="text-[11px] font-black text-gray-500">${dateText}</div>
+                    <div class="mt-3 flex justify-center">
+                        ${resultIcon}
+                    </div>
                 </div>
 
-                <div class="mt-2 flex items-center justify-center gap-3">
-                    <div class="flex flex-col items-center min-w-[52px]">
-                        <div class="w-9 h-9 flex items-center justify-center shrink-0 rounded-full ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-center gap-2">
+                        <div class="w-10 h-10 flex items-center justify-center rounded-full ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
                             ${teamALogo}
                         </div>
-                        ${votedA ? `<span class="mt-1 text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">SEU VOTO</span>` : `<span class="mt-1 text-[8px] opacity-0">.</span>`}
-                    </div>
 
-                    <span class="text-[10px] font-black text-gray-400 uppercase">x</span>
+                        <span class="text-[14px] font-black text-black">X</span>
 
-                    <div class="flex flex-col items-center min-w-[52px]">
-                        <div class="w-9 h-9 flex items-center justify-center shrink-0 rounded-full ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+                        <div class="w-10 h-10 flex items-center justify-center rounded-full ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
                             ${teamBLogo}
                         </div>
-                        ${votedB ? `<span class="mt-1 text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">SEU VOTO</span>` : `<span class="mt-1 text-[8px] opacity-0">.</span>`}
+
+                        <span class="text-[24px] font-black text-gray-400 ml-1">#${h.id ? String(h.id).replace(/\D/g, '') : ''}</span>
+                    </div>
+
+                    <div class="mt-2 flex items-center justify-center gap-2">
+                        ${votedA ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">SEU VOTO</span>` : ``}
+                        ${votedB ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">SEU VOTO</span>` : ``}
                     </div>
                 </div>
 
-                ${
-                    h.votedTeam
-                        ? `<div class="mt-1 text-center text-[9px] font-bold text-gray-500">Palpite: ${h.votedTeam}</div>`
-                        : ``
-                }
+                <div class="w-16 shrink-0 text-right">
+                    <div class="text-[24px] leading-none font-black ${ptsColor}">${ptsText.replace(' pts', '')}</div>
+                    <div class="text-[11px] font-black ${ptsColor}">pts</div>
+                </div>
             </div>
-
-            <i class="fas fa-chevron-right text-[10px] opacity-60 text-gray-500 shrink-0"></i>
-        </div>
-    </button>
-`;
-
+        </button>
+    `;
 }).join('') : `<div class="text-center py-4 text-gray-400 text-xs">Nenhum registro encontrado.</div>`;
+
 
 
             
