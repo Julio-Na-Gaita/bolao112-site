@@ -2998,12 +2998,13 @@ window.__fromHistoryUid = u.uid;
 const votedB = (h.votedTeam || "") === (h.teamB || "");
 
 const teamALogo = h.teamAUrl
-    ? `<img src="${h.teamAUrl}" class="w-8 h-8 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
-    : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;
+    ? `<img src="${h.teamAUrl}" class="w-9 h-9 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+    : `<span class="text-[10px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;
 
 const teamBLogo = h.teamBUrl
-    ? `<img src="${h.teamBUrl}" class="w-8 h-8 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
-    : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;
+    ? `<img src="${h.teamBUrl}" class="w-9 h-9 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+    : `<span class="text-[10px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;
+
 
 const dateText = h.ts instanceof Date
     ? h.ts.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
@@ -3022,6 +3023,7 @@ const resultIcon = isHit
 const rowBg = isHit ? 'bg-[#EEF6EC]' : 'bg-[#F7EAEA]';
 const matchNo = h.matchNumber ? `#${h.matchNumber}` : '';
 
+
 return `
     <button
         type="button"
@@ -3039,17 +3041,20 @@ return `
 
             <div class="min-w-0">
                 <div class="flex items-center justify-center gap-2">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-full shrink-0 ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+                    <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+
                         ${teamALogo}
                     </div>
 
                     <span class="text-[14px] font-black text-black shrink-0">X</span>
 
-                    <div class="w-10 h-10 flex items-center justify-center rounded-full shrink-0 ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+                   <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+
                         ${teamBLogo}
                     </div>
 
-                    <span class="text-[18px] font-black text-gray-400 leading-none shrink-0">${matchNo}</span>
+                    <span class="text-[17px] font-black text-gray-400 leading-none shrink-0 tracking-tight">${matchNo}</span>
+
                 </div>
 
                 <div class="mt-2 h-[14px] flex items-center justify-center">
