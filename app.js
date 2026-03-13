@@ -2344,8 +2344,15 @@ chronoMatches.forEach(m => {
     teamB: m.teamB,
     teamAUrl: m.teamAUrl || "",
     teamBUrl: m.teamBUrl || "",
+    votedTeam: g.teamSelected || "",
+    votedLogo: g.teamSelected === m.teamA
+        ? (m.teamAUrl || "")
+        : g.teamSelected === m.teamB
+            ? (m.teamBUrl || "")
+            : "",
     type: 'good'
 });
+
 
 
       if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "3 acertos seguidos.", date: dateStr, hiddenInList: false });
@@ -2365,14 +2372,21 @@ chronoMatches.forEach(m => {
     id: m.id,
     ts: m.deadlineDate,
     created: m.createdAt,
-    text: `${dateStr} - 👎 Errou ${m.teamA} x ${m.teamB}`,
+    text: `${dateStr} - ❌ Errou ${m.teamA} x ${m.teamB}`,
     label: `${dateStr} - Errou`,
     teamA: m.teamA,
     teamB: m.teamB,
     teamAUrl: m.teamAUrl || "",
     teamBUrl: m.teamBUrl || "",
+    votedTeam: g.teamSelected || "",
+    votedLogo: g.teamSelected === m.teamA
+        ? (m.teamAUrl || "")
+        : g.teamSelected === m.teamB
+            ? (m.teamBUrl || "")
+            : "",
     type: 'bad'
 });
+
 
     }
 
@@ -2386,14 +2400,17 @@ chronoMatches.forEach(m => {
     id: m.id,
     ts: m.deadlineDate,
     created: m.createdAt,
-    text: `${dateStr} - ❌ Não votou ${m.teamA} x ${m.teamB}`,
+    text: `${dateStr} - ⚪ Não votou ${m.teamA} x ${m.teamB}`,
     label: `${dateStr} - Não votou`,
     teamA: m.teamA,
     teamB: m.teamB,
     teamAUrl: m.teamAUrl || "",
     teamBUrl: m.teamBUrl || "",
+    votedTeam: "",
+    votedLogo: "",
     type: 'bad'
 });
+
 
   }
 });
@@ -2967,46 +2984,62 @@ window.__fromHistoryUid = u.uid;
         return `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${colorClass}">${h.text}</div>`;
     }
 
-    const teamALogo = h.teamAUrl
-        ? `<img src="${h.teamAUrl}" class="w-7 h-7 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
-        : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;
+    const votedA = (h.votedTeam || "") === (h.teamA || "");
+const votedB = (h.votedTeam || "") === (h.teamB || "");
 
-    const teamBLogo = h.teamBUrl
-        ? `<img src="${h.teamBUrl}" class="w-7 h-7 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
-        : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;
+const teamALogo = h.teamAUrl
+    ? `<img src="${h.teamAUrl}" class="w-7 h-7 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+    : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;
 
-    const statusText = h.label || h.text || '';
+const teamBLogo = h.teamBUrl
+    ? `<img src="${h.teamBUrl}" class="w-7 h-7 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+    : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;
 
-    return `
-        <button
-            type="button"
-            onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.fromHistoryIdx)"
-            class="w-full text-left border-b border-gray-300/50 py-2 hover:bg-black/5 active:bg-black/10 rounded px-1"
-            title="Abrir palpites registrados deste confronto"
-        >
-            <div class="flex items-center justify-between gap-2">
-                <div class="min-w-0 flex-1">
-                    <div class="text-[11px] font-black leading-snug ${colorClass}">
-                        ${statusText}
-                    </div>
+const statusText = h.label || h.text || '';
 
-                    <div class="mt-2 flex items-center justify-center gap-2">
-                        <div class="w-8 h-8 flex items-center justify-center shrink-0">
+return `
+    <button
+        type="button"
+        onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.fromHistoryIdx)"
+        class="w-full text-left border-b border-gray-300/50 py-2 hover:bg-black/5 active:bg-black/10 rounded px-1"
+        title="Abrir palpites registrados deste confronto"
+    >
+        <div class="flex items-center justify-between gap-2">
+            <div class="min-w-0 flex-1">
+                <div class="text-[11px] font-black leading-snug ${colorClass}">
+                    ${statusText}
+                </div>
+
+                <div class="mt-2 flex items-center justify-center gap-3">
+                    <div class="flex flex-col items-center min-w-[52px]">
+                        <div class="w-9 h-9 flex items-center justify-center shrink-0 rounded-full ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
                             ${teamALogo}
                         </div>
+                        ${votedA ? `<span class="mt-1 text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">SEU VOTO</span>` : `<span class="mt-1 text-[8px] opacity-0">.</span>`}
+                    </div>
 
-                        <span class="text-[10px] font-black text-gray-400 uppercase">x</span>
+                    <span class="text-[10px] font-black text-gray-400 uppercase">x</span>
 
-                        <div class="w-8 h-8 flex items-center justify-center shrink-0">
+                    <div class="flex flex-col items-center min-w-[52px]">
+                        <div class="w-9 h-9 flex items-center justify-center shrink-0 rounded-full ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
                             ${teamBLogo}
                         </div>
+                        ${votedB ? `<span class="mt-1 text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">SEU VOTO</span>` : `<span class="mt-1 text-[8px] opacity-0">.</span>`}
                     </div>
                 </div>
 
-                <i class="fas fa-chevron-right text-[10px] opacity-60 text-gray-500 shrink-0"></i>
+                ${
+                    h.votedTeam
+                        ? `<div class="mt-1 text-center text-[9px] font-bold text-gray-500">Palpite: ${h.votedTeam}</div>`
+                        : ``
+                }
             </div>
-        </button>
-    `;
+
+            <i class="fas fa-chevron-right text-[10px] opacity-60 text-gray-500 shrink-0"></i>
+        </div>
+    </button>
+`;
+
 }).join('') : `<div class="text-center py-4 text-gray-400 text-xs">Nenhum registro encontrado.</div>`;
 
 
