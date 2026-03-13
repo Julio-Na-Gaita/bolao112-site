@@ -2336,6 +2336,7 @@ chronoMatches.forEach(m => {
 
       hist.push({
     id: m.id,
+    matchNumber: m.matchNumber || null,
     ts: m.deadlineDate,
     created: m.createdAt,
     text: `${dateStr} - ✅ Acerto ${m.teamA} x ${m.teamB}`,
@@ -2350,8 +2351,10 @@ chronoMatches.forEach(m => {
         : g.teamSelected === m.teamB
             ? (m.teamBUrl || "")
             : "",
+    ptsEarned: pts,
     type: 'good'
 });
+
 
 
 
@@ -2370,6 +2373,7 @@ chronoMatches.forEach(m => {
 
       hist.push({
     id: m.id,
+    matchNumber: m.matchNumber || null,
     ts: m.deadlineDate,
     created: m.createdAt,
     text: `${dateStr} - ❌ Errou ${m.teamA} x ${m.teamB}`,
@@ -2384,8 +2388,11 @@ chronoMatches.forEach(m => {
         : g.teamSelected === m.teamB
             ? (m.teamBUrl || "")
             : "",
+    ptsEarned: 0,
     type: 'bad'
 });
+
+
 
 
     }
@@ -2398,6 +2405,7 @@ chronoMatches.forEach(m => {
 
     hist.push({
     id: m.id,
+    matchNumber: m.matchNumber || null,
     ts: m.deadlineDate,
     created: m.createdAt,
     text: `${dateStr} - ⚪ Não votou ${m.teamA} x ${m.teamB}`,
@@ -2408,8 +2416,10 @@ chronoMatches.forEach(m => {
     teamBUrl: m.teamBUrl || "",
     votedTeam: "",
     votedLogo: "",
+    ptsEarned: 0,
     type: 'bad'
 });
+
 
 
   }
@@ -2985,75 +2995,79 @@ window.__fromHistoryUid = u.uid;
     }
 
     const votedA = (h.votedTeam || "") === (h.teamA || "");
-    const votedB = (h.votedTeam || "") === (h.teamB || "");
+const votedB = (h.votedTeam || "") === (h.teamB || "");
 
-    const teamALogo = h.teamAUrl
-        ? `<img src="${h.teamAUrl}" class="w-8 h-8 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
-        : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;
+const teamALogo = h.teamAUrl
+    ? `<img src="${h.teamAUrl}" class="w-8 h-8 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+    : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;
 
-    const teamBLogo = h.teamBUrl
-        ? `<img src="${h.teamBUrl}" class="w-8 h-8 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
-        : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;
+const teamBLogo = h.teamBUrl
+    ? `<img src="${h.teamBUrl}" class="w-8 h-8 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+    : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;
 
-    const dateText = h.ts instanceof Date
-        ? h.ts.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
-        : '';
+const dateText = h.ts instanceof Date
+    ? h.ts.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    : '';
 
-    const isNoVote = (h.label || '').toLowerCase().includes('não votou');
-    const isHit = h.type === 'good' && !isNoVote;
+const isNoVote = (h.label || '').toLowerCase().includes('não votou');
+const isHit = h.type === 'good' && !isNoVote;
+const ptsEarned = Number(h.ptsEarned || 0);
+const ptsText = `${ptsEarned > 0 ? '+' : ''}${ptsEarned}`;
+const ptsColor = ptsEarned > 0 ? 'text-[#2E7D32]' : 'text-gray-400';
 
-    const ptsText = isHit ? '+3 pts' : '+0 pts';
-    const ptsColor = isHit ? 'text-[#2E7D32]' : 'text-gray-400';
+const resultIcon = isHit
+    ? `<i class="fas fa-check text-black text-[18px]"></i>`
+    : `<i class="fas fa-times text-black text-[18px]"></i>`;
 
-    const resultIcon = isHit
-        ? `<i class="fas fa-check text-black text-[18px]"></i>`
-        : `<i class="fas fa-times text-black text-[18px]"></i>`;
+const rowBg = isHit ? 'bg-[#EEF6EC]' : 'bg-[#F7EAEA]';
+const matchNo = h.matchNumber ? `#${h.matchNumber}` : '';
 
-    const rowBg = isHit ? 'bg-[#EEF6EC]' : 'bg-[#F7EAEA]';
-
-    return `
-        <button
-            type="button"
-            onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.fromHistoryIdx)"
-            class="w-full text-left mb-2 rounded-2xl border border-gray-200 ${rowBg} px-3 py-3 hover:bg-black/5 active:bg-black/10 transition"
-            title="Abrir palpites registrados deste confronto"
-        >
-            <div class="flex items-center gap-3">
-                <div class="w-12 shrink-0 text-center">
-                    <div class="text-[11px] font-black text-gray-500">${dateText}</div>
-                    <div class="mt-3 flex justify-center">
-                        ${resultIcon}
-                    </div>
-                </div>
-
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-center gap-2">
-                        <div class="w-10 h-10 flex items-center justify-center rounded-full ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
-                            ${teamALogo}
-                        </div>
-
-                        <span class="text-[14px] font-black text-black">X</span>
-
-                        <div class="w-10 h-10 flex items-center justify-center rounded-full ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
-                            ${teamBLogo}
-                        </div>
-
-                        <span class="text-[24px] font-black text-gray-400 ml-1">#${h.id ? String(h.id).replace(/\D/g, '') : ''}</span>
-                    </div>
-
-                    <div class="mt-2 flex items-center justify-center gap-2">
-                        ${votedA ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">SEU VOTO</span>` : ``}
-                        ${votedB ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full">SEU VOTO</span>` : ``}
-                    </div>
-                </div>
-
-                <div class="w-16 shrink-0 text-right">
-                    <div class="text-[24px] leading-none font-black ${ptsColor}">${ptsText.replace(' pts', '')}</div>
-                    <div class="text-[11px] font-black ${ptsColor}">pts</div>
+return `
+    <button
+        type="button"
+        onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.fromHistoryIdx)"
+        class="w-full text-left mb-2 rounded-2xl border border-gray-200 ${rowBg} px-3 py-3 hover:bg-black/5 active:bg-black/10 transition"
+        title="Abrir palpites registrados deste confronto"
+    >
+        <div class="grid grid-cols-[44px_1fr_54px] items-center gap-3">
+            <div class="text-center">
+                <div class="text-[11px] font-black text-gray-500 leading-none">${dateText}</div>
+                <div class="mt-3 flex justify-center leading-none">
+                    ${resultIcon}
                 </div>
             </div>
-        </button>
-    `;
+
+            <div class="min-w-0">
+                <div class="flex items-center justify-center gap-2">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-full shrink-0 ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+                        ${teamALogo}
+                    </div>
+
+                    <span class="text-[14px] font-black text-black shrink-0">X</span>
+
+                    <div class="w-10 h-10 flex items-center justify-center rounded-full shrink-0 ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+                        ${teamBLogo}
+                    </div>
+
+                    <span class="text-[18px] font-black text-gray-400 leading-none shrink-0">${matchNo}</span>
+                </div>
+
+                <div class="mt-2 h-[14px] flex items-center justify-center">
+                    ${(votedA || votedB)
+                        ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full leading-none">SEU VOTO</span>`
+                        : ``
+                    }
+                </div>
+            </div>
+
+            <div class="text-right">
+                <div class="text-[16px] leading-none font-black ${ptsColor}">${ptsText}</div>
+                <div class="text-[11px] leading-none font-black ${ptsColor} mt-0.5">pts</div>
+            </div>
+        </div>
+    </button>
+`;
+
 }).join('') : `<div class="text-center py-4 text-gray-400 text-xs">Nenhum registro encontrado.</div>`;
 
 
