@@ -964,8 +964,9 @@ window.finalizeAppEntryAfterLogin = () => {
   if (appContent) appContent.className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
 
   // Pega as tabs que EXISTEM no HTML (evita null)
-  const tabs = ['matches', 'ranking', 'rules', 'shop', 'profile']
-    .filter(t => document.getElementById(`${t}Screen`) && document.getElementById(`nav-${t}`));
+  const tabs = ['matches', 'ranking', 'rules', 'profile']
+  .filter(t => document.getElementById(`${t}Screen`) && document.getElementById(`nav-${t}`));
+
 
   // Esconde todas e “desativa” no menu
   tabs.forEach(t => {
@@ -989,10 +990,10 @@ window.finalizeAppEntryAfterLogin = () => {
 
   // Chamadas de carregamento por aba (só se existirem)
   if (tab === 'matches' && typeof loadMatches === 'function') loadMatches();
-  if (tab === 'ranking' && typeof loadRanking === 'function') loadRanking();
-  if (tab === 'rules' && typeof renderRules === 'function') renderRules();
-  if (tab === 'shop' && typeof loadShop === 'function') loadShop();
-  if (tab === 'profile' && typeof loadProfile === 'function') loadProfile();
+if (tab === 'ranking' && typeof loadRanking === 'function') loadRanking();
+if (tab === 'rules' && typeof renderRules === 'function') renderRules();
+if (tab === 'profile' && typeof loadProfile === 'function') loadProfile();
+
 };
       
 
