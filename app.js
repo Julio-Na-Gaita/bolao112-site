@@ -2168,15 +2168,28 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
 
                 // 1. DADOS BRUTOS & DATA MATCHES
                 const matches = [];
-                const validMatchIds = new Set();
-                mSnap.forEach(d => {
-                    const data = d.data();
-                    if (data.deadline) {
-                        matches.push({ id: d.id, ...data, deadlineDate: data.deadline.toDate() });
-                        validMatchIds.add(d.id);
-                    }
-                });
-                const finishedMatches = matches.filter(m => m.winner);
+const validMatchIds = new Set();
+
+mSnap.forEach(d => {
+    const data = d.data();
+    if (data.deadline) {
+        matches.push({
+            id: d.id,
+            ...data,
+            deadlineDate: data.deadline.toDate()
+        });
+        validMatchIds.add(d.id);
+    }
+});
+
+// ADICIONE EXATAMENTE AQUI
+matches.sort(matchComparator);
+matches.forEach((m, idx) => {
+    m.matchNumber = idx + 1;
+});
+
+const finishedMatches = matches.filter(m => m.winner);
+
                 
                // 1.1 Info Rodapé (Última Atualização Real)
                 if (finishedMatches.length > 0) {
@@ -3081,8 +3094,9 @@ return `
             document.getElementById("modalOverlay").classList.remove("hidden");
 document.getElementById("modalContainer").innerHTML = `
     <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
-        <img src="bgdialogextrato.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-20">
-        <div class="relative z-10 px-4 pt-4 pb-3 flex flex-col items-center h-[78vh]">
+    <img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none z-0" onerror="this.style.display='none'">
+    <div class="relative z-10 px-4 pt-4 pb-3 flex flex-col items-center h-[78vh]">
+
             <i class="fas fa-file-invoice-dollar text-[#006400] text-2xl mb-1"></i>
 
             <div class="bg-white/80 rounded px-3 py-1 mb-1 shadow-sm">
