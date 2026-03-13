@@ -165,7 +165,7 @@
             </div>
         </div>
     </section>
-        <div id="mainScreens" class="hidden p-4 space-y-4">
+                <div id="mainScreens" class="hidden p-4 space-y-4">
             
             <div id="matchesScreen" class="hidden space-y-6"></div>
 
@@ -179,14 +179,14 @@
             
         </div>
 
-            <div id="rulesScreen" class="hidden space-y-4">
-                
-                <div id="rulesList" class="space-y-2"></div>
-                <div class="h-10"></div>
-            </div>
-
+        <div id="rulesScreen" class="hidden space-y-4">
             
-            <div id="profileScreen" class="hidden">
+            <div id="rulesList" class="space-y-2"></div>
+            <div class="h-10"></div>
+        </div>
+
+        <div id="profileScreen" class="hidden">
+
                 <div class="card-cut p-6 border-t-4 border-[#006400] text-center relative mb-4">
                     <h2 class="font-bold text-gray-400 text-xs mb-6 tracking-[0.2em]">CARTÃO DE MEMBRO</h2>
                     <div class="relative w-28 h-28 mx-auto mb-4">
@@ -297,11 +297,11 @@
     </div>
 
     <nav id="bottomNav" class="hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t safe-bottom flex justify-around p-2 z-50 shadow-2xl">
-        <button onclick="showTab('matches')" class="nav-btn flex flex-col items-center text-[#006400]" id="nav-matches"><i class="fas fa-soccer-ball text-lg"></i><span class="text-[10px] mt-1">Confrontos</span></button>
-        <button onclick="showTab('ranking')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-ranking"><i class="fas fa-trophy text-lg"></i><span class="text-[10px] mt-1">Ranking</span></button>
+    <button onclick="showTab('matches')" class="nav-btn flex flex-col items-center text-[#006400]" id="nav-matches"><i class="fas fa-soccer-ball text-lg"></i><span class="text-[10px] mt-1">Confrontos</span></button>
+    <button onclick="showTab('ranking')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-ranking"><i class="fas fa-trophy text-lg"></i><span class="text-[10px] mt-1">Ranking</span></button>
+    <button onclick="showTab('profile')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-profile"><i class="fas fa-user text-lg"></i><span class="text-[10px] mt-1">Perfil</span></button>
+</nav>
 
-        <button onclick="showTab('profile')" class="nav-btn flex flex-col items-center text-gray-400" id="nav-profile"><i class="fas fa-user text-lg"></i><span class="text-[10px] mt-1">Perfil</span></button>
-    </nav>
 
     <script type="module" src="app.js" defer></script>
 </body>
