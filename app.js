@@ -3095,7 +3095,7 @@ return `
             document.getElementById("modalOverlay").classList.remove("hidden");
 document.getElementById("modalContainer").innerHTML = `
     <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
-    <img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none z-0" onerror="this.style.display='none'">
+    <img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none z-0" onerror="this.style.display='none'">
     <div class="relative z-10 px-4 pt-4 pb-3 flex flex-col items-center h-[78vh]">
 
             <i class="fas fa-file-invoice-dollar text-[#006400] text-2xl mb-1"></i>
