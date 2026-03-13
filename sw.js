@@ -1,12 +1,15 @@
-const CACHE_NAME = 'bolao112-site-v2';
+const SW_URL = new URL(self.location.href);
+const APP_VERSION = SW_URL.searchParams.get('v') || 'web-1.7.1';
+const CACHE_NAME = `bolao112-site-${APP_VERSION}`;
 
 const ASSETS = [
   '/',
   '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/favicon.png'
+  `/styles.css?v=${APP_VERSION}`,
+  `/app.js?v=${APP_VERSION}`,
+  `/favicon.png?v=${APP_VERSION}`
 ];
+
 
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
@@ -43,18 +46,19 @@ self.addEventListener('fetch', (event) => {
     url.pathname.endsWith('/app.js') ||
     url.pathname.endsWith('/styles.css');
 
-  if (isCriticalAsset) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => caches.match(event.request))
-    );
-    return;
-  }
+ if (event.request.mode === 'navigate' || isCriticalAsset) {
+  event.respondWith(
+    fetch(new Request(event.request, { cache: 'no-store' }))
+      .then((response) => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
+  );
+  return;
+}
+
 
   event.respondWith(
     caches.match(event.request).then((cached) =>
