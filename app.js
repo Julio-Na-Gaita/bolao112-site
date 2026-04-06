@@ -2656,12 +2656,23 @@ let html = `
       <p class="text-[11px] font-bold text-gray-500">TEMPORADA 2026</p>
     </div>
 
-    <button
-      onclick="showKingModal()"
-      class="px-3 py-2 rounded-xl bg-[#FFF3CD] border border-[#FFD700] text-[#6D4C00] font-black text-[11px] shadow-sm active:scale-[0.98]"
-    >
-      👑 Rei do mês
-    </button>
+    <div class="flex items-center gap-2 shrink-0">
+      <button
+        onclick="showKingModal()"
+        class="px-3 py-2 rounded-xl bg-[#FFF3CD] border border-[#FFD700] text-[#6D4C00] font-black text-[11px] shadow-sm active:scale-[0.98]"
+      >
+        👑 Rei do mês
+      </button>
+
+      <button
+        onclick="openRankingInfo()"
+        aria-label="Sobre o ranking"
+        title="Sobre o ranking"
+        class="w-10 h-10 rounded-full bg-[#006400] text-white font-black text-base shadow-sm border border-[#0B7A0B] active:scale-[0.98] flex items-center justify-center"
+      >
+        i
+      </button>
+    </div>
   </div>
 
   <div class="grid grid-cols-[40px_1fr_26px_38px] gap-2 px-2 py-2 text-[11px] font-black text-gray-500 uppercase">
@@ -3751,53 +3762,64 @@ window.openCalendar2026 = () => {
         };
 // --- CÁLCULO DO POTE COM PREVISÃO ANUAL ---
         window.calculatePot = async () => {
-             try {
-                 const snap = await getDocs(collection(db, "users"));
-                 
-                 let totalCotasPagas = 0; // Quantidade de meses pagos (real)
-                 const totalParticipantes = snap.size; // Total de pessoas no bolão
-                 
-                 snap.forEach(d => {
-                     const p = d.data().payments;
-                     if(p) totalCotasPagas += Object.values(p).filter(Boolean).length;
-                 });
-                 
-                 // 1. Valores Reais (O que já tem no caixa)
-                 const currentPrize = totalCotasPagas * 10;
-                 const currentParty = totalCotasPagas * 5;
-                 const currentTotal = currentPrize + currentParty;
+  try {
+    const [usersSnap, configSnap] = await Promise.all([
+      getDocs(collection(db, "users")),
+      getDoc(doc(db, "settings", "config"))
+    ]);
 
-                 // 2. Valores de Previsão (Participantes * 12 meses * Valor)
-                 const forecastPrize = totalParticipantes * 12 * 10;
-                 const forecastParty = totalParticipantes * 12 * 5;
+    let totalCotasPagas = 0; // Quantidade de meses pagos (real)
+    const totalUsuarios = usersSnap.size;
 
-                 // Formatador de Moeda
-                 const fmt = (v) => v.toLocaleString('pt-br',{style:'currency',currency:'BRL'});
+    usersSnap.forEach(d => {
+      const p = d.data().payments;
+      if (p) totalCotasPagas += Object.values(p).filter(Boolean).length;
+    });
 
-                 // Atualiza HTML - Valores Reais
-                 const elPot = document.getElementById('potValue');
-                 const elParty = document.getElementById('partyValue');
-                 const elTotal = document.getElementById('totalValue');
+    const configData = configSnap.exists() ? configSnap.data() : {};
+    const rawConfiguredParticipants =
+      configData?.pot_active_participants ??
+      configData?.potactiveparticipants;
 
-                 if(elPot) elPot.innerText = fmt(currentPrize);
-                 if(elParty) elParty.innerText = fmt(currentParty);
-                 if(elTotal) elTotal.innerText = `Total Arrecadado (Real): ${fmt(currentTotal)}`;
+    const totalParticipantesAtivos = Number.isFinite(Number(rawConfiguredParticipants))
+      ? Number(rawConfiguredParticipants)
+      : totalUsuarios;
 
-                 // Atualiza HTML - Previsões
-                 const elPotRef = document.getElementById('potRef');
-                 const elPartyRef = document.getElementById('partyRef');
+    // 1. Valores Reais (O que já tem no caixa)
+    const currentPrize = totalCotasPagas * 10;
+    const currentParty = totalCotasPagas * 5;
+    const currentTotal = currentPrize + currentParty;
 
-                 if(elPotRef) elPotRef.innerText = `Previsão Final: ${fmt(forecastPrize)}`;
-                 if(elPartyRef) elPartyRef.innerText = `Previsão Final: ${fmt(forecastParty)}`;
+    // 2. Valores de Previsão (Participantes adimplentes definidos pelo admin)
+    const forecastPrize = totalParticipantesAtivos * 12 * 10;
+    const forecastParty = totalParticipantesAtivos * 12 * 5;
 
-             // ATUALIZAÇÃO DO CONTADOR NO HTML
-                 const elCount = document.getElementById('potCount');
-                 if (elCount) {
-                     elCount.innerText = `👥 ${totalParticipantes} PARTICIPANTES ATIVOS`;
-                 }
+    // Formatador de Moeda
+    const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-             } catch (e) { console.error("Erro Pote:", e); }
-        };
+    // Atualiza HTML - Valores Reais
+    const elPot = document.getElementById('potValue');
+    const elParty = document.getElementById('partyValue');
+    const elTotal = document.getElementById('totalValue');
+    if (elPot) elPot.innerText = fmt(currentPrize);
+    if (elParty) elParty.innerText = fmt(currentParty);
+    if (elTotal) elTotal.innerText = `Total Arrecadado (Real): ${fmt(currentTotal)}`;
+
+    // Atualiza HTML - Previsões
+    const elPotRef = document.getElementById('potRef');
+    const elPartyRef = document.getElementById('partyRef');
+    if (elPotRef) elPotRef.innerText = `Previsão Final: ${fmt(forecastPrize)}`;
+    if (elPartyRef) elPartyRef.innerText = `Previsão Final: ${fmt(forecastParty)}`;
+
+    // ATUALIZAÇÃO DO CONTADOR NO HTML
+    const elCount = document.getElementById('potCount');
+    if (elCount) {
+      elCount.innerText = ` ${totalParticipantesAtivos} PARTICIPANTES ADIMPLENTES`;
+    }
+  } catch (e) {
+    console.error("Erro Pote:", e);
+  }
+};
 // --- CORREÇÃO: CARD INSTAGRAM TURBINADO (Tabela Inteligente + Marketing) ---
         window.generateWebCard = async () => {
             const modalEl = document.getElementById('profileModal');
