@@ -1,0 +1,154 @@
+[1mdiff --git a/app.js b/app.js[m
+[1mindex 285304e..6c20846 100644[m
+[1m--- a/app.js[m
+[1m+++ b/app.js[m
+[36m@@ -14,7 +14,7 @@[m
+   reauthenticateWithCredential[m
+ } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";[m
+ [m
+[31m-        // ADICIONADO: enableIndexedDbPersistence (Teste simples)[m
+[32m+[m[32m        // ADICIONADO: enableIndexedDbPersistence[m
+         import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";[m
+ [m
+         const registerServiceWorker = () => {[m
+[36m@@ -2334,7 +2334,19 @@[m [mchronoMatches.forEach(m => {[m
+       simStreak++;[m
+       if (isFinal) finalsWon++;[m
+ [m
+[31m-      hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ✅ Acerto: ${m.teamA} x ${m.teamB} (+${pts})`, type: 'good' });[m
+[32m+[m[32m      hist.push({[m
+[32m+[m[32m    id: m.id,[m
+[32m+[m[32m    ts: m.deadlineDate,[m
+[32m+[m[32m    created: m.createdAt,[m
+[32m+[m[32m    text: `${dateStr} - ✅ Acerto ${m.teamA} x ${m.teamB}`,[m
+[32m+[m[32m    label: `${dateStr} - Acerto`,[m
+[32m+[m[32m    teamA: m.teamA,[m
+[32m+[m[32m    teamB: m.teamB,[m
+[32m+[m[32m    teamAUrl: m.teamAUrl || "",[m
+[32m+[m[32m    teamBUrl: m.teamBUrl || "",[m
+[32m+[m[32m    type: 'good'[m
+[32m+[m[32m});[m
+[32m+[m
+ [m
+       if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "3 acertos seguidos.", date: dateStr, hiddenInList: false });[m
+       if (simStreak === 5) trophyRoom.push({ icon: "🎯", name: "MITO", desc: "5 acertos seguidos.", date: dateStr, hiddenInList: false });[m
+[36m@@ -2349,7 +2361,19 @@[m [mchronoMatches.forEach(m => {[m
+       wrongStreak++;[m
+       simStreak = 0;[m
+ [m
+[31m-      hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - 👎 Errou: ${m.teamA} x ${m.teamB}`, type: 'bad' });[m
+[32m+[m[32m      hist.push({[m
+[32m+[m[32m    id: m.id,[m
+[32m+[m[32m    ts: m.deadlineDate,[m
+[32m+[m[32m    created: m.createdAt,[m
+[32m+[m[32m    text: `${dateStr} - 👎 Errou ${m.teamA} x ${m.teamB}`,[m
+[32m+[m[32m    label: `${dateStr} - Errou`,[m
+[32m+[m[32m    teamA: m.teamA,[m
+[32m+[m[32m    teamB: m.teamB,[m
+[32m+[m[32m    teamAUrl: m.teamAUrl || "",[m
+[32m+[m[32m    teamBUrl: m.teamBUrl || "",[m
+[32m+[m[32m    type: 'bad'[m
+[32m+[m[32m});[m
+[32m+[m
+     }[m
+ [m
+   } else {[m
+[36m@@ -2358,7 +2382,19 @@[m [mchronoMatches.forEach(m => {[m
+     wrongStreak = 0;[m
+     simStreak = 0;[m
+ [m
+[31m-    hist.push({ id: m.id, ts: m.deadlineDate, created: m.createdAt, text: `${dateStr} - ❌ Não votou: ${m.teamA} x ${m.teamB}`, type: 'bad' });[m
+[32m+[m[32m    hist.push({[m
+[32m+[m[32m    id: m.id,[m
+[32m+[m[32m    ts: m.deadlineDate,[m
+[32m+[m[32m    created: m.createdAt,[m
+[32m+[m[32m    text: `${dateStr} - ❌ Não votou ${m.teamA} x ${m.teamB}`,[m
+[32m+[m[32m    label: `${dateStr} - Não votou`,[m
+[32m+[m[32m    teamA: m.teamA,[m
+[32m+[m[32m    teamB: m.teamB,[m
+[32m+[m[32m    teamAUrl: m.teamAUrl || "",[m
+[32m+[m[32m    teamBUrl: m.teamBUrl || "",[m
+[32m+[m[32m    type: 'bad'[m
+[32m+[m[32m});[m
+[32m+[m
+   }[m
+ });[m
+                         // ✅ STATUS ATUAL (não é conquista): Fantasma só se a sequência ATUAL for >= 3 sem votar[m
+[36m@@ -2921,32 +2957,58 @@[m [mwindow.__fromHistoryIdx = idx;[m
+ window.__fromHistoryUid = u.uid;[m
+ [m
+             [m
+[31m-            const html = (u.hist && u.hist.length > 0)[m
+[31m-  ? u.hist.map(h => {[m
+[31m-      const colorClass = (h.type === 'bad') ? 'text-red-600' : 'text-[#2E7D32]';[m
+[32m+[m[32m            const html = u.hist && u.hist.length > 0 ? u.hist.map(h => {[m
+[32m+[m[32m    const colorClass = h.type === 'bad' ? 'text-red-600' : 'text-[#2E7D32]';[m
+ [m
+[31m-      // Só deixa clicável se tiver id de match e não for item "especial"[m
+[31m-      const isMatch = h.id && h.id !== "diamante";[m
+[32m+[m[32m    // Só deixa clicável se tiver id de match e não for item especial[m
+[32m+[m[32m    const isMatch = h.id && h.id !== 'diamante';[m
+ [m
+[31m-      if (!isMatch) {[m
+[32m+[m[32m    if (!isMatch) {[m
+         return `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${colorClass}">${h.text}</div>`;[m
+[31m-      }[m
+[32m+[m[32m    }[m
+ [m
+[31m-      return `[m
+[32m+[m[32m    const teamALogo = h.teamAUrl[m
+[32m+[m[32m        ? `<img src="${h.teamAUrl}" class="w-7 h-7 object-contain bg-white rounded-full border border-gray-200 p-0.5">`[m
+[32m+[m[32m        : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;[m
+[32m+[m
+[32m+[m[32m    const teamBLogo = h.teamBUrl[m
+[32m+[m[32m        ? `<img src="${h.teamBUrl}" class="w-7 h-7 object-contain bg-white rounded-full border border-gray-200 p-0.5">`[m
+[32m+[m[32m        : `<span class="text-[9px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;[m
+[32m+[m
+[32m+[m[32m    const statusText = h.label || h.text || '';[m
+[32m+[m
+[32m+[m[32m    return `[m
+         <button[m
+[31m-          type="button"[m
+[31m-          onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.__fromHistoryIdx)"[m
+[31m-          class="w-full text-left border-b border-gray-300/50 py-2 text-xs font-bold ${colorClass} hover:bg-black/5 active:bg-black/10 rounded px-1"[m
+[31m-          title="Abrir palpites registrados deste confronto"[m
+[32m+[m[32m            type="button"[m
+[32m+[m[32m            onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.fromHistoryIdx)"[m
+[32m+[m[32m            class="w-full text-left border-b border-gray-300/50 py-2 hover:bg-black/5 active:bg-black/10 rounded px-1"[m
+[32m+[m[32m            title="Abrir palpites registrados deste confronto"[m
+         >[m
+[31m-          <div class="flex items-center justify-between gap-2">[m
+[31m-            <span class="leading-snug">${h.text}</span>[m
+[31m-            <i class="fas fa-chevron-right text-[10px] opacity-60"></i>[m
+[31m-          </div>[m
+[32m+[m[32m            <div class="flex items-center justify-between gap-2">[m
+[32m+[m[32m                <div class="min-w-0 flex-1">[m
+[32m+[m[32m                    <div class="text-[11px] font-black leading-snug ${colorClass}">[m
+[32m+[m[32m                        ${statusText}[m
+[32m+[m[32m                    </div>[m
+[32m+[m
+[32m+[m[32m                    <div class="mt-2 flex items-center justify-center gap-2">[m
+[32m+[m[32m                        <div class="w-8 h-8 flex items-center justify-center shrink-0">[m
+[32m+[m[32m                            ${teamALogo}[m
+[32m+[m[32m                        </div>[m
+[32m+[m
+[32m+[m[32m                        <span class="text-[10px] font-black text-gray-400 uppercase">x</span>[m
+[32m+[m
+[32m+[m[32m                        <div class="w-8 h-8 flex items-center justify-center shrink-0">[m
+[32m+[m[32m                            ${teamBLogo}[m
+[32m+[m[32m                        </div>[m
+[32m+[m[32m                    </div>[m
+[32m+[m[32m                </div>[m
+[32m+[m
+[32m+[m[32m                <i class="fas fa-chevron-right text-[10px] opacity-60 text-gray-500 shrink-0"></i>[m
+[32m+[m[32m            </div>[m
+         </button>[m
+[31m-      `;[m
+[31m-    }).join('')[m
+[31m-  : "<div class='text-center py-4 text-gray-400 text-xs'>Nenhum registro encontrado.</div>";[m
+[32m+[m[32m    `;[m
+[32m+[m[32m}).join('') : `<div class="text-center py-4 text-gray-400 text-xs">Nenhum registro encontrado.</div>`;[m
+[32m+[m
+ [m
+             [m
+             document.getElementById('modalOverlay').classList.remove('hidden'); [m

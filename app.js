@@ -2305,48 +2305,61 @@ const finishedMatches = matches.filter(m => m.winner);
                 // 4. CÁLCULO HISTÓRICO: REIS DO MÊS (👑)
                 // =================================================================
                 // Precisamos saber quem ganhou os meses anteriores para dar a medalha
-                const kingCounts = {}; // { uid: 2 } (Ganhou 2 meses)
-                const now = new Date();
-                const currentYear = now.getFullYear();
-                const currentMonthIndex = now.getMonth(); 
+                const kingCounts = {};
+const now = new Date();
+const currentYear = now.getFullYear();
+const currentMonthIndex = now.getMonth();
+const monthNames = [
+  "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO",
+  "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"
+];
+const monthlyHistory = [];
 
-                // Loop pelos meses anteriores do ano (0 = Jan, até o mês passado)
-                for (let m = 0; m < currentMonthIndex; m++) {
-                    // Filtra jogos daquele mês/ano
-                    const monthMatches = finishedMatches.filter(x => x.deadlineDate.getMonth() === m && x.deadlineDate.getFullYear() === currentYear);
-                    
-                    if (monthMatches.length > 0) {
-                        const monthScores = {};
-                        
-                        // Calcula pontos só daquele mês
-                        users.forEach(u => {
-                            let score = 0;
-                            monthMatches.forEach(match => {
-                                if (u.createdDate > match.deadlineDate) return;
-                                const g = allGuesses.find(gx => gx.userId === u.uid && gx.matchId === match.id);
-                                if (g && g.teamSelected === match.winner) {
-                                    score += (match.round?.toLowerCase() === 'final') ? 6 : 3;
-                                }
-                            });
-                            // Bônus Oitavas daquele mês (Simplificado: se data final caiu no mês)
-                            // (Logica completa de diamante omitida aqui para brevidade, focado nos pontos de jogo)
-                            monthScores[u.uid] = score;
-                        });
+// Loop pelos meses anteriores do ano (0 = Jan, até o mês passado)
+for (let m = 0; m < currentMonthIndex; m++) {
+  const monthMatches = finishedMatches.filter(
+    x => x.deadlineDate.getMonth() === m && x.deadlineDate.getFullYear() === currentYear
+  );
 
-                        // Acha o líder
-                        const sortedMonth = Object.entries(monthScores).sort((a,b) => b[1] - a[1]);
-                        
-                        // Regra: Líder ISOLADO (1º > 2º) e pontos > 0
-                        if (sortedMonth.length >= 2) {
-                            if (sortedMonth[0][1] > sortedMonth[1][1] && sortedMonth[0][1] > 0) {
-                                const winnerId = sortedMonth[0][0];
-                                kingCounts[winnerId] = (kingCounts[winnerId] || 0) + 1;
-                            }
-                        } else if (sortedMonth.length === 1 && sortedMonth[0][1] > 0) {
-                             kingCounts[sortedMonth[0][0]] = 1;
-                        }
-                    }
-                }
+  const ranking = users.map(u => {
+    let score = 0;
+
+    monthMatches.forEach(match => {
+      if (u.createdDate > match.deadlineDate) return;
+
+      const g = allGuesses.find(gx => gx.userId === u.uid && gx.matchId === match.id);
+      if (g && g.teamSelected === match.winner) {
+        score += (match.round?.toLowerCase() === "final") ? 6 : 3;
+      }
+    });
+
+    return {
+      uid: u.uid,
+      name: u.name || u.username || "Sem nome",
+      points: score
+    };
+  }).sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    return (a.name || "").localeCompare(b.name || "");
+  });
+
+  const hasKing =
+    ranking.length > 0 &&
+    ranking[0].points > 0 &&
+    (ranking.length === 1 || ranking[0].points > ranking[1].points);
+
+  if (hasKing) {
+    const winnerId = ranking[0].uid;
+    kingCounts[winnerId] = (kingCounts[winnerId] || 0) + 1;
+  }
+
+  monthlyHistory.push({
+    monthIndex: m,
+    monthName: monthNames[m],
+    ranking,
+    hasKing
+  });
+}
 
                 // =================================================================
                 // 5. CÁLCULO PRINCIPAL (PONTOS ATUAIS)
@@ -2609,10 +2622,55 @@ if (wrongStreak >= 3) {
                 }
 
                 currentRankingData = users;
-                window.currentMonthlyRanking = monthlyData.sort((a,b) => b.points - a.points);
 
-                // Renderiza HTML
-                let html = `<div class="bg-[#006400] rounded-t-xl p-3 flex justify-between items-center shadow-md"><div><h3 class="font-black text-white text-sm tracking-wider">CLASSIFICAÇÃO</h3><p class="text-[10px] text-[#FFD700] font-bold">TEMPORADA 2026</p></div><div class="flex gap-2"><button onclick="window.showKingModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-lg shadow border border-white/20">🏆</button><button onclick="window.openRankingInfo()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white shadow border border-white/20"><i class="fas fa-info text-xs"></i></button></div></div><div class="bg-[#005000] flex text-white/70 text-[9px] font-bold py-1 px-2 uppercase border-b border-white/10"><div class="w-[35px] text-center">Pos</div><div class="flex-1 pl-2">Participante</div><div class="w-[28px] text-center">D</div><div class="w-[40px] text-center text-white">Pts</div></div><div class="bg-white rounded-b-xl overflow-hidden shadow-sm">`;
+const currentMonthRanking = monthlyData.sort((a, b) => {
+  if (b.points !== a.points) return b.points - a.points;
+  return (a.name || "").localeCompare(b.name || "");
+});
+
+const currentMonthHasKing =
+  currentMonthRanking.length > 0 &&
+  currentMonthRanking[0].points > 0 &&
+  (
+    currentMonthRanking.length === 1 ||
+    currentMonthRanking[0].points > currentMonthRanking[1].points
+  );
+
+window.currentMonthlyRanking = currentMonthRanking;
+window.currentMonthlyRankingHistory = [
+  ...monthlyHistory,
+  {
+    monthIndex: currentMonthIndex,
+    monthName: monthNames[currentMonthIndex],
+    ranking: currentMonthRanking,
+    hasKing: currentMonthHasKing
+  }
+];
+window.currentMonthlyRankingSelectedMonth = currentMonthIndex;
+
+// Renderiza HTML
+let html = `
+  <div class="flex items-center justify-between gap-3 mb-3">
+    <div>
+      <h3 class="text-lg font-black text-[#006400]">CLASSIFICAÇÃO</h3>
+      <p class="text-[11px] font-bold text-gray-500">TEMPORADA 2026</p>
+    </div>
+
+    <button
+      onclick="showKingModal()"
+      class="px-3 py-2 rounded-xl bg-[#FFF3CD] border border-[#FFD700] text-[#6D4C00] font-black text-[11px] shadow-sm active:scale-[0.98]"
+    >
+      👑 Rei do mês
+    </button>
+  </div>
+
+  <div class="grid grid-cols-[40px_1fr_26px_38px] gap-2 px-2 py-2 text-[11px] font-black text-gray-500 uppercase">
+    <div>Pos</div>
+    <div>Participante</div>
+    <div class="text-center">D</div>
+    <div class="text-right">Pts</div>
+  </div>
+`;
 
                 html += users.map((u, i) => {
                     const pos = i + 1;
@@ -2755,70 +2813,117 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
   window.openModal(html);
 };
 
+window.selectKingMonth = (monthIndex) => {
+  window.currentMonthlyRankingSelectedMonth = Number(monthIndex);
+  window.showKingModal();
+};
+
 window.showKingModal = () => {
-            const modal = document.getElementById('modalOverlay');
-            const cont = document.getElementById('modalContainer');
-            modal.classList.remove('hidden');
-            
-            const months = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
-            const currentMonthName = months[new Date().getMonth()];
-            
-            const ranking = window.currentMonthlyRanking || [];
-            
-            // Verifica líder isolado para exibir a coroa apenas aqui
-            let hasKing = false;
-            if(ranking.length > 0 && ranking[0].points > 0) {
-                if(ranking.length === 1) hasKing = true;
-                else if(ranking[0].points > ranking[1].points) hasKing = true;
-            }
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  modal.classList.remove("hidden");
 
-            let listHtml = "";
-            if(ranking.length === 0 || ranking[0].points === 0) {
-                listHtml = `<div class="text-center p-6 text-xs text-gray-500 italic">Nenhum ponto marcado neste mês ainda.</div>`;
-            } else {
-                listHtml = ranking.map((u, i) => {
-                    const isKingRow = i === 0 && hasKing;
-                    const bg = isKingRow ? 'bg-[#FFF9C4]' : 'bg-white';
-                    const icon = isKingRow ? '👑 ' : '';
-                    const bold = isKingRow ? 'font-black' : 'font-normal';
-                    const color = isKingRow ? 'text-[#006400]' : 'text-black';
-                    
-                    return `
-                    <div class="flex items-center justify-between p-3 border-b border-gray-100 ${bg} shrink-0">
-                        <div class="flex items-center gap-3 overflow-hidden">
-                            <span class="text-xs font-bold text-gray-400 w-6 text-center shrink-0">${i+1}º</span>
-                            <span class="text-xs ${bold} truncate max-w-[150px]">${icon}${u.name}</span>
-                        </div>
-                        <span class="text-sm ${bold} ${color} shrink-0">${u.points}</span>
-                    </div>`;
-                }).join('');
-            }
+  const monthHistory = window.currentMonthlyRankingHistory || [];
+  const fallbackMonthIndex = new Date().getMonth();
 
-            // CORREÇÃO IPHONE: Estrutura flexível com altura máxima controlada
-            cont.innerHTML = `
-            <div class="bg-white rounded-lg shadow-2xl relative overflow-hidden w-[95%] max-w-sm mx-auto flex flex-col" style="max-height: 80vh;">
-                <img src="bg_ranking.png" class="absolute inset-0 w-full h-full object-cover opacity-10 pointer-events-none">
-                
-                <div class="relative z-10 bg-[#006400] p-4 text-center shrink-0">
-                    <div class="text-3xl mb-1">🏆</div>
-                    <h3 class="font-black text-[#FFD700] text-lg tracking-widest uppercase leading-none">REI DE ${currentMonthName}</h3>
-                    <p class="text-[10px] text-white font-bold opacity-80 uppercase mt-1">Classificação Mensal</p>
-                </div>
-                
-                <div class="relative z-10 flex justify-between bg-gray-100 p-2 text-[10px] font-bold text-gray-500 uppercase shrink-0 border-b">
-                    <span class="pl-4">Participante</span>
-                    <span class="pr-2">Pts</span>
-                </div>
+  const selectedMonthIndex = Number.isInteger(window.currentMonthlyRankingSelectedMonth)
+    ? window.currentMonthlyRankingSelectedMonth
+    : fallbackMonthIndex;
 
-                <div class="relative z-10 overflow-y-auto flex-1 bg-white/80 overscroll-contain">
-                    ${listHtml}
-                </div>
+  const fallbackMonthNames = [
+    "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO",
+    "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"
+  ];
 
-                <div class="relative z-10 p-3 bg-gray-50 shrink-0 border-t pb-safe">
-                    <button onclick="closeModal()" class="w-full bg-[#006400] text-white py-3 rounded font-bold shadow btn-press text-sm">FECHAR</button>
-                </div>
-            </div>`;
-        }; 
+  const selectedMonth =
+    monthHistory.find(item => item.monthIndex === selectedMonthIndex) ||
+    monthHistory[monthHistory.length - 1] || {
+      monthIndex: fallbackMonthIndex,
+      monthName: fallbackMonthNames[fallbackMonthIndex],
+      ranking: [],
+      hasKing: false
+    };
+
+  const ranking = Array.isArray(selectedMonth.ranking) ? selectedMonth.ranking : [];
+  const hasKing = !!selectedMonth.hasKing;
+
+  const monthTabsHtml = monthHistory.map(item => {
+    const isActive = item.monthIndex === selectedMonth.monthIndex;
+
+    return `
+      <button
+        onclick="selectKingMonth(${item.monthIndex})"
+        class="px-3 py-2 rounded-full border text-[11px] font-black whitespace-nowrap ${
+          isActive
+            ? "bg-[#006400] text-white border-[#006400]"
+            : "bg-white text-[#006400] border-green-200"
+        }"
+      >
+        ${item.monthName.slice(0, 3)}
+      </button>
+    `;
+  }).join("");
+
+  let listHtml = "";
+  if (ranking.length === 0 || ranking.every(u => (u.points || 0) === 0)) {
+    listHtml = `
+      <div class="bg-white rounded-2xl border border-gray-200 px-4 py-6 text-center text-sm text-gray-500">
+        Nenhum ponto marcado neste mês ainda.
+      </div>
+    `;
+  } else {
+    listHtml = ranking.map((u, i) => {
+      const isKingRow = i === 0 && hasKing;
+      const bg = isKingRow ? "bg-[#FFF9C4]" : "bg-white";
+      const icon = isKingRow ? "👑 " : "";
+      const bold = isKingRow ? "font-black" : "font-normal";
+      const color = isKingRow ? "text-[#006400]" : "text-black";
+
+      return `
+        <div class="${bg} border border-gray-200 rounded-2xl px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-8 text-sm font-black text-gray-500">${i + 1}º</div>
+            <div class="truncate text-sm ${bold} ${color}">${icon}${u.name}</div>
+          </div>
+          <div class="text-sm font-black ${color}">${u.points}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  cont.innerHTML = `
+    <div class="w-full max-w-md mx-auto bg-[#F9FFF4] rounded-[28px] border-[3px] border-[#006400] shadow-2xl overflow-hidden">
+      <div class="relative px-5 pt-5 pb-4 text-center bg-gradient-to-b from-[#006400] to-[#0B7A0B] text-white">
+        <img src="bg_ranking.png" class="absolute inset-0 w-full h-full object-cover opacity-10" />
+        <div class="relative z-10">
+          <h3 class="text-2xl font-black tracking-wide">👑 REI DE ${selectedMonth.monthName}</h3>
+          <p class="text-xs font-semibold text-white/80 mt-1">Classificação mensal</p>
+        </div>
+      </div>
+
+      <div class="px-4 pt-4">
+        <div class="flex gap-2 overflow-x-auto pb-2">
+          ${monthTabsHtml}
+        </div>
+      </div>
+
+      <div class="px-4 py-4 space-y-3 max-h-[58vh] overflow-y-auto">
+        <div class="grid grid-cols-[1fr_56px] gap-2 px-2 text-[11px] font-black text-gray-500 uppercase">
+          <div>Participante</div>
+          <div class="text-right">Pts</div>
+        </div>
+
+        ${listHtml}
+      </div>
+
+      <div class="px-4 pb-4 pt-2">
+        <button onclick="closeModal()" class="w-full py-3 rounded-2xl bg-[#006400] text-white font-black shadow-lg">
+          FECHAR
+        </button>
+      </div>
+    </div>
+  `;
+};
 
        window.showModalPhoto = (idx) => { 
             const u = currentRankingData[idx]; 
