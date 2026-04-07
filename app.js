@@ -150,7 +150,92 @@ const ensureExternalScript = (src, globalKey) => {
 const ensureChartJs = () => ensureExternalScript('https://cdn.jsdelivr.net/npm/chart.js', 'Chart');
 const ensureHtml2Canvas = () => ensureExternalScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js', 'html2canvas');
 
-        // --- NOVA FUNÇÃO DE ORDENAÇÃO (PADRÃO ANDROID) ---
+const DATA_CACHE_TTL = {
+  hot: 15000,
+  warm: 60000,
+  cold: 300000
+};
+
+const runtimeQueryCache = new Map();
+window.__matchesScreenStateCache = null;
+window.__rankingScreenCache = null;
+
+const readWithRuntimeCache = async (key, loader, { ttlMs = DATA_CACHE_TTL.hot, force = false } = {}) => {
+  const now = Date.now();
+  const current = runtimeQueryCache.get(key);
+
+  if (!force && current?.data && (now - current.ts) < ttlMs) {
+    return current.data;
+  }
+
+  if (!force && current?.promise) {
+    return current.promise;
+  }
+
+  const promise = Promise.resolve()
+    .then(loader)
+    .then((data) => {
+      runtimeQueryCache.set(key, { data, ts: Date.now(), promise: null });
+      return data;
+    })
+    .catch((error) => {
+      runtimeQueryCache.delete(key);
+      throw error;
+    });
+
+  runtimeQueryCache.set(key, {
+    data: current?.data || null,
+    ts: current?.ts || 0,
+    promise
+  });
+
+  return promise;
+};
+
+const invalidateRuntimeCache = (...keys) => {
+  keys.forEach((key) => runtimeQueryCache.delete(key));
+};
+
+const invalidateHomeRankingCaches = () => {
+  invalidateRuntimeCache(
+    "col:matches",
+    "col:guesses",
+    "col:users",
+    "col:match_comments",
+    "col:polls",
+    "col:banners",
+    "doc:settings:competitions",
+    "doc:settings:news",
+    "doc:settings:home_layout"
+  );
+
+  window.__matchesScreenStateCache = null;
+  window.__rankingScreenCache = null;
+  window.cachedMatches = null;
+};
+
+const syncMatchesNavBadge = (pendingFastVoteCount = 0) => {
+  const navBtn = document.getElementById("nav-matches");
+  const oldBadge = document.getElementById("matches-badge");
+
+  if (oldBadge) oldBadge.remove();
+  if (!navBtn || pendingFastVoteCount <= 0) return;
+
+  navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingFastVoteCount > 9 ? "+" : pendingFastVoteCount}</span>`;
+};
+
+const renderMatchesScreenFromState = async (state) => {
+  const container = document.getElementById("matchesScreen");
+  if (!container || !state) return;
+
+  const finalHtml = await renderHomeSectionsWeb(state);
+  container.innerHTML = finalHtml;
+  applyRemoteBackgrounds();
+  window.updateBadges();
+  syncMatchesNavBadge(state.runtime?.pendingFastVoteCount || 0);
+};
+
+// --- NOVA FUNÇÃO DE ORDENAÇÃO (PADRÃO ANDROID) ---
 // Regra: 1. Prazo (Crescente) | 2. Criação (Crescente/Antigo 1º) | 3. ID (Fallback)
 const matchComparator = (a, b) => {
     // 1. Deadline
@@ -614,11 +699,11 @@ const initRemoteConfig = () => {
     }
 
     if (currentUser && !document.getElementById("matchesScreen")?.classList.contains("hidden")) {
-      loadMatches();
-    }
-    if (currentUser && !document.getElementById("rankingScreen")?.classList.contains("hidden") && typeof loadRanking === "function") {
-      loadRanking();
-    }
+  loadMatches({ force: true });
+}
+if (currentUser && !document.getElementById("rankingScreen")?.classList.contains("hidden") && typeof loadRanking === "function") {
+  loadRanking({ force: true });
+}
   });
 };
 
@@ -1525,6 +1610,7 @@ window.votePoll = async (pid, idx) => {
   try {
     const ref = doc(db, "polls", pid);
     const snap = await getDoc(ref);
+
     if (!snap.exists()) {
       alert("Enquete não encontrada.");
       return;
@@ -1545,21 +1631,13 @@ window.votePoll = async (pid, idx) => {
     }
 
     await updateDoc(ref, payload);
-    loadMatches();
+    invalidateHomeRankingCaches();
+    loadMatches({ force: true });
   } catch (e) {
     console.error("Erro enquete:", e);
     alert("Erro ao salvar voto.");
   }
 };
-
-        window.votePoll = async (pid, idx) => {
-            if(!currentUser) { alert("Faça login para votar."); return; }
-            try {
-                const ref = doc(db, "polls", pid);
-                await setDoc(ref, { [`votes.${currentUser.uid}`]: idx }, { merge: true });
-                loadMatches();
-            } catch(e) { console.error("Erro enquete:", e); alert("Erro ao salvar voto."); }
-        };
 
         // --- FUNÇÃO DE NOTÍCIAS (COM LINHA DO TEMPO) ---
        const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expiredMatches = []) => {
@@ -1944,8 +2022,14 @@ const buildHomeVisibilityRuntime = ({ matches, open, waiting, finished, myVotesM
   };
 };
 
-window.toggleHomeSectionCollapse = (sectionKey) => {
+window.toggleHomeSectionCollapse = async (sectionKey) => {
   homeSectionCollapseState[sectionKey] = !homeSectionCollapseState[sectionKey];
+
+  if (window.__matchesScreenStateCache) {
+    await renderMatchesScreenFromState(window.__matchesScreenStateCache);
+    return;
+  }
+
   loadMatches();
 };
 
@@ -2262,12 +2346,11 @@ const startWebAdminSync = () => {
     if (typeof calculatePot === "function") calculatePot();
 
     if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) {
-      loadMatches();
-    }
-
-    if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && typeof loadRanking === "function") {
-      loadRanking();
-    }
+  loadMatches({ force: true });
+}
+if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && typeof loadRanking === "function") {
+  loadRanking({ force: true });
+}
 
     if (!document.getElementById("profileScreen")?.classList.contains("hidden") && typeof loadProfile === "function") {
       loadProfile();
@@ -2275,10 +2358,17 @@ const startWebAdminSync = () => {
   });
 };
 
-        async function loadMatches() {
+        async function loadMatches(options = {}) {
+  const { force = false } = options;
   const container = document.getElementById("matchesScreen");
   const progressBar = document.getElementById("progressBar");
   if (!container) return;
+
+  const cachedState = window.__matchesScreenStateCache;
+  if (!force && cachedState && (Date.now() - cachedState.cachedAt) < DATA_CACHE_TTL.hot) {
+    await renderMatchesScreenFromState(cachedState);
+    return;
+  }
 
   progressBar?.classList.remove("hidden");
 
@@ -2294,15 +2384,15 @@ const startWebAdminSync = () => {
       bannersSnap,
       pollsSnap
     ] = await Promise.all([
-      getDoc(doc(db, "settings", "competitions")),
-      getDocs(collection(db, "matches")),
-      getDocs(collection(db, "guesses")),
-      getDocs(collection(db, "users")),
-      getDocs(collection(db, "match_comments")),
-      getDoc(doc(db, "settings", "news")),
-      getDoc(doc(db, "settings", "home_layout")),
-      getDocs(collection(db, "banners")),
-      getDocs(collection(db, "polls"))
+      readWithRuntimeCache("doc:settings:competitions", () => getDoc(doc(db, "settings", "competitions")), { ttlMs: DATA_CACHE_TTL.cold, force }),
+      readWithRuntimeCache("col:matches", () => getDocs(collection(db, "matches")), { ttlMs: DATA_CACHE_TTL.hot, force }),
+      readWithRuntimeCache("col:guesses", () => getDocs(collection(db, "guesses")), { ttlMs: DATA_CACHE_TTL.hot, force }),
+      readWithRuntimeCache("col:users", () => getDocs(collection(db, "users")), { ttlMs: DATA_CACHE_TTL.warm, force }),
+      readWithRuntimeCache("col:match_comments", () => getDocs(collection(db, "match_comments")), { ttlMs: DATA_CACHE_TTL.hot, force }),
+      readWithRuntimeCache("doc:settings:news", () => getDoc(doc(db, "settings", "news")), { ttlMs: DATA_CACHE_TTL.warm, force }),
+      readWithRuntimeCache("doc:settings:home_layout", () => getDoc(doc(db, "settings", "home_layout")), { ttlMs: DATA_CACHE_TTL.warm, force }),
+      readWithRuntimeCache("col:banners", () => getDocs(collection(db, "banners")), { ttlMs: DATA_CACHE_TTL.warm, force }),
+      readWithRuntimeCache("col:polls", () => getDocs(collection(db, "polls")), { ttlMs: DATA_CACHE_TTL.hot, force })
     ]);
 
     compMap = {};
@@ -2459,34 +2549,22 @@ const startWebAdminSync = () => {
       allUsersData
     });
 
-    const finalHtml = await renderHomeSectionsWeb({
-      sections: homeSections,
-      runtime,
-      open,
-      waiting,
-      finished,
-      allUsersData,
-      myVotesMap,
-      bannersMap,
-      activePoll,
-      newsContent
-    });
+    const screenState = {
+  sections: homeSections,
+  runtime,
+  open,
+  waiting,
+  finished,
+  allUsersData,
+  myVotesMap,
+  bannersMap,
+  activePoll,
+  newsContent,
+  cachedAt: Date.now()
+};
 
-    container.innerHTML = finalHtml;
-    applyRemoteBackgrounds();
-    window.updateBadges();
-
-    const navBtn = document.getElementById("nav-matches");
-    const oldBadge = document.getElementById("matches-badge");
-    if (oldBadge) oldBadge.remove();
-
-    if (runtime.pendingFastVoteCount > 0 && navBtn) {
-      navBtn.innerHTML += `
-        <span id="matches-badge" class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-black align-top">
-          ${runtime.pendingFastVoteCount > 9 ? "+" : runtime.pendingFastVoteCount}
-        </span>
-      `;
-    }
+window.__matchesScreenStateCache = screenState;
+await renderMatchesScreenFromState(screenState);
   } catch (e) {
     console.error("Erro fatal loadMatches:", e);
   } finally {
@@ -2638,12 +2716,14 @@ const startWebAdminSync = () => {
             }
 playVoteSound();
             // 2. SALVA NO BANCO
-            await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), { 
-                matchId: mid, 
-                userId: currentUser.uid, 
-                teamSelected: team, 
-                timestamp: new Date() 
-            }); 
+            await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), {
+  matchId: mid,
+  userId: currentUser.uid,
+  teamSelected: team,
+  timestamp: new Date()
+});
+
+invalidateHomeRankingCaches();
         };
         
        // --- FUNÇÃO QUEM VOTOU / QUEM FALTA (CORRIGIDA COM FILTRO DE DATA) ---
@@ -2987,19 +3067,35 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
         window.globalLastUpdateInfo = "Aguardando atualização...";
 
        // --- RANKING FINAL (PARIDADE ANDROID: REIS, ZEBRAS E SORT COMPLEXO) ---
-        async function loadRanking() {
-            const listContainer = document.getElementById('rankingListContent');
-            const footer = document.getElementById('lastUpdateRanking');
+        async function loadRanking(options = {}) {
+  const { force = false } = options;
+  const listContainer = document.getElementById('rankingListContent');
+  const footer = document.getElementById('lastUpdateRanking');
+  if (!listContainer || !footer) return;
 
-            footer.innerHTML = "";
-            listContainer.innerHTML = `<div class="text-center py-10"><i class="fas fa-circle-notch fa-spin text-[#006400] text-2xl"></i></div>`;
+  const cachedRanking = window.__rankingScreenCache;
+  if (!force && cachedRanking && (Date.now() - cachedRanking.cachedAt) < DATA_CACHE_TTL.hot) {
+    footer.innerHTML = cachedRanking.footerHtml;
+    listContainer.innerHTML = cachedRanking.html;
+    currentRankingData = cachedRanking.currentRankingData;
+    window.currentMonthlyRanking = cachedRanking.currentMonthlyRanking;
+    window.currentMonthlyRankingHistory = cachedRanking.currentMonthlyRankingHistory;
+    window.currentMonthlyRankingSelectedMonth = cachedRanking.currentMonthlyRankingSelectedMonth;
+    window.globalLastUpdateInfo = cachedRanking.lastUpdateInfo;
+    return;
+  }
 
-            try {
-                const [uSnap, gSnap, mSnap] = await Promise.all([
-                    getDocs(collection(db, "users")),
-                    getDocs(collection(db, "guesses")),
-                    getDocs(collection(db, "matches"))
-                ]);
+  footer.innerHTML = "";
+  listContainer.innerHTML = `
+    <div class="text-center py-6 text-sm text-gray-500 font-bold">Atualizando ranking...</div>
+  `;
+
+  try {
+    const [uSnap, gSnap, mSnap] = await Promise.all([
+      readWithRuntimeCache("col:users", () => getDocs(collection(db, "users")), { ttlMs: DATA_CACHE_TTL.warm, force }),
+      readWithRuntimeCache("col:guesses", () => getDocs(collection(db, "guesses")), { ttlMs: DATA_CACHE_TTL.hot, force }),
+      readWithRuntimeCache("col:matches", () => getDocs(collection(db, "matches")), { ttlMs: DATA_CACHE_TTL.hot, force })
+    ]);
 
                 // 1. DADOS BRUTOS & DATA MATCHES
                 const matches = [];
@@ -3059,7 +3155,22 @@ const finishedMatches = matches.filter(m => m.winner);
                 }
                 // 2. PREPARAÇÃO DE USUÁRIOS (TIMELINE)
                 const allGuesses = [];
-                gSnap.forEach(d => allGuesses.push(d.data()));
+gSnap.forEach(d => allGuesses.push(d.data()));
+
+const guessesByUser = {};
+const guessesByMatch = {};
+const guessLookupByUserMatch = {};
+
+allGuesses.forEach((guess) => {
+  if (!guess?.userId || !guess?.matchId) return;
+
+  if (!guessesByUser[guess.userId]) guessesByUser[guess.userId] = [];
+  if (!guessesByMatch[guess.matchId]) guessesByMatch[guess.matchId] = [];
+
+  guessesByUser[guess.userId].push(guess);
+  guessesByMatch[guess.matchId].push(guess);
+  guessLookupByUserMatch[`${guess.userId}__${guess.matchId}`] = guess;
+});
                 
                 let users = [];
                 uSnap.forEach(doc => {
@@ -3080,15 +3191,11 @@ const finishedMatches = matches.filter(m => m.winner);
                     const validUsersAtTime = users.filter(u => u.createdDate < m.deadlineDate).length;
                     
                     if (validUsersAtTime > 0) {
-                        let winnerVotes = 0;
-                        allGuesses.forEach(g => {
-                            if (g.matchId === m.id && g.teamSelected === m.winner) winnerVotes++;
-                        });
-                        
-                        // Nova Regra: Menor ou IGUAL a 20%
-                        if ((winnerVotes / validUsersAtTime) <= 0.20) {
-                            zebraMatchIds.push(m.id);
-                        }
+                        const winnerVotes = (guessesByMatch[m.id] || []).filter(g => g.teamSelected === m.winner).length;
+
+if ((winnerVotes / validUsersAtTime) <= 0.20) {
+  zebraMatchIds.push(m.id);
+}
                     }
                 });
 
@@ -3118,10 +3225,10 @@ for (let m = 0; m < currentMonthIndex; m++) {
     monthMatches.forEach(match => {
       if (u.createdDate > match.deadlineDate) return;
 
-      const g = allGuesses.find(gx => gx.userId === u.uid && gx.matchId === match.id);
-      if (g && g.teamSelected === match.winner) {
-        score += (match.round?.toLowerCase() === "final") ? 6 : 3;
-      }
+      const g = guessLookupByUserMatch[`${u.uid}__${match.id}`];
+if (g && g.teamSelected === match.winner) {
+  score += (match.round?.toLowerCase() === "final") ? 6 : 3;
+}
     });
 
     return {
@@ -3162,10 +3269,11 @@ for (let m = 0; m < currentMonthIndex; m++) {
                     const d = u.debts || 0;
                     const trophyRoom = [];
                     const hist = [];
-                    const userGuesses = allGuesses.filter(g => g.userId === u.uid && validMatchIds.has(g.matchId));
+                    const userGuesses = (guessesByUser[u.uid] || []).filter(g => validMatchIds.has(g.matchId));
+const userGuessesMap = Object.fromEntries(userGuesses.map(g => [g.matchId, g]));
 
                     // ORDENAÇÃO OFICIAL: Usa o comparador padrão (Deadline > CreatedAt > ID)
-const chronoMatches = [...finishedMatches].sort(matchComparator);
+const chronoMatches = finishedMatches;
                    // ✅ STREAKS (regras oficiais)
 let noVoteStreak = 0;   // 3 seguidos sem votar => 👻
 let wrongStreak  = 0;   // 3 erros seguidos     => 🥬
@@ -3175,7 +3283,7 @@ chronoMatches.forEach(m => {
   // Linha do Tempo: Ignora jogos antes do user nascer
   if (u.createdDate > m.deadlineDate) return;
 
-  const g = userGuesses.find(x => x.matchId === m.id);
+  const g = userGuessesMap[m.id] || null;
   const isThisMonth = m.deadlineDate.getMonth() === currentMonthIndex && m.deadlineDate.getFullYear() === currentYear;
   const dateStr = `📅 ${m.deadlineDate.getDate()}/${m.deadlineDate.getMonth()+1}`;
 
@@ -3315,7 +3423,7 @@ if (wrongStreak >= 3) {
                     for(const k in byComp) {
                         const matches = byComp[k];
                         if(matches.length === 8) {
-                            const hits = matches.filter(m => userGuesses.find(g=>g.matchId===m.id && g.teamSelected===m.winner)).length;
+                            const hits = matches.filter(m => userGuessesMap[m.id]?.teamSelected === m.winner).length;
                             if(hits === 8) { 
                                 p += 3; 
                                 const lastOitava = matches[matches.length-1].deadlineDate;
@@ -3531,6 +3639,17 @@ let html = `
 
                 html += `</div>`;
                 listContainer.innerHTML = html;
+
+window.__rankingScreenCache = {
+  html,
+  footerHtml: footer.innerHTML,
+  currentRankingData: [...users],
+  currentMonthlyRanking: [...window.currentMonthlyRanking],
+  currentMonthlyRankingHistory: [...window.currentMonthlyRankingHistory],
+  currentMonthlyRankingSelectedMonth: window.currentMonthlyRankingSelectedMonth,
+  lastUpdateInfo: window.globalLastUpdateInfo,
+  cachedAt: Date.now()
+};
 
             } catch (e) { console.error(e); listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro ao carregar ranking.</div>`; }
         }
@@ -4163,9 +4282,13 @@ async function loadAdminMatches() {
             listDiv.innerHTML = html || "Sem jogos."; 
         }
         // --- LIXEIRA WEB ---
-        window.moveToTrash = async (matchId) => { if(!confirm("Mover para Lixeira?")) return; try { const snap = await getDoc(doc(db, "matches", matchId)); if(snap.exists()) { await setDoc(doc(db, "bin_matches", matchId), {...snap.data(), deletedAt: new Date()}); await deleteDoc(doc(db, "matches", matchId)); loadAdminMatches(); loadMatches(); } } catch(e){alert(e.message);} };
+        window.moveToTrash = async (matchId) => { if(!confirm("Mover para Lixeira?")) return; try { const snap = await getDoc(doc(db, "matches", matchId)); if(snap.exists()) { await setDoc(doc(db, "bin_matches", matchId), {...snap.data(), deletedAt: new Date()}); await deleteDoc(doc(db, "matches", matchId)); invalidateHomeRankingCaches();
+loadAdminMatches();
+loadMatches({ force: true }); } } catch(e){alert(e.message);} };
         window.openTrashBin = async () => { const cont = document.getElementById('modalContainer'); const snap = await getDocs(collection(db, "bin_matches")); let html = `<div class="w-full bg-white h-[85vh] p-4 overflow-y-auto"><div class="flex justify-between mb-4"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left"></i></button><h3 class="font-bold">Lixeira</h3><div></div></div>`; if(snap.empty) html += "<p>Vazia.</p>"; else snap.forEach(d => { const m = d.data(); html += `<div class="border p-2 mb-2 rounded flex justify-between"><span>${m.teamA} x ${m.teamB}</span><button onclick="restoreMatch('${d.id}')" class="text-green-600 font-bold">Restaurar</button></div>`; }); html += "</div>"; cont.innerHTML = html; };
-        window.restoreMatch = async (matchId) => { try { const snap = await getDoc(doc(db, "bin_matches", matchId)); if(snap.exists()) { const d = snap.data(); delete d.deletedAt; await setDoc(doc(db, "matches", matchId), d); await deleteDoc(doc(db, "bin_matches", matchId)); openTrashBin(); loadMatches(); } } catch(e){alert(e.message);} };
+        window.restoreMatch = async (matchId) => { try { const snap = await getDoc(doc(db, "bin_matches", matchId)); if(snap.exists()) { const d = snap.data(); delete d.deletedAt; await setDoc(doc(db, "matches", matchId), d); await deleteDoc(doc(db, "bin_matches", matchId)); invalidateHomeRankingCaches();
+openTrashBin();
+loadMatches({ force: true }); } } catch(e){alert(e.message);} };
 
         window.openCompetitionsManager = async () => {
             const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
