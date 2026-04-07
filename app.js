@@ -98,6 +98,12 @@ let homeSections = [];
 let activePolls = {};
 let activeBannersMap = {};
 let __appStateUnsub = null;
+
+let homeSectionCollapseState = {
+  matches_open: false,
+  matches_wait: false,
+  matches_done: true
+};
         // --- NOVA FUNÇÃO DE ORDENAÇÃO (PADRÃO ANDROID) ---
 // Regra: 1. Prazo (Crescente) | 2. Criação (Crescente/Antigo 1º) | 3. ID (Fallback)
 const matchComparator = (a, b) => {
@@ -1891,6 +1897,48 @@ const buildHomeVisibilityRuntime = ({ matches, open, waiting, finished, myVotesM
   };
 };
 
+window.toggleHomeSectionCollapse = (sectionKey) => {
+  homeSectionCollapseState[sectionKey] = !homeSectionCollapseState[sectionKey];
+  loadMatches();
+};
+
+const renderCollapsibleSection = ({
+  sectionKey,
+  title,
+  count,
+  accentClass,
+  contentHtml,
+  emptyHtml = "",
+  defaultCollapsed = false
+}) => {
+  if (!(sectionKey in homeSectionCollapseState)) {
+    homeSectionCollapseState[sectionKey] = defaultCollapsed;
+  }
+
+  const isCollapsed = !!homeSectionCollapseState[sectionKey];
+  const chevron = isCollapsed ? "▾" : "▴";
+
+  return `
+    <div class="mb-3 rounded-[26px] border-[3px] border-[#006400] bg-white shadow-lg overflow-hidden">
+      <button
+        onclick="toggleHomeSectionCollapse('${sectionKey}')"
+        class="w-full flex items-center justify-between gap-3 px-4 py-4 text-left bg-[#F9FFF4] active:scale-[0.995]"
+      >
+        <div class="flex items-center gap-2 min-w-0">
+          <h3 class="text-base font-black ${accentClass} truncate">${title}</h3>
+          <span class="text-[11px] font-black text-gray-500">(${count})</span>
+        </div>
+
+        <span class="text-lg font-black text-[#006400] leading-none">${chevron}</span>
+      </button>
+
+      <div class="${isCollapsed ? "hidden" : ""} px-3 pb-3">
+        ${count > 0 ? contentHtml : emptyHtml}
+      </div>
+    </div>
+  `;
+};
+
 const isHomeSectionVisibleWeb = (section, runtime) => {
   const visibility = section.visibility || {};
   const currentUserData = runtime.currentUser;
@@ -2047,35 +2095,46 @@ const renderFastVoteBlock = async (pendingOpenMatches, allUsersData, myVotesMap)
   `;
 };
 
-const renderMatchesOpenBlock = async (open, allUsersData, myVotesMap) => `
-  <div class="mb-3">
-    <h3 class="text-base font-black text-[#006400] mb-2">✅ (${open.length}) DISPONÍVEIS</h3>
-    ${open.length > 0
-      ? await renderMatchList(open, allUsersData, globalServerCounts, myVotesMap)
-      : `<div class="bg-white rounded-2xl border border-gray-200 px-4 py-5 text-sm text-gray-500">Nenhum confronto aberto.</div>`
-    }
-  </div>
-`;
+const renderMatchesOpenBlock = async (open, allUsersData, myVotesMap) => {
+  const contentHtml = await renderMatchList(open, allUsersData, globalServerCounts, myVotesMap);
 
-const renderMatchesWaitingBlock = async (waiting, allUsersData, myVotesMap) => `
-  <div class="mb-3">
-    <h3 class="text-base font-black text-[#8A6D00] mb-2">⏳ (${waiting.length}) AGUARDANDO</h3>
-    ${waiting.length > 0
-      ? await renderMatchList(waiting, allUsersData, globalServerCounts, myVotesMap)
-      : `<div class="bg-white rounded-2xl border border-gray-200 px-4 py-5 text-sm text-gray-500">Nenhum confronto aguardando.</div>`
-    }
-  </div>
-`;
+  return renderCollapsibleSection({
+    sectionKey: "matches_open",
+    title: "✅ DISPONÍVEIS",
+    count: open.length,
+    accentClass: "text-[#006400]",
+    contentHtml,
+    emptyHtml: `<div class="px-1 py-4 text-sm text-gray-500">Nenhum confronto aberto.</div>`,
+    defaultCollapsed: false
+  });
+};
+
+const renderMatchesWaitingBlock = async (waiting, allUsersData, myVotesMap) => {
+  const contentHtml = await renderMatchList(waiting, allUsersData, globalServerCounts, myVotesMap);
+
+  return renderCollapsibleSection({
+    sectionKey: "matches_wait",
+    title: "⏳ AGUARDANDO",
+    count: waiting.length,
+    accentClass: "text-[#8A6D00]",
+    contentHtml,
+    emptyHtml: `<div class="px-1 py-4 text-sm text-gray-500">Nenhum confronto aguardando.</div>`,
+    defaultCollapsed: false
+  });
+};
 
 const renderMatchesDoneBlock = async (finished, allUsersData, myVotesMap) => {
-  if (!finished.length) return "";
+  const contentHtml = await renderMatchList(finished, allUsersData, globalServerCounts, myVotesMap);
 
-  return `
-    <div class="mb-3">
-      <h3 class="text-base font-black text-[#B71C1C] mb-2">🏁 (${finished.length}) FINALIZADOS</h3>
-      ${await renderMatchList(finished, allUsersData, globalServerCounts, myVotesMap)}
-    </div>
-  `;
+  return renderCollapsibleSection({
+    sectionKey: "matches_done",
+    title: "🏁 FINALIZADOS",
+    count: finished.length,
+    accentClass: "text-[#B71C1C]",
+    contentHtml,
+    emptyHtml: `<div class="px-1 py-4 text-sm text-gray-500">Nenhum confronto finalizado.</div>`,
+    defaultCollapsed: true
+  });
 };
 
 const renderHomeSectionsWeb = async ({
