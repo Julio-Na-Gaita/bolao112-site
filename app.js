@@ -3119,7 +3119,14 @@ matches.forEach((m, idx) => {
     m.matchNumber = idx + 1;
 });
 
-const finishedMatches = matches.filter(m => m.winner);
+// IMPORTANTE:
+// finishedMatchesChrono = ordem oficial para cálculo de medalhas/streaks
+// finishedMatchesDisplay = ordem visual mais recente primeiro
+const finishedMatchesChrono = matches.filter(m => m.winner);
+const finishedMatchesDisplay = [...finishedMatchesChrono].sort((a, b) => matchComparator(b, a));
+
+// Mantém esta cópia só para o rodapé da última atualização
+const finishedMatches = [...finishedMatchesChrono];
 
                 
                // 1.1 Info Rodapé (Última Atualização Real)
@@ -3250,8 +3257,8 @@ for (let i = 0; i < 12; i++) pointsByMonth[i] = {};
     userGuesses.map((g) => [g.matchId, g]),
   );
 
-  // ORDENAÇÃO OFICIAL: Usa o comparador padrão (Deadline > CreatedAt > ID)
-  const chronoMatches = finishedMatches;
+ // ORDENAÇÃO OFICIAL: usa a ordem cronológica real, igual ao Android
+const chronoMatches = finishedMatchesChrono;
   const registerMatchMedal = (medal) => {
     trophyRoom.push(medal);
     if (["👽", "💎", "🎯", "🦓", "🔥", "🔮", "🎓"].includes(medal.icon)) {
@@ -3309,10 +3316,6 @@ chronoMatches.forEach(m => {
 
 
 
-
-      if (simStreak === 3) trophyRoom.push({ icon: "🔥", name: "ON FIRE", desc: "3 acertos seguidos.", date: dateStr, hiddenInList: false });
-      if (simStreak === 5) trophyRoom.push({ icon: "🎯", name: "MITO", desc: "5 acertos seguidos.", date: dateStr, hiddenInList: false });
-      if (simStreak === 10) trophyRoom.push({ icon: "👽", name: "ALIEN", desc: "10 acertos seguidos!", date: dateStr, hiddenInList: false });
 
       if (simStreak === 3)
   registerMatchMedal({
@@ -3421,7 +3424,7 @@ if (victories > 0 && victories % 50 === 0)
 
   }
 });
-                        const last3Matches = finishedMatches.slice(-3);
+                        const last3Matches = finishedMatchesDisplay.slice(0, 3);
 if (last3Matches.length === 3) {
   let wrongCount = 0;
   let noVoteCount = 0;
