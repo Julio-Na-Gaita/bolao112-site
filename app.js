@@ -4360,10 +4360,12 @@ const medalBadgeHtml = medalsWonHere.length > 0
 
 
 return `
-    <button
-        type="button"
+    <div
+        role="button"
+        tabindex="0"
         onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.__fromHistoryIdx)"
-        class="w-full text-left mb-2 rounded-2xl border border-gray-200 ${rowBg} px-3 py-3 hover:bg-black/5 active:bg-black/10 transition"
+        onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.__fromHistoryIdx); }"
+        class="w-full text-left mb-2 rounded-2xl border border-gray-200 ${rowBg} px-3 py-3 hover:bg-black/5 active:bg-black/10 transition cursor-pointer"
         title="Abrir palpites registrados deste confronto"
     >
         <div class="grid grid-cols-[44px_1fr_42px_54px] items-center gap-3">
@@ -4377,19 +4379,16 @@ return `
             <div class="min-w-0">
                 <div class="flex items-center justify-center gap-2">
                     <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
-
                         ${teamALogo}
                     </div>
 
                     <span class="text-[14px] font-black text-black shrink-0">X</span>
 
-                   <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
-
+                    <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
                         ${teamBLogo}
                     </div>
 
                     <span class="text-[17px] font-black text-gray-400 leading-none shrink-0 tracking-tight">${matchNo}</span>
-
                 </div>
 
                 <div class="mt-2 h-[14px] flex items-center justify-center">
@@ -4402,12 +4401,12 @@ return `
 
             ${medalBadgeHtml}
 
-<div class="text-right">
-  <div class="text-[16px] leading-none font-black ${ptsColor}">${ptsText}</div>
-  <div class="text-[11px] leading-none font-black ${ptsColor} mt-0.5">pts</div>
-</div>
+            <div class="text-right">
+                <div class="text-[16px] leading-none font-black ${ptsColor}">${ptsText}</div>
+                <div class="text-[11px] leading-none font-black ${ptsColor} mt-0.5">pts</div>
+            </div>
         </div>
-    </button>
+    </div>
 `;
 
 }).join('') : `<div class="text-center py-4 text-gray-400 text-xs">Nenhum registro encontrado.</div>`;
@@ -4417,17 +4416,17 @@ return `
             
             document.getElementById("modalOverlay").classList.remove("hidden");
 document.getElementById("modalContainer").innerHTML = `
-    <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
-    <img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none z-0" onerror="this.style.display='none'">
-    <div class="relative z-10 px-4 pt-4 pb-3 flex flex-col items-center h-[78vh]">
+    <div class="w-[min(92vw,430px)] max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative">
+        <img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none z-0" onerror="this.style.display='none'">
 
-            <i class="fas fa-file-invoice-dollar text-[#006400] text-2xl mb-1"></i>
+        <div class="relative z-10 px-3 sm:px-4 pt-4 pb-3 flex flex-col items-stretch h-[78vh]">
+            <i class="fas fa-file-invoice-dollar text-[#006400] text-2xl mb-1 self-center"></i>
 
-            <div class="bg-white/80 rounded px-3 py-1 mb-1 shadow-sm">
+            <div class="bg-white/80 rounded px-3 py-1 mb-1 shadow-sm self-center">
                 <h3 class="font-black text-[#006400] uppercase text-sm">Extrato de Pontos</h3>
             </div>
 
-            <div class="bg-white/80 rounded px-2 py-1 mb-2 shadow-sm">
+            <div class="bg-white/80 rounded px-2 py-1 mb-2 shadow-sm self-center">
                 <h2 class="font-black text-black text-lg">${u.name}</h2>
             </div>
 
@@ -4438,20 +4437,21 @@ document.getElementById("modalContainer").innerHTML = `
             <button onclick="closeModal()" class="mt-3 w-full bg-[#006400] text-white font-bold py-2.5 rounded shadow-lg btn-press">
                 FECHAR
             </button>
+
             <div id="extractMedalsInlineOverlay" class="hidden absolute inset-0 z-30 bg-black/45 flex items-center justify-center p-4">
-  <div class="w-full max-w-[320px] rounded-[28px] bg-white shadow-2xl p-5">
-    <div class="text-center">
-      <h3 class="text-[14px] font-black text-[#006400] uppercase">Medalhas deste confronto</h3>
-      <p id="extractMedalsInlineTitle" class="mt-2 text-[13px] font-bold text-gray-800"></p>
-    </div>
+                <div class="w-full max-w-[320px] rounded-[28px] bg-white shadow-2xl p-5">
+                    <div class="text-center">
+                        <h3 class="text-[14px] font-black text-[#006400] uppercase">Medalhas deste confronto</h3>
+                        <p id="extractMedalsInlineTitle" class="mt-2 text-[13px] font-bold text-gray-800"></p>
+                    </div>
 
-    <div id="extractMedalsInlineBody" class="mt-4 max-h-[260px] overflow-y-auto space-y-3"></div>
+                    <div id="extractMedalsInlineBody" class="mt-4 max-h-[260px] overflow-y-auto space-y-3"></div>
 
-    <button onclick="window.closeExtractMedalsInline()" class="mt-4 w-full bg-[#006400] text-white font-bold py-2.5 rounded shadow-lg btn-press">
-      FECHAR
-    </button>
-  </div>
-</div>
+                    <button onclick="window.closeExtractMedalsInline()" class="mt-4 w-full bg-[#006400] text-white font-bold py-2.5 rounded shadow-lg btn-press">
+                        FECHAR
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 `;
