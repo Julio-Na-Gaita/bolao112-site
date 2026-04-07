@@ -4362,7 +4362,7 @@ const medalBadgeHtml = medalsWonHere.length > 0
 return `
     <button
         type="button"
-        onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.fromHistoryIdx)"
+        onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.__fromHistoryIdx)"
         class="w-full text-left mb-2 rounded-2xl border border-gray-200 ${rowBg} px-3 py-3 hover:bg-black/5 active:bg-black/10 transition"
         title="Abrir palpites registrados deste confronto"
     >
