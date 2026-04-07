@@ -33,7 +33,7 @@
 
   window.addEventListener('load', async () => {
     try {
-      const swVersion = window.APP_VERSION || 'web-1.7.1';
+      const swVersion = window.APP_VERSION || 'web-1.7.3';
 
 const registration = await navigator.serviceWorker.register(
   `/sw.js?v=${swVersion}`,
@@ -950,7 +950,7 @@ window.addEventListener("DOMContentLoaded", () => {
                     isAdmin: false,
                     debts: 0,
                     payments: {},
-                    appVersion: "Web v1.7.1",
+                    appVersion: "Web v1.7.3",
                     passwordHint: hint,
                     // NOVOS CAMPOS PARA CONTROLE:
                     isTrial: isTrial, 
@@ -1073,7 +1073,7 @@ window.continueAfterLoginGates = async () => {
                     }
 
                     // ATUALIZANDO VERSÃO
-try { await updateDoc(userDocRef, { appVersion: "Web v1.7.1", lastAccess: new Date() }); } catch(e) {}
+try { await updateDoc(userDocRef, { appVersion: "Web v1.7.3", lastAccess: new Date() }); } catch(e) {}
 
 // ✅ NOVO: inicia o gate de troca de senha obrigatória (Android parity)
 window.startForcePasswordWatcher(user);
@@ -4380,7 +4380,7 @@ async function loadProfile() {
                 </div>
 
                 <div class="text-center pb-safe">
-                    <div class="version-chip">Web v1.7.1</div>
+                    <div class="version-chip">Web v1.7.3</div>
                     <p class="text-[9px] text-gray-400 mt-2 font-bold uppercase">Bolão 112 F.C • 2026</p>
                 </div>
             </div>`;
@@ -4452,7 +4452,7 @@ window.openCalendar2026 = () => {
 
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.7.1) ---
+        // --- GUIA DO APP ATUALIZADO (v1.7.3) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
@@ -4460,7 +4460,7 @@ window.openCalendar2026 = () => {
                 <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
-                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.7.1</p>
+                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.7.3</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
