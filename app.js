@@ -4341,22 +4341,27 @@ if (medalsWonHere.length > 0) {
   };
 }
 
-const medalBadgeHtml = medalsWonHere.length > 0
-  ? `
-    <button
-      type="button"
-      onclick="event.stopPropagation(); window.openExtractMedalsInline('${medalCacheKey}')"
-      class="flex items-center justify-center gap-1 rounded-xl bg-[#FFF3CD] px-2 py-1 shadow-sm border border-[#F4D58D]"
-      title="Ver medalhas deste confronto"
-    >
-      <span class="text-[12px] leading-none">🏅</span>
-      ${medalsWonHere.length > 1
-        ? `<span class="text-[10px] font-black text-[#8D6E63]">${medalsWonHere.length}</span>`
-        : ``
-      }
-    </button>
-  `
-  : `<div class="w-[38px]"></div>`;
+const medalBadgeHtml = `
+  <div class="w-[52px] flex items-center justify-center shrink-0">
+    ${medalsWonHere.length > 0
+      ? `
+        <button
+          type="button"
+          onclick="event.stopPropagation(); window.openExtractMedalsInline('${medalCacheKey}')"
+          class="w-[44px] h-[28px] flex items-center justify-center gap-1 rounded-full bg-[#FFF3CD] border border-[#F4D58D] shadow-sm"
+          title="Ver medalhas deste confronto"
+        >
+          <span class="text-[12px] leading-none">🏅</span>
+          ${medalsWonHere.length > 1
+            ? `<span class="text-[10px] font-black text-[#8D6E63] leading-none">${medalsWonHere.length}</span>`
+            : ``
+          }
+        </button>
+      `
+      : ``
+    }
+  </div>
+`;
 
 
 return `
@@ -4368,8 +4373,8 @@ return `
         class="w-full text-left mb-2 rounded-2xl border border-gray-200 ${rowBg} px-3 py-3 hover:bg-black/5 active:bg-black/10 transition cursor-pointer"
         title="Abrir palpites registrados deste confronto"
     >
-        <div class="grid grid-cols-[44px_1fr_42px_54px] items-center gap-3">
-            <div class="text-center">
+        <div class="grid grid-cols-[42px_minmax(0,1fr)_52px_56px] items-center gap-2.5">
+            <div class="text-center shrink-0">
                 <div class="text-[11px] font-black text-gray-500 leading-none">${dateText}</div>
                 <div class="mt-3 flex justify-center leading-none">
                     ${resultIcon}
@@ -4377,21 +4382,23 @@ return `
             </div>
 
             <div class="min-w-0">
-                <div class="flex items-center justify-center gap-2">
+                <div class="grid grid-cols-[44px_16px_44px_minmax(34px,auto)] items-center justify-center gap-x-2">
                     <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
                         ${teamALogo}
                     </div>
 
-                    <span class="text-[14px] font-black text-black shrink-0">X</span>
+                    <span class="text-[14px] font-black text-black text-center leading-none shrink-0">X</span>
 
                     <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
                         ${teamBLogo}
                     </div>
 
-                    <span class="text-[17px] font-black text-gray-400 leading-none shrink-0 tracking-tight">${matchNo}</span>
+                    <div class="min-w-[34px] text-left">
+                        <span class="text-[17px] font-black text-gray-400 leading-none tracking-tight">${matchNo}</span>
+                    </div>
                 </div>
 
-                <div class="mt-2 h-[14px] flex items-center justify-center">
+                <div class="mt-2 min-h-[14px] flex items-center justify-center">
                     ${(votedA || votedB)
                         ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full leading-none">SEU VOTO</span>`
                         : ``
@@ -4401,7 +4408,7 @@ return `
 
             ${medalBadgeHtml}
 
-            <div class="text-right">
+            <div class="w-[56px] text-right shrink-0">
                 <div class="text-[16px] leading-none font-black ${ptsColor}">${ptsText}</div>
                 <div class="text-[11px] leading-none font-black ${ptsColor} mt-0.5">pts</div>
             </div>
@@ -4416,7 +4423,7 @@ return `
             
             document.getElementById("modalOverlay").classList.remove("hidden");
 document.getElementById("modalContainer").innerHTML = `
-    <div class="w-[min(92vw,430px)] max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative">
+    <div class="w-[min(94vw,430px)] max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative">
         <img src="bg_dialog_extrato.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-60 pointer-events-none z-0" onerror="this.style.display='none'">
 
         <div class="relative z-10 px-3 sm:px-4 pt-4 pb-3 flex flex-col items-stretch h-[78vh]">
