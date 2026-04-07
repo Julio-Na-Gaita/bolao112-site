@@ -3259,12 +3259,32 @@ for (let i = 0; i < 12; i++) pointsByMonth[i] = {};
 
  // ORDENAÇÃO OFICIAL: usa a ordem cronológica real, igual ao Android
 const chronoMatches = finishedMatchesChrono;
-  const registerMatchMedal = (medal) => {
-    trophyRoom.push(medal);
-    if (["👽", "💎", "🎯", "🦓", "🔥", "🔮", "🎓"].includes(medal.icon)) {
-      activeMedals.push(medal.icon);
-    }
-  };
+  const cloneHistoryMedal = (medal) => ({
+  icon: medal.icon,
+  name: medal.name,
+  desc: medal.desc,
+  date: medal.date,
+});
+
+const registerMatchMedal = (medal) => {
+  trophyRoom.push(medal);
+  if (["👽", "💎", "🎯", "🦓", "🔥", "🔮", "🎓"].includes(medal.icon)) {
+    activeMedals.push(medal.icon);
+  }
+};
+
+const attachMedalToHistItem = (historyItemId, medal) => {
+  if (!historyItemId) return;
+
+  const target = hist.find((item) => item.id === historyItemId);
+  if (!target) return;
+
+  if (!Array.isArray(target.medalsHere)) {
+    target.medalsHere = [];
+  }
+
+  target.medalsHere.push(cloneHistoryMedal(medal));
+};
 
 chronoMatches.forEach(m => {
   // Linha do Tempo: Ignora jogos antes do user nascer
@@ -3276,22 +3296,104 @@ chronoMatches.forEach(m => {
 
   if (g) {
   if (m.winner === g.teamSelected) {
-    const isFinal = m.round && m.round.toLowerCase() === "final";
-    const pts = isFinal ? 6 : 3;
-    const matchMonth = m.deadlineDate.getMonth();
-    const matchYear = m.deadlineDate.getFullYear();
+  const isFinal = m.round && m.round.toLowerCase() === "final";
+  const pts = isFinal ? 6 : 3;
+  const matchMonth = m.deadlineDate.getMonth();
+  const matchYear = m.deadlineDate.getFullYear();
 
-    p += pts;
-    if (isThisMonth) monthlyP += pts;
+  p += pts;
+  if (isThisMonth) monthlyP += pts;
 
-    if (matchYear === currentYear) {
-      pointsByMonth[matchMonth][u.uid] =
-        (pointsByMonth[matchMonth][u.uid] || 0) + pts;
-    }
+  if (matchYear === currentYear) {
+    pointsByMonth[matchMonth][u.uid] =
+      (pointsByMonth[matchMonth][u.uid] || 0) + pts;
+  }
 
-    victories++;
-    simStreak++;
-    if (isFinal) finalsWon++;
+  victories++;
+  simStreak++;
+  if (isFinal) finalsWon++;
+
+  const medalsWonHere = [];
+  const registerMatchMedalForHistory = (medal) => {
+    registerMatchMedal(medal);
+    medalsWonHere.push(cloneHistoryMedal(medal));
+  };
+
+  if (simStreak === 3)
+    registerMatchMedalForHistory({
+      icon: "🔥",
+      name: "ON FIRE",
+      desc: "Palpitou 3 acertos seguidos.",
+      date: dateStr,
+      hiddenInList: false,
+    });
+
+  if (simStreak === 5)
+    registerMatchMedalForHistory({
+      icon: "🎯",
+      name: "MITO",
+      desc: "Palpitou 5 acertos seguidos.",
+      date: dateStr,
+      hiddenInList: false,
+    });
+
+  if (simStreak === 10)
+    registerMatchMedalForHistory({
+      icon: "👽",
+      name: "ALIEN",
+      desc: "Palpitou 10 acertos seguidos!",
+      date: dateStr,
+      hiddenInList: false,
+    });
+
+  if (zebraMatchIds.includes(m.id))
+    registerMatchMedalForHistory({
+      icon: "🦓",
+      name: "CAÇADOR DE ZEBRAS",
+      desc: `Acertou a zebra em ${m.teamA} x ${m.teamB}`,
+      date: dateStr,
+      hiddenInList: false,
+    });
+
+  if (isFinal)
+    registerMatchMedalForHistory({
+      icon: "🔮",
+      name: "MÃE DINAH",
+      desc: `Cravou o campeão em ${m.teamA} x ${m.teamB}`,
+      date: dateStr,
+      hiddenInList: false,
+    });
+
+  if (victories > 0 && victories % 50 === 0)
+    registerMatchMedalForHistory({
+      icon: "🎓",
+      name: `VETERANO Nvl ${victories / 50}`,
+      desc: `Conquistou ${victories} acertos.`,
+      date: dateStr,
+      hiddenInList: false,
+    });
+
+  hist.push({
+    id: m.id,
+    matchNumber: m.matchNumber || null,
+    ts: m.deadlineDate,
+    created: m.createdAt,
+    text: `${dateStr} - ✅ Acerto ${m.teamA} x ${m.teamB}`,
+    label: `${dateStr} - Acerto`,
+    teamA: m.teamA,
+    teamB: m.teamB,
+    teamAUrl: m.teamAUrl || "",
+    teamBUrl: m.teamBUrl || "",
+    votedTeam: g.teamSelected || "",
+    votedLogo: g.teamSelected === m.teamA
+      ? (m.teamAUrl || "")
+      : g.teamSelected === m.teamB
+        ? (m.teamBUrl || "")
+        : "",
+    ptsEarned: pts,
+    medalsHere: medalsWonHere,
+    type: "good"
+  });
 
       hist.push({
     id: m.id,
@@ -3493,22 +3595,25 @@ for (const competitionName in byComp) {
           (pointsByMonth[bonusMonth][u.uid] || 0) + 3;
       }
 
-      registerMatchMedal({
-        icon: "💎",
-        name: "DIAMANTE",
-        desc: competitionName
-          ? `Gabaritou as Oitavas (8/8) da ${competitionName}.`
-          : "Gabaritou as Oitavas (8/8) de um torneio.",
-        date: `📅 ${lastOitavaDate.getDate()}/${lastOitavaDate.getMonth() + 1}`,
-        hiddenInList: false,
-      });
+      const diamondMedal = {
+  icon: "💎",
+  name: "DIAMANTE",
+  desc: competitionName
+    ? `Gabaritou as Oitavas (8/8) da ${competitionName}.`
+    : "Gabaritou as Oitavas (8/8) de um torneio.",
+  date: `📅 ${lastOitavaDate.getDate()}/${lastOitavaDate.getMonth() + 1}`,
+  hiddenInList: false,
+};
 
-      hist.push({
-        id: `diamante_${competitionName || "torneio"}`,
-        ts: lastOitavaDate,
-        text: `💎 BÔNUS: Gabarito Oitavas (+3 pts)`,
-        type: "good",
-      });
+registerMatchMedal(diamondMedal);
+attachMedalToHistItem(lastOitavaMatch?.id, diamondMedal);
+
+hist.push({
+  id: `diamante_${competitionName || "torneio"}`,
+  ts: lastOitavaDate,
+  text: `💎 BÔNUS: Gabarito Oitavas (+3 pts)`,
+  type: "good",
+});
     }
   }
 }
@@ -4217,19 +4322,58 @@ if (count > 1) {
             }, 2500);
         };
         
+window.__extractMedalsCache = {};
+
+window.openExtractMedalsInline = (cacheKey) => {
+  const data = window.__extractMedalsCache?.[cacheKey];
+  const overlay = document.getElementById("extractMedalsInlineOverlay");
+  const titleEl = document.getElementById("extractMedalsInlineTitle");
+  const bodyEl = document.getElementById("extractMedalsInlineBody");
+
+  if (!data || !overlay || !titleEl || !bodyEl) return;
+
+  titleEl.textContent = data.title || "Confronto";
+  bodyEl.innerHTML = (data.medals || [])
+    .map((medal) => `
+      <div class="w-full rounded-2xl border border-gray-200 bg-[#F8F9FA] p-3">
+        <div class="flex items-start gap-3">
+          <div class="text-[24px] leading-none">${escapeHtml(medal.icon || "")}</div>
+          <div class="min-w-0 flex-1">
+            <div class="text-[13px] font-black text-[#006400]">${escapeHtml(medal.name || "")}</div>
+            <div class="mt-1 text-[12px] font-medium text-gray-700">${escapeHtml(medal.desc || "")}</div>
+            <div class="mt-2 text-[10px] font-bold text-gray-400">Conquistada em: ${escapeHtml(medal.date || "")}</div>
+          </div>
+        </div>
+      </div>
+    `)
+    .join("");
+
+  overlay.classList.remove("hidden");
+};
+
+window.closeExtractMedalsInline = () => {
+  const overlay = document.getElementById("extractMedalsInlineOverlay");
+  const titleEl = document.getElementById("extractMedalsInlineTitle");
+  const bodyEl = document.getElementById("extractMedalsInlineBody");
+
+  if (titleEl) titleEl.textContent = "";
+  if (bodyEl) bodyEl.innerHTML = "";
+  if (overlay) overlay.classList.add("hidden");
+};
+
        window.showModalHistory = (idx) => { 
             const u = currentRankingData[idx]; 
             if(!u) return;
                // Guarda de qual extrato estamos vindo (para o botão VOLTAR no modal de palpites)
 window.__fromHistoryIdx = idx;
 window.__fromHistoryUid = u.uid;
-
+window.__extractMedalsCache = {};
             
-           const html = u.hist && u.hist.length > 0 ? u.hist.map(h => {
+           const html = u.hist && u.hist.length > 0 ? u.hist.map((h, histIndex) => {
     const colorClass = h.type === 'bad' ? 'text-red-600' : 'text-[#2E7D32]';
 
     // Só deixa clicável se tiver id de match e não for item especial
-    const isMatch = h.id && h.id !== 'diamante';
+    const isMatch = h.id && !String(h.id).startsWith('diamante_');
 
     if (!isMatch) {
         return `<div class="border-b border-gray-300/50 py-2 text-xs font-bold ${colorClass}">${h.text}</div>`;
@@ -4264,6 +4408,34 @@ const resultIcon = isHit
 const rowBg = isHit ? 'bg-[#EEF6EC]' : 'bg-[#F7EAEA]';
 const matchNo = h.matchNumber ? `#${h.matchNumber}` : '';
 
+const medalsWonHere = Array.isArray(h.medalsHere) ? h.medalsHere : [];
+const matchTitleText = [h.teamA, h.teamB].filter(Boolean).join(' x ') || (h.label || '');
+const medalCacheKey = `${u.uid}_${String(h.id || histIndex).replace(/[^a-zA-Z0-9_-]/g, '_')}_${histIndex}`;
+
+if (medalsWonHere.length > 0) {
+  window.__extractMedalsCache[medalCacheKey] = {
+    title: matchTitleText,
+    medals: medalsWonHere.map((medal) => ({ ...medal })),
+  };
+}
+
+const medalBadgeHtml = medalsWonHere.length > 0
+  ? `
+    <button
+      type="button"
+      onclick="event.stopPropagation(); window.openExtractMedalsInline('${medalCacheKey}')"
+      class="flex items-center justify-center gap-1 rounded-xl bg-[#FFF3CD] px-2 py-1 shadow-sm border border-[#F4D58D]"
+      title="Ver medalhas deste confronto"
+    >
+      <span class="text-[12px] leading-none">🏅</span>
+      ${medalsWonHere.length > 1
+        ? `<span class="text-[10px] font-black text-[#8D6E63]">${medalsWonHere.length}</span>`
+        : ``
+      }
+    </button>
+  `
+  : `<div class="w-[38px]"></div>`;
+
 
 return `
     <button
@@ -4272,7 +4444,7 @@ return `
         class="w-full text-left mb-2 rounded-2xl border border-gray-200 ${rowBg} px-3 py-3 hover:bg-black/5 active:bg-black/10 transition"
         title="Abrir palpites registrados deste confronto"
     >
-        <div class="grid grid-cols-[44px_1fr_54px] items-center gap-3">
+        <div class="grid grid-cols-[44px_1fr_42px_54px] items-center gap-3">
             <div class="text-center">
                 <div class="text-[11px] font-black text-gray-500 leading-none">${dateText}</div>
                 <div class="mt-3 flex justify-center leading-none">
@@ -4306,10 +4478,12 @@ return `
                 </div>
             </div>
 
-            <div class="text-right">
-                <div class="text-[16px] leading-none font-black ${ptsColor}">${ptsText}</div>
-                <div class="text-[11px] leading-none font-black ${ptsColor} mt-0.5">pts</div>
-            </div>
+            ${medalBadgeHtml}
+
+<div class="text-right">
+  <div class="text-[16px] leading-none font-black ${ptsColor}">${ptsText}</div>
+  <div class="text-[11px] leading-none font-black ${ptsColor} mt-0.5">pts</div>
+</div>
         </div>
     </button>
 `;
@@ -4342,6 +4516,20 @@ document.getElementById("modalContainer").innerHTML = `
             <button onclick="closeModal()" class="mt-3 w-full bg-[#006400] text-white font-bold py-2.5 rounded shadow-lg btn-press">
                 FECHAR
             </button>
+            <div id="extractMedalsInlineOverlay" class="hidden absolute inset-0 z-30 bg-black/45 flex items-center justify-center p-4">
+  <div class="w-full max-w-[320px] rounded-[28px] bg-white shadow-2xl p-5">
+    <div class="text-center">
+      <h3 class="text-[14px] font-black text-[#006400] uppercase">Medalhas deste confronto</h3>
+      <p id="extractMedalsInlineTitle" class="mt-2 text-[13px] font-bold text-gray-800"></p>
+    </div>
+
+    <div id="extractMedalsInlineBody" class="mt-4 max-h-[260px] overflow-y-auto space-y-3"></div>
+
+    <button onclick="window.closeExtractMedalsInline()" class="mt-4 w-full bg-[#006400] text-white font-bold py-2.5 rounded shadow-lg btn-press">
+      FECHAR
+    </button>
+  </div>
+</div>
         </div>
     </div>
 `;
