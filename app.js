@@ -3374,104 +3374,26 @@ chronoMatches.forEach(m => {
     });
 
   hist.push({
-    id: m.id,
-    matchNumber: m.matchNumber || null,
-    ts: m.deadlineDate,
-    created: m.createdAt,
-    text: `${dateStr} - ✅ Acerto ${m.teamA} x ${m.teamB}`,
-    label: `${dateStr} - Acerto`,
-    teamA: m.teamA,
-    teamB: m.teamB,
-    teamAUrl: m.teamAUrl || "",
-    teamBUrl: m.teamBUrl || "",
-    votedTeam: g.teamSelected || "",
-    votedLogo: g.teamSelected === m.teamA
-      ? (m.teamAUrl || "")
-      : g.teamSelected === m.teamB
-        ? (m.teamBUrl || "")
-        : "",
-    ptsEarned: pts,
-    medalsHere: medalsWonHere,
-    type: "good"
-  });
-
-      hist.push({
-    id: m.id,
-    matchNumber: m.matchNumber || null,
-    ts: m.deadlineDate,
-    created: m.createdAt,
-    text: `${dateStr} - ✅ Acerto ${m.teamA} x ${m.teamB}`,
-    label: `${dateStr} - Acerto`,
-    teamA: m.teamA,
-    teamB: m.teamB,
-    teamAUrl: m.teamAUrl || "",
-    teamBUrl: m.teamBUrl || "",
-    votedTeam: g.teamSelected || "",
-    votedLogo: g.teamSelected === m.teamA
-        ? (m.teamAUrl || "")
-        : g.teamSelected === m.teamB
-            ? (m.teamBUrl || "")
-            : "",
-    ptsEarned: pts,
-    type: 'good'
+  id: m.id,
+  matchNumber: m.matchNumber || null,
+  ts: m.deadlineDate,
+  created: m.createdAt,
+  text: `${dateStr} - ✅ Acerto ${m.teamA} x ${m.teamB}`,
+  label: `${dateStr} - Acerto`,
+  teamA: m.teamA,
+  teamB: m.teamB,
+  teamAUrl: m.teamAUrl || "",
+  teamBUrl: m.teamBUrl || "",
+  votedTeam: g.teamSelected || "",
+  votedLogo: g.teamSelected === m.teamA
+    ? (m.teamAUrl || "")
+    : g.teamSelected === m.teamB
+      ? (m.teamBUrl || "")
+      : "",
+  ptsEarned: pts,
+  medalsHere: medalsWonHere,
+  type: "good"
 });
-
-
-
-
-      if (simStreak === 3)
-  registerMatchMedal({
-    icon: "🔥",
-    name: "ON FIRE",
-    desc: "Palpitou 3 acertos seguidos.",
-    date: dateStr,
-    hiddenInList: false,
-  });
-
-if (simStreak === 5)
-  registerMatchMedal({
-    icon: "🎯",
-    name: "MITO",
-    desc: "Palpitou 5 acertos seguidos.",
-    date: dateStr,
-    hiddenInList: false,
-  });
-
-if (simStreak === 10)
-  registerMatchMedal({
-    icon: "👽",
-    name: "ALIEN",
-    desc: "Palpitou 10 acertos seguidos!",
-    date: dateStr,
-    hiddenInList: false,
-  });
-
-if (zebraMatchIds.includes(m.id))
-  registerMatchMedal({
-    icon: "🦓",
-    name: "CAÇADOR DE ZEBRAS",
-    desc: `Acertou a zebra em ${m.teamA} x ${m.teamB}`,
-    date: dateStr,
-    hiddenInList: false,
-  });
-
-if (isFinal)
-  registerMatchMedal({
-    icon: "🔮",
-    name: "MÃE DINAH",
-    desc: `Cravou o campeão em ${m.teamA} x ${m.teamB}`,
-    date: dateStr,
-    hiddenInList: false,
-  });
-
-if (victories > 0 && victories % 50 === 0)
-  registerMatchMedal({
-    icon: "🎓",
-    name: `VETERANO Nvl ${victories / 50}`,
-    desc: `Conquistou ${victories} acertos.`,
-    date: dateStr,
-    hiddenInList: false,
-  });
 
     } else {
   simStreak = 0;
