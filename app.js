@@ -15,7 +15,7 @@
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ADICIONADO: enableIndexedDbPersistence
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const registerServiceWorker = () => {
   if (!('serviceWorker' in navigator)) return;
@@ -74,14 +74,30 @@ const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", auth
         const auth = getAuth(app);
         const db = getFirestore(app);
          let currentUser = null;
-        let currentRankingData = [];
-        let compMap = {}; 
-        let globalServerCounts = {};
-        // NOVO: Objeto para guardar as regras do Android
-        let appConfig = { chat: true, scout: true, vote: true };
-        // --- NOVAS VARIÁVEIS AQUI ---
-        let layoutOrder = []; // Vai guardar a ordem da tela ["ticker", "banner_X", "matches_open"...]
-        let activePolls = {}; // Cache das enquetes
+let currentRankingData = [];
+let compMap = {};
+let globalServerCounts = {};
+
+let appConfig = {
+  chat: true,
+  scout: true,
+  vote: true,
+  featureFlags: {},
+  bgHome: "",
+  bgRanking: "",
+  mediaAssets: {},
+  soundAssets: {},
+  bannerActive: false,
+  bannerBlocking: false,
+  bannerTitle: "",
+  bannerMessage: ""
+};
+
+let layoutOrder = [];
+let homeSections = [];
+let activePolls = {};
+let activeBannersMap = {};
+let __appStateUnsub = null;
         // --- NOVA FUNÇÃO DE ORDENAÇÃO (PADRÃO ANDROID) ---
 // Regra: 1. Prazo (Crescente) | 2. Criação (Crescente/Antigo 1º) | 3. ID (Fallback)
 const matchComparator = (a, b) => {
@@ -113,12 +129,15 @@ const matchComparator = (a, b) => {
 };
        // --- ÁUDIO SIMPLES (SOMENTE POP) ---
         const playVoteSound = () => {
-            try {
-                const audio = new Audio('som_pop.mp3');
-                audio.volume = 0.5;
-                audio.play().catch(e => console.log("Áudio bloqueado:", e));
-            } catch(e) { console.log(e); }
-        };
+  try {
+    const audioSrc = resolveRemoteSoundAsset("POP", "som_pop.mp3");
+    const audio = new Audio(audioSrc);
+    audio.volume = 0.5;
+    audio.play().catch(e => console.log("Áudio bloqueado:", e));
+  } catch (e) {
+    console.log(e);
+  }
+};
         
         // Garante que o som toque nas funções de voto existentes
         // (Nota: As funções window.vote e window.votePoll já chamam playVoteSound(), 
@@ -423,45 +442,134 @@ const shouldGateBeActiveNow = (officialStartAt) => {
 
         // COLETAR ESTE BLOCO AQUI (INÍCIO)
 // --- 2. SISTEMA DE REMOTE CONFIG (BANNERS E RECURSOS) ---
-        const initRemoteConfig = () => {
-            onSnapshot(doc(db, "settings", "config"), (docSnap) => {
-                if (docSnap.exists()) {
-                    const config = docSnap.data();
-                    
-                    // A. Atualiza Configurações Globais (Lê do seu print)
-                    appConfig.chat = config.enable_chat !== false; // Padrão true se não existir
-                    appConfig.scout = config.enable_scout !== false;
-                    appConfig.vote = config.enable_fast_vote !== false;
+        const normalizeRemoteMap = (raw) => {
+  const result = {};
+  if (!raw || typeof raw !== "object") return result;
 
-                    // B. Lógica Visual do Banner
-                    const maintScreen = document.getElementById('maintenanceScreen');
-                    const alertBanner = document.getElementById('alertBanner');
-                    
-                    if (!maintScreen || !alertBanner) return;
+  Object.entries(raw).forEach(([key, value]) => {
+    if (typeof key !== "string" || typeof value !== "string") return;
+    const safeKey = key.trim();
+    const safeValue = fixDriveUrl(value.trim());
+    if (safeKey && safeValue) result[safeKey] = safeValue;
+  });
 
-                    // Bloqueio (Manutenção)
-                    if (config.banner_active && config.banner_blocking) {
-                        const t = document.getElementById('maintTitle'); if(t) t.innerText = config.banner_title || "EM MANUTENÇÃO";
-                        const m = document.getElementById('maintMessage'); if(m) m.innerText = config.banner_message || "Voltamos logo!";
-                        maintScreen.classList.remove('hidden');
-                        alertBanner.classList.add('hidden');
-                        document.body.style.overflow = "hidden";
-                    } else {
-                        maintScreen.classList.add('hidden');
-                        document.body.style.overflow = "auto";
-                    }
+  return result;
+};
 
-                    // Aviso Informativo
-                    if (config.banner_active && !config.banner_blocking) {
-                        const t = document.getElementById('alertTitle'); if(t) t.innerText = config.banner_title || "AVISO";
-                        const m = document.getElementById('alertMessage'); if(m) m.innerText = config.banner_message || "";
-                        alertBanner.classList.remove('hidden');
-                    } else {
-                        alertBanner.classList.add('hidden');
-                    }
-                }
-            });
-        };
+const resolveRemoteMediaAsset = (source = "") => {
+  const trimmed = String(source || "").trim();
+  if (!trimmed) return "";
+
+  if (trimmed.startsWith("data:image")) return trimmed;
+  if (/^[A-Za-z0-9+/=]{120,}$/.test(trimmed)) {
+    return `data:image/jpeg;base64,${trimmed}`;
+  }
+
+  return appConfig.mediaAssets[trimmed] || fixDriveUrl(trimmed);
+};
+
+const resolveRemoteSoundAsset = (code = "", fallback = "som_pop.mp3") => {
+  const trimmed = String(code || "").trim();
+  return appConfig.soundAssets[trimmed] || fallback;
+};
+
+const applyRemoteBackgrounds = () => {
+  const homeBg = resolveRemoteMediaAsset(appConfig.bgHome);
+  const rankingBg = resolveRemoteMediaAsset(appConfig.bgRanking);
+
+  const applyBg = (el, bgUrl) => {
+    if (!el) return;
+
+    if (bgUrl) {
+      el.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.97)), url('${bgUrl}')`;
+      el.style.backgroundSize = "cover";
+      el.style.backgroundPosition = "center";
+      el.style.backgroundRepeat = "no-repeat";
+    } else {
+      el.style.backgroundImage = "";
+      el.style.backgroundSize = "";
+      el.style.backgroundPosition = "";
+      el.style.backgroundRepeat = "";
+    }
+  };
+
+  applyBg(document.getElementById("matchesScreen"), homeBg);
+  applyBg(document.getElementById("rankingScreen"), rankingBg);
+};
+
+const initRemoteConfig = () => {
+  onSnapshot(doc(db, "settings", "config"), (docSnap) => {
+    if (!docSnap.exists()) return;
+
+    const config = docSnap.data() || {};
+    const featureFlags = (config.feature_flags && typeof config.feature_flags === "object")
+      ? config.feature_flags
+      : {};
+
+    appConfig.featureFlags = featureFlags;
+    appConfig.chat =
+      (typeof featureFlags.chat === "boolean" ? featureFlags.chat : undefined) ??
+      (typeof config.enable_chat === "boolean" ? config.enable_chat : undefined) ??
+      true;
+
+    appConfig.scout =
+      (typeof featureFlags.scout === "boolean" ? featureFlags.scout : undefined) ??
+      (typeof config.enable_scout === "boolean" ? config.enable_scout : undefined) ??
+      true;
+
+    appConfig.vote =
+      (typeof featureFlags.fast_vote === "boolean" ? featureFlags.fast_vote : undefined) ??
+      (typeof config.enable_fast_vote === "boolean" ? config.enable_fast_vote : undefined) ??
+      true;
+
+    appConfig.bannerActive = config.banner_active === true;
+    appConfig.bannerBlocking = config.banner_blocking === true;
+    appConfig.bannerTitle = String(config.banner_title || "");
+    appConfig.bannerMessage = String(config.banner_message || "");
+
+    appConfig.bgHome = String(config.bg_home || config.bghome || "");
+    appConfig.bgRanking = String(config.bg_ranking || config.bgranking || "");
+    appConfig.mediaAssets = normalizeRemoteMap(config.media_assets);
+    appConfig.soundAssets = normalizeRemoteMap(config.sound_assets);
+
+    applyRemoteBackgrounds();
+
+    const maintScreen = document.getElementById("maintenanceScreen");
+    const alertBanner = document.getElementById("alertBanner");
+    if (!maintScreen || !alertBanner) return;
+
+    if (appConfig.bannerActive && appConfig.bannerBlocking) {
+      const t = document.getElementById("maintTitle");
+      const m = document.getElementById("maintMessage");
+      if (t) t.innerText = appConfig.bannerTitle || "EM MANUTENÇÃO";
+      if (m) m.innerText = appConfig.bannerMessage || "Voltamos logo!";
+      maintScreen.classList.remove("hidden");
+      alertBanner.classList.add("hidden");
+      document.body.style.overflow = "hidden";
+    } else {
+      maintScreen.classList.add("hidden");
+      document.body.style.overflow = "auto";
+    }
+
+    if (appConfig.bannerActive && !appConfig.bannerBlocking) {
+      const t = document.getElementById("alertTitle");
+      const m = document.getElementById("alertMessage");
+      if (t) t.innerText = appConfig.bannerTitle || "AVISO";
+      if (m) m.innerText = appConfig.bannerMessage || "";
+      alertBanner.classList.remove("hidden");
+    } else {
+      alertBanner.classList.add("hidden");
+    }
+
+    if (currentUser && !document.getElementById("matchesScreen")?.classList.contains("hidden")) {
+      loadMatches();
+    }
+    if (currentUser && !document.getElementById("rankingScreen")?.classList.contains("hidden") && typeof loadRanking === "function") {
+      loadRanking();
+    }
+  });
+};
+
         initRemoteConfig();
         // (FIM DO BLOCO)
 
@@ -982,6 +1090,11 @@ window.continueAfterLoginGates();
 window.currentUid = null;
 currentUser = null;
 
+if (__appStateUnsub) {
+  try { __appStateUnsub(); } catch (e) {}
+  __appStateUnsub = null;
+}
+
 document.getElementById('mainHeader').classList.add('hidden');
 document.getElementById('loginScreen').classList.remove('hidden');
 document.getElementById('mainScreens').classList.add('hidden');
@@ -996,6 +1109,9 @@ window.finalizeAppEntryAfterLogin = () => {
   document.getElementById('mainScreens').classList.remove('hidden');
   document.getElementById('bottomNav').classList.remove('hidden');
   document.getElementById('btnLogout').classList.remove('hidden');
+
+  startWebAdminSync();
+  applyRemoteBackgrounds();
 
   showTab('matches');
   calculatePot();
@@ -1294,44 +1410,94 @@ async function renderRules(forceRefresh = false) {
 
         // 3. Renderiza Enquete (Correção de Clique)
         const renderPoll = (poll) => {
-            if (!poll || !poll.active) return '';
-            const totalVotes = Object.keys(poll.votes || {}).length;
-            const myVote = poll.votes ? poll.votes[currentUser.uid] : null;
-            let isExpired = false;
-            if(poll.deadline) { try { isExpired = new Date() > poll.deadline.toDate(); } catch(e) {} }
-            
-            let optionsHtml = '';
-            (poll.options || []).forEach((opt, idx) => {
-                let count = 0;
-                if (poll.votes) Object.values(poll.votes).forEach(v => { if(v == idx) count++; });
-                const pct = totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
-                const isSelected = myVote === idx;
-                const barColor = isSelected ? 'bg-[#006400]' : 'bg-gray-300';
-                const textColor = isSelected ? 'text-[#006400]' : 'text-gray-700';
-                const border = isSelected ? 'border-[#FFD700] border-2' : 'border-gray-200 border';
-                
-                const clickAction = isExpired ? '' : `onclick="window.votePoll('${poll.id}', ${idx})"`;
+  if (!poll || !poll.active) return "";
 
-                optionsHtml += `
-                <div ${clickAction} class="mb-2 relative rounded-lg overflow-hidden ${border} bg-white h-10 px-3 cursor-pointer btn-press shadow-sm select-none flex items-center justify-between group hover:bg-gray-50">
-                    <div class="absolute top-0 left-0 bottom-0 ${barColor} opacity-30 transition-all duration-500 pointer-events-none" style="width: ${pct}%; z-index: 0;"></div>
-                    <span class="relative z-10 text-xs font-bold ${textColor} pointer-events-none flex items-center">
-                        ${opt} ${isSelected ? '<i class="fas fa-check-circle ml-2 text-green-600"></i>' : ''}
-                    </span>
-                    <span class="relative z-10 text-[10px] font-black text-gray-500 pointer-events-none">${pct}%</span>
-                </div>`;
-            });
+  const votes = (poll.votes && typeof poll.votes === "object") ? poll.votes : {};
+  const userVotes = (poll.userVotes && typeof poll.userVotes === "object") ? poll.userVotes : {};
+  const myVote = currentUser ? userVotes[currentUser.uid] : null;
+  const totalVotes = Object.values(votes).reduce((sum, value) => sum + (Number(value) || 0), 0);
 
-            return `
-            <div class="card-cut bg-white border-t-4 border-blue-600 mb-4 p-4 shadow-md relative overflow-hidden">
-                <div class="flex justify-between items-start mb-3">
-                    <h3 class="font-black text-blue-800 text-sm uppercase"><i class="fas fa-poll-h mr-2"></i>${poll.question}</h3>
-                    ${isExpired ? '<span class="bg-red-100 text-red-600 text-[8px] font-bold px-2 py-1 rounded">ENCERRADA</span>' : ''}
-                </div>
-                <div class="flex flex-col">${optionsHtml}</div>
-                <p class="text-[9px] text-gray-400 text-right mt-2 font-bold">${totalVotes} votos • ${isExpired ? 'Finalizada' : 'Toque na opção para votar'}</p>
-            </div>`;
-        };
+  let isExpired = false;
+  if (poll.deadline) {
+    const deadlineDate = toJsDate(poll.deadline);
+    if (deadlineDate) isExpired = new Date() > deadlineDate;
+  }
+
+  let optionsHtml = "";
+
+  (poll.options || []).forEach((opt, idx) => {
+    const count = Number(votes[idx] ?? votes[String(idx)] ?? 0);
+    const pct = totalVotes === 0 ? 0 : Math.round((count / totalVotes) * 100);
+    const isSelected = myVote === idx;
+
+    const textColor = isSelected ? "text-[#006400]" : "text-gray-700";
+    const border = isSelected ? "border-[#FFD700] border-2" : "border-gray-200 border";
+    const clickAction = isExpired ? "" : `onclick="window.votePoll('${poll.id}', ${idx})"`;
+
+    optionsHtml += `
+      <button ${clickAction} class="w-full text-left px-4 py-3 rounded-2xl ${border} bg-white mb-2">
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-sm font-black ${textColor}">${opt}</span>
+          <span class="text-xs font-black ${textColor}">${pct}%</span>
+        </div>
+        <div class="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden">
+          <div class="h-full ${isSelected ? "bg-[#006400]" : "bg-gray-300"}" style="width:${pct}%"></div>
+        </div>
+      </button>
+    `;
+  });
+
+  return `
+    <div class="bg-white rounded-[26px] border-[3px] border-[#006400] shadow-lg p-4 mb-3">
+      <div class="flex items-center justify-between gap-3 mb-3">
+        <h3 class="text-base font-black text-[#006400]">${poll.question}</h3>
+        ${isExpired ? `<span class="text-[10px] font-black text-red-600">ENCERRADA</span>` : ``}
+      </div>
+
+      ${optionsHtml}
+
+      <div class="text-[11px] font-bold text-gray-500 mt-2">
+        ${totalVotes} votos • ${isExpired ? "Finalizada" : "Toque na opção para votar"}
+      </div>
+    </div>
+  `;
+};
+
+window.votePoll = async (pid, idx) => {
+  if (!currentUser) {
+    alert("Faça login para votar.");
+    return;
+  }
+
+  try {
+    const ref = doc(db, "polls", pid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      alert("Enquete não encontrada.");
+      return;
+    }
+
+    const data = snap.data() || {};
+    const prev = data.userVotes?.[currentUser.uid];
+
+    if (Number(prev) === idx) return;
+
+    const payload = {
+      [`votes.${idx}`]: increment(1),
+      [`userVotes.${currentUser.uid}`]: idx
+    };
+
+    if (prev !== undefined && prev !== null) {
+      payload[`votes.${prev}`] = increment(-1);
+    }
+
+    await updateDoc(ref, payload);
+    loadMatches();
+  } catch (e) {
+    console.error("Erro enquete:", e);
+    alert("Erro ao salvar voto.");
+  }
+};
 
         window.votePoll = async (pid, idx) => {
             if(!currentUser) { alert("Faça login para votar."); return; }
@@ -1544,164 +1710,682 @@ async function renderRules(forceRefresh = false) {
             return segments.join(' | ') + " | " + segments.join(' | ');
         };
 
-        async function loadMatches() {
-        const container = document.getElementById('matchesScreen');
-        document.getElementById('progressBar').classList.remove('hidden');
-        try {
-            // 1. BUSCA TUDO (Adicionado: layout, banners, polls)
-            const [setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap, newsSnap, layoutSnap, bannersSnap, pollsSnap] = await Promise.all([
-                getDoc(doc(db, "settings", "competitions")), 
-                getDocs(collection(db, "matches")), 
-                getDocs(collection(db, "guesses")),
-                getDocs(collection(db, "users")), 
-                getDocs(collection(db, "match_comments")), 
-                getDoc(doc(db, "settings", "news")),
-                getDoc(doc(db, "settings", "home_layout")), 
-                getDocs(collection(db, "banners")), 
-                getDocs(collection(db, "polls"))
-            ]);
+const DEFAULT_HOME_LAYOUT_ORDER = ["ticker", "fast_vote", "matches_open", "matches_wait", "matches_done"];
 
-            // ... (Processamento de dados padrão - mantido para brevidade) ...
-            const totalParticipants = uSnap.size || 1;
-            // --- NOVO TRECHO (LINHA DO TEMPO) ---
-            // Cria uma lista com a data de entrada de cada usuário para o cálculo correto
-            const allUsersData = uSnap.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                // Se não tiver data, assume AGORA (new Date()), para proteger usuários novos em jogos velhos
-                createdAt: doc.data().createdAt ? doc.data().createdAt.toDate() : new Date()
-            }));
-            // ------------------------------------
-            if(setSnap.exists()) (setSnap.data().items||[]).forEach(i => compMap[i.name] = i.logo);
-            
-            const statsMap = {}; const myVotesMap = {};
-            const guessesData = []; // <--- VARIÁVEL QUE FALTAVA
-            guessesSnap.forEach(d => {
-                const g = d.data();
-                guessesData.push(g); // <--- PREENCHENDO A VARIÁVEL
-                if(g.userId === currentUser.uid) myVotesMap[g.matchId] = g.teamSelected;
-                if(!statsMap[g.matchId]) statsMap[g.matchId] = { teamA: 0, teamB: 0, total: 0 };
-                if(!statsMap[g.matchId][g.teamSelected]) statsMap[g.matchId][g.teamSelected] = 0;
-                statsMap[g.matchId][g.teamSelected]++; statsMap[g.matchId].total++;
-            });
+const toJsDate = (value) => {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value.toDate === "function") return value.toDate();
+  if (value.seconds) return new Date(value.seconds * 1000);
+  return null;
+};
 
-            globalServerCounts = {};
-            commentsSnap.forEach(d => { const mid = d.data().matchId; globalServerCounts[mid] = (globalServerCounts[mid]||0)+1; });
+const normalizeHomeSectionType = (raw = "") => {
+  const value = String(raw || "").trim().toLowerCase();
+  if ([
+    "ticker",
+    "banner",
+    "banner_ref",
+    "poll",
+    "fast_vote",
+    "matches_open",
+    "matches_wait",
+    "matches_done",
+    "announcement",
+    "cta_card"
+  ].includes(value)) return value;
+  return "";
+};
 
-            // 1. DADOS BRUTOS & ORDENAÇÃO
-            const now = new Date();
-            let matches = [];
+const normalizeHomeActionType = (raw = "") => {
+  const value = String(raw || "").trim().toLowerCase();
+  return ["none", "url", "tab"].includes(value) ? value : "none";
+};
 
-            matchesSnap.forEach(d => {
-                const m = {id: d.id, ...d.data()};
-                
-                if(m.deadline) {
-                    m.deadlineDate = m.deadline.toDate();
-                    m.expired = now > m.deadlineDate;
-                    m.final = (m.round || "").toLowerCase() === 'final';
-                    m.stats = statsMap[m.id] || {};
-                    matches.push(m);
-                }
-            });
+const normalizeHomeSectionStyle = (raw = "") => {
+  const value = String(raw || "").trim().toLowerCase();
+  return ["default", "warning", "success", "danger", "dark"].includes(value) ? value : "default";
+};
 
-            // CORREÇÃO CRÍTICA: Ordenação por Data (Crescente) E ID (Desempate)
-            // ORDENAÇÃO OFICIAL: 1. Prazo > 2. Criação (Antigo 1º) > 3. ID
-            matches.sort(matchComparator);
-            
-            window.cachedMatches = matches;
+const normalizeHomeFeatureFlag = (raw = "") => {
+  const value = String(raw || "").trim().toLowerCase();
+  return ["", "chat", "fast_vote", "scout"].includes(value) ? value : "";
+};
 
-            // 2. SEPARAÇÃO NAS ABAS
-            let open = [], waiting = [], finished = [];
-            let totalUnread = 0;
-            
-            matches.forEach((m, idx) => {
-                m.matchNumber = idx + 1; // Numeração baseada na ordem correta
-                
-                const sCount = globalServerCounts[m.id] || 0;
-                const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
-                if (sCount > lCount) totalUnread++;
-                
-                if(m.winner) finished.push(m);
-                else if(m.expired) waiting.push(m);
-                else open.push(m);
-            });
+const normalizeHomeUserSegment = (raw = "") => {
+  const value = String(raw || "").trim().toLowerCase();
+  return ["", "debtors", "new_users", "veterans"].includes(value) ? value : "";
+};
 
-           // CORREÇÃO FINAL:
-           // Aguardando: Usa a mesma lógica padrão (Crescente)
-waiting.sort(matchComparator);
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
-// Finalizados: Inverso (Do mais recente para o mais antigo)
-finished.sort((a,b) => matchComparator(b, a)); // Note o (b, a) para inverter
-            // --- LÓGICA SDUI (NOVA) ---
-            let order = ["ticker", "matches_open", "matches_wait", "matches_done"];
-            if (layoutSnap.exists() && layoutSnap.data().order) order = layoutSnap.data().order;
-            
-            const bannersMap = {}; bannersSnap.forEach(d => bannersMap[d.id] = d.data());
-            const pollsMap = {}; pollsSnap.forEach(d => pollsMap[d.id] = {id: d.id, ...d.data()});
+const escapeJsString = (value = "") =>
+  String(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, " ")
+    .replace(/\r/g, " ");
 
-            let finalHtml = "";
-            
-            // --- CORREÇÃO: CRIAR A VARIÁVEL QUE FALTA ---
-            // Cria a lista de jogos com prazo vencido (usado para a medalha Fantasma no letreiro)
-            const expiredMatches = matches.filter(m => m.deadlineDate < new Date());
-            // --------------------------------------------
+const resolveSectionMediaSource = (section) => {
+  const mediaUrl = String(section.mediaUrl || "").trim();
+  const mediaBase64 = String(section.mediaBase64 || "").trim();
+  return resolveRemoteMediaAsset(mediaUrl || mediaBase64);
+};
 
-            const newsContent = generateNewsFeed(
-                newsSnap, 
-                guessesData, 
-                finished, 
-                allUsersData, 
-                expiredMatches // Agora a variável existe e o erro sumirá!
-            );
-            
-            const tickerBlock = `<div class="card-container mb-4"><div class="ticker-container shadow-lg"><div class="ticker-wrapper"><div class="ticker-item">${newsContent}</div></div></div></div>`;
+const parseHomeLayoutDoc = (layoutSnap) => {
+  const data = layoutSnap?.exists() ? (layoutSnap.data() || {}) : {};
+  const rawSections = Array.isArray(data.sections) ? data.sections : [];
 
-            for (const item of order) {
-                if (item === "ticker") finalHtml += tickerBlock;
-                
-                else if (item.startsWith("banner_")) {
-                    let bid = item; 
-                    if(!bannersMap[item]) bid = item.replace("banner_", "");
-                    const bData = bannersMap[bid] || bannersMap[item];
-                    if(bData) finalHtml += renderBanner(bData);
-                }
-                
-                else if (item === "matches_open") {
-                    const pulse = open.some(m => !myVotesMap[m.id]) ? '<span class="pulse-dot"></span>' : '';
-                    // Passa allUsersData aqui também
-                    finalHtml += `<div onclick="window.toggleOpen()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#006400] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#006400] uppercase tracking-wider text-xs flex-1">✅ (${open.length}) DISPONÍVEIS ${pulse}</h4><i id="iconOpen" class="fas fa-chevron-up text-[#006400]"></i></div></div><div id="openContainer">${open.length > 0 ? await renderMatchList(open, allUsersData, globalServerCounts, myVotesMap) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aberto.</div>`}</div>`;
-                }
-                
-                else if (item === "matches_wait") {
-                    // Passa allUsersData aqui também
-                    finalHtml += `<div onclick="window.toggleWaiting()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#FBC02D] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#FBC02D] uppercase tracking-wider text-xs flex-1">⏳ (${waiting.length}) AGUARDANDO</h4><i id="iconWaiting" class="fas fa-chevron-down text-[#FBC02D]"></i></div></div><div id="waitingContainer" class="${waiting.length > 0 ? 'hidden' : ''}">${waiting.length > 0 ? await renderMatchList(waiting, allUsersData, globalServerCounts, myVotesMap) : `<div class="text-center text-black text-[12px] italic mb-6 font-bold">Nenhum confronto aguardando.</div>`}</div>`;
-                }
-                
-                else if (item === "matches_done") {
-                    if (finished.length > 0) {
-                        // Passa allUsersData aqui também
-                        finalHtml += `<div onclick="window.toggleFinished()" class="card-container mb-3 cursor-pointer btn-press"><div class="bg-white/90 border border-[#D32F2F] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm flex justify-between items-center px-4"><h4 class="font-bold text-[#D32F2F] uppercase tracking-wider text-xs flex-1">🚫 (${finished.length}) FINALIZADOS</h4><i id="iconFinished" class="fas fa-chevron-down text-[#D32F2F]"></i></div></div><div id="finishedContainer" class="hidden">${await renderMatchList(finished, allUsersData, globalServerCounts, myVotesMap)}</div>`;
-                    }
-                }
-                
-                else if (item === "poll") {
-                    Object.values(pollsMap).filter(p=>p.active).forEach(p => finalHtml += renderPoll(p));
-                }
-            }
-            container.innerHTML = finalHtml;
-            window.updateBadges();
+  if (rawSections.length > 0) {
+    return {
+      hasExplicitSections: true,
+      order: Array.isArray(data.order) && data.order.length ? data.order : DEFAULT_HOME_LAYOUT_ORDER,
+      sections: rawSections.map((section, index) => {
+        const action = section?.action && typeof section.action === "object" ? section.action : {};
+        const visibility = section?.visibility && typeof section.visibility === "object" ? section.visibility : {};
 
-            const bell = document.getElementById('btnBell');
-            const old = bell.querySelector('.bell-badge'); if(old) old.remove();
-            if(totalUnread > 0) bell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
+        return {
+          id: String(section?.id || `section_${index}`),
+          type: normalizeHomeSectionType(section?.type),
+          enabled: section?.enabled !== false,
+          title: String(section?.title || ""),
+          subtitle: String(section?.subtitle || ""),
+          body: String(section?.body || ""),
+          bannerId: String(section?.bannerId || ""),
+          mediaUrl: String(section?.mediaUrl || ""),
+          mediaBase64: String(section?.mediaBase64 || ""),
+          style: normalizeHomeSectionStyle(section?.style),
+          action: {
+            type: normalizeHomeActionType(action.type),
+            value: String(action.value || ""),
+            label: String(action.label || "")
+          },
+          visibility: {
+            adminsOnly: visibility.adminsOnly === true,
+            requiresPendingVotes: visibility.requiresPendingVotes === true,
+            requiresUnreadOpenChat: visibility.requiresUnreadOpenChat === true,
+            requiresUnreadWaitingChat: visibility.requiresUnreadWaitingChat === true,
+            requiresUnreadFinishedChat: visibility.requiresUnreadFinishedChat === true,
+            featureFlag: normalizeHomeFeatureFlag(visibility.featureFlag),
+            competition: String(visibility.competition || ""),
+            userSegment: normalizeHomeUserSegment(visibility.userSegment),
+            startAt: toJsDate(visibility.startAt),
+            endAt: toJsDate(visibility.endAt)
+          }
+        };
+      }).filter(section => section.type)
+    };
+  }
 
-            let pendingCount = 0; open.forEach(m => { if (!myVotesMap[m.id]) pendingCount++; });
-            const navBtn = document.getElementById('nav-matches'); const oldBadge = document.getElementById('matches-badge'); if(oldBadge) oldBadge.remove();
-            if (pendingCount > 0) navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingCount}</span>`;
+  const legacyOrder = Array.isArray(data.order) && data.order.length
+    ? data.order.filter(Boolean)
+    : DEFAULT_HOME_LAYOUT_ORDER;
 
-        } catch(e) { console.error("Erro fatal loadMatches:", e); }
-        document.getElementById('progressBar').classList.add('hidden');
+  return {
+    hasExplicitSections: false,
+    order: legacyOrder,
+    sections: legacyOrder.map((item, index) => ({
+      id: `legacy_${index}`,
+      type: item.startsWith("banner_") ? "banner_ref" : normalizeHomeSectionType(item),
+      enabled: true,
+      title: "",
+      subtitle: "",
+      body: "",
+      bannerId: item.startsWith("banner_") ? item.replace("banner_", "") : "",
+      mediaUrl: "",
+      mediaBase64: "",
+      style: "default",
+      action: { type: "none", value: "", label: "" },
+      visibility: {
+        adminsOnly: false,
+        requiresPendingVotes: false,
+        requiresUnreadOpenChat: false,
+        requiresUnreadWaitingChat: false,
+        requiresUnreadFinishedChat: false,
+        featureFlag: "",
+        competition: "",
+        userSegment: "",
+        startAt: null,
+        endAt: null
+      }
+    }))
+  };
+};
+
+const buildHomeVisibilityRuntime = ({ matches, open, waiting, finished, myVotesMap, allUsersData }) => {
+  const currentUserData = allUsersData.find(u => u.uid === currentUser?.uid) || null;
+
+  let hasUnreadOpenChat = false;
+  let hasUnreadWaitingChat = false;
+  let hasUnreadFinishedChat = false;
+
+  matches.forEach((m) => {
+    const serverCount = globalServerCounts[m.id] || 0;
+    const localCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0", 10);
+    if (serverCount <= localCount) return;
+
+    if (m.winner) hasUnreadFinishedChat = true;
+    else if (m.expired) hasUnreadWaitingChat = true;
+    else hasUnreadOpenChat = true;
+  });
+
+  const pendingFastVoteCount = open.filter(m => !myVotesMap[m.id]).length;
+
+  return {
+    currentUser: currentUserData,
+    pendingFastVoteCount,
+    hasUnreadOpenChat,
+    hasUnreadWaitingChat,
+    hasUnreadFinishedChat,
+    enableChat: appConfig.chat,
+    enableFastVote: appConfig.vote,
+    enableScout: appConfig.scout,
+    availableCompetitions: new Set(matches.map(m => String(m.competition || "").trim()).filter(Boolean)),
+    now: new Date()
+  };
+};
+
+const isHomeSectionVisibleWeb = (section, runtime) => {
+  const visibility = section.visibility || {};
+  const currentUserData = runtime.currentUser;
+  const now = runtime.now;
+
+  if (!section.enabled) return false;
+  if (visibility.adminsOnly && currentUserData?.isAdmin !== true) return false;
+  if (visibility.requiresPendingVotes && runtime.pendingFastVoteCount <= 0) return false;
+  if (visibility.requiresUnreadOpenChat && !runtime.hasUnreadOpenChat) return false;
+  if (visibility.requiresUnreadWaitingChat && !runtime.hasUnreadWaitingChat) return false;
+  if (visibility.requiresUnreadFinishedChat && !runtime.hasUnreadFinishedChat) return false;
+
+  if (visibility.startAt && now < visibility.startAt) return false;
+  if (visibility.endAt && now > visibility.endAt) return false;
+
+  if (visibility.featureFlag) {
+    if (visibility.featureFlag === "chat" && !runtime.enableChat) return false;
+    if (visibility.featureFlag === "fast_vote" && !runtime.enableFastVote) return false;
+    if (visibility.featureFlag === "scout" && !runtime.enableScout) return false;
+  }
+
+  if (visibility.competition) {
+    const hasCompetition = [...runtime.availableCompetitions].some(
+      item => item.toLowerCase() === visibility.competition.toLowerCase()
+    );
+    if (!hasCompetition) return false;
+  }
+
+  if (visibility.userSegment) {
+    const createdAt = currentUserData?.createdDate || null;
+    const daysSinceCreation = createdAt
+      ? Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+
+    if (visibility.userSegment === "debtors" && Number(currentUserData?.debts || 0) <= 0) return false;
+    if (visibility.userSegment === "new_users" && !(daysSinceCreation !== null && daysSinceCreation <= 30)) return false;
+    if (visibility.userSegment === "veterans" && !(daysSinceCreation !== null && daysSinceCreation > 30)) return false;
+  }
+
+  return true;
+};
+
+window.executeHomeSectionAction = (type, value) => {
+  const actionType = normalizeHomeActionType(type);
+  const actionValue = String(value || "").trim();
+
+  if (!actionValue || actionType === "none") return;
+
+  if (actionType === "tab") {
+    showTab(actionValue);
+    return;
+  }
+
+  if (actionType === "url") {
+    const safeUrl = /^https?:\/\//i.test(actionValue) ? actionValue : `https://${actionValue}`;
+    window.open(safeUrl, "_blank", "noopener,noreferrer");
+  }
+};
+
+const renderTickerBlock = (newsContent) => `
+  <div class="mb-3 rounded-[24px] border-[3px] border-[#006400] bg-white shadow-lg overflow-hidden">
+    <div class="px-4 py-3 bg-[#006400] text-white text-[11px] font-black uppercase tracking-wide">
+      Letreiro
+    </div>
+    <div class="px-3 py-3 text-[13px] font-bold text-[#006400] bg-[#F9FFF4]">
+      <marquee scrollamount="4">${escapeHtml(newsContent)}</marquee>
+    </div>
+  </div>
+`;
+
+const renderServerDrivenSection = (section) => {
+  const style = normalizeHomeSectionStyle(section.style);
+  const mediaSource = resolveSectionMediaSource(section);
+  const actionType = normalizeHomeActionType(section.action?.type);
+  const actionValue = String(section.action?.value || "");
+  const actionLabel = String(section.action?.label || "");
+  const canExecute = actionType !== "none" && actionValue && actionLabel;
+
+  const palette = {
+    default: {
+      wrapper: "bg-white border-[#006400]",
+      title: "text-[#111827]",
+      subtitle: "text-gray-600",
+      body: "text-gray-700",
+      button: "bg-[#006400] text-white"
+    },
+    warning: {
+      wrapper: "bg-[#FFF8E1] border-[#F9A825]",
+      title: "text-[#E65100]",
+      subtitle: "text-[#8D6E63]",
+      body: "text-[#5D4037]",
+      button: "bg-[#F9A825] text-black"
+    },
+    success: {
+      wrapper: "bg-[#E8F5E9] border-[#2E7D32]",
+      title: "text-[#1B5E20]",
+      subtitle: "text-[#2E7D32]",
+      body: "text-[#1B4332]",
+      button: "bg-[#2E7D32] text-white"
+    },
+    danger: {
+      wrapper: "bg-[#FFEBEE] border-[#C62828]",
+      title: "text-[#B71C1C]",
+      subtitle: "text-[#C62828]",
+      body: "text-[#6D1B1B]",
+      button: "bg-[#C62828] text-white"
+    },
+    dark: {
+      wrapper: "bg-[#102027] border-[#FFD700]",
+      title: "text-white",
+      subtitle: "text-[#CFD8DC]",
+      body: "text-[#ECEFF1]",
+      button: "bg-[#FFD700] text-black"
     }
+  }[style];
+
+  return `
+    <div class="mb-3 rounded-[26px] border-[3px] ${palette.wrapper} shadow-lg overflow-hidden">
+      ${mediaSource ? `
+        <img
+          src="${mediaSource}"
+          alt="${escapeHtml(section.title || "section")}"
+          class="w-full h-[180px] object-cover"
+          loading="lazy"
+        />
+      ` : ""}
+
+      <div class="p-4">
+        ${section.title ? `<h3 class="text-lg font-black ${palette.title}">${escapeHtml(section.title)}</h3>` : ""}
+        ${section.subtitle ? `<p class="text-[12px] font-bold ${palette.subtitle} mt-1">${escapeHtml(section.subtitle)}</p>` : ""}
+        ${section.body ? `<p class="text-[13px] leading-6 ${palette.body} mt-3">${escapeHtml(section.body)}</p>` : ""}
+
+        ${canExecute ? `
+          <button
+            onclick="window.executeHomeSectionAction('${escapeJsString(actionType)}', '${escapeJsString(actionValue)}')"
+            class="mt-4 px-4 py-3 rounded-2xl font-black shadow-sm ${palette.button}"
+          >
+            ${escapeHtml(actionLabel)}
+          </button>
+        ` : ""}
+      </div>
+    </div>
+  `;
+};
+
+const renderFastVoteBlock = async (pendingOpenMatches, allUsersData, myVotesMap) => {
+  if (!pendingOpenMatches.length) return "";
+
+  return `
+    <div class="mb-3">
+      <h3 class="text-base font-black text-[#006400] mb-2">⚡ VOTO RÁPIDO (${pendingOpenMatches.length})</h3>
+      ${await renderMatchList(pendingOpenMatches, allUsersData, globalServerCounts, myVotesMap)}
+    </div>
+  `;
+};
+
+const renderMatchesOpenBlock = async (open, allUsersData, myVotesMap) => `
+  <div class="mb-3">
+    <h3 class="text-base font-black text-[#006400] mb-2">✅ (${open.length}) DISPONÍVEIS</h3>
+    ${open.length > 0
+      ? await renderMatchList(open, allUsersData, globalServerCounts, myVotesMap)
+      : `<div class="bg-white rounded-2xl border border-gray-200 px-4 py-5 text-sm text-gray-500">Nenhum confronto aberto.</div>`
+    }
+  </div>
+`;
+
+const renderMatchesWaitingBlock = async (waiting, allUsersData, myVotesMap) => `
+  <div class="mb-3">
+    <h3 class="text-base font-black text-[#8A6D00] mb-2">⏳ (${waiting.length}) AGUARDANDO</h3>
+    ${waiting.length > 0
+      ? await renderMatchList(waiting, allUsersData, globalServerCounts, myVotesMap)
+      : `<div class="bg-white rounded-2xl border border-gray-200 px-4 py-5 text-sm text-gray-500">Nenhum confronto aguardando.</div>`
+    }
+  </div>
+`;
+
+const renderMatchesDoneBlock = async (finished, allUsersData, myVotesMap) => {
+  if (!finished.length) return "";
+
+  return `
+    <div class="mb-3">
+      <h3 class="text-base font-black text-[#B71C1C] mb-2">🏁 (${finished.length}) FINALIZADOS</h3>
+      ${await renderMatchList(finished, allUsersData, globalServerCounts, myVotesMap)}
+    </div>
+  `;
+};
+
+const renderHomeSectionsWeb = async ({
+  sections,
+  runtime,
+  open,
+  waiting,
+  finished,
+  allUsersData,
+  myVotesMap,
+  bannersMap,
+  activePoll,
+  newsContent
+}) => {
+  let html = "";
+  const firstActiveBanner = Object.values(bannersMap).find(item => item.active) || null;
+  const pendingOpenMatches = open.filter(m => !myVotesMap[m.id]);
+
+  for (const section of sections) {
+    if (!isHomeSectionVisibleWeb(section, runtime)) continue;
+
+    switch (normalizeHomeSectionType(section.type)) {
+      case "ticker":
+        html += renderTickerBlock(newsContent);
+        break;
+
+      case "banner_ref":
+        if (section.bannerId && bannersMap[section.bannerId]) {
+          html += renderBanner(bannersMap[section.bannerId]);
+        }
+        break;
+
+      case "banner":
+        if (firstActiveBanner) {
+          html += renderBanner(firstActiveBanner);
+        }
+        break;
+
+      case "poll":
+        if (activePoll) {
+          html += renderPoll(activePoll);
+        }
+        break;
+
+      case "announcement":
+      case "cta_card":
+        html += renderServerDrivenSection(section);
+        break;
+
+      case "fast_vote":
+        html += await renderFastVoteBlock(pendingOpenMatches, allUsersData, myVotesMap);
+        break;
+
+      case "matches_open":
+        html += await renderMatchesOpenBlock(open, allUsersData, myVotesMap);
+        break;
+
+      case "matches_wait":
+        html += await renderMatchesWaitingBlock(waiting, allUsersData, myVotesMap);
+        break;
+
+      case "matches_done":
+        html += await renderMatchesDoneBlock(finished, allUsersData, myVotesMap);
+        break;
+    }
+  }
+
+  return html;
+};
+
+const startWebAdminSync = () => {
+  if (__appStateUnsub) return;
+
+  __appStateUnsub = onSnapshot(doc(db, "settings", "app_state"), () => {
+    if (!currentUser) return;
+
+    if (typeof calculatePot === "function") calculatePot();
+
+    if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) {
+      loadMatches();
+    }
+
+    if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && typeof loadRanking === "function") {
+      loadRanking();
+    }
+
+    if (!document.getElementById("profileScreen")?.classList.contains("hidden") && typeof loadProfile === "function") {
+      loadProfile();
+    }
+  });
+};
+
+        async function loadMatches() {
+  const container = document.getElementById("matchesScreen");
+  const progressBar = document.getElementById("progressBar");
+  if (!container) return;
+
+  progressBar?.classList.remove("hidden");
+
+  try {
+    const [
+      setSnap,
+      matchesSnap,
+      guessesSnap,
+      uSnap,
+      commentsSnap,
+      newsSnap,
+      layoutSnap,
+      bannersSnap,
+      pollsSnap
+    ] = await Promise.all([
+      getDoc(doc(db, "settings", "competitions")),
+      getDocs(collection(db, "matches")),
+      getDocs(collection(db, "guesses")),
+      getDocs(collection(db, "users")),
+      getDocs(collection(db, "match_comments")),
+      getDoc(doc(db, "settings", "news")),
+      getDoc(doc(db, "settings", "home_layout")),
+      getDocs(collection(db, "banners")),
+      getDocs(collection(db, "polls"))
+    ]);
+
+    compMap = {};
+    if (setSnap.exists()) {
+      const items = Array.isArray(setSnap.data().items) ? setSnap.data().items : [];
+      items.forEach((item) => {
+        if (item?.name) compMap[item.name] = item.logo || "";
+      });
+    }
+
+    const allUsersData = [];
+    uSnap.forEach((d) => {
+      const data = d.data() || {};
+      allUsersData.push({
+        id: d.id,
+        uid: d.id,
+        ...data,
+        name: data.name || data.username || "Sem nome",
+        createdDate: toJsDate(data.createdAt) || new Date(0),
+        debts: Number(data.debts || 0),
+        isAdmin: data.isAdmin === true
+      });
+    });
+
+    const guessesData = [];
+    const myVotesMap = {};
+    const statsMap = {};
+
+    guessesSnap.forEach((d) => {
+      const guess = d.data() || {};
+      guessesData.push({ id: d.id, ...guess });
+
+      if (guess.userId === currentUser?.uid) {
+        myVotesMap[guess.matchId] = guess.teamSelected;
+      }
+
+      if (!statsMap[guess.matchId]) {
+        statsMap[guess.matchId] = { a: 0, b: 0 };
+      }
+
+      if (guess.teamSelected && statsMap[guess.matchId]) {
+        if (!statsMap[guess.matchId][guess.teamSelected]) {
+          statsMap[guess.matchId][guess.teamSelected] = 0;
+        }
+        statsMap[guess.matchId][guess.teamSelected] += 1;
+      }
+    });
+
+    globalServerCounts = {};
+    commentsSnap.forEach((d) => {
+      const data = d.data() || {};
+      const matchId = data.matchId || d.id;
+
+      if (!matchId) return;
+
+      if (typeof data.count === "number") {
+        globalServerCounts[matchId] = data.count;
+      } else if (Array.isArray(data.comments)) {
+        globalServerCounts[matchId] = data.comments.length;
+      } else {
+        globalServerCounts[matchId] = 0;
+      }
+    });
+
+    const now = new Date();
+    const matches = [];
+
+    matchesSnap.forEach((d) => {
+      const m = { id: d.id, ...d.data() };
+      const deadlineDate = toJsDate(m.deadline);
+      if (!deadlineDate) return;
+
+      m.deadlineDate = deadlineDate;
+      m.expired = now > deadlineDate;
+      m.final = String(m.round || "").toLowerCase() === "final";
+      m.stats = statsMap[m.id] || {};
+      matches.push(m);
+    });
+
+    matches.sort(matchComparator);
+    window.cachedMatches = matches;
+
+    const open = [];
+    const waiting = [];
+    const finished = [];
+
+    matches.forEach((m, idx) => {
+      m.matchNumber = idx + 1;
+
+      if (m.winner) finished.push(m);
+      else if (m.expired) waiting.push(m);
+      else open.push(m);
+    });
+
+    waiting.sort(matchComparator);
+    finished.sort((a, b) => matchComparator(b, a));
+
+    const parsedLayout = parseHomeLayoutDoc(layoutSnap);
+    layoutOrder = parsedLayout.order;
+    homeSections = parsedLayout.sections;
+
+    const bannersMap = {};
+    bannersSnap.forEach((d) => {
+      const b = d.data() || {};
+      bannersMap[d.id] = {
+        id: d.id,
+        ...b,
+        name: b.name || "",
+        type: b.type || "full",
+        imageUrl: fixDriveUrl(b.imageUrl || ""),
+        targetUrl: b.targetUrl || "",
+        imageUrl2: fixDriveUrl(b.imageUrl2 || ""),
+        targetUrl2: b.targetUrl2 || "",
+        active: b.active !== false
+      };
+    });
+    activeBannersMap = bannersMap;
+
+    const pollsMap = {};
+    let activePoll = null;
+
+    pollsSnap.forEach((d) => {
+      const p = d.data() || {};
+      const poll = {
+        id: d.id,
+        question: p.question || "",
+        options: Array.isArray(p.options) ? p.options : [],
+        votes: (p.votes && typeof p.votes === "object") ? p.votes : {},
+        userVotes: (p.userVotes && typeof p.userVotes === "object") ? p.userVotes : {},
+        active: p.active !== false,
+        deadline: p.deadline || null
+      };
+
+      pollsMap[d.id] = poll;
+      if (!activePoll && poll.active) activePoll = poll;
+    });
+    activePolls = pollsMap;
+
+    const expiredMatches = matches.filter((m) => m.deadlineDate < new Date());
+    const newsContent = generateNewsFeed(
+      newsSnap,
+      guessesData,
+      finished,
+      allUsersData,
+      expiredMatches
+    );
+
+    const runtime = buildHomeVisibilityRuntime({
+      matches,
+      open,
+      waiting,
+      finished,
+      myVotesMap,
+      allUsersData
+    });
+
+    const finalHtml = await renderHomeSectionsWeb({
+      sections: homeSections,
+      runtime,
+      open,
+      waiting,
+      finished,
+      allUsersData,
+      myVotesMap,
+      bannersMap,
+      activePoll,
+      newsContent
+    });
+
+    container.innerHTML = finalHtml;
+    applyRemoteBackgrounds();
+    window.updateBadges();
+
+    const navBtn = document.getElementById("nav-matches");
+    const oldBadge = document.getElementById("matches-badge");
+    if (oldBadge) oldBadge.remove();
+
+    if (runtime.pendingFastVoteCount > 0 && navBtn) {
+      navBtn.innerHTML += `
+        <span id="matches-badge" class="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-black align-top">
+          ${runtime.pendingFastVoteCount > 9 ? "+" : runtime.pendingFastVoteCount}
+        </span>
+      `;
+    }
+  } catch (e) {
+    console.error("Erro fatal loadMatches:", e);
+  } finally {
+    progressBar?.classList.add("hidden");
+  }
+}
 
         // --- RENDERIZA LISTA DE JOGOS (COM DATA NO BOTÃO DE VOTANTES) ---
         async function renderMatchList(list, usersList, serverCounts, myVotesMap) {
