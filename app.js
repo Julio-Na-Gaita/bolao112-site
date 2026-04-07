@@ -119,13 +119,6 @@ const syncStaticVersionLabels = () => {
   });
 };
 
-const escapeHtml = (value = '') => String(value)
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;');
-
 const formatUserText = (value = '') => escapeHtml(value).replace(/\n/g, '<br>');
 
 const ensureExternalScript = (src, globalKey) => {
