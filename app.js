@@ -1902,15 +1902,7 @@ window.toggleHomeSectionCollapse = (sectionKey) => {
   loadMatches();
 };
 
-const renderCollapsibleSection = ({
-  sectionKey,
-  title,
-  count,
-  accentClass,
-  contentHtml,
-  emptyHtml = "",
-  defaultCollapsed = false
-}) => {
+const renderCollapsibleSection = ({ sectionKey, title, count, accentClass, contentHtml, emptyHtml = "", defaultCollapsed = false }) => {
   if (!(sectionKey in homeSectionCollapseState)) {
     homeSectionCollapseState[sectionKey] = defaultCollapsed;
   }
@@ -1919,23 +1911,32 @@ const renderCollapsibleSection = ({
   const chevron = isCollapsed ? "▾" : "▴";
 
   return `
-    <div class="mb-3 rounded-[26px] border-[3px] border-[#006400] bg-white shadow-lg overflow-hidden">
+    <section class="mb-4 bg-white rounded-2xl shadow-sm border border-[#E5E7EB] overflow-hidden">
       <button
-        onclick="toggleHomeSectionCollapse('${sectionKey}')"
-        class="w-full flex items-center justify-between gap-3 px-4 py-4 text-left bg-[#F9FFF4] active:scale-[0.995]"
+        type="button"
+        onclick="window.toggleHomeSectionCollapse('${sectionKey}')"
+        class="w-full relative px-4 py-3 bg-[#F9FAFB]"
       >
-        <div class="flex items-center gap-2 min-w-0">
-          <h3 class="text-base font-black ${accentClass} truncate">${title}</h3>
-          <span class="text-[11px] font-black text-gray-500">(${count})</span>
+        <div class="flex flex-col items-center justify-center text-center">
+          <h3 class="${accentClass} font-black uppercase text-sm sm:text-base">
+            ${title}
+          </h3>
+          <span class="text-xs font-black text-gray-500">
+            (${count})
+          </span>
         </div>
 
-        <span class="text-lg font-black text-[#006400] leading-none">${chevron}</span>
+        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-lg font-black text-gray-500">
+          ${chevron}
+        </span>
       </button>
 
-      <div class="${isCollapsed ? "hidden" : ""} px-3 pb-3">
-        ${count > 0 ? contentHtml : emptyHtml}
-      </div>
-    </div>
+      ${isCollapsed ? "" : `
+        <div class="p-3">
+          ${count > 0 ? contentHtml : emptyHtml}
+        </div>
+      `}
+    </section>
   `;
 };
 
