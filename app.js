@@ -3200,84 +3200,64 @@ if ((winnerVotes / validUsersAtTime) <= 0.20) {
                 });
 
                 // =================================================================
-                // 4. CÁLCULO HISTÓRICO: REIS DO MÊS (👑)
-                // =================================================================
-                // Precisamos saber quem ganhou os meses anteriores para dar a medalha
-                const kingCounts = {};
+// 4. BASE MENSAL (PARIDADE COM ANDROID)
+// =================================================================
 const now = new Date();
 const currentYear = now.getFullYear();
 const currentMonthIndex = now.getMonth();
 const monthNames = [
-  "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO",
-  "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"
+  "JANEIRO",
+  "FEVEREIRO",
+  "MARÇO",
+  "ABRIL",
+  "MAIO",
+  "JUNHO",
+  "JULHO",
+  "AGOSTO",
+  "SETEMBRO",
+  "OUTUBRO",
+  "NOVEMBRO",
+  "DEZEMBRO",
 ];
 const monthlyHistory = [];
-
-// Loop pelos meses anteriores do ano (0 = Jan, até o mês passado)
-for (let m = 0; m < currentMonthIndex; m++) {
-  const monthMatches = finishedMatches.filter(
-    x => x.deadlineDate.getMonth() === m && x.deadlineDate.getFullYear() === currentYear
-  );
-
-  const ranking = users.map(u => {
-    let score = 0;
-
-    monthMatches.forEach(match => {
-      if (u.createdDate > match.deadlineDate) return;
-
-      const g = guessLookupByUserMatch[`${u.uid}__${match.id}`];
-if (g && g.teamSelected === match.winner) {
-  score += (match.round?.toLowerCase() === "final") ? 6 : 3;
-}
-    });
-
-    return {
-      uid: u.uid,
-      name: u.name || u.username || "Sem nome",
-      points: score
-    };
-  }).sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    return (a.name || "").localeCompare(b.name || "");
-  });
-
-  const hasKing =
-    ranking.length > 0 &&
-    ranking[0].points > 0 &&
-    (ranking.length === 1 || ranking[0].points > ranking[1].points);
-
-  if (hasKing) {
-    const winnerId = ranking[0].uid;
-    kingCounts[winnerId] = (kingCounts[winnerId] || 0) + 1;
-  }
-
-  monthlyHistory.push({
-    monthIndex: m,
-    monthName: monthNames[m],
-    ranking,
-    hasKing
-  });
-}
+const pointsByMonth = {};
+for (let i = 0; i < 12; i++) pointsByMonth[i] = {};
 
                 // =================================================================
                 // 5. CÁLCULO PRINCIPAL (PONTOS ATUAIS)
                 // =================================================================
                 let monthlyData = [];
 
-                users.forEach(u => {
-                    let p = 0, monthlyP = 0, victories = 0, finalsWon = 0, simStreak = 0;
-                    const d = u.debts || 0;
-                    const trophyRoom = [];
-                    const hist = [];
-                    const userGuesses = (guessesByUser[u.uid] || []).filter(g => validMatchIds.has(g.matchId));
-const userGuessesMap = Object.fromEntries(userGuesses.map(g => [g.matchId, g]));
+                users.forEach((u) => {
+  let p = 0,
+    monthlyP = 0,
+    victories = 0,
+    finalsWon = 0,
+    simStreak = 0;
+  const d = u.debts || 0;
+  const trophyRoom = [];
+  const rawMedals = Array.isArray(u.medals) ? u.medals : [];
+  const existingMedals = rawMedals.filter(
+    (icon) =>
+      !["👽", "💎", "🎯", "🦓", "🔥", "🔮", "🎓", "🥬", "👻"].includes(icon),
+  );
+  const activeMedals = [...existingMedals];
+  const hist = [];
+  const userGuesses = (guessesByUser[u.uid] || []).filter((g) =>
+    validMatchIds.has(g.matchId),
+  );
+  const userGuessesMap = Object.fromEntries(
+    userGuesses.map((g) => [g.matchId, g]),
+  );
 
-                    // ORDENAÇÃO OFICIAL: Usa o comparador padrão (Deadline > CreatedAt > ID)
-const chronoMatches = finishedMatches;
-                   // ✅ STREAKS (regras oficiais)
-let noVoteStreak = 0;   // 3 seguidos sem votar => 👻
-let wrongStreak  = 0;   // 3 erros seguidos     => 🥬
-let gotGhost     = false;
+  // ORDENAÇÃO OFICIAL: Usa o comparador padrão (Deadline > CreatedAt > ID)
+  const chronoMatches = finishedMatches;
+  const registerMatchMedal = (medal) => {
+    trophyRoom.push(medal);
+    if (["👽", "💎", "🎯", "🦓", "🔥", "🔮", "🎓"].includes(medal.icon)) {
+      activeMedals.push(medal.icon);
+    }
+  };
 
 chronoMatches.forEach(m => {
   // Linha do Tempo: Ignora jogos antes do user nascer
@@ -3288,20 +3268,23 @@ chronoMatches.forEach(m => {
   const dateStr = `📅 ${m.deadlineDate.getDate()}/${m.deadlineDate.getMonth()+1}`;
 
   if (g) {
-    // votou => zera "sem votar"
-    noVoteStreak = 0;
+  if (m.winner === g.teamSelected) {
+    const isFinal = m.round && m.round.toLowerCase() === "final";
+    const pts = isFinal ? 6 : 3;
+    const matchMonth = m.deadlineDate.getMonth();
+    const matchYear = m.deadlineDate.getFullYear();
 
-    if (m.winner === g.teamSelected) {
-      // acertou => zera erros
-      wrongStreak = 0;
+    p += pts;
+    if (isThisMonth) monthlyP += pts;
 
-      const isFinal = (m.round && m.round.toLowerCase() === 'final');
-      const pts = isFinal ? 6 : 3;
-      p += pts;
-      if (isThisMonth) monthlyP += pts;
-      victories++;
-      simStreak++;
-      if (isFinal) finalsWon++;
+    if (matchYear === currentYear) {
+      pointsByMonth[matchMonth][u.uid] =
+        (pointsByMonth[matchMonth][u.uid] || 0) + pts;
+    }
+
+    victories++;
+    simStreak++;
+    if (isFinal) finalsWon++;
 
       hist.push({
     id: m.id,
@@ -3331,14 +3314,62 @@ chronoMatches.forEach(m => {
       if (simStreak === 5) trophyRoom.push({ icon: "🎯", name: "MITO", desc: "5 acertos seguidos.", date: dateStr, hiddenInList: false });
       if (simStreak === 10) trophyRoom.push({ icon: "👽", name: "ALIEN", desc: "10 acertos seguidos!", date: dateStr, hiddenInList: false });
 
-      if (zebraMatchIds.includes(m.id)) trophyRoom.push({ icon: "🦓", name: "CAÇADOR DE ZEBRAS", desc: `Acertou a zebra em ${m.teamA} x ${m.teamB}`, date: dateStr, hiddenInList: false });
+      if (simStreak === 3)
+  registerMatchMedal({
+    icon: "🔥",
+    name: "ON FIRE",
+    desc: "Palpitou 3 acertos seguidos.",
+    date: dateStr,
+    hiddenInList: false,
+  });
 
-      if (isFinal) trophyRoom.push({ icon: "🔮", name: "MÃE DINAH", desc: "Cravou o campeão.", date: dateStr, hiddenInList: false });
+if (simStreak === 5)
+  registerMatchMedal({
+    icon: "🎯",
+    name: "MITO",
+    desc: "Palpitou 5 acertos seguidos.",
+    date: dateStr,
+    hiddenInList: false,
+  });
+
+if (simStreak === 10)
+  registerMatchMedal({
+    icon: "👽",
+    name: "ALIEN",
+    desc: "Palpitou 10 acertos seguidos!",
+    date: dateStr,
+    hiddenInList: false,
+  });
+
+if (zebraMatchIds.includes(m.id))
+  registerMatchMedal({
+    icon: "🦓",
+    name: "CAÇADOR DE ZEBRAS",
+    desc: `Acertou a zebra em ${m.teamA} x ${m.teamB}`,
+    date: dateStr,
+    hiddenInList: false,
+  });
+
+if (isFinal)
+  registerMatchMedal({
+    icon: "🔮",
+    name: "MÃE DINAH",
+    desc: `Cravou o campeão em ${m.teamA} x ${m.teamB}`,
+    date: dateStr,
+    hiddenInList: false,
+  });
+
+if (victories > 0 && victories % 50 === 0)
+  registerMatchMedal({
+    icon: "🎓",
+    name: `VETERANO Nvl ${victories / 50}`,
+    desc: `Conquistou ${victories} acertos.`,
+    date: dateStr,
+    hiddenInList: false,
+  });
 
     } else {
-      // errou => acumula erros
-      wrongStreak++;
-      simStreak = 0;
+  simStreak = 0;
 
       hist.push({
     id: m.id,
@@ -3367,10 +3398,7 @@ chronoMatches.forEach(m => {
     }
 
   } else {
-    // não votou => acumula "sem votar" e zera erros
-    noVoteStreak++;
-    wrongStreak = 0;
-    simStreak = 0;
+  simStreak = 0;
 
     hist.push({
     id: m.id,
@@ -3393,64 +3421,133 @@ chronoMatches.forEach(m => {
 
   }
 });
-                        // ✅ STATUS ATUAL (não é conquista): Fantasma só se a sequência ATUAL for >= 3 sem votar
-if (noVoteStreak >= 3) {
-  trophyRoom.push({
-    icon: "👻",
-    name: "FANTASMA",
-    desc: `Está com ${noVoteStreak} jogo(s) seguidos sem votar.`,
-    date: "Atual",
-    hiddenInList: false
+                        const last3Matches = finishedMatches.slice(-3);
+if (last3Matches.length === 3) {
+  let wrongCount = 0;
+  let noVoteCount = 0;
+
+  last3Matches.forEach((match) => {
+    if (u.createdDate > match.deadlineDate) return;
+
+    const guess = userGuessesMap[match.id] || null;
+    if (!guess) noVoteCount++;
+    else if (guess.teamSelected !== match.winner) wrongCount++;
   });
+
+  if (wrongCount === 3) {
+    activeMedals.push("🥬");
+    trophyRoom.push({
+      icon: "🥬",
+      name: "MÃO DE ALFACE",
+      desc: "Status Atual: Errou 3 palpites seguidos.",
+      date: "Atual",
+      hiddenInList: false,
+    });
+  }
+
+  if (noVoteCount === 3) {
+    activeMedals.push("👻");
+    trophyRoom.push({
+      icon: "👻",
+      name: "FANTASMA",
+      desc: "Status Atual: Esqueceu de votar em 3 seguidos.",
+      date: "Atual",
+      hiddenInList: false,
+    });
+  }
 }
 
-// ✅ STATUS ATUAL (não é conquista): Mão de Alface só se a sequência ATUAL for >= 3 erros seguidos
-if (wrongStreak >= 3) {
-  trophyRoom.push({
-    icon: "🥬",
-    name: "MÃO DE ALFACE",
-    desc: `Está com ${wrongStreak} erro(s) seguidos.`,
-    date: "Atual",
-    hiddenInList: false
-  });
+// Diamante
+const oitavas = chronoMatches.filter((m) => m.round === "Oitavas de final");
+const byComp = {};
+oitavas.forEach((m) => {
+  if (!byComp[m.competition]) byComp[m.competition] = [];
+  byComp[m.competition].push(m);
+});
+
+for (const competitionName in byComp) {
+  const competitionMatches = byComp[competitionName];
+  if (competitionMatches.length === 8) {
+    const hits = competitionMatches.filter(
+      (match) => userGuessesMap[match.id]?.teamSelected === match.winner,
+    ).length;
+
+    if (hits === 8) {
+      p += 3;
+
+      const lastOitavaMatch =
+        competitionMatches[competitionMatches.length - 1];
+      const lastOitavaDate = lastOitavaMatch.deadlineDate;
+      const bonusMonth = lastOitavaDate.getMonth();
+      const bonusYear = lastOitavaDate.getFullYear();
+
+      if (bonusMonth === currentMonthIndex && bonusYear === currentYear) {
+        monthlyP += 3;
+      }
+
+      if (bonusYear === currentYear) {
+        pointsByMonth[bonusMonth][u.uid] =
+          (pointsByMonth[bonusMonth][u.uid] || 0) + 3;
+      }
+
+      registerMatchMedal({
+        icon: "💎",
+        name: "DIAMANTE",
+        desc: competitionName
+          ? `Gabaritou as Oitavas (8/8) da ${competitionName}.`
+          : "Gabaritou as Oitavas (8/8) de um torneio.",
+        date: `📅 ${lastOitavaDate.getDate()}/${lastOitavaDate.getMonth() + 1}`,
+        hiddenInList: false,
+      });
+
+      hist.push({
+        id: `diamante_${competitionName || "torneio"}`,
+        ts: lastOitavaDate,
+        text: `💎 BÔNUS: Gabarito Oitavas (+3 pts)`,
+        type: "good",
+      });
+    }
+  }
 }
 
+// Patrão
+const monthsNames = [
+  "Jan",
+  "Fev",
+  "Mar",
+  "Abr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Set",
+  "Out",
+  "Nov",
+  "Dez",
+];
 
+let allPaid = true;
+if (currentYear >= 2026) {
+  for (let i = 0; i <= currentMonthIndex; i++) {
+    if (u.payments?.[monthsNames[i]] !== true) {
+      allPaid = false;
+      break;
+    }
+  }
+} else if (d > 0) {
+  allPaid = false;
+}
 
-                    // Diamante
-                    const oitavas = chronoMatches.filter(m => m.round === "Oitavas de final");
-                    const byComp = {}; oitavas.forEach(m => { if(!byComp[m.competition]) byComp[m.competition]=[]; byComp[m.competition].push(m); });
-                    for(const k in byComp) {
-                        const matches = byComp[k];
-                        if(matches.length === 8) {
-                            const hits = matches.filter(m => userGuessesMap[m.id]?.teamSelected === m.winner).length;
-                            if(hits === 8) { 
-                                p += 3; 
-                                const lastOitava = matches[matches.length-1].deadlineDate;
-                                if(lastOitava.getMonth() === currentMonthIndex && lastOitava.getFullYear() === currentYear) monthlyP += 3;
-                                trophyRoom.push({ icon: "💎", name: "DIAMANTE", desc: "Gabaritou Oitavas.", date: "Bônus", hiddenInList: false });
-                                hist.push({ id: "diamante", ts: new Date(), text: `💎 BÔNUS: Gabarito Oitavas (+3 pts)`, type: 'good' });
-                            }
-                        }
-                    }
-
-                    // Veterano
-                    if (victories >= 50) {
-                        const level = Math.floor(victories / 50);
-                        trophyRoom.push({ icon: "🎓", name: `VETERANO Nvl ${level}`, desc: `${victories} vitórias.`, date: "Carreira", hiddenInList: false });
-                    }
-
-                    // Injeta as Coroas Históricas (Calculadas no passo 4)
-                    const kings = kingCounts[u.uid] || 0;
-                    for(let k=0; k<kings; k++) {
-                        trophyRoom.push({ icon: "👑", name: "REI DO MÊS", desc: "Líder isolado de mês anterior.", date: "2026", hiddenInList: false });
-                    }
-
-                    // Patrão
-                    const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-                    const isPaid = (new Date().getFullYear() < 2026) || (u.payments && u.payments[monthsNames[currentMonthIndex]]);
-                    if (isPaid) trophyRoom.unshift({ icon: "💰", name: "PATRÃO", desc: "Mensalidade OK.", date: "Mês Atual", hiddenInList: false });
-
+if (allPaid) {
+  activeMedals.push("💰");
+  trophyRoom.unshift({
+    icon: "💰",
+    name: "PATRÃO",
+    desc: "Mensalidades em dia.",
+    date: monthsNames[currentMonthIndex],
+    hiddenInList: false,
+  });
+}
                     // Débitos
                     if (d > 0) {
                         p -= (d * 3);
@@ -3460,8 +3557,9 @@ if (wrongStreak >= 3) {
                     // Amauri (Oculto na lista, mas conta pro objeto)
                     if (u.username === 'amauri') trophyRoom.push({icon: "🏆", name:"Campeão 2025", desc:"Lenda.", hiddenInList: true});
 
-                    u.p = p; 
-                    u.trophyRoom = trophyRoom; 
+                    u.p = p;
+u.medals = activeMedals;
+u.trophyRoom = trophyRoom; 
                    // ORDENAÇÃO DO EXTRATO: Inversa à lista de jogos (Mais recente no topo)
                     u.hist = hist.sort((a,b) => {
                         // 1. Data do Jogo (Decrescente)
@@ -3482,6 +3580,56 @@ if (wrongStreak >= 3) {
                     monthlyData.push({ name: u.name, points: monthlyP, uid: u.uid });
                 });
 
+for (let monthIdx = 0; monthIdx < currentMonthIndex; monthIdx++) {
+  const ranking = users
+    .map((u) => ({
+      uid: u.uid,
+      name: u.name || u.username || "Sem nome",
+      points: pointsByMonth[monthIdx][u.uid] || 0,
+    }))
+    .sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
+  const maxScore = ranking[0]?.points || 0;
+  const leaders = ranking.filter((entry) => entry.points === maxScore);
+  const hasKing = maxScore > 0 && leaders.length === 1;
+
+  if (hasKing) {
+    const winnerId = leaders[0].uid;
+    const winnerIndex = users.findIndex((user) => user.uid === winnerId);
+
+    if (winnerIndex !== -1) {
+      const winner = users[winnerIndex];
+
+      if (!winner.medals.includes("👑")) winner.medals.push("👑");
+
+      const crownName = `REI DE ${monthNames[monthIdx]}`;
+      const alreadyHasThisCrown = winner.trophyRoom.some(
+        (medal) => medal.icon === "👑" && medal.name === crownName,
+      );
+
+      if (!alreadyHasThisCrown) {
+        winner.trophyRoom.unshift({
+          icon: "👑",
+          name: crownName,
+          desc: `Campeão isolado do mês (${maxScore} pts).`,
+          date: String(currentYear),
+          hiddenInList: false,
+        });
+      }
+    }
+  }
+
+  monthlyHistory.push({
+    monthIndex: monthIdx,
+    monthName: monthNames[monthIdx],
+    ranking,
+    hasKing,
+  });
+}
+
                 // =================================================================
                 // 6. SORTING CRÍTICO (A LÓGICA DO ANDROID)
                 // =================================================================
@@ -3498,8 +3646,8 @@ if (wrongStreak >= 3) {
                     // 3. Medalhas (Hierarquia Estrita)
                     for (let icon of medalHierarchy) {
                         // Conta medalhas VISÍVEIS (ignora hiddenInList como o troféu do amauri se não estiver na hierarquia)
-                        const countA = a.trophyRoom.filter(m => m.icon === icon && !m.hiddenInList).length;
-  const countB = b.trophyRoom.filter(m => m.icon === icon && !m.hiddenInList).length;
+                        const countA = (a.medals || []).filter((medalIcon) => medalIcon === icon).length;
+const countB = (b.medals || []).filter((medalIcon) => medalIcon === icon).length;
 
   if (countB !== countA) return countB - countA; // Maior quantidade ganha
 }
@@ -3514,8 +3662,14 @@ if (wrongStreak >= 3) {
                     for(let i = z4StartIndex; i < users.length; i++) {
                         if(users[i]) {
                              users[i].isZ4 = true;
-                             // Adiciona ícone visualmente para aparecer na lista
-                             users[i].trophyRoom.push({icon: "⚓", name:"ZONA DE PERIGO", desc:"Z-4", date:"Atual", hiddenInList: false});
+if (!users[i].medals.includes("⚓")) users[i].medals.push("⚓");
+users[i].trophyRoom.push({
+  icon: "⚓",
+  name: "ZONA DE REBAIXAMENTO",
+  desc: "Z-4",
+  date: "Atual",
+  hiddenInList: false,
+});
                         }
                     }
                 }
@@ -3597,9 +3751,10 @@ let html = `
 
                     // Renderiza Medalhas (Agrupadas)
                     let medalsHtml = "";
-                    const visibleMedals = u.trophyRoom.filter(m => !m.hiddenInList);
                     const counts = {};
-                    visibleMedals.forEach(m => counts[m.icon] = (counts[m.icon]||0)+1);
+(u.medals || []).forEach(
+  (icon) => (counts[icon] = (counts[icon] || 0) + 1),
+);
                     
                     // Ordena ícones visualmente pela mesma hierarquia do sort (mais importantes primeiro)
                     // Adiciona os que não estão na hierarquia no final (Patrão, etc)
@@ -4753,8 +4908,8 @@ window.openCalendar2026 = () => {
 
                 const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
                 for (let icon of hierarchy) {
-                    const countA = (a.trophyRoom || []).filter(m => m.icon === icon).length;
-                    const countB = (b.trophyRoom || []).filter(m => m.icon === icon).length;
+                    const countA = (a.medals || []).filter((medalIcon) => medalIcon === icon).length;
+const countB = (b.medals || []).filter((medalIcon) => medalIcon === icon).length;
                     if (countB !== countA) return countB - countA;
                 }
                 return a.name.localeCompare(b.name);
@@ -4770,10 +4925,9 @@ window.openCalendar2026 = () => {
 // =========================
 const priorityOrder = ["🏆", "👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰", "👻", "🥬"];
 
-const visibleMedals = (user.trophyRoom || []).filter(m => !m.hiddenInList);
 const medalCounts = {};
-visibleMedals.forEach(m => {
-  medalCounts[m.icon] = (medalCounts[m.icon] || 0) + 1;
+(user.medals || []).forEach((icon) => {
+  medalCounts[icon] = (medalCounts[icon] || 0) + 1;
 });
 
 const iconsOrdered = Object.keys(medalCounts).sort((a,b) => {
