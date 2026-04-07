@@ -68,6 +68,11 @@ const optimizeImages = async () => {
   return images;
 };
 
+const extractAppVersion = (html) => {
+  const match = html.match(/window\.APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+  return match?.[1] || 'web-dev';
+};
+
 const build = async () => {
   await ensureCleanDir(dist);
 
@@ -77,6 +82,8 @@ const build = async () => {
     fs.readFile(path.join(root, 'app.js'), 'utf8')
   ]);
 
+  const appVersion = extractAppVersion(indexHtml);
+
   const minifiedCss = minifyCss(stylesCss).css;
   const minifiedJs = await minify(appJs, { module: true });
 
@@ -85,8 +92,8 @@ const build = async () => {
   }
 
   const htmlForDist = indexHtml
-    .replace('styles.css', 'styles.min.css')
-    .replace('app.js', 'app.min.js');
+    .replace(/styles\.css/g, 'styles.min.css')
+    .replace(/app\.js/g, 'app.min.js');
 
   await Promise.all([
     fs.writeFile(path.join(dist, 'styles.min.css'), minifiedCss),
@@ -105,7 +112,7 @@ const build = async () => {
     '/favicon.png'
   ];
 
-  const swContent = `const CACHE_NAME = 'bolao112-site-v1';
+  const swContent = `const CACHE_NAME = 'bolao112-site-${appVersion}';
 const ASSETS = ${JSON.stringify(precacheAssets, null, 2)};
 
 // Arquivos que DEVEM atualizar sempre (network-first)

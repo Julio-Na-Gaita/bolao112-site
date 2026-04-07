@@ -33,7 +33,7 @@
 
   window.addEventListener('load', async () => {
     try {
-      const swVersion = window.APP_VERSION || 'web-1.7.3';
+      const swVersion = getAppVersion();
 
 const registration = await navigator.serviceWorker.register(
   `/sw.js?v=${swVersion}`,
@@ -104,6 +104,59 @@ let homeSectionCollapseState = {
   matches_wait: false,
   matches_done: true
 };
+
+const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.4');
+const getAppVersionShort = () => getAppVersion().replace(/^web-/, '');
+const getAppVersionLabel = () => `Web v${getAppVersionShort()}`;
+const getAppVersionFullLabel = () => `Versão ${getAppVersionLabel()}`;
+
+const syncStaticVersionLabels = () => {
+  document.querySelectorAll('[data-app-version-label]').forEach((el) => {
+    el.textContent = getAppVersionLabel();
+  });
+  document.querySelectorAll('[data-app-version-full]').forEach((el) => {
+    el.textContent = getAppVersionFullLabel();
+  });
+};
+
+const escapeHtml = (value = '') => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+const formatUserText = (value = '') => escapeHtml(value).replace(/\n/g, '<br>');
+
+const ensureExternalScript = (src, globalKey) => {
+  if (globalKey && window[globalKey]) return Promise.resolve(window[globalKey]);
+  if (!window.__externalScriptPromises) window.__externalScriptPromises = {};
+  if (window.__externalScriptPromises[src]) return window.__externalScriptPromises[src];
+
+  window.__externalScriptPromises[src] = new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[data-dynamic-src="${src}"]`);
+    if (existing) {
+      existing.addEventListener('load', () => resolve(globalKey ? window[globalKey] : true), { once: true });
+      existing.addEventListener('error', () => reject(new Error(`Falha ao carregar ${src}`)), { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    script.defer = true;
+    script.dataset.dynamicSrc = src;
+    script.onload = () => resolve(globalKey ? window[globalKey] : true);
+    script.onerror = () => reject(new Error(`Falha ao carregar ${src}`));
+    document.head.appendChild(script);
+  });
+
+  return window.__externalScriptPromises[src];
+};
+
+const ensureChartJs = () => ensureExternalScript('https://cdn.jsdelivr.net/npm/chart.js', 'Chart');
+const ensureHtml2Canvas = () => ensureExternalScript('https://html2canvas.hertzen.com/dist/html2canvas.min.js', 'html2canvas');
+
         // --- NOVA FUNÇÃO DE ORDENAÇÃO (PADRÃO ANDROID) ---
 // Regra: 1. Prazo (Crescente) | 2. Criação (Crescente/Antigo 1º) | 3. ID (Fallback)
 const matchComparator = (a, b) => {
@@ -732,6 +785,7 @@ window.setupLoginPasswordEye = () => {
 // roda quando o DOM estiver pronto
 window.addEventListener("DOMContentLoaded", () => {
   window.setupLoginPasswordEye();
+  syncStaticVersionLabels();
 });
 
 
@@ -950,7 +1004,7 @@ window.addEventListener("DOMContentLoaded", () => {
                     isAdmin: false,
                     debts: 0,
                     payments: {},
-                    appVersion: "Web v1.7.3",
+                    appVersion: getAppVersionLabel(),
                     passwordHint: hint,
                     // NOVOS CAMPOS PARA CONTROLE:
                     isTrial: isTrial, 
@@ -1073,7 +1127,7 @@ window.continueAfterLoginGates = async () => {
                     }
 
                     // ATUALIZANDO VERSÃO
-try { await updateDoc(userDocRef, { appVersion: "Web v1.7.3", lastAccess: new Date() }); } catch(e) {}
+try { await updateDoc(userDocRef, { appVersion: getAppVersionLabel(), lastAccess: new Date() }); } catch(e) {}
 
 // ✅ NOVO: inicia o gate de troca de senha obrigatória (Android parity)
 window.startForcePasswordWatcher(user);
@@ -4380,7 +4434,7 @@ async function loadProfile() {
                 </div>
 
                 <div class="text-center pb-safe">
-                    <div class="version-chip">Web v1.7.3</div>
+                    <div class="version-chip">${getAppVersionLabel()}</div>
                     <p class="text-[9px] text-gray-400 mt-2 font-bold uppercase">Bolão 112 F.C • 2026</p>
                 </div>
             </div>`;
@@ -4460,7 +4514,7 @@ window.openCalendar2026 = () => {
                 <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
-                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">Versão Web v1.7.3</p>
+                    <p class="text-center text-[10px] text-gray-500 font-bold mb-4">${getAppVersionFullLabel()}</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
                         <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
@@ -4767,8 +4821,9 @@ ${medalsStripHtml}
 
             try {
                 await new Promise(r => setTimeout(r, 800)); 
-                const canvas = await html2canvas(cardContainer, { scale: 2, useCORS: true, backgroundColor: null, logging: false });
-                const link = document.createElement('a');
+await ensureHtml2Canvas();
+const canvas = await window.html2canvas(cardContainer, { scale: 2, useCORS: true, backgroundColor: null, logging: false });
+const link = document.createElement('a');
                 link.download = `card_${user.name.replace(/\s+/g, '_')}.jpg`;
                 link.href = canvas.toDataURL("image/jpeg", 0.9);
                 link.click();
@@ -4893,9 +4948,9 @@ window.currentChatUnsub = null;
                                     
                                     <div class="max-w-[80%] ${isMe ? 'bg-[#DCF8C6]' : 'bg-white'} p-2 rounded-lg shadow text-xs relative">
 
-                                        ${!isMe ? `<p class="text-[9px] font-bold text-[#006400] mb-1">${m.userName}</p>` : ''}
-                                        <p class="text-gray-800 text-sm leading-snug">${m.text}</p>
-                                        <p class="text-[8px] text-gray-400 text-right mt-1">${time}</p>
+                                        ${!isMe ? `<p class="text-[9px] font-bold text-[#006400] mb-1">${escapeHtml(m.userName)}</p>` : ''}
+<p class="text-gray-800 text-sm leading-snug">${formatUserText(m.text)}</p>
+<p class="text-[8px] text-gray-400 text-right mt-1">${time}</p>
                                     </div>
                                     
                                     ${isMe ? `<button onclick="window.toggleReactMenu('${m.id}')" class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity px-1"><i class="far fa-smile"></i></button>` : ''}
@@ -5477,11 +5532,12 @@ cont.innerHTML = html;
 
     // 10) Gráfico
     if (window.myScoutChart) window.myScoutChart.destroy();
-    if (rankHistory.length > 0) {
-      const canvas = document.getElementById('scoutChart');
-      const ctx = canvas.getContext('2d');
+if (rankHistory.length > 0) {
+  const canvas = document.getElementById('scoutChart');
+  const ctx = canvas.getContext('2d');
+  const ChartLib = await ensureChartJs();
 
-      window.myScoutChart = new Chart(ctx, {
+  window.myScoutChart = new ChartLib(ctx, {
         type: 'line',
         data: {
           labels: rankHistory.map((_, i) => i + 1),
