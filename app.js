@@ -5448,11 +5448,6 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
                     <div style="position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column;">
                         <h1 style="color: #FFD700; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; margin: 0;">BOLÃO 112 F.C</h1>
                         
-                        <div style="background: rgba(0,0,0,0.6); border: 1px solid rgba(255,215,0,0.5); border-radius: 8px; padding: 6px; margin-top: 8px; margin-bottom: 16px;">
-                            <div style="color: #FFF176; font-weight: bold; font-size: 9px;">⚠️ PRÉ-TEMPORADA (PERÍODO DE TESTES)</div>
-                            <div style="color: white; font-weight: 900; font-size: 11px; margin-top: 2px;">🚀 INÍCIO OFICIAL: 1º DE FEVEREIRO</div>
-                        </div>
-
                         <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
                             <div style="width: 65px; height: 65px; border-radius: 50%; border: 3px solid #FFD700; overflow: hidden; background: black; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
                                 <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">
