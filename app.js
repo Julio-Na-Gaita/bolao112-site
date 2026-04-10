@@ -4644,27 +4644,34 @@ return `
             </div>
 
             <div class="min-w-0">
-                <div class="grid grid-cols-[44px_16px_44px_minmax(34px,auto)] items-center justify-center gap-x-2">
+                <div class="grid grid-cols-[44px_16px_44px_minmax(34px,auto)] grid-rows-[44px_minmax(14px,auto)] items-center justify-center gap-x-2 gap-y-1">
                     <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
                         ${teamALogo}
                     </div>
 
-                    <span class="text-[14px] font-black text-black text-center leading-none shrink-0">X</span>
+                    <span class="row-span-2 self-center text-[14px] font-black text-black text-center leading-none shrink-0">X</span>
 
                     <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
                         ${teamBLogo}
                     </div>
 
-                    <div class="min-w-[34px] text-left">
+                    <div class="row-span-2 self-center min-w-[34px] text-left">
                         <span class="text-[17px] font-black text-gray-400 leading-none tracking-tight">${matchNo}</span>
                     </div>
-                </div>
 
-                <div class="mt-2 min-h-[14px] flex items-center justify-center">
-                    ${(votedA || votedB)
-                        ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full leading-none">SEU VOTO</span>`
-                        : ``
-                    }
+                    <div class="min-h-[14px] flex items-start justify-center">
+                        ${votedA
+                            ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">SEU VOTO</span>`
+                            : ``
+                        }
+                    </div>
+
+                    <div class="min-h-[14px] flex items-start justify-center">
+                        ${votedB
+                            ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">SEU VOTO</span>`
+                            : ``
+                        }
+                    </div>
                 </div>
             </div>
 
