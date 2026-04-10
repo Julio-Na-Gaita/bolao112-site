@@ -4086,61 +4086,64 @@ window.currentMonthlyRankingSelectedMonth = currentMonthIndex;
 
 // Renderiza HTML
 let html = `
-  <div class="flex items-center justify-between gap-3 mb-3">
-    <div>
-      <h3 class="text-lg font-black text-[#006400]">CLASSIFICAÇÃO</h3>
-      <p class="text-[11px] font-bold text-gray-500">TEMPORADA 2026</p>
-    </div>
+  <div class="ranking-hero mb-4">
+    <div class="ranking-hero__bg"></div>
+    <div class="ranking-hero__content">
+      <div>
+        <p class="ranking-hero__eyebrow">Classificacao Oficial</p>
+        <h3 class="ranking-hero__title">Temporada 2026</h3>
+        <p class="ranking-hero__subtitle">${users.length} participantes no ranking geral</p>
+      </div>
 
-    <div class="flex items-center gap-2 shrink-0">
-      <button
-        onclick="showKingModal()"
-        class="px-3 py-2 rounded-xl bg-[#FFF3CD] border border-[#FFD700] text-[#6D4C00] font-black text-[11px] shadow-sm active:scale-[0.98]"
-      >
-        👑 Rei do mês
-      </button>
+      <div class="ranking-hero__actions">
+        <button
+          onclick="showKingModal()"
+          class="ranking-hero__btn ranking-hero__btn--king btn-press"
+        >
+          Rei do mes
+        </button>
 
-      <button
-        onclick="openRankingInfo()"
-        aria-label="Sobre o ranking"
-        title="Sobre o ranking"
-        class="w-10 h-10 rounded-full bg-[#006400] text-white font-black text-base shadow-sm border border-[#0B7A0B] active:scale-[0.98] flex items-center justify-center"
-      >
-        i
-      </button>
+        <button
+          onclick="openRankingInfo()"
+          aria-label="Sobre o ranking"
+          title="Sobre o ranking"
+          class="ranking-hero__btn ranking-hero__btn--info btn-press"
+        >
+          <i class="fas fa-info"></i>
+        </button>
+      </div>
     </div>
   </div>
 
-  <div class="grid grid-cols-[40px_1fr_26px_38px] gap-2 px-2 py-2 text-[11px] font-black text-gray-500 uppercase">
-    <div>Pos</div>
-    <div>Participante</div>
-    <div class="text-center">D</div>
-    <div class="text-right">Pts</div>
-  </div>
+  <div class="ranking-table-shell">
+    <div class="ranking-table-head">
+      <span>Pos</span>
+      <span>Participante</span>
+      <span class="text-center">D</span>
+      <span class="text-right">Pts</span>
+    </div>
+    <div class="ranking-table-body">
 `;
 
                 html += users.map((u, i) => {
                     const pos = i + 1;
-                    let bgColor = 'bg-white';
-                    let borderColor = 'border-transparent';
-                    let posIcon = `<span class="text-gray-500 font-bold">${pos}º</span>`;
-                    let nameColor = "text-gray-800";
+                    let rowClass = "";
+                    let posIcon = `<span class="ranking-pos-plain">${pos}º</span>`;
+                    let nameClass = "ranking-name";
+                    let avatarClass = "ranking-avatar";
 
-                    if (i === 0) { bgColor = 'bg-[#FFF9C4]'; posIcon = '🥇'; borderColor = 'border-[#FFD700]'; }
-                    else if (i === 1) { bgColor = 'bg-[#E0E0E0]'; posIcon = '🥈'; borderColor = 'border-gray-400'; }
-                    else if (i === 2) { bgColor = 'bg-[#FFCCBC]'; posIcon = '🥉'; borderColor = 'border-[#D84315]'; }
-                    else if (i === 3 || i === 4) { bgColor = 'bg-green-50'; borderColor = 'border-green-600'; posIcon = `<span class="text-green-700 font-black">${pos}º</span>`; }
-                    else if (u.isZ4) { bgColor = 'bg-[#FFEBEE]'; nameColor = "text-[#8B0000]"; }
+                    if (i === 0) { rowClass = "ranking-row--gold"; posIcon = "🥇"; avatarClass += " ranking-avatar--gold"; }
+                    else if (i === 1) { rowClass = "ranking-row--silver"; posIcon = "🥈"; avatarClass += " ranking-avatar--silver"; }
+                    else if (i === 2) { rowClass = "ranking-row--bronze"; posIcon = "🥉"; avatarClass += " ranking-avatar--bronze"; }
+                    else if (i === 3 || i === 4) { rowClass = "ranking-row--top5"; }
+                    if (u.isZ4) { rowClass += " ranking-row--z4"; nameClass += " ranking-name--danger"; }
 
-                    // Renderiza Medalhas (Agrupadas)
                     let medalsHtml = "";
                     const counts = {};
 (u.medals || []).forEach(
   (icon) => (counts[icon] = (counts[icon] || 0) + 1),
 );
-                    
-                    // Ordena ícones visualmente pela mesma hierarquia do sort (mais importantes primeiro)
-                    // Adiciona os que não estão na hierarquia no final (Patrão, etc)
+
                     const visualHierarchy = ["🏆", ...medalHierarchy, "💰", "👻", "🥬", "⚓"];
                     const uniqueIcons = Object.keys(counts).sort((a,b) => {
                         let idxA = visualHierarchy.indexOf(a); if(idxA === -1) idxA = 99;
@@ -4149,33 +4152,38 @@ let html = `
                     }).slice(0, 6);
 
                     if (uniqueIcons.length > 0) {
-                        medalsHtml = `<div class="flex items-center mt-1 space-x-1">` + 
-                            uniqueIcons.map(icon => `<span class="text-[12px] leading-none">${icon}${counts[icon]>1 ? `<sup class="text-[8px] text-gray-500">${counts[icon]}</sup>`:''}</span>`).join('') + 
+                        medalsHtml = `<div class="ranking-medals">` + 
+                            uniqueIcons.map(icon => `<span class="ranking-medal-chip">${icon}${counts[icon]>1 ? `<sup class="ranking-medal-count">${counts[icon]}</sup>`:''}</span>`).join('') + 
                         `</div>`;
                     }
 
-                    let diffHtml = u.lastRank > 0 
-                        ? (pos < u.lastRank ? `<div class="text-green-600 text-[8px] font-bold mt-1 flex justify-center"><i class="fas fa-caret-up mr-1"></i> ${u.lastRank - pos}</div>` 
-                        : (pos > u.lastRank ? `<div class="text-red-600 text-[8px] font-bold mt-1 flex justify-center"><i class="fas fa-caret-down mr-1"></i> ${pos - u.lastRank}</div>` : `<div class="text-gray-300 text-[8px] font-bold mt-1 text-center">=</div>`)) 
-                        : `<div class="text-blue-500 text-[7px] font-bold mt-1 text-center">NOVO</div>`;
+                    let diffHtml = `<div class="ranking-move ranking-move--new">NOVO</div>`;
+                    if (u.lastRank > 0) {
+                      if (pos < u.lastRank) diffHtml = `<div class="ranking-move ranking-move--up"><i class="fas fa-caret-up"></i> ${u.lastRank - pos}</div>`;
+                      else if (pos > u.lastRank) diffHtml = `<div class="ranking-move ranking-move--down"><i class="fas fa-caret-down"></i> ${pos - u.lastRank}</div>`;
+                      else diffHtml = `<div class="ranking-move ranking-move--same">=</div>`;
+                    }
 
-                    return `<div class="${bgColor} border-b border-gray-100 flex items-center py-1 px-2 ${i < 5 ? 'border-l-4' : ''}" style="${i < 5 ? `border-left-color: ${borderColor.replace('border-[', '').replace(']', '')}` : ''}">
-                        <div class="w-[35px] text-center flex flex-col items-center justify-center h-full"><div class="text-sm">${posIcon}</div>${diffHtml}</div>
-                        <div class="flex-1 flex flex-col justify-center pl-2 overflow-hidden shrink-0 cursor-pointer h-full py-1" onclick="showModalPhoto(${i})">
-                            <div class="flex items-center gap-2">
-                                <div class="w-[30px] h-[30px] rounded-full bg-white border border-gray-300 flex items-center justify-center overflow-hidden shrink-0"><img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-full h-full object-cover"></div>
-                                <div class="flex flex-col w-full overflow-hidden">
-                                    <div class="flex items-center"><span class="text-xs font-bold ${nameColor} truncate max-w-[140px]">${u.name || u.username}</span></div>
-                                    ${medalsHtml}
-                                </div>
+                    return `<div class="ranking-row ${rowClass}">
+                        <div class="ranking-row__pos">
+                          <div class="ranking-pos-badge">${posIcon}</div>
+                          ${diffHtml}
+                        </div>
+
+                        <div class="ranking-row__user" onclick="showModalPhoto(${i})">
+                            <div class="${avatarClass}"><img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-full h-full object-cover"></div>
+                            <div class="ranking-user-meta">
+                                <div class="flex items-center"><span class="${nameClass} truncate max-w-[160px]">${escapeHtml(u.name || u.username || "Sem nome")}</span></div>
+                                ${medalsHtml || '<div class="ranking-medals-empty">Sem medalhas</div>'}
                             </div>
                         </div>
-                        <div class="w-[28px] text-center text-xs font-bold ${u.debts > 0 ? 'text-red-600' : 'text-gray-300'}" onclick="showModalHistory(${i})">${u.debts||0}</div>
-                        <div class="w-[40px] text-center text-sm font-black text-[#006400]" onclick="showModalHistory(${i})">${u.p}</div>
+
+                        <button type="button" class="ranking-row__debt ${u.debts > 0 ? 'is-debt' : ''}" onclick="showModalHistory(${i})">${u.debts||0}</button>
+                        <button type="button" class="ranking-row__points" onclick="showModalHistory(${i})">${u.p}</button>
                     </div>`;
                 }).join('');
 
-                html += `</div>`;
+                html += `</div></div>`;
                 listContainer.innerHTML = html;
 
 window.__rankingScreenCache = {
