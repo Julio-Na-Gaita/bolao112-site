@@ -118,6 +118,7 @@ const CHAT_ALLOWED_REACTIONS = Object.freeze([
   "\u{1F621}",
   "\u{1F62D}"
 ]);
+const SOUND_PREFERENCE_KEY = "bolao112_sound_enabled";
 
 let matchesLoadRequestSeq = 0;
 
@@ -276,7 +277,33 @@ const matchComparator = (a, b) => {
     return a.id.localeCompare(b.id);
 };
        // --- ÁUDIO SIMPLES (SOMENTE POP) ---
+        const isSoundEnabled = () => {
+  try {
+    return localStorage.getItem(SOUND_PREFERENCE_KEY) !== "0";
+  } catch (e) {
+    return true;
+  }
+};
+
+const setSoundEnabled = (enabled) => {
+  try {
+    localStorage.setItem(SOUND_PREFERENCE_KEY, enabled ? "1" : "0");
+  } catch (e) {
+    console.log("Nao foi possivel salvar preferencia de som:", e);
+  }
+};
+
+window.toggleSoundPreference = () => {
+  const nextValue = !isSoundEnabled();
+  setSoundEnabled(nextValue);
+  if (typeof loadProfile === "function" && !document.getElementById("profileScreen")?.classList.contains("hidden")) {
+    loadProfile();
+  }
+  if (nextValue) playVoteSound();
+};
+
         const playVoteSound = () => {
+  if (!isSoundEnabled()) return;
   try {
     const audioSrc = resolveRemoteSoundAsset("POP", "som_pop.mp3");
     const audio = new Audio(audioSrc);
@@ -4361,7 +4388,7 @@ if (count > 1) {
                
             document.getElementById('modalContainer').innerHTML = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" id="profileModal" data-uid="${u.uid}">
-                    <img src="bg_dialog_foto.png" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                    <img src="bg_dialog_foto.png" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
                     <div class="relative z-10 p-6 text-center flex flex-col items-center max-h-[85vh] overflow-y-auto">
                         <h3 class="font-bold uppercase text-[#006400] mb-4 text-xl tracking-wider">${u.name}</h3>
                         <div class="border-4 border-[#FFD700] rounded-2xl overflow-hidden shadow-2xl bg-black w-[240px] h-[240px] flex items-center justify-center mb-6 relative">
@@ -4435,7 +4462,7 @@ if (count > 1) {
 
             document.getElementById('modalContainer').innerHTML = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden h-[400px] flex flex-col relative">
-                    <img src="bg_perfil.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none">
+                    <img src="bg_perfil.png" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-15 pointer-events-none">
 
                     <div class="relative z-10 bg-white/80 p-4 border-b flex flex-col items-center">
                         <span class="text-5xl mb-2">${first.icon}</span>
@@ -4709,7 +4736,7 @@ document.getElementById("modalContainer").innerHTML = `
             
             cont.innerHTML = `
             <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh] flex flex-col">
-                <img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
                 
                 <div class="relative z-10 flex flex-col h-full bg-white/90">
                     <div class="bg-[#006400] p-4 text-white flex items-center shadow-md">
@@ -4805,7 +4832,7 @@ loadMatches({ force: true }); } } catch(e){alert(e.message);} };
             const docRef = doc(db, "settings", "competitions"); const snap = await getDoc(docRef);
             let comps = snap.exists() ? (snap.data().items || []) : [];
             const render = () => {
-                let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]"><img src="bg_painel_admin.jpeg" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 flex flex-col h-full bg-white/80 p-4"><div class="flex justify-between items-center mb-4"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold text-black text-lg">Competições</h3><div class="w-6"></div></div><div class="bg-white p-3 rounded border mb-4"><h4 class="font-bold text-xs text-[#006400] mb-2">Nova/Editar</h4><input type="text" id="compName" placeholder="Nome (ex: Copa do Mundo)" class="w-full border p-2 text-xs rounded mb-2"><input type="text" id="compLogo" placeholder="URL do Logo" class="w-full border p-2 text-xs rounded mb-2"><button onclick="saveComp()" class="w-full bg-[#EF6C00] text-white py-2 rounded font-bold text-xs shadow">SALVAR</button></div><div class="flex-1 overflow-y-auto space-y-2">`;
+                let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]"><img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 flex flex-col h-full bg-white/80 p-4"><div class="flex justify-between items-center mb-4"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold text-black text-lg">Competições</h3><div class="w-6"></div></div><div class="bg-white p-3 rounded border mb-4"><h4 class="font-bold text-xs text-[#006400] mb-2">Nova/Editar</h4><input type="text" id="compName" placeholder="Nome (ex: Copa do Mundo)" class="w-full border p-2 text-xs rounded mb-2"><input type="text" id="compLogo" placeholder="URL do Logo" class="w-full border p-2 text-xs rounded mb-2"><button onclick="saveComp()" class="w-full bg-[#EF6C00] text-white py-2 rounded font-bold text-xs shadow">SALVAR</button></div><div class="flex-1 overflow-y-auto space-y-2">`;
                 comps.forEach((c, idx) => { html += `<div class="bg-white p-2 rounded border flex justify-between items-center shadow-sm"><div class="flex items-center gap-2"><img src="${c.logo}" class="w-8 h-8 object-contain bg-gray-100 rounded"> <span class="font-bold text-xs text-black">${c.name}</span></div><button onclick="deleteComp(${idx})" class="text-red-500"><i class="fas fa-trash"></i></button></div>`; });
                 html += `</div></div></div>`; cont.innerHTML = html;
             };
@@ -4949,7 +4976,7 @@ async function loadProfile() {
             <div id="pixArea" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="if(event.target === this) this.classList.add('hidden')">
                 <div class="relative bg-white rounded-lg w-full max-w-sm overflow-hidden shadow-2xl border border-gray-200">
                     <div class="absolute inset-0 z-0">
-                        <img src="bg_pix.jpeg" class="w-full h-full object-cover opacity-50">
+                        <img src="bg_pix.jpeg" loading="lazy" decoding="async" class="w-full h-full object-cover opacity-50">
                     </div>
                     
                     <div class="relative z-10 p-6 pt-8 text-center">
@@ -4988,6 +5015,8 @@ async function loadProfile() {
                     </div>
                 </div>
             </div>`;
+
+            const soundEnabled = isSoundEnabled();
 
             // HTML DA TELA DE PERFIL (GRADE LIMPA)
             const profileHTML = `
@@ -5046,6 +5075,14 @@ async function loadProfile() {
   <span class="text-xs font-bold text-gray-700">Guia do App</span>
 </button>
 
+<button onclick="window.toggleSoundPreference()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press col-span-2">
+  <div class="w-10 h-10 rounded-full ${soundEnabled ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'} flex items-center justify-center">
+    <i class="fas ${soundEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-lg"></i>
+  </div>
+  <span class="text-xs font-bold text-gray-700">Som ${soundEnabled ? 'Ligado' : 'Desligado'}</span>
+  <span class="text-[10px] font-bold text-gray-400">Controle local do navegador/app</span>
+</button>
+
 
 
                 <div class="space-y-3 mb-8">
@@ -5100,7 +5137,7 @@ async function loadProfile() {
         document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.remove('hidden');
         window.copyKeyOnly = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
         document.getElementById('btnCopyPix').onclick = () => { alert("Copie a chave manual abaixo por enquanto."); };
-        window.changePassword = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_login2.png" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 p-6"><h3 class="font-black text-[#006400] text-center mb-6 text-lg uppercase">Nova Senha</h3><input type="password" id="newPassInput" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnConfirmPass" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CONFIRMAR</button><button onclick="closeModal()" class="w-full text-black font-black text-xs mt-4">CANCELAR</button></div></div>`; document.getElementById('btnConfirmPass').onclick = () => { const newPass = document.getElementById('newPassInput').value; if(newPass && newPass.length >= 6) { updatePassword(currentUser, newPass).then(() => { alert("Senha alterada com sucesso!"); closeModal(); }).catch(e => alert("Erro: Faça logout e login novamente para trocar a senha.")); } else { alert("A senha deve ter no mínimo 6 caracteres."); } }; };
+        window.changePassword = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_login2.png" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 p-6"><h3 class="font-black text-[#006400] text-center mb-6 text-lg uppercase">Nova Senha</h3><input type="password" id="newPassInput" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnConfirmPass" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CONFIRMAR</button><button onclick="closeModal()" class="w-full text-black font-black text-xs mt-4">CANCELAR</button></div></div>`; document.getElementById('btnConfirmPass').onclick = () => { const newPass = document.getElementById('newPassInput').value; if(newPass && newPass.length >= 6) { updatePassword(currentUser, newPass).then(() => { alert("Senha alterada com sucesso!"); closeModal(); }).catch(e => alert("Erro: Faça logout e login novamente para trocar a senha.")); } else { alert("A senha deve ter no mínimo 6 caracteres."); } }; };
 
 window.openCalendar2026 = () => {
   const html = `
@@ -5120,6 +5157,8 @@ window.openCalendar2026 = () => {
       <div class="relative z-10 w-full h-full flex items-center justify-center px-2 pb-6">
         <img
           src="calendario_2026.png"
+          loading="lazy"
+          decoding="async"
           class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
           alt="Calendário 2026"
         />
@@ -5137,7 +5176,7 @@ window.openCalendar2026 = () => {
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
             <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
-                <img src="bg_regras.png" class="absolute inset-0 w-full h-full object-cover opacity-15">
+                <img src="bg_regras.png" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-15">
                 <div class="relative z-10 bg-white/80 p-6 max-h-[85vh] overflow-y-auto">
                     <h3 class="font-bold text-lg mb-4 text-center uppercase tracking-widest text-gray-800">GUIA DO APP</h3>
                     <p class="text-center text-[10px] text-gray-500 font-bold mb-4">${getAppVersionFullLabel()}</p>
@@ -5404,7 +5443,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
             // HTML DO CARD FINAL
             cardContainer.innerHTML = `
                 <div style="width: 320px; height: 720px; display: flex; flex-direction: column; padding: 16px; background: linear-gradient(180deg, #004D40 0%, #000000 100%); font-family: serif; text-align: center; position: relative; overflow: hidden;">
-                    <img src="bg_ranking.jpeg" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.15; mix-blend-mode: overlay;">
+                    <img src="bg_ranking.png" loading="lazy" decoding="async" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.15; mix-blend-mode: overlay;">
                     
                     <div style="position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column;">
                         <h1 style="color: #FFD700; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; margin: 0;">BOLÃO 112 F.C</h1>
@@ -5646,7 +5685,7 @@ window.__currentChatMessagesById = {};
                 await addDoc(collection(db, "match_comments"), { 
                     matchId: matchId, 
                     userId: currentUser.uid, 
-                    userName: uData.name || "Anônimo", 
+                    userName: normalizeChatUserName(uData.name || "Anonimo"), 
                     userPhoto: uData.photoBase64 || "", 
                     text: txt, 
                     timestamp: serverTimestamp(), 
