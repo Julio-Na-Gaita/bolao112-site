@@ -4936,6 +4936,51 @@ loadMatches({ force: true }); } } catch(e){alert(e.message);} };
         };
         window.checkDelays = async () => { const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const now = new Date(); const currMonth = months[now.getMonth()]; const day = now.getDate(); if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; } const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const snap = await getDocs(collection(db, "users")); let late = []; snap.forEach(d => { const u = d.data(); if (!u.payments || !u.payments[currMonth]) { late.push({id: d.id, name: u.name, debts: u.debts || 0}); } }); let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`; if (late.length === 0) { html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`; } else { html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`; late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; }); html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`; } html += `</div>`; cont.innerHTML = html; window.applyBatchPenalty = async () => { if(!confirm("Confirmar aplicação de multa em massa?")) return; const batch = writeBatch(db); late.forEach(l => { const ref = doc(db, "users", l.id); batch.update(ref, { debts: l.debts + 1 }); }); await batch.commit(); alert("Penalidades aplicadas!"); openFinancialScreen(); }; };
 
+const renderProfileSectionHeader = (title, subtitle, chipLabel = "") => `
+  <div class="profile-section__header">
+    <div>
+      <div class="profile-section__title">${escapeHtml(title)}</div>
+      <div class="profile-section__subtitle">${escapeHtml(subtitle)}</div>
+    </div>
+    ${chipLabel ? `<span class="status-chip status-chip--default">${escapeHtml(chipLabel)}</span>` : ""}
+  </div>
+`;
+
+const renderProfileActionTile = ({ tag = "button", onclick = "", extraAttrs = "", iconClass, iconToneClass, title, desc }) => `
+  <${tag}
+    ${onclick ? `onclick="${onclick}"` : ""}
+    ${extraAttrs}
+    class="profile-action-tile btn-press ${tag === "label" ? "cursor-pointer" : ""}"
+  >
+    <div class="profile-action-tile__icon ${iconToneClass}">
+      <i class="${iconClass}"></i>
+    </div>
+    <div>
+      <div class="profile-action-tile__title">${escapeHtml(title)}</div>
+      <div class="profile-action-tile__desc">${escapeHtml(desc)}</div>
+    </div>
+  </${tag}>
+`;
+
+const renderProfileActionRow = ({ onclick = "", iconClass, iconToneClass, title, desc, chip = "", dark = false }) => `
+  <button
+    onclick="${onclick}"
+    class="profile-action-row btn-press ${dark ? "bg-gray-900 text-white border-gray-800" : ""}"
+  >
+    <div class="profile-action-row__icon ${iconToneClass}">
+      <i class="${iconClass}"></i>
+    </div>
+    <div class="profile-action-row__body">
+      <div class="profile-action-row__title ${dark ? "text-white" : ""}">${escapeHtml(title)}</div>
+      <div class="profile-action-row__desc ${dark ? "text-white/70" : ""}">${escapeHtml(desc)}</div>
+    </div>
+    <div class="profile-action-row__end">
+      ${chip ? `<span class="status-chip ${dark ? "status-chip--warning" : "status-chip--default"}">${escapeHtml(chip)}</span>` : ""}
+      <i class="fas fa-chevron-right profile-action-row__arrow ${dark ? "text-white/60" : ""}"></i>
+    </div>
+  </button>
+`;
+
 async function loadProfile() { 
         if (!currentUser) return; 
         
@@ -5024,6 +5069,89 @@ async function loadProfile() {
             </div>`;
 
             const soundEnabled = isSoundEnabled();
+            const accountActionsHtml = `
+              <section class="profile-section mb-4">
+                ${renderProfileSectionHeader("Conta", "Ações principais do seu acesso", "Essencial")}
+                <div class="profile-action-grid">
+                  ${renderProfileActionTile({
+                    tag: "label",
+                    extraAttrs: `for="uploadPhoto"`,
+                    iconClass: "fas fa-camera",
+                    iconToneClass: "bg-green-50 text-green-600",
+                    title: "Mudar foto",
+                    desc: "Atualize sua imagem de perfil."
+                  })}
+                  ${renderProfileActionTile({
+                    onclick: "changePassword()",
+                    iconClass: "fas fa-lock",
+                    iconToneClass: "bg-orange-50 text-orange-600",
+                    title: "Trocar senha",
+                    desc: "Mantenha sua conta protegida."
+                  })}
+                </div>
+              </section>
+            `;
+
+            const shortcutsSectionHtml = `
+              <section class="profile-section mb-4">
+                ${renderProfileSectionHeader("Atalhos", "Tudo o que você usa com mais frequência", "Rápido")}
+                <div class="profile-action-list">
+                  ${renderProfileActionRow({
+                    onclick: "openRulesModal()",
+                    iconClass: "fas fa-scroll",
+                    iconToneClass: "bg-emerald-50 text-emerald-700",
+                    title: "Regras do bolão",
+                    desc: "Consulte o regulamento sempre que precisar."
+                  })}
+                  ${renderProfileActionRow({
+                    onclick: "window.openCalendar2026()",
+                    iconClass: "fas fa-calendar-alt",
+                    iconToneClass: "bg-blue-50 text-blue-700",
+                    title: "Calendário 2026",
+                    desc: "Veja as datas importantes da temporada."
+                  })}
+                  ${renderProfileActionRow({
+                    onclick: "showAppGuide()",
+                    iconClass: "fas fa-info-circle",
+                    iconToneClass: "bg-purple-50 text-purple-600",
+                    title: "Guia do app",
+                    desc: "Relembre funções e atalhos do sistema."
+                  })}
+                </div>
+              </section>
+            `;
+
+            const preferencesSectionHtml = `
+              <section class="profile-section mb-6">
+                ${renderProfileSectionHeader("Preferências", "Ajustes locais deste aparelho", "Pessoal")}
+                <div class="profile-action-list">
+                  ${renderProfileActionRow({
+                    onclick: "window.toggleSoundPreference()",
+                    iconClass: soundEnabled ? "fas fa-volume-up" : "fas fa-volume-mute",
+                    iconToneClass: soundEnabled ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500",
+                    title: "Som do app",
+                    desc: "Controle se os efeitos sonoros tocam neste dispositivo.",
+                    chip: soundEnabled ? "Ligado" : "Desligado"
+                  })}
+                </div>
+              </section>
+            `;
+
+            const adminSectionHtml = u.isAdmin ? `
+              <section class="profile-section mb-6">
+                ${renderProfileSectionHeader("Admin", "Ferramentas administrativas do bolão", "Restrito")}
+                <div class="profile-action-list">
+                  ${renderProfileActionRow({
+                    onclick: "openAdminMenu()",
+                    iconClass: "fas fa-cogs",
+                    iconToneClass: "bg-white/10 text-[#FFD700]",
+                    title: "Painel do administrador",
+                    desc: "Gerencie confrontos, financeiro e configurações.",
+                    dark: true
+                  })}
+                </div>
+              </section>
+            ` : "";
 
             // HTML DA TELA DE PERFIL (GRADE LIMPA)
             const profileHTML = `
@@ -5041,58 +5169,25 @@ async function loadProfile() {
                         <div>
                             <h2 class="text-xl font-black text-[#006400] uppercase leading-tight">${u.name || "Membro"}</h2>
                             <p class="text-sm text-gray-500 font-bold">@${u.username}</p>
-                            <div class="mt-2 inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-[10px] font-bold text-gray-600">
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                              <div class="inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-[10px] font-bold text-gray-600">
                                 <i class="fas fa-crown text-[#FFD700]"></i> SÓCIO TORCEDOR
+                              </div>
+                              <span class="status-chip ${isPaid ? "status-chip--success" : "status-chip--danger"}">${isPaid ? "Mensalidade ok" : "Pagamento pendente"}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <label class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press cursor-pointer">
-                        <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600"><i class="fas fa-camera text-lg"></i></div>
-                        <span class="text-xs font-bold text-gray-700">Mudar Foto</span>
-                        <input type="file" id="uploadPhoto" accept="image/*" class="hidden" onchange="handlePhotoUpload(this)">
-                    </label>
+                <input type="file" id="uploadPhoto" accept="image/*" class="hidden" onchange="handlePhotoUpload(this)">
 
-                    <button onclick="changePassword()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
-                        <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600"><i class="fas fa-lock text-lg"></i></div>
-                        <span class="text-xs font-bold text-gray-700">Senha</span>
-                    </button>
-                    
-<button onclick="openRulesModal()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press col-span-2">
-  <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-700">
-    <i class="fas fa-scroll text-lg"></i>
-  </div>
-  <span class="text-xs font-bold text-gray-700">Regras</span>
-</button>
+                ${accountActionsHtml}
+                ${shortcutsSectionHtml}
+                ${preferencesSectionHtml}
 
-                    <!-- Linha: CALENDÁRIO + GUIA -->
-<button onclick="window.openCalendar2026()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
-  <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-700">
-    <i class="fas fa-calendar-alt text-lg"></i>
-  </div>
-  <span class="text-xs font-bold text-gray-700">Calendário</span>
-</button>
-
-<button onclick="showAppGuide()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press">
-  <div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
-    <i class="fas fa-info-circle text-lg"></i>
-  </div>
-  <span class="text-xs font-bold text-gray-700">Guia do App</span>
-</button>
-
-<button onclick="window.toggleSoundPreference()" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center gap-2 btn-press col-span-2">
-  <div class="w-10 h-10 rounded-full ${soundEnabled ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'} flex items-center justify-center">
-    <i class="fas ${soundEnabled ? 'fa-volume-up' : 'fa-volume-mute'} text-lg"></i>
-  </div>
-  <span class="text-xs font-bold text-gray-700">Som ${soundEnabled ? 'Ligado' : 'Desligado'}</span>
-  <span class="text-[10px] font-bold text-gray-400">Controle local do navegador/app</span>
-</button>
-
-
-
-                <div class="space-y-3 mb-8">
+                <div class="profile-section mb-6">
+                    ${renderProfileSectionHeader("Financeiro", "Sua situação da mensalidade em um toque", isPaid ? "Em dia" : "Atenção")}
+                    <div class="p-3">
                      <div id="financialCard" class="p-4 rounded-lg border shadow-sm cursor-pointer btn-press flex justify-between items-center transition-colors ${finCardClass}" onclick="document.getElementById('pixArea').classList.remove('hidden')">
                         <div class="text-left">
                             <p class="font-black text-sm ${isPaid ? 'text-green-800' : 'text-red-800'}">${finStatusText}</p>
@@ -5100,8 +5195,10 @@ async function loadProfile() {
                         </div>
                         <i class="fas ${finIcon} text-2xl"></i>
                     </div>
-                    ${u.isAdmin ? `<button onclick="openAdminMenu()" class="w-full bg-gray-800 text-white py-3 rounded-lg font-bold text-xs shadow-lg btn-press"><i class="fas fa-cogs mr-2"></i> PAINEL DO ADMIN</button>` : ''}
+                    </div>
                 </div>
+
+                ${adminSectionHtml}
 
                 <div class="text-center pb-safe">
                     <div class="version-chip">${getAppVersionLabel()}</div>
