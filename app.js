@@ -4150,7 +4150,7 @@ let html = `
                         let idxB = visualHierarchy.indexOf(b); if(idxB === -1) idxB = 99;
                         return idxA - idxB;
                     });
-                    const uniqueIcons = orderedIcons.slice(0, 5);
+                    const uniqueIcons = orderedIcons.slice(0, 8);
                     const hiddenIconsCount = Math.max(0, orderedIcons.length - uniqueIcons.length);
 
                     if (uniqueIcons.length > 0) {
