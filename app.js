@@ -2216,11 +2216,11 @@ const renderCollapsibleSection = ({ sectionKey, title, count, accentClass, tone 
   const chevron = isCollapsed ? "▾" : "▴";
 
   return `
-    <section class="mb-4 surface-card overflow-hidden">
+    <section class="mb-4 surface-card overflow-hidden matches-section-shell matches-section--${tone}">
       <button
         type="button"
         onclick="window.toggleHomeSectionCollapse('${sectionKey}')"
-        class="w-full relative px-4 py-3 bg-white/80"
+        class="w-full relative px-4 py-3 matches-section-header"
       >
         <div class="flex flex-col items-center justify-center text-center">
           <span class="status-chip ${getStatusToneChipClass(tone)} ${accentClass}">${title}</span>
@@ -2235,7 +2235,7 @@ const renderCollapsibleSection = ({ sectionKey, title, count, accentClass, tone 
       </button>
 
       ${isCollapsed ? "" : `
-        <div class="p-3">
+        <div class="p-3 matches-section-body">
           ${count > 0 ? contentHtml : emptyHtml}
         </div>
       `}
@@ -2835,15 +2835,102 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
 }
 
         // --- RENDERIZA LISTA DE JOGOS (COM DATA NO BOTÃO DE VOTANTES) ---
+        const normalizeCompetitionKey = (value = "") => String(value || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .trim();
+
+        const getCompetitionTheme = (competitionName = "") => {
+          const key = normalizeCompetitionKey(competitionName);
+          const themes = [
+            {
+              test: /(libertadores|pre-libertadores|conmebol libertadores)/,
+              accent: "#0f766e",
+              soft: "rgba(236, 253, 245, 0.92)",
+              softStrong: "rgba(209, 250, 229, 0.9)",
+              chipBg: "rgba(16, 185, 129, 0.14)",
+              chipText: "#065f46",
+              icon: "fa-star"
+            },
+            {
+              test: /(copa do brasil|cdb)/,
+              accent: "#9d174d",
+              soft: "rgba(253, 242, 248, 0.92)",
+              softStrong: "rgba(252, 231, 243, 0.9)",
+              chipBg: "rgba(190, 24, 93, 0.14)",
+              chipText: "#831843",
+              icon: "fa-trophy"
+            },
+            {
+              test: /(brasileirao|brasileiro|serie a|serie b|serie c)/,
+              accent: "#1d4ed8",
+              soft: "rgba(239, 246, 255, 0.92)",
+              softStrong: "rgba(219, 234, 254, 0.9)",
+              chipBg: "rgba(37, 99, 235, 0.14)",
+              chipText: "#1e3a8a",
+              icon: "fa-shield-halved"
+            },
+            {
+              test: /(sul-americana|sulamericana|sudamericana)/,
+              accent: "#c2410c",
+              soft: "rgba(255, 247, 237, 0.92)",
+              softStrong: "rgba(254, 215, 170, 0.42)",
+              chipBg: "rgba(234, 88, 12, 0.14)",
+              chipText: "#9a3412",
+              icon: "fa-fire-flame-curved"
+            },
+            {
+              test: /(champions|uefa)/,
+              accent: "#1e40af",
+              soft: "rgba(238, 242, 255, 0.92)",
+              softStrong: "rgba(224, 231, 255, 0.9)",
+              chipBg: "rgba(59, 130, 246, 0.14)",
+              chipText: "#1e3a8a",
+              icon: "fa-futbol"
+            },
+            {
+              test: /(carioca|paulista|gaucho|cearense|mineiro|pernambucano|paranaense|estadual)/,
+              accent: "#0f766e",
+              soft: "rgba(240, 253, 250, 0.92)",
+              softStrong: "rgba(204, 251, 241, 0.88)",
+              chipBg: "rgba(13, 148, 136, 0.14)",
+              chipText: "#115e59",
+              icon: "fa-map"
+            },
+            {
+              test: /(amistoso|pre temporada|pre-temporada|torneio de verao|supercopa)/,
+              accent: "#475569",
+              soft: "rgba(248, 250, 252, 0.92)",
+              softStrong: "rgba(226, 232, 240, 0.88)",
+              chipBg: "rgba(100, 116, 139, 0.14)",
+              chipText: "#334155",
+              icon: "fa-flag-checkered"
+            }
+          ];
+
+          const fallback = {
+            accent: "#006400",
+            soft: "rgba(240, 253, 244, 0.9)",
+            softStrong: "rgba(220, 252, 231, 0.86)",
+            chipBg: "rgba(0, 100, 0, 0.14)",
+            chipText: "#065f46",
+            icon: "fa-medal"
+          };
+
+          return themes.find((theme) => theme.test.test(key)) || fallback;
+        };
+
         async function renderMatchList(list, usersList, serverCounts, myVotesMap) {
             let html = "";
             for (const m of list) {
                 let userVote = myVotesMap[m.id] || ""; 
                 
-                const dl = m.deadlineDate; 
-                const borderColor = m.final ? 'border-[#FFD700]' : (m.expired ? (m.winner ? 'border-[#D32F2F]' : 'border-[#FBC02D]') : 'border-[#006400]'); 
-                const bgColor = m.final ? 'bg-[#FFF9C4]' : 'bg-white'; 
+                const dl = m.deadlineDate;
+                const statusAccent = m.final ? "#FFD700" : (m.expired ? (m.winner ? "#D32F2F" : "#FBC02D") : "#006400");
+                const theme = getCompetitionTheme(m.competition || "");
                 const logo = compMap[m.competition] || "";
+                const cardStyle = `--match-accent:${theme.accent};--match-soft:${theme.soft};--match-soft-strong:${theme.softStrong};--match-chip-bg:${theme.chipBg};--match-chip-text:${theme.chipText};border-left-color:${statusAccent};`;
                 
                 const sCount = serverCounts[m.id] || 0; 
                 const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0"); 
@@ -2879,33 +2966,37 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                     thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1"><span class="text-green-700">${pctA}%</span><span class="text-gray-400 text-[8px]">TERMÔMETRO (CINZA = NÃO VOTOU)</span><span class="text-red-700">${pctB}%</span></div><div class="w-full h-2.5 bg-gray-200 rounded-full flex overflow-hidden"><div style="flex: ${votesA}" class="bg-green-700 h-full border-r border-white/50"></div><div style="flex: ${absReal}" class="bg-gray-300 h-full border-r border-white/50"></div><div style="flex: ${votesB}" class="bg-red-700 h-full"></div></div><div class="flex justify-between text-[8px] text-gray-400 mt-1"><span>${m.teamA}: ${votesA}</span>${absReal > 0 ? `<span>Faltosos: ${absReal}</span>` : ''}<span>${m.teamB}: ${votesB}</span></div></div>`; 
                 }
 
-                html += `<div class="card-cut relative border-l-[6px] ${bgColor} mb-6 overflow-hidden" style="border-left-color: ${borderColor.replace('border-[','').replace(']','')};">
-                            ${logo ? `<img src="${logo}" class="absolute inset-0 w-full h-full object-contain opacity-[0.10] z-0 pointer-events-none p-8">` : ''}
+                html += `<div class="match-card-shell card-cut relative border-l-[6px] mb-6 overflow-hidden" style="${cardStyle}">
+                            <div class="match-card-topbar"></div>
+                            ${logo ? `<img src="${logo}" class="match-card-logo-ghost absolute inset-0 w-full h-full object-contain z-0 pointer-events-none p-8">` : ''}
                             <div class="relative z-10 p-3">
                                 
                                 <div class="flex justify-between items-start mb-2 border-b border-gray-100 pb-2">
                                     <div class="w-10">
-                                        <span class="text-[14px] font-black text-gray-400">#${m.matchNumber}</span>
+                                        <span class="match-number-pill">#${m.matchNumber}</span>
                                     </div>
                                     
                                     <div class="flex-1 text-center">
-                                        ${m.final ? '<div class="text-[9px] font-black text-orange-600 mb-0 leading-none">★ FINAL ★</div>' : ''}
-                                        <div class="text-[12px] font-black text-[#006400] uppercase tracking-wide leading-tight">${m.competition}</div>
+                                        ${m.final ? '<div class="text-[9px] font-black text-orange-600 mb-1 leading-none">FINAL</div>' : ''}
+                                        <div class="match-competition-chip">
+                                          <i class="fas ${theme.icon}"></i>
+                                          <span>${escapeHtml(m.competition || "Confronto")}</span>
+                                        </div>
                                     </div>
                                     
                                     <div class="w-10"></div> </div>
 
                                 <div class="flex justify-between items-start mb-4">
                                     <div class="flex flex-col w-full pr-2">
-                                        <span class="text-[10px] text-gray-500 font-bold leading-tight mb-1">${m.round}</span>
-                                        <span class="text-[11px] font-black text-[#D32F2F]">${m.expired ? 'Encerrado:' : '⚠️ Prazo:'} ${dl.toLocaleTimeString([], {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}</span>
+                                        <span class="match-round-pill">${escapeHtml(m.round || "Rodada")}</span>
+                                        <span class="match-deadline-pill ${m.expired ? "is-expired" : ""}">${m.expired ? "Encerrado:" : "Prazo:"} ${dl.toLocaleTimeString([], {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"})}</span>
                                     </div>
                                     
                                     <div class="flex gap-3 pt-1">
-                                        <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="text-gray-500 hover:text-[#006400] transition-colors relative">
+                                        <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="match-action-btn text-gray-500 hover:text-[#006400] transition-colors relative">
                                             <i class="fas fa-comment-dots text-xl"></i>${chatBadge}
                                         </button>
-                                        <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}', '${dl.toISOString()}')" class="text-[#006400] hover:scale-110 transition-transform">
+                                        <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}', '${dl.toISOString()}')" class="match-action-btn text-[#006400] hover:scale-110 transition-transform">
                                             <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-xl"></i>
                                         </button>
                                     </div>
@@ -2913,11 +3004,11 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                                 
                                 <div class="flex items-center justify-between px-1">
                                     ${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}
-                                    <span class="font-black text-gray-300 text-xl">X</span>
+                                    <span class="match-versus">X</span>
                                     ${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}
                                 </div>
                                 
-                                ${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="text-[#006400] font-black text-lg">${m.winner}</p></div>` : ''}
+                                ${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="match-winner-name">${escapeHtml(m.winner)}</p></div>` : ''}
                                 ${thermoHtml}
                             </div>
                         </div>`;
@@ -2947,7 +3038,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
             // CORREÇÃO DO CLICK: Adicionado window.vote
             return `<button id="${btnId}" onclick="window.vote('${mid}', '${name}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}">
                 ${iconHtml}
-                <span class="text-[11px] font-bold text-center leading-tight px-1 line-clamp-2">${name}</span>
+                <span class="match-team-name text-center leading-tight px-1 line-clamp-2">${name}</span>
             </button>`; 
         }
         window.vote = async (mid, team, btnId) => { 
