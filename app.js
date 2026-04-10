@@ -4150,13 +4150,11 @@ let html = `
                         let idxB = visualHierarchy.indexOf(b); if(idxB === -1) idxB = 99;
                         return idxA - idxB;
                     });
-                    const uniqueIcons = orderedIcons.slice(0, 8);
-                    const hiddenIconsCount = Math.max(0, orderedIcons.length - uniqueIcons.length);
+                    const uniqueIcons = orderedIcons;
 
                     if (uniqueIcons.length > 0) {
                         medalsHtml = `<div class="ranking-medals">` + 
-                            uniqueIcons.map(icon => `<span class="ranking-medal-chip">${icon}${counts[icon]>1 ? `<sup class="ranking-medal-count">${counts[icon]}</sup>`:''}</span>`).join('') +
-                            (hiddenIconsCount > 0 ? `<span class="ranking-medal-chip ranking-medal-chip--more">+${hiddenIconsCount}</span>` : "") +
+                            uniqueIcons.map(icon => `<span class="ranking-medal-chip">${icon}${counts[icon]>1 ? `<sup class="ranking-medal-count">${counts[icon]}</sup>`:''}</span>`).join('') + 
                         `</div>`;
                     }
 
@@ -4176,9 +4174,12 @@ let html = `
                         <div class="ranking-row__user" onclick="showModalPhoto(${i})">
                             <div class="${avatarClass}"><img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-full h-full object-cover"></div>
                             <div class="ranking-user-meta">
-                                <div class="flex items-center"><span class="${nameClass} truncate max-w-[160px]">${escapeHtml(u.name || u.username || "Sem nome")}</span></div>
-                                ${medalsHtml || '<div class="ranking-medals-empty">Sem medalhas</div>'}
+                                <div class="flex items-center"><span class="${nameClass} truncate max-w-[170px]">${escapeHtml(u.name || u.username || "Sem nome")}</span></div>
                             </div>
+                        </div>
+
+                        <div class="ranking-row__medals">
+                          ${medalsHtml || '<div class="ranking-medals-empty">Sem medalhas</div>'}
                         </div>
 
                         <button type="button" class="ranking-row__debt ${u.debts > 0 ? 'is-debt' : ''}" onclick="showModalHistory(${i})">${u.debts||0}</button>
