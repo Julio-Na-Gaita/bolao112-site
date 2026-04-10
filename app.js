@@ -4145,15 +4145,18 @@ let html = `
 );
 
                     const visualHierarchy = ["🏆", ...medalHierarchy, "💰", "👻", "🥬", "⚓"];
-                    const uniqueIcons = Object.keys(counts).sort((a,b) => {
+                    const orderedIcons = Object.keys(counts).sort((a,b) => {
                         let idxA = visualHierarchy.indexOf(a); if(idxA === -1) idxA = 99;
                         let idxB = visualHierarchy.indexOf(b); if(idxB === -1) idxB = 99;
                         return idxA - idxB;
-                    }).slice(0, 6);
+                    });
+                    const uniqueIcons = orderedIcons.slice(0, 5);
+                    const hiddenIconsCount = Math.max(0, orderedIcons.length - uniqueIcons.length);
 
                     if (uniqueIcons.length > 0) {
                         medalsHtml = `<div class="ranking-medals">` + 
-                            uniqueIcons.map(icon => `<span class="ranking-medal-chip">${icon}${counts[icon]>1 ? `<sup class="ranking-medal-count">${counts[icon]}</sup>`:''}</span>`).join('') + 
+                            uniqueIcons.map(icon => `<span class="ranking-medal-chip">${icon}${counts[icon]>1 ? `<sup class="ranking-medal-count">${counts[icon]}</sup>`:''}</span>`).join('') +
+                            (hiddenIconsCount > 0 ? `<span class="ranking-medal-chip ranking-medal-chip--more">+${hiddenIconsCount}</span>` : "") +
                         `</div>`;
                     }
 
