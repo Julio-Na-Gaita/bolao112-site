@@ -4981,6 +4981,22 @@ const renderProfileActionRow = ({ onclick = "", iconClass, iconToneClass, title,
   </button>
 `;
 
+window.openPixPaymentModal = () => {
+  const pixArea = document.getElementById("pixArea");
+  if (!pixArea) return;
+  pixArea.classList.remove("hidden");
+  pixArea.querySelector(".pix-modal-scroll")?.scrollTo({ top: 0, behavior: "auto" });
+};
+
+window.closePixPaymentModal = () => {
+  document.getElementById("pixArea")?.classList.add("hidden");
+};
+
+const mountPixPaymentModal = (html) => {
+  document.getElementById("pixArea")?.remove();
+  document.body.insertAdjacentHTML("beforeend", html);
+};
+
 async function loadProfile() { 
         if (!currentUser) return; 
         
@@ -5025,14 +5041,14 @@ async function loadProfile() {
 
             // --- MODAL PIX ---
             const pixModalHTML = `
-            <div id="pixArea" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="if(event.target === this) this.classList.add('hidden')">
-                <div class="relative bg-white rounded-lg w-full max-w-sm overflow-hidden shadow-2xl border border-gray-200">
+            <div id="pixArea" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onclick="if(event.target === this) window.closePixPaymentModal()">
+                <div class="pix-modal-scroll relative bg-white rounded-lg w-full max-w-sm max-h-[92vh] overflow-y-auto shadow-2xl border border-gray-200">
                     <div class="absolute inset-0 z-0">
                         <img src="bg_pix.jpeg" loading="lazy" decoding="async" class="w-full h-full object-cover opacity-50">
                     </div>
                     
                     <div class="relative z-10 p-6 pt-8 text-center">
-                        <button onclick="document.getElementById('pixArea').classList.add('hidden')" class="absolute top-2 right-2 text-[#006400] p-2 hover:scale-110 transition-transform"><i class="fas fa-times text-xl"></i></button>
+                        <button onclick="window.closePixPaymentModal()" class="absolute top-2 right-2 text-[#006400] p-2 hover:scale-110 transition-transform"><i class="fas fa-times text-xl"></i></button>
                         
                         <div class="mb-4">
                             <i class="fas fa-qrcode text-4xl text-[#006400] drop-shadow-sm"></i>
@@ -5156,8 +5172,6 @@ async function loadProfile() {
             // HTML DA TELA DE PERFIL (GRADE LIMPA)
             const profileHTML = `
             <div id="profileScreen" class="animate-fade-in p-4">
-                ${pixModalHTML}
-                
                 <div class="card-cut relative overflow-hidden bg-white shadow-lg mb-6 border-l-4 border-[#006400]">
                     <div class="absolute right-0 top-0 p-2 opacity-10">
                         <i class="fas fa-id-card text-6xl text-[#006400]"></i>
@@ -5185,10 +5199,10 @@ async function loadProfile() {
                 ${shortcutsSectionHtml}
                 ${preferencesSectionHtml}
 
-                <div class="profile-section mb-6">
+                <div id="financialSection" class="profile-section mb-6">
                     ${renderProfileSectionHeader("Financeiro", "Sua situação da mensalidade em um toque", isPaid ? "Em dia" : "Atenção")}
                     <div class="p-3">
-                     <div id="financialCard" class="p-4 rounded-lg border shadow-sm cursor-pointer btn-press flex justify-between items-center transition-colors ${finCardClass}" onclick="document.getElementById('pixArea').classList.remove('hidden')">
+                     <div id="financialCard" class="p-4 rounded-lg border shadow-sm cursor-pointer btn-press flex justify-between items-center transition-colors ${finCardClass}" onclick="window.openPixPaymentModal()">
                         <div class="text-left">
                             <p class="font-black text-sm ${isPaid ? 'text-green-800' : 'text-red-800'}">${finStatusText}</p>
                             <p class="text-[10px] font-bold opacity-70">Toque para detalhes</p>
@@ -5208,6 +5222,13 @@ async function loadProfile() {
 
             document.getElementById('profileScreen').innerHTML = profileHTML;
             document.getElementById('profileScreen').classList.remove('hidden');
+            mountPixPaymentModal(pixModalHTML);
+
+            const accountSectionEl = document.querySelector("#profileScreen .profile-section");
+            const financialSectionEl = document.getElementById("financialSection");
+            if (accountSectionEl && financialSectionEl) {
+              accountSectionEl.insertAdjacentElement("afterend", financialSectionEl);
+            }
 
         } catch (error) { console.error("Erro no loadProfile:", error); } 
     }
@@ -5238,7 +5259,7 @@ async function loadProfile() {
         document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { compressImage(file).then(async (base64) => { await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }).catch(err => { alert("Erro ao processar imagem."); console.error(err); }); } };
 
         window.changeDebt = async (uid, delta) => { const ref = doc(db, "users", uid); const u = await getDoc(ref); let debts = u.data().debts || 0; debts += delta; if(debts < 0) debts = 0; await updateDoc(ref, { debts: debts }); openFinancialScreen(); };
-        document.getElementById('financialCard').onclick = () => document.getElementById('pixArea').classList.remove('hidden');
+        document.getElementById('financialCard').onclick = () => window.openPixPaymentModal();
         window.copyKeyOnly = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
         document.getElementById('btnCopyPix').onclick = () => { alert("Copie a chave manual abaixo por enquanto."); };
         window.changePassword = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_login2.png" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 p-6"><h3 class="font-black text-[#006400] text-center mb-6 text-lg uppercase">Nova Senha</h3><input type="password" id="newPassInput" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnConfirmPass" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CONFIRMAR</button><button onclick="closeModal()" class="w-full text-black font-black text-xs mt-4">CANCELAR</button></div></div>`; document.getElementById('btnConfirmPass').onclick = () => { const newPass = document.getElementById('newPassInput').value; if(newPass && newPass.length >= 6) { updatePassword(currentUser, newPass).then(() => { alert("Senha alterada com sucesso!"); closeModal(); }).catch(e => alert("Erro: Faça logout e login novamente para trocar a senha.")); } else { alert("A senha deve ter no mínimo 6 caracteres."); } }; };
