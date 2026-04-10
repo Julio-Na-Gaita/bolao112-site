@@ -15,7 +15,7 @@
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ADICIONADO: enableIndexedDbPersistence
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const registerServiceWorker = () => {
   if (!('serviceWorker' in navigator)) return;
@@ -110,6 +110,17 @@ const getAppVersionShort = () => getAppVersion().replace(/^web-/, '');
 const getAppVersionLabel = () => `Web v${getAppVersionShort()}`;
 const getAppVersionFullLabel = () => `Versão ${getAppVersionLabel()}`;
 
+const CHAT_MAX_MESSAGE_LENGTH = 280;
+const CHAT_ALLOWED_REACTIONS = Object.freeze([
+  "\u{1F44D}",
+  "\u{1F602}",
+  "\u{1F525}",
+  "\u{1F621}",
+  "\u{1F62D}"
+]);
+
+let matchesLoadRequestSeq = 0;
+
 const syncStaticVersionLabels = () => {
   document.querySelectorAll('[data-app-version-label]').forEach((el) => {
     el.textContent = getAppVersionLabel();
@@ -119,7 +130,7 @@ const syncStaticVersionLabels = () => {
   });
 };
 
-const formatUserText = (value = '') => escapeHtml(value).replace(/\n/g, '<br>');
+const formatUserText = (value = '') => escapeHtml(stripControlChars(String(value || "").normalize("NFC"))).replace(/\n/g, '<br>');
 
 const ensureExternalScript = (src, globalKey) => {
   if (globalKey && window[globalKey]) return Promise.resolve(window[globalKey]);
@@ -1522,9 +1533,9 @@ async function renderRules(forceRefresh = false) {
                 return `
                 <div class="card-container mb-4 animate-fade-in grid grid-cols-2 gap-2">
                     <a href="${link1}" target="_blank" class="block rounded-xl overflow-hidden shadow-md border border-gray-200 relative group aspect-[4/3]">
-                        <img src="${img1}" referrerpolicy="no-referrer" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                        <img src="${img1}" referrerpolicy="no-referrer" loading="lazy" decoding="async" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </a>
-                    ${img2 ? `<a href="${link2}" target="_blank" class="block rounded-xl overflow-hidden shadow-md border border-gray-200 relative group aspect-[4/3]"><img src="${img2}" referrerpolicy="no-referrer" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"></a>` : ''}
+                    ${img2 ? `<a href="${link2}" target="_blank" class="block rounded-xl overflow-hidden shadow-md border border-gray-200 relative group aspect-[4/3]"><img src="${img2}" referrerpolicy="no-referrer" loading="lazy" decoding="async" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"></a>` : ''}
                 </div>`;
             }
 
@@ -1532,7 +1543,7 @@ async function renderRules(forceRefresh = false) {
                  return `
                 <div class="card-container mb-4 animate-fade-in">
                     <a href="${link1}" target="_blank" class="block rounded-lg overflow-hidden shadow-sm border border-gray-200 relative group aspect-[6/1]">
-                        <img src="${img1}" referrerpolicy="no-referrer" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                        <img src="${img1}" referrerpolicy="no-referrer" loading="lazy" decoding="async" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </a>
                 </div>`;
             }
@@ -1540,8 +1551,8 @@ async function renderRules(forceRefresh = false) {
             return `
             <div class="card-container mb-4 animate-fade-in">
                 <a href="${link1}" target="_blank" class="block rounded-xl overflow-hidden shadow-lg border border-gray-200 relative group aspect-[2.7/1]">
-                    <img src="${img1}" referrerpolicy="no-referrer" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.style.display='none'">
-                    ${bannerData.name ? `<div class="absolute bottom-0 right-0 bg-black/60 text-white text-[8px] px-2 py-1 font-bold rounded-tl-lg">${bannerData.name}</div>` : ''}
+                    <img src="${img1}" referrerpolicy="no-referrer" loading="lazy" decoding="async" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onerror="this.style.display='none'">
+                    ${bannerData.name ? `<div class="absolute bottom-0 right-0 bg-black/60 text-white text-[8px] px-2 py-1 font-bold rounded-tl-lg">${escapeHtml(bannerData.name)}</div>` : ''}
                 </a>
             </div>`;
         };
@@ -1575,7 +1586,7 @@ async function renderRules(forceRefresh = false) {
     optionsHtml += `
       <button ${clickAction} class="w-full text-left px-4 py-3 rounded-2xl ${border} bg-white mb-2">
         <div class="flex items-center justify-between gap-3">
-          <span class="text-sm font-black ${textColor}">${opt}</span>
+          <span class="text-sm font-black ${textColor}">${escapeHtml(opt)}</span>
           <span class="text-xs font-black ${textColor}">${pct}%</span>
         </div>
         <div class="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden">
@@ -1588,7 +1599,7 @@ async function renderRules(forceRefresh = false) {
   return `
     <div class="bg-white rounded-[26px] border-[3px] border-[#006400] shadow-lg p-4 mb-3">
       <div class="flex items-center justify-between gap-3 mb-3">
-        <h3 class="text-base font-black text-[#006400]">${poll.question}</h3>
+        <h3 class="text-base font-black text-[#006400]">${escapeHtml(poll.question)}</h3>
         ${isExpired ? `<span class="text-[10px] font-black text-red-600">ENCERRADA</span>` : ``}
       </div>
 
@@ -1903,6 +1914,142 @@ const escapeJsString = (value = "") =>
     .replace(/\n/g, " ")
     .replace(/\r/g, " ");
 
+const clampTextLength = (value = "", max = CHAT_MAX_MESSAGE_LENGTH) =>
+  Array.from(String(value || "")).slice(0, max).join("");
+
+const stripControlChars = (value = "") =>
+  String(value || "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+
+const normalizeChatMessageInput = (value = "") =>
+  clampTextLength(
+    stripControlChars(String(value || "").normalize("NFC")).replace(/\r\n?/g, "\n").trim(),
+    CHAT_MAX_MESSAGE_LENGTH
+  );
+
+const getTextLength = (value = "") => Array.from(String(value || "")).length;
+
+const normalizeChatUserName = (value = "") => {
+  const sanitized = clampTextLength(
+    stripControlChars(String(value || "").normalize("NFC")).trim(),
+    40
+  );
+  return sanitized || "Anonimo";
+};
+
+const normalizeChatReaction = (value = "") => {
+  const normalized = String(value || "").normalize("NFC").trim();
+  return CHAT_ALLOWED_REACTIONS.includes(normalized) ? normalized : "";
+};
+
+const createBaseHomeSection = (id, type) => ({
+  id,
+  type,
+  enabled: true,
+  title: "",
+  subtitle: "",
+  body: "",
+  bannerId: "",
+  mediaUrl: "",
+  mediaBase64: "",
+  style: "default",
+  action: { type: "none", value: "", label: "" },
+  visibility: {
+    adminsOnly: false,
+    requiresPendingVotes: false,
+    requiresUnreadOpenChat: false,
+    requiresUnreadWaitingChat: false,
+    requiresUnreadFinishedChat: false,
+    featureFlag: "",
+    competition: "",
+    userSegment: "",
+    startAt: null,
+    endAt: null
+  }
+});
+
+const getBaseHomeSections = () => ([
+  createBaseHomeSection("base_fast_vote", "fast_vote"),
+  createBaseHomeSection("base_matches_open", "matches_open"),
+  createBaseHomeSection("base_matches_wait", "matches_wait"),
+  createBaseHomeSection("base_matches_done", "matches_done")
+]);
+
+const getStatusToneChipClass = (tone = "default") => ({
+  default: "status-chip--default",
+  success: "status-chip--success",
+  warning: "status-chip--warning",
+  danger: "status-chip--danger"
+}[tone] || "status-chip--default");
+
+const renderCompactEmptyState = ({ title, description, tone = "default" }) => {
+  const toneClass = {
+    default: "empty-state--default",
+    success: "empty-state--success",
+    warning: "empty-state--warning",
+    danger: "empty-state--danger"
+  }[tone] || "empty-state--default";
+
+  return `
+    <div class="empty-state ${toneClass}">
+      <p class="empty-state__title">${escapeHtml(title)}</p>
+      <p class="empty-state__description">${escapeHtml(description)}</p>
+    </div>
+  `;
+};
+
+const renderSkeletonBlock = (lines = 3) => `
+  <div class="skeleton-card">
+    ${Array.from({ length: lines }).map((_, index) => `
+      <div class="skeleton-line ${index === 0 ? "skeleton-line--short" : ""}"></div>
+    `).join("")}
+  </div>
+`;
+
+const renderDeferredHomeSkeleton = () => `
+  <div class="surface-card mb-4 p-4">
+    <div class="status-chip status-chip--default mb-3">Atualizando destaques</div>
+    <div class="space-y-3">
+      ${renderSkeletonBlock(3)}
+    </div>
+  </div>
+`;
+
+const renderMatchesScreenSkeleton = () => `
+  <div class="space-y-4">
+    ${renderDeferredHomeSkeleton()}
+    ${Array.from({ length: 3 }).map(() => `
+      <section class="surface-card overflow-hidden">
+        <div class="px-4 py-3 bg-white/80 border-b border-gray-100">
+          <div class="flex items-center justify-between gap-3">
+            <div class="status-chip status-chip--default">Carregando jogos</div>
+            <div class="skeleton-pill"></div>
+          </div>
+        </div>
+        <div class="p-3 space-y-3">
+          ${renderSkeletonBlock(4)}
+        </div>
+      </section>
+    `).join("")}
+  </div>
+`;
+
+const renderRankingScreenSkeleton = () => `
+  <div class="space-y-3">
+    ${Array.from({ length: 6 }).map(() => `
+      <div class="surface-card p-4">
+        <div class="flex items-center gap-3">
+          <div class="skeleton-avatar"></div>
+          <div class="flex-1 space-y-2">
+            <div class="skeleton-line skeleton-line--medium"></div>
+            <div class="skeleton-line skeleton-line--short"></div>
+          </div>
+          <div class="skeleton-pill"></div>
+        </div>
+      </div>
+    `).join("")}
+  </div>
+`;
+
 const resolveSectionMediaSource = (section) => {
   const mediaUrl = String(section.mediaUrl || "").trim();
   const mediaBase64 = String(section.mediaBase64 || "").trim();
@@ -2033,7 +2180,7 @@ window.toggleHomeSectionCollapse = async (sectionKey) => {
   loadMatches();
 };
 
-const renderCollapsibleSection = ({ sectionKey, title, count, accentClass, contentHtml, emptyHtml = "", defaultCollapsed = false }) => {
+const renderCollapsibleSection = ({ sectionKey, title, count, accentClass, tone = "default", contentHtml, emptyHtml = "", defaultCollapsed = false }) => {
   if (!(sectionKey in homeSectionCollapseState)) {
     homeSectionCollapseState[sectionKey] = defaultCollapsed;
   }
@@ -2042,16 +2189,14 @@ const renderCollapsibleSection = ({ sectionKey, title, count, accentClass, conte
   const chevron = isCollapsed ? "▾" : "▴";
 
   return `
-    <section class="mb-4 bg-white rounded-2xl shadow-sm border border-[#E5E7EB] overflow-hidden">
+    <section class="mb-4 surface-card overflow-hidden">
       <button
         type="button"
         onclick="window.toggleHomeSectionCollapse('${sectionKey}')"
-        class="w-full relative px-4 py-3 bg-[#F9FAFB]"
+        class="w-full relative px-4 py-3 bg-white/80"
       >
         <div class="flex flex-col items-center justify-center text-center">
-          <h3 class="${accentClass} font-black uppercase text-sm sm:text-base">
-            ${title}
-          </h3>
+          <span class="status-chip ${getStatusToneChipClass(tone)} ${accentClass}">${title}</span>
           <span class="text-xs font-black text-gray-500">
             (${count})
           </span>
@@ -2235,8 +2380,13 @@ const renderMatchesOpenBlock = async (open, allUsersData, myVotesMap) => {
     title: "✅ DISPONÍVEIS",
     count: open.length,
     accentClass: "text-[#006400]",
+    tone: "success",
     contentHtml,
-    emptyHtml: `<div class="px-1 py-4 text-sm text-gray-500">Nenhum confronto aberto.</div>`,
+    emptyHtml: renderCompactEmptyState({
+      title: "Nenhum confronto aberto",
+      description: "Assim que um novo jogo for liberado, ele aparece aqui.",
+      tone: "success"
+    }),
     defaultCollapsed: false
   });
 };
@@ -2249,8 +2399,13 @@ const renderMatchesWaitingBlock = async (waiting, allUsersData, myVotesMap) => {
     title: "⏳ AGUARDANDO",
     count: waiting.length,
     accentClass: "text-[#8A6D00]",
+    tone: "warning",
     contentHtml,
-    emptyHtml: `<div class="px-1 py-4 text-sm text-gray-500">Nenhum confronto aguardando.</div>`,
+    emptyHtml: renderCompactEmptyState({
+      title: "Nada aguardando resultado",
+      description: "Quando o prazo fechar, o confronto entra nesta area.",
+      tone: "warning"
+    }),
     defaultCollapsed: false
   });
 };
@@ -2263,8 +2418,13 @@ const renderMatchesDoneBlock = async (finished, allUsersData, myVotesMap) => {
     title: "🏁 FINALIZADOS",
     count: finished.length,
     accentClass: "text-[#B71C1C]",
+    tone: "danger",
     contentHtml,
-    emptyHtml: `<div class="px-1 py-4 text-sm text-gray-500">Nenhum confronto finalizado.</div>`,
+    emptyHtml: renderCompactEmptyState({
+      title: "Ainda sem jogos finalizados",
+      description: "Os resultados encerrados ficam organizados neste bloco.",
+      tone: "danger"
+    }),
     defaultCollapsed: true
   });
 };
@@ -2279,9 +2439,10 @@ const renderHomeSectionsWeb = async ({
   myVotesMap,
   bannersMap,
   activePoll,
-  newsContent
+  newsContent,
+  extrasPending = false
 }) => {
-  let html = "";
+  let html = extrasPending ? renderDeferredHomeSkeleton() : "";
   const firstActiveBanner = Object.values(bannersMap).find(item => item.active) || null;
   const pendingOpenMatches = open.filter(m => !myVotesMap[m.id]);
 
@@ -2337,6 +2498,203 @@ const renderHomeSectionsWeb = async ({
   return html;
 };
 
+const buildMatchesCriticalData = ({ setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap }) => {
+  compMap = {};
+  if (setSnap.exists()) {
+    const items = Array.isArray(setSnap.data().items) ? setSnap.data().items : [];
+    items.forEach((item) => {
+      if (item?.name) compMap[item.name] = item.logo || "";
+    });
+  }
+
+  const allUsersData = [];
+  uSnap.forEach((d) => {
+    const data = d.data() || {};
+    allUsersData.push({
+      id: d.id,
+      uid: d.id,
+      ...data,
+      name: data.name || data.username || "Sem nome",
+      createdDate: toJsDate(data.createdAt) || new Date(0),
+      debts: Number(data.debts || 0),
+      isAdmin: data.isAdmin === true
+    });
+  });
+
+  const guessesData = [];
+  const myVotesMap = {};
+  const statsMap = {};
+
+  guessesSnap.forEach((d) => {
+    const guess = d.data() || {};
+    guessesData.push({ id: d.id, ...guess });
+
+    if (guess.userId === currentUser?.uid) {
+      myVotesMap[guess.matchId] = guess.teamSelected;
+    }
+
+    if (!statsMap[guess.matchId]) {
+      statsMap[guess.matchId] = { a: 0, b: 0 };
+    }
+
+    if (guess.teamSelected && statsMap[guess.matchId]) {
+      if (!statsMap[guess.matchId][guess.teamSelected]) {
+        statsMap[guess.matchId][guess.teamSelected] = 0;
+      }
+      statsMap[guess.matchId][guess.teamSelected] += 1;
+    }
+  });
+
+  globalServerCounts = {};
+  commentsSnap.forEach((d) => {
+    const data = d.data() || {};
+    const matchId = data.matchId || d.id;
+
+    if (!matchId) return;
+
+    if (typeof data.count === "number") {
+      globalServerCounts[matchId] = data.count;
+    } else if (Array.isArray(data.comments)) {
+      globalServerCounts[matchId] = data.comments.length;
+    } else {
+      globalServerCounts[matchId] = 0;
+    }
+  });
+
+  const now = new Date();
+  const matches = [];
+
+  matchesSnap.forEach((d) => {
+    const m = { id: d.id, ...d.data() };
+    const deadlineDate = toJsDate(m.deadline);
+    if (!deadlineDate) return;
+
+    m.deadlineDate = deadlineDate;
+    m.expired = now > deadlineDate;
+    m.final = String(m.round || "").toLowerCase() === "final";
+    m.stats = statsMap[m.id] || {};
+    matches.push(m);
+  });
+
+  matches.sort(matchComparator);
+  window.cachedMatches = matches;
+
+  const open = [];
+  const waiting = [];
+  const finished = [];
+
+  matches.forEach((m, idx) => {
+    m.matchNumber = idx + 1;
+
+    if (m.winner) finished.push(m);
+    else if (m.expired) waiting.push(m);
+    else open.push(m);
+  });
+
+  waiting.sort(matchComparator);
+  finished.sort((a, b) => matchComparator(b, a));
+
+  return {
+    matches,
+    open,
+    waiting,
+    finished,
+    allUsersData,
+    myVotesMap,
+    guessesData,
+    runtime: buildHomeVisibilityRuntime({
+      matches,
+      open,
+      waiting,
+      finished,
+      myVotesMap,
+      allUsersData
+    })
+  };
+};
+
+const buildInitialMatchesScreenState = (criticalData) => ({
+  sections: getBaseHomeSections(),
+  runtime: criticalData.runtime,
+  open: criticalData.open,
+  waiting: criticalData.waiting,
+  finished: criticalData.finished,
+  allUsersData: criticalData.allUsersData,
+  myVotesMap: criticalData.myVotesMap,
+  bannersMap: {},
+  activePoll: null,
+  newsContent: "",
+  extrasPending: true,
+  cachedAt: Date.now()
+});
+
+const buildFinalMatchesScreenState = (criticalData, { newsSnap, layoutSnap, bannersSnap, pollsSnap }) => {
+  const parsedLayout = parseHomeLayoutDoc(layoutSnap);
+  layoutOrder = parsedLayout.order;
+  homeSections = parsedLayout.sections;
+
+  const bannersMap = {};
+  bannersSnap.forEach((d) => {
+    const b = d.data() || {};
+    bannersMap[d.id] = {
+      id: d.id,
+      ...b,
+      name: b.name || "",
+      type: b.type || "full",
+      imageUrl: fixDriveUrl(b.imageUrl || ""),
+      targetUrl: b.targetUrl || "",
+      imageUrl2: fixDriveUrl(b.imageUrl2 || ""),
+      targetUrl2: b.targetUrl2 || "",
+      active: b.active !== false
+    };
+  });
+  activeBannersMap = bannersMap;
+
+  const pollsMap = {};
+  let activePoll = null;
+
+  pollsSnap.forEach((d) => {
+    const p = d.data() || {};
+    const poll = {
+      id: d.id,
+      question: p.question || "",
+      options: Array.isArray(p.options) ? p.options : [],
+      votes: (p.votes && typeof p.votes === "object") ? p.votes : {},
+      userVotes: (p.userVotes && typeof p.userVotes === "object") ? p.userVotes : {},
+      active: p.active !== false,
+      deadline: p.deadline || null
+    };
+
+    pollsMap[d.id] = poll;
+    if (!activePoll && poll.active) activePoll = poll;
+  });
+  activePolls = pollsMap;
+
+  const expiredMatches = criticalData.matches.filter((m) => m.deadlineDate < new Date());
+  const newsContent = generateNewsFeed(
+    newsSnap,
+    criticalData.guessesData,
+    criticalData.finished,
+    criticalData.allUsersData,
+    expiredMatches
+  );
+
+  return {
+    sections: homeSections.length ? homeSections : getBaseHomeSections(),
+    runtime: criticalData.runtime,
+    open: criticalData.open,
+    waiting: criticalData.waiting,
+    finished: criticalData.finished,
+    allUsersData: criticalData.allUsersData,
+    myVotesMap: criticalData.myVotesMap,
+    bannersMap,
+    activePoll,
+    newsContent,
+    extrasPending: false,
+    cachedAt: Date.now()
+  };
+};
+
 const startWebAdminSync = () => {
   if (__appStateUnsub) return;
 
@@ -2370,6 +2728,13 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
     return;
   }
 
+  const requestId = ++matchesLoadRequestSeq;
+
+  if (!cachedState) {
+    container.innerHTML = renderMatchesScreenSkeleton();
+    applyRemoteBackgrounds();
+  }
+
   progressBar?.classList.remove("hidden");
 
   try {
@@ -2378,195 +2743,65 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
       matchesSnap,
       guessesSnap,
       uSnap,
-      commentsSnap,
-      newsSnap,
-      layoutSnap,
-      bannersSnap,
-      pollsSnap
+      commentsSnap
     ] = await Promise.all([
       readWithRuntimeCache("doc:settings:competitions", () => getDoc(doc(db, "settings", "competitions")), { ttlMs: DATA_CACHE_TTL.cold, force }),
       readWithRuntimeCache("col:matches", () => getDocs(collection(db, "matches")), { ttlMs: DATA_CACHE_TTL.hot, force }),
       readWithRuntimeCache("col:guesses", () => getDocs(collection(db, "guesses")), { ttlMs: DATA_CACHE_TTL.hot, force }),
       readWithRuntimeCache("col:users", () => getDocs(collection(db, "users")), { ttlMs: DATA_CACHE_TTL.warm, force }),
-      readWithRuntimeCache("col:match_comments", () => getDocs(collection(db, "match_comments")), { ttlMs: DATA_CACHE_TTL.hot, force }),
-      readWithRuntimeCache("doc:settings:news", () => getDoc(doc(db, "settings", "news")), { ttlMs: DATA_CACHE_TTL.warm, force }),
-      readWithRuntimeCache("doc:settings:home_layout", () => getDoc(doc(db, "settings", "home_layout")), { ttlMs: DATA_CACHE_TTL.warm, force }),
-      readWithRuntimeCache("col:banners", () => getDocs(collection(db, "banners")), { ttlMs: DATA_CACHE_TTL.warm, force }),
-      readWithRuntimeCache("col:polls", () => getDocs(collection(db, "polls")), { ttlMs: DATA_CACHE_TTL.hot, force })
+      readWithRuntimeCache("col:match_comments", () => getDocs(collection(db, "match_comments")), { ttlMs: DATA_CACHE_TTL.hot, force })
     ]);
 
-    compMap = {};
-    if (setSnap.exists()) {
-      const items = Array.isArray(setSnap.data().items) ? setSnap.data().items : [];
-      items.forEach((item) => {
-        if (item?.name) compMap[item.name] = item.logo || "";
+    if (requestId !== matchesLoadRequestSeq) return;
+
+    const criticalData = buildMatchesCriticalData({
+      setSnap,
+      matchesSnap,
+      guessesSnap,
+      uSnap,
+      commentsSnap
+    });
+
+    const initialState = buildInitialMatchesScreenState(criticalData);
+    window.__matchesScreenStateCache = initialState;
+    await renderMatchesScreenFromState(initialState);
+    progressBar?.classList.add("hidden");
+
+    try {
+      const [newsSnap, layoutSnap, bannersSnap, pollsSnap] = await Promise.all([
+        readWithRuntimeCache("doc:settings:news", () => getDoc(doc(db, "settings", "news")), { ttlMs: DATA_CACHE_TTL.warm, force }),
+        readWithRuntimeCache("doc:settings:home_layout", () => getDoc(doc(db, "settings", "home_layout")), { ttlMs: DATA_CACHE_TTL.warm, force }),
+        readWithRuntimeCache("col:banners", () => getDocs(collection(db, "banners")), { ttlMs: DATA_CACHE_TTL.warm, force }),
+        readWithRuntimeCache("col:polls", () => getDocs(collection(db, "polls")), { ttlMs: DATA_CACHE_TTL.hot, force })
+      ]);
+
+      if (requestId !== matchesLoadRequestSeq) return;
+
+      const finalState = buildFinalMatchesScreenState(criticalData, {
+        newsSnap,
+        layoutSnap,
+        bannersSnap,
+        pollsSnap
       });
+
+      window.__matchesScreenStateCache = finalState;
+      await renderMatchesScreenFromState(finalState);
+    } catch (secondaryError) {
+      console.error("Erro ao carregar blocos secundarios da home:", secondaryError);
     }
-
-    const allUsersData = [];
-    uSnap.forEach((d) => {
-      const data = d.data() || {};
-      allUsersData.push({
-        id: d.id,
-        uid: d.id,
-        ...data,
-        name: data.name || data.username || "Sem nome",
-        createdDate: toJsDate(data.createdAt) || new Date(0),
-        debts: Number(data.debts || 0),
-        isAdmin: data.isAdmin === true
-      });
-    });
-
-    const guessesData = [];
-    const myVotesMap = {};
-    const statsMap = {};
-
-    guessesSnap.forEach((d) => {
-      const guess = d.data() || {};
-      guessesData.push({ id: d.id, ...guess });
-
-      if (guess.userId === currentUser?.uid) {
-        myVotesMap[guess.matchId] = guess.teamSelected;
-      }
-
-      if (!statsMap[guess.matchId]) {
-        statsMap[guess.matchId] = { a: 0, b: 0 };
-      }
-
-      if (guess.teamSelected && statsMap[guess.matchId]) {
-        if (!statsMap[guess.matchId][guess.teamSelected]) {
-          statsMap[guess.matchId][guess.teamSelected] = 0;
-        }
-        statsMap[guess.matchId][guess.teamSelected] += 1;
-      }
-    });
-
-    globalServerCounts = {};
-    commentsSnap.forEach((d) => {
-      const data = d.data() || {};
-      const matchId = data.matchId || d.id;
-
-      if (!matchId) return;
-
-      if (typeof data.count === "number") {
-        globalServerCounts[matchId] = data.count;
-      } else if (Array.isArray(data.comments)) {
-        globalServerCounts[matchId] = data.comments.length;
-      } else {
-        globalServerCounts[matchId] = 0;
-      }
-    });
-
-    const now = new Date();
-    const matches = [];
-
-    matchesSnap.forEach((d) => {
-      const m = { id: d.id, ...d.data() };
-      const deadlineDate = toJsDate(m.deadline);
-      if (!deadlineDate) return;
-
-      m.deadlineDate = deadlineDate;
-      m.expired = now > deadlineDate;
-      m.final = String(m.round || "").toLowerCase() === "final";
-      m.stats = statsMap[m.id] || {};
-      matches.push(m);
-    });
-
-    matches.sort(matchComparator);
-    window.cachedMatches = matches;
-
-    const open = [];
-    const waiting = [];
-    const finished = [];
-
-    matches.forEach((m, idx) => {
-      m.matchNumber = idx + 1;
-
-      if (m.winner) finished.push(m);
-      else if (m.expired) waiting.push(m);
-      else open.push(m);
-    });
-
-    waiting.sort(matchComparator);
-    finished.sort((a, b) => matchComparator(b, a));
-
-    const parsedLayout = parseHomeLayoutDoc(layoutSnap);
-    layoutOrder = parsedLayout.order;
-    homeSections = parsedLayout.sections;
-
-    const bannersMap = {};
-    bannersSnap.forEach((d) => {
-      const b = d.data() || {};
-      bannersMap[d.id] = {
-        id: d.id,
-        ...b,
-        name: b.name || "",
-        type: b.type || "full",
-        imageUrl: fixDriveUrl(b.imageUrl || ""),
-        targetUrl: b.targetUrl || "",
-        imageUrl2: fixDriveUrl(b.imageUrl2 || ""),
-        targetUrl2: b.targetUrl2 || "",
-        active: b.active !== false
-      };
-    });
-    activeBannersMap = bannersMap;
-
-    const pollsMap = {};
-    let activePoll = null;
-
-    pollsSnap.forEach((d) => {
-      const p = d.data() || {};
-      const poll = {
-        id: d.id,
-        question: p.question || "",
-        options: Array.isArray(p.options) ? p.options : [],
-        votes: (p.votes && typeof p.votes === "object") ? p.votes : {},
-        userVotes: (p.userVotes && typeof p.userVotes === "object") ? p.userVotes : {},
-        active: p.active !== false,
-        deadline: p.deadline || null
-      };
-
-      pollsMap[d.id] = poll;
-      if (!activePoll && poll.active) activePoll = poll;
-    });
-    activePolls = pollsMap;
-
-    const expiredMatches = matches.filter((m) => m.deadlineDate < new Date());
-    const newsContent = generateNewsFeed(
-      newsSnap,
-      guessesData,
-      finished,
-      allUsersData,
-      expiredMatches
-    );
-
-    const runtime = buildHomeVisibilityRuntime({
-      matches,
-      open,
-      waiting,
-      finished,
-      myVotesMap,
-      allUsersData
-    });
-
-    const screenState = {
-  sections: homeSections,
-  runtime,
-  open,
-  waiting,
-  finished,
-  allUsersData,
-  myVotesMap,
-  bannersMap,
-  activePoll,
-  newsContent,
-  cachedAt: Date.now()
-};
-
-window.__matchesScreenStateCache = screenState;
-await renderMatchesScreenFromState(screenState);
   } catch (e) {
     console.error("Erro fatal loadMatches:", e);
+    if (!cachedState) {
+      container.innerHTML = `
+        <div class="p-4">
+          ${renderCompactEmptyState({
+            title: "Erro ao carregar confrontos",
+            description: "Confira sua conexao e toque em atualizar para tentar de novo.",
+            tone: "danger"
+          })}
+        </div>
+      `;
+    }
   } finally {
     progressBar?.classList.add("hidden");
   }
@@ -2601,7 +2836,7 @@ await renderMatchesScreenFromState(screenState);
                 
                 // --- CÁLCULO CIRÚRGICO DO TERMÔMETRO ---
                 // Conta apenas usuários que existiam ANTES do prazo do jogo
-                const validCount = usersList.filter(u => u.createdAt < m.deadlineDate).length;
+                const validCount = usersList.filter(u => (u.createdDate || u.createdAt || new Date(0)) < m.deadlineDate).length;
                 // Garante que o total seja pelo menos 1 ou o número de votos (segurança contra inconsistência)
                 const safeTotalUsers = Math.max(validCount || 1, totalVotes);
                 // ---------------------------------------
@@ -3086,9 +3321,9 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
   }
 
   footer.innerHTML = "";
-  listContainer.innerHTML = `
-    <div class="text-center py-6 text-sm text-gray-500 font-bold">Atualizando ranking...</div>
-  `;
+  if (!cachedRanking) {
+    listContainer.innerHTML = renderRankingScreenSkeleton();
+  }
 
   try {
     const [uSnap, gSnap, mSnap] = await Promise.all([
@@ -5251,6 +5486,7 @@ document.getElementById('btnLogout').onclick = () => {
    [BLOCO A] GLOBAL: guarda o listener atual do chat
      ================================ */
 window.currentChatUnsub = null;
+window.__currentChatMessagesById = {};
        // --- CHAT COM MÚLTIPLAS REAÇÕES ---
         window.openMatchComments = async (mid, ta, tb, winner) => {
             if (!appConfig.chat) {
@@ -5261,6 +5497,7 @@ window.currentChatUnsub = null;
   window.currentChatUnsub();
   window.currentChatUnsub = null;
 }
+            window.__currentChatMessagesById = {};
             const currentCount = globalServerCounts[mid] || 0;
             localStorage.setItem(`read_count_${mid}`, currentCount);
             const matchBtns = document.querySelectorAll(`button[onclick*="${mid}"]`);
@@ -5276,12 +5513,19 @@ window.currentChatUnsub = null;
 
             // Função para salvar reação no Firestore (Map: userId -> emoji)
             window.selectReaction = async (msgId, emoji) => {
+                const normalizedEmoji = normalizeChatReaction(emoji);
+                if (!normalizedEmoji) return;
                 const ref = doc(db, "match_comments", msgId);
                 const key = `reactions.${currentUser.uid}`;
                 // Se clicar no mesmo, remove (toggle). Se for diferente, atualiza.
                 // Como ler o estado atual é complexo no onclick, vamos apenas setar por enquanto.
                 // Para toggle perfeito, precisariamos ler o doc antes, mas para performance vamos apenas escrever.
-                await updateDoc(ref, { [key]: emoji });
+                const currentMessage = window.__currentChatMessagesById?.[msgId] || {};
+                const currentReaction = normalizeChatReaction(currentMessage.reactions?.[currentUser.uid] || "");
+                const payload = currentReaction === normalizedEmoji
+                  ? { [key]: deleteField() }
+                  : { [key]: normalizedEmoji };
+                await updateDoc(ref, payload);
                 
                 // Fecha o menu de reação dessa mensagem
                 const menu = document.getElementById(`react-menu-${msgId}`);
@@ -5362,7 +5606,7 @@ window.currentChatUnsub = null;
                              <p class="text-xs font-bold text-gray-500">⛔ Chat encerrado (Jogo Finalizado)</p>
                             </div>`
                         : `<div class="p-2 bg-white border-t flex items-center gap-2 shrink-0">
-                             <input type="text" id="commentInput" placeholder="Digite sua resenha..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none border focus:border-[#006400]">
+                             <input type="text" id="commentInput" maxlength="${CHAT_MAX_MESSAGE_LENGTH}" aria-label="Mensagem da resenha" placeholder="Digite sua resenha..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none border focus:border-[#006400]">
                              <button onclick="sendComment('${mid}')" class="bg-[#006400] text-white w-10 h-10 rounded-full shadow flex items-center justify-center btn-press"><i class="fas fa-paper-plane text-xs"></i></button>
                             </div>`
                     }
@@ -5378,6 +5622,7 @@ window.currentChatUnsub = null;
   const msgs = [];
   snap.forEach(d => msgs.push({ id: d.id, ...d.data() }));
   msgs.sort((a,b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+  window.__currentChatMessagesById = Object.fromEntries(msgs.map((msg) => [msg.id, msg]));
   
   if(msgs.length > currentCount) {
     localStorage.setItem(`read_count_${mid}`, msgs.length);
@@ -5386,10 +5631,18 @@ window.currentChatUnsub = null;
 });
             
             window.sendComment = async (matchId) => {
-                const txt = document.getElementById('commentInput').value.trim();
+                const input = document.getElementById('commentInput');
+                const rawValue = input?.value || "";
+                const rawLength = getTextLength(rawValue.trim());
+                const txt = normalizeChatMessageInput(rawValue);
                 if(!txt) return;
+                if(rawLength > CHAT_MAX_MESSAGE_LENGTH) {
+                    alert(`Sua mensagem pode ter no maximo ${CHAT_MAX_MESSAGE_LENGTH} caracteres.`);
+                    input?.focus();
+                    return;
+                }
                 const uDoc = await getDoc(doc(db, "users", currentUser.uid));
-                const uData = uDoc.data();
+                const uData = uDoc.data() || {};
                 await addDoc(collection(db, "match_comments"), { 
                     matchId: matchId, 
                     userId: currentUser.uid, 
@@ -5399,8 +5652,8 @@ window.currentChatUnsub = null;
                     timestamp: serverTimestamp(), 
                     reactions: {} // Inicializa vazio
                 });
-                document.getElementById('commentInput').value = "";
-                document.getElementById('commentInput').focus();
+                input.value = "";
+                input.focus();
             };
         };
 window.__toggleScoutInfo = (id) => {

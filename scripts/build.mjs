@@ -104,35 +104,43 @@ const build = async () => {
   await copyStaticAssets();
   await optimizeImages();
 
+  const minifiedStylesPath = '/styles.min.css';
+  const minifiedAppPath = '/app.min.js';
+  const versionedStylesPath = `${minifiedStylesPath}?v=${appVersion}`;
+  const versionedAppPath = `${minifiedAppPath}?v=${appVersion}`;
+  const versionedFaviconPath = `/favicon.png?v=${appVersion}`;
   const precacheAssets = [
     '/',
     '/index.html',
-    '/styles.min.css',
-    '/app.min.js',
-    '/favicon.png'
+    versionedStylesPath,
+    versionedAppPath,
+    versionedFaviconPath
   ];
 
-  const swContent = `const CACHE_NAME = 'bolao112-site-${appVersion}';
+  const swContent = `const SW_URL = new URL(self.location.href);
+const APP_VERSION = SW_URL.searchParams.get('v') || '${appVersion}';
+const CACHE_NAME = \`bolao112-site-\${APP_VERSION}\`;
+
 const ASSETS = ${JSON.stringify(precacheAssets, null, 2)};
 
-// Arquivos que DEVEM atualizar sempre (network-first)
-const CRITICAL = ['/app.min.js', '/styles.min.css', '/index.html'];
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    Promise.all([
-      caches.keys().then((keys) =>
-        Promise.all(keys.map((key) => (key === CACHE_NAME ? null : caches.delete(key))))
-      ),
-      self.clients.claim()
-    ])
+    caches.keys().then((keys) =>
+      Promise.all(keys.map((key) => (key === CACHE_NAME ? null : caches.delete(key))))
+    ).then(() => self.clients.claim())
   );
 });
 
@@ -142,10 +150,16 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
+  const isCriticalAsset =
+    url.pathname === '/' ||
+    url.pathname.endsWith('/index.html') ||
+    url.pathname.endsWith('${minifiedAppPath.replace(/^\//, '')}') ||
+    url.pathname.endsWith('${minifiedStylesPath.replace(/^\//, '')}');
+
   // NETWORK FIRST para arquivos críticos
-  if (CRITICAL.includes(url.pathname)) {
+  if (event.request.mode === 'navigate' || isCriticalAsset) {
     event.respondWith(
-      fetch(event.request)
+      fetch(new Request(event.request, { cache: 'no-store' }))
         .then((response) => {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
