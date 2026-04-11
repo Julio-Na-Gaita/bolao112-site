@@ -4738,49 +4738,51 @@ return `
         class="w-full text-left mb-2 rounded-2xl border border-gray-200 ${rowBg} px-3 py-3 hover:bg-black/5 active:bg-black/10 transition cursor-pointer"
         title="Abrir palpites registrados deste confronto"
     >
-        <div class="grid grid-cols-[42px_minmax(0,1fr)_52px_56px] items-center gap-2.5">
-            <div class="text-center shrink-0">
+        <div class="grid grid-cols-[42px_minmax(0,1fr)_52px_58px] items-center gap-2">
+            <div class="h-full text-center shrink-0 flex flex-col items-center justify-between py-1">
                 <div class="text-[11px] font-black text-gray-500 leading-none">${dateText}</div>
-                <div class="mt-3 flex justify-center leading-none">
+                <div class="flex justify-center leading-none">
                     ${resultIcon}
                 </div>
             </div>
 
             <div class="min-w-0">
-                <div class="grid grid-cols-[44px_16px_44px_minmax(34px,auto)] grid-rows-[44px_minmax(14px,auto)] items-center justify-center gap-x-2 gap-y-1">
-                    <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
-                        ${teamALogo}
+                <div class="w-full flex items-center justify-center gap-2">
+                    <div class="w-[46px] flex flex-col items-center gap-1">
+                        <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+                            ${teamALogo}
+                        </div>
+                        <div class="h-[14px] flex items-center justify-center">
+                            ${votedA
+                                ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">SEU VOTO</span>`
+                                : ``
+                            }
+                        </div>
                     </div>
 
-                    <span class="row-span-2 self-center text-[14px] font-black text-black text-center leading-none shrink-0">X</span>
+                    <span class="text-[14px] font-black text-black text-center leading-none shrink-0">X</span>
 
-                    <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
-                        ${teamBLogo}
+                    <div class="w-[46px] flex flex-col items-center gap-1">
+                        <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+                            ${teamBLogo}
+                        </div>
+                        <div class="h-[14px] flex items-center justify-center">
+                            ${votedB
+                                ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">SEU VOTO</span>`
+                                : ``
+                            }
+                        </div>
                     </div>
 
-                    <div class="row-span-2 self-center min-w-[34px] text-left">
+                    <div class="w-[36px] text-left shrink-0">
                         <span class="text-[17px] font-black text-gray-400 leading-none tracking-tight">${matchNo}</span>
-                    </div>
-
-                    <div class="min-h-[14px] flex items-start justify-center">
-                        ${votedA
-                            ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">SEU VOTO</span>`
-                            : ``
-                        }
-                    </div>
-
-                    <div class="min-h-[14px] flex items-start justify-center">
-                        ${votedB
-                            ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">SEU VOTO</span>`
-                            : ``
-                        }
                     </div>
                 </div>
             </div>
 
             ${medalBadgeHtml}
 
-            <div class="w-[56px] text-right shrink-0">
+            <div class="w-[58px] shrink-0 flex flex-col items-end justify-center">
                 <div class="text-[16px] leading-none font-black ${ptsColor}">${ptsText}</div>
                 <div class="text-[11px] leading-none font-black ${ptsColor} mt-0.5">pts</div>
             </div>
