@@ -4153,8 +4153,8 @@ let html = `
                     const uniqueIcons = orderedIcons;
 
                     if (uniqueIcons.length > 0) {
-                        medalsHtml = `<div class="ranking-medals">` + 
-                            uniqueIcons.map(icon => `<span class="ranking-medal-chip">${icon}${counts[icon]>1 ? `<sup class="ranking-medal-count">${counts[icon]}</sup>`:''}</span>`).join('') + 
+                        medalsHtml = `<div class="ranking-medals">` +
+                            uniqueIcons.map(icon => `<span class="ranking-medal-chip">${icon}${counts[icon]>1 ? `<span class="ranking-medal-count">${counts[icon]}</span>` : ""}</span>`).join("") +
                         `</div>`;
                     }
 
