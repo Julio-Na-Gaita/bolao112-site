@@ -4670,12 +4670,12 @@ window.__extractMedalsCache = {};
 const votedB = (h.votedTeam || "") === (h.teamB || "");
 
 const teamALogo = h.teamAUrl
-    ? `<img src="${h.teamAUrl}" class="w-9 h-9 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
-    : `<span class="text-[10px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;
+    ? `<img src="${h.teamAUrl}" class="extract-team-logo w-9 h-9 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+    : `<span class="extract-team-fallback text-[10px] font-black text-gray-500 text-center leading-tight">${h.teamA || ''}</span>`;
 
 const teamBLogo = h.teamBUrl
-    ? `<img src="${h.teamBUrl}" class="w-9 h-9 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
-    : `<span class="text-[10px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;
+    ? `<img src="${h.teamBUrl}" class="extract-team-logo w-9 h-9 object-contain bg-white rounded-full border border-gray-200 p-0.5">`
+    : `<span class="extract-team-fallback text-[10px] font-black text-gray-500 text-center leading-tight">${h.teamB || ''}</span>`;
 
 
 const dateText = h.ts instanceof Date
@@ -4689,8 +4689,8 @@ const ptsText = `${ptsEarned > 0 ? '+' : ''}${ptsEarned}`;
 const ptsColor = ptsEarned > 0 ? 'text-[#2E7D32]' : 'text-gray-400';
 
 const resultIcon = isHit
-    ? `<i class="fas fa-check text-black text-[18px]"></i>`
-    : `<i class="fas fa-times text-black text-[18px]"></i>`;
+    ? `<i class="fas fa-check text-black text-[18px] extract-result-icon"></i>`
+    : `<i class="fas fa-times text-black text-[18px] extract-result-icon"></i>`;
 
 const rowBg = isHit ? 'bg-[#EEF6EC]' : 'bg-[#F7EAEA]';
 const matchNo = h.matchNumber ? `#${h.matchNumber}` : '';
@@ -4707,18 +4707,18 @@ if (medalsWonHere.length > 0) {
 }
 
 const medalBadgeHtml = `
-  <div class="w-[52px] flex items-center justify-center shrink-0">
+  <div class="extract-col-medal">
     ${medalsWonHere.length > 0
       ? `
         <button
           type="button"
           onclick="event.stopPropagation(); window.openExtractMedalsInline('${medalCacheKey}')"
-          class="w-[44px] h-[28px] flex items-center justify-center gap-1 rounded-full bg-[#FFF3CD] border border-[#F4D58D] shadow-sm"
+          class="extract-medal-btn"
           title="Ver medalhas deste confronto"
         >
           <span class="text-[12px] leading-none">🏅</span>
           ${medalsWonHere.length > 1
-            ? `<span class="text-[10px] font-black text-[#8D6E63] leading-none">${medalsWonHere.length}</span>`
+            ? `<span class="extract-medal-count">${medalsWonHere.length}</span>`
             : ``
           }
         </button>
@@ -4735,56 +4735,56 @@ return `
         tabindex="0"
         onclick="window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.__fromHistoryIdx)"
         onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.goToMatchRegisteredBets('${String(h.id).replace(/'/g, "\\'")}', window.__fromHistoryIdx); }"
-        class="w-full text-left mb-2 rounded-2xl border border-gray-200 ${rowBg} px-3 py-3 hover:bg-black/5 active:bg-black/10 transition cursor-pointer"
+        class="extract-match-card w-full text-left mb-2 rounded-2xl border border-gray-200 ${rowBg} px-3 py-3 hover:bg-black/5 active:bg-black/10 transition cursor-pointer"
         title="Abrir palpites registrados deste confronto"
     >
-        <div class="grid grid-cols-[42px_minmax(0,1fr)_52px_58px] items-center gap-2">
-            <div class="h-full text-center shrink-0 flex flex-col items-center justify-between py-1">
-                <div class="text-[11px] font-black text-gray-500 leading-none">${dateText}</div>
-                <div class="flex justify-center leading-none">
+        <div class="extract-row-grid">
+            <div class="extract-col-status">
+                <div class="extract-date">${dateText}</div>
+                <div class="extract-result-wrap">
                     ${resultIcon}
                 </div>
             </div>
 
-            <div class="min-w-0">
-                <div class="w-full flex items-center justify-center gap-2">
-                    <div class="w-[46px] flex flex-col items-center gap-1">
-                        <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+            <div class="extract-col-match">
+                <div class="extract-match-layout">
+                    <div class="extract-team-slot">
+                        <div class="extract-team-circle ${votedA ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
                             ${teamALogo}
                         </div>
-                        <div class="h-[14px] flex items-center justify-center">
+                        <div class="extract-vote-slot">
                             ${votedA
-                                ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">SEU VOTO</span>`
+                                ? `<span class="extract-vote-tag">SEU VOTO</span>`
                                 : ``
                             }
                         </div>
                     </div>
 
-                    <span class="text-[14px] font-black text-black text-center leading-none shrink-0">X</span>
+                    <span class="extract-versus">X</span>
 
-                    <div class="w-[46px] flex flex-col items-center gap-1">
-                        <div class="w-11 h-11 flex items-center justify-center rounded-full shrink-0 ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
+                    <div class="extract-team-slot">
+                        <div class="extract-team-circle ${votedB ? 'ring-2 ring-[#FFD700] bg-yellow-50' : ''}">
                             ${teamBLogo}
                         </div>
-                        <div class="h-[14px] flex items-center justify-center">
+                        <div class="extract-vote-slot">
                             ${votedB
-                                ? `<span class="text-[8px] font-black text-[#006400] bg-[#E8F5E9] px-1.5 py-0.5 rounded-full leading-none whitespace-nowrap">SEU VOTO</span>`
+                                ? `<span class="extract-vote-tag">SEU VOTO</span>`
                                 : ``
                             }
                         </div>
                     </div>
 
-                    <div class="w-[36px] text-left shrink-0">
-                        <span class="text-[17px] font-black text-gray-400 leading-none tracking-tight">${matchNo}</span>
+                    <div class="extract-match-no">
+                        <span class="extract-match-no-text">${matchNo}</span>
                     </div>
                 </div>
             </div>
 
             ${medalBadgeHtml}
 
-            <div class="w-[58px] shrink-0 flex flex-col items-end justify-center">
-                <div class="text-[16px] leading-none font-black ${ptsColor}">${ptsText}</div>
-                <div class="text-[11px] leading-none font-black ${ptsColor} mt-0.5">pts</div>
+            <div class="extract-col-points">
+                <div class="extract-points-value ${ptsColor}">${ptsText}</div>
+                <div class="extract-points-unit ${ptsColor}">pts</div>
             </div>
         </div>
     </div>

@@ -921,6 +921,272 @@ select:focus-visible {
     color: #166534;
 }
 
+.extract-match-card {
+    overflow: hidden;
+}
+
+.extract-row-grid {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 52px 58px;
+    align-items: center;
+    column-gap: 8px;
+}
+
+.extract-col-status {
+    min-height: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.extract-date {
+    font-size: 11px;
+    font-weight: 900;
+    color: #6b7280;
+    line-height: 1;
+}
+
+.extract-result-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.extract-col-match {
+    min-width: 0;
+}
+
+.extract-match-layout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.extract-team-slot {
+    width: 46px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.extract-team-circle {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    flex-shrink: 0;
+}
+
+.extract-team-fallback {
+    max-width: 40px;
+}
+
+.extract-vote-slot {
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.extract-vote-tag {
+    font-size: 8px;
+    font-weight: 900;
+    color: #006400;
+    background: #E8F5E9;
+    padding: 2px 6px;
+    border-radius: 999px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.extract-versus {
+    font-size: 14px;
+    font-weight: 900;
+    color: #000;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.extract-match-no {
+    width: 36px;
+    text-align: left;
+    flex-shrink: 0;
+}
+
+.extract-match-no-text {
+    font-size: 17px;
+    font-weight: 900;
+    color: #9ca3af;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.extract-col-medal {
+    width: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.extract-medal-btn {
+    width: 44px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 999px;
+    background: #FFF3CD;
+    border: 1px solid #F4D58D;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+.extract-medal-btn > span:first-child {
+    font-size: 12px;
+    line-height: 1;
+}
+
+.extract-medal-count {
+    font-size: 10px;
+    font-weight: 900;
+    color: #8D6E63;
+    line-height: 1;
+}
+
+.extract-col-points {
+    width: 58px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.extract-points-value {
+    font-size: 16px;
+    line-height: 1;
+    font-weight: 900;
+}
+
+.extract-points-unit {
+    font-size: 11px;
+    line-height: 1;
+    font-weight: 900;
+    margin-top: 2px;
+}
+
+@media (max-width: 430px) {
+    .extract-match-card {
+        padding: 10px 8px !important;
+    }
+
+    .extract-row-grid {
+        grid-template-columns: 32px minmax(0, 1fr) 40px 38px;
+        column-gap: 4px;
+    }
+
+    .extract-col-status {
+        min-height: 50px;
+        padding: 3px 0;
+    }
+
+    .extract-date {
+        font-size: 10px;
+    }
+
+    .extract-result-icon {
+        font-size: 15px !important;
+    }
+
+    .extract-match-layout {
+        justify-content: flex-start;
+        gap: 4px;
+    }
+
+    .extract-team-slot {
+        width: 38px;
+        gap: 3px;
+    }
+
+    .extract-team-circle {
+        width: 38px;
+        height: 38px;
+    }
+
+    .extract-team-logo {
+        width: 30px !important;
+        height: 30px !important;
+    }
+
+    .extract-team-fallback {
+        max-width: 34px;
+        font-size: 8px !important;
+    }
+
+    .extract-vote-slot {
+        height: 12px;
+    }
+
+    .extract-vote-tag {
+        font-size: 7px;
+        padding: 1px 4px;
+    }
+
+    .extract-versus {
+        font-size: 11px;
+    }
+
+    .extract-match-no {
+        width: 26px;
+    }
+
+    .extract-match-no-text {
+        font-size: 12px;
+    }
+
+    .extract-col-medal {
+        width: 40px;
+    }
+
+    .extract-medal-btn {
+        width: 34px;
+        height: 24px;
+        gap: 2px;
+    }
+
+    .extract-medal-btn > span:first-child {
+        font-size: 10px;
+    }
+
+    .extract-medal-count {
+        font-size: 8px;
+    }
+
+    .extract-col-points {
+        width: 38px;
+    }
+
+    .extract-points-value {
+        font-size: 12px;
+    }
+
+    .extract-points-unit {
+        font-size: 9px;
+        margin-top: 1px;
+    }
+}
+
 @media (max-width: 430px) {
     .ranking-hero__content {
         flex-direction: column;
