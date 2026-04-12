@@ -4235,10 +4235,8 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
   `).join("");
 
   const html = `
-    <div class="w-full max-w-sm rounded-none shadow-2xl overflow-hidden relative" style="max-height: 90vh; overflow-y: auto;">
-      <div class="absolute inset-0 bg-gradient-to-b from-[#071018] via-[#0b1622] to-[#071018]"></div>
-
-      <div class="relative z-10 p-5 text-white">
+    <div class="w-full max-w-sm rounded-none shadow-2xl overflow-hidden text-white" style="max-height: 90vh; overflow-y: auto; background: linear-gradient(180deg, #071018 0%, #0b1622 50%, #071018 100%);">
+      <div class="p-5">
         <div class="flex items-start justify-between">
           <div>
             <div class="flex items-center gap-2">
