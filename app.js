@@ -4090,17 +4090,18 @@ let html = `
     <div class="ranking-hero__bg"></div>
     <div class="ranking-hero__content">
       <div>
-        <p class="ranking-hero__eyebrow">Classificacao Oficial</p>
-        <h3 class="ranking-hero__title">Temporada 2026</h3>
-        <p class="ranking-hero__subtitle">${users.length} participantes no ranking geral</p>
+        <h3 class="ranking-hero__title">CLASSIFICACAO</h3>
+        <p class="ranking-hero__subtitle">Temporada 2026 • ${users.length} participantes</p>
       </div>
 
       <div class="ranking-hero__actions">
         <button
           onclick="showKingModal()"
+          aria-label="Rei do mes"
+          title="Rei do mes"
           class="ranking-hero__btn ranking-hero__btn--king btn-press"
         >
-          Rei do mes
+          <i class="fas fa-trophy"></i>
         </button>
 
         <button
@@ -4117,10 +4118,10 @@ let html = `
 
   <div class="ranking-table-shell">
     <div class="ranking-table-head">
-      <span>Pos</span>
+      <span>Posicao</span>
       <span>Participante</span>
-      <span class="text-center">D</span>
-      <span class="text-right">Pts</span>
+      <span class="text-center">Dividas</span>
+      <span class="text-right">Pontos</span>
     </div>
     <div class="ranking-table-body">
 `;
@@ -4174,7 +4175,7 @@ let html = `
                         <div class="ranking-row__user" onclick="showModalPhoto(${i})">
                             <div class="${avatarClass}"><img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-full h-full object-cover"></div>
                             <div class="ranking-user-meta">
-                                <div class="flex items-center"><span class="${nameClass} truncate max-w-[170px]">${escapeHtml(u.name || u.username || "Sem nome")}</span></div>
+                                <div class="flex items-start"><span class="${nameClass}">${escapeHtml(u.name || u.username || "Sem nome")}</span></div>
                             </div>
                         </div>
 
