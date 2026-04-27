@@ -1296,7 +1296,11 @@ window.finalizeAppEntryAfterLogin = () => {
 
         window.showTab = (tab) => {
   const appContent = document.getElementById('appContent');
-  if (appContent) appContent.className = `flex-1 overflow-y-auto bg-main pb-32 tab-${tab}`;
+  if (appContent) {
+    const contentBottomPaddingClass = tab === 'ranking' ? 'pb-16' : 'pb-32';
+    appContent.className = `flex-1 overflow-y-auto bg-main ${contentBottomPaddingClass} tab-${tab}`;
+    appContent.scrollTop = 0;
+  }
 
   // Pega as tabs que EXISTEM no HTML (evita null)
   const tabs = ['matches', 'ranking', 'rules', 'profile']
@@ -1328,6 +1332,11 @@ window.finalizeAppEntryAfterLogin = () => {
 if (tab === 'ranking' && typeof loadRanking === 'function') loadRanking();
 if (tab === 'rules' && typeof renderRules === 'function') renderRules();
 if (tab === 'profile' && typeof loadProfile === 'function') loadProfile();
+
+if (tab === 'ranking') {
+  const rankingListContent = document.getElementById('rankingListContent');
+  if (rankingListContent) rankingListContent.scrollTop = 0;
+}
 
 };
       
@@ -1453,56 +1462,62 @@ async function renderRules(forceRefresh = false) {
           // --- FUNÇÃO SINO: SEM ALERT E COM LAYOUT CORRIGIDO ---
         // --- FUNÇÃO SINO: SEM ALERT E COM LAYOUT CORRIGIDO ---
         window.updateBadges = () => {
-            let unreadGames = [];
+            const unreadGames = [];
             let totalUnread = 0;
 
-            if(window.cachedMatches) {
-                window.cachedMatches.forEach(m => {
+            if (Array.isArray(window.cachedMatches)) {
+                window.cachedMatches.forEach((m) => {
                     const sCount = globalServerCounts[m.id] || 0;
-                    const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0");
-                    
-                    if (sCount > lCount) {
-                        totalUnread++;
-                        // Guarda o objeto completo para usar no onclick
+                    const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0", 10);
+                    const unreadCount = Math.max(0, sCount - lCount);
+
+                    if (unreadCount > 0) {
+                        totalUnread += unreadCount;
                         unreadGames.push({
                             id: m.id,
                             title: `${m.teamA} x ${m.teamB}`,
                             teamA: m.teamA,
                             teamB: m.teamB,
-                            winner: m.winner || ''
+                            winner: m.winner || "",
+                            unreadCount
                         });
                     }
                 });
             }
 
-            const btnBell = document.getElementById('btnBell');
-            const old = btnBell.querySelector('.bell-badge'); if(old) old.remove();
+            unreadGames.sort((a, b) => b.unreadCount - a.unreadCount);
+
+            const btnBell = document.getElementById("btnBell");
+            if (!btnBell) return;
+
+            const old = btnBell.querySelector(".bell-badge");
+            if (old) old.remove();
             
             // Clona para limpar eventos antigos
             const newBell = btnBell.cloneNode(true); 
-            btnBell.parentNode.replaceChild(newBell, btnBell);
+            btnBell.parentNode?.replaceChild(newBell, btnBell);
 
             if (totalUnread > 0) {
-                newBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+' : totalUnread}</div>`;
-                newBell.classList.add('text-red-400');
+                newBell.innerHTML += `<div class="bell-badge">${totalUnread > 9 ? '+9' : totalUnread}</div>`;
+                newBell.classList.add("text-red-400");
                 
-                // AQUI ESTAVA O PROBLEMA: Agora o onclick abre o modal DIRETO
                 newBell.onclick = () => {
-                    const modal = document.getElementById('modalOverlay');
-                    const cont = document.getElementById('modalContainer');
-                    
-                    // Gera a lista clicável que chama openMatchComments
-                    let listHtml = unreadGames.map(game => `
-                        <div onclick="window.openMatchComments('${game.id}', '${game.teamA}', '${game.teamB}', '${game.winner}');" 
-                             class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-green-50 transition-colors btn-press">
-                            <span class="text-xs font-bold text-gray-700">💬 ⚽ ${game.title}</span>
-                            <span class="text-[9px] text-green-600 font-bold uppercase tracking-wider bg-green-100 px-2 py-1 rounded">Ler</span>
-                        </div>
-                    `).join('');
+                    const modal = document.getElementById("modalOverlay");
+                    const cont = document.getElementById("modalContainer");
+                    if (!modal || !cont) return;
 
-                    modal.classList.remove('hidden');
-                    
-                    // CORREÇÃO DO LAYOUT: Usando classes padrão (w-full max-w-sm) em vez de w-72 fixo
+                    const listHtml = unreadGames.map((game, idx) => `
+                        <button
+                          type="button"
+                          data-unread-index="${idx}"
+                          class="js-unread-game w-full p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-green-50 transition-colors btn-press text-left"
+                        >
+                            <span class="text-xs font-bold text-gray-700">💬 ⚽ ${escapeHtml(game.title)}</span>
+                            <span class="text-[9px] text-green-700 font-black uppercase tracking-wider bg-green-100 px-2 py-1 rounded">${game.unreadCount > 9 ? "+9" : game.unreadCount}</span>
+                        </button>
+                    `).join("");
+
+                    modal.classList.remove("hidden");
                     cont.innerHTML = `
                     <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden">
                         <div class="bg-[#006400] p-3 text-center">
@@ -1515,19 +1530,32 @@ async function renderRules(forceRefresh = false) {
                             <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg mb-4 shadow-inner bg-gray-100">
                                 ${listHtml}
                             </div>
-                            <button onclick="closeModal()" class="w-full bg-gray-800 text-white py-2 rounded font-bold text-xs shadow-md btn-press">
+                            <button onclick="window.closeModal()" class="w-full bg-gray-800 text-white py-2 rounded font-bold text-xs shadow-md btn-press">
                                 FECHAR LISTA
                             </button>
                         </div>
                     </div>`;
+
+                    cont.querySelectorAll(".js-unread-game").forEach((btn) => {
+                        btn.addEventListener("click", () => {
+                            const index = Number(btn.getAttribute("data-unread-index"));
+                            const targetGame = unreadGames[index];
+                            if (!targetGame) return;
+
+                            window.openMatchComments(
+                                targetGame.id,
+                                targetGame.teamA,
+                                targetGame.teamB,
+                                targetGame.winner || ""
+                            );
+                        });
+                    });
                 };
             } else {
-                newBell.classList.remove('text-red-400');
+                newBell.classList.remove("text-red-400");
                 newBell.onclick = () => alert("Nenhuma nova mensagem.");
             }
         };
-      
-   
 // --- CORREÇÃO DE IMAGENS DO GOOGLE DRIVE ---
         const fixDriveUrl = (url) => {
             if (!url) return "";
@@ -3420,10 +3448,11 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
         window.globalLastUpdateInfo = "Aguardando atualização...";
 
        // --- RANKING FINAL (PARIDADE ANDROID: REIS, ZEBRAS E SORT COMPLEXO) ---
-        async function loadRanking(options = {}) {
+async function loadRanking(options = {}) {
   const { force = false } = options;
   const listContainer = document.getElementById('rankingListContent');
   const footer = document.getElementById('lastUpdateRanking');
+  const appContent = document.getElementById('appContent');
   if (!listContainer || !footer) return;
 
   const cachedRanking = window.__rankingScreenCache;
@@ -3435,6 +3464,8 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
     window.currentMonthlyRankingHistory = cachedRanking.currentMonthlyRankingHistory;
     window.currentMonthlyRankingSelectedMonth = cachedRanking.currentMonthlyRankingSelectedMonth;
     window.globalLastUpdateInfo = cachedRanking.lastUpdateInfo;
+    listContainer.scrollTop = 0;
+    if (appContent) appContent.scrollTop = 0;
     return;
   }
 
@@ -3963,7 +3994,7 @@ u.trophyRoom = trophyRoom;
                     monthlyData.push({ name: u.name, points: monthlyP, uid: u.uid });
                 });
 
-for (let monthIdx = 0; monthIdx < currentMonthIndex; monthIdx++) {
+for (let monthIdx = 0; monthIdx < 12; monthIdx++) {
   const ranking = users
     .map((u) => ({
       uid: u.uid,
@@ -4064,25 +4095,16 @@ const currentMonthRanking = monthlyData.sort((a, b) => {
   return (a.name || "").localeCompare(b.name || "");
 });
 
-const currentMonthHasKing =
-  currentMonthRanking.length > 0 &&
-  currentMonthRanking[0].points > 0 &&
-  (
-    currentMonthRanking.length === 1 ||
-    currentMonthRanking[0].points > currentMonthRanking[1].points
-  );
+const currentMonthEntry = monthlyHistory.find((item) => item.monthIndex === currentMonthIndex);
+const selectedKingMonth = Number(window.currentMonthlyRankingSelectedMonth);
+const safeSelectedKingMonth =
+  Number.isInteger(selectedKingMonth) && selectedKingMonth >= 0 && selectedKingMonth < 12
+    ? selectedKingMonth
+    : currentMonthIndex;
 
-window.currentMonthlyRanking = currentMonthRanking;
-window.currentMonthlyRankingHistory = [
-  ...monthlyHistory,
-  {
-    monthIndex: currentMonthIndex,
-    monthName: monthNames[currentMonthIndex],
-    ranking: currentMonthRanking,
-    hasKing: currentMonthHasKing
-  }
-];
-window.currentMonthlyRankingSelectedMonth = currentMonthIndex;
+window.currentMonthlyRanking = [...(currentMonthEntry?.ranking || currentMonthRanking)];
+window.currentMonthlyRankingHistory = [...monthlyHistory];
+window.currentMonthlyRankingSelectedMonth = safeSelectedKingMonth;
 
 // Renderiza HTML
 let html = `
@@ -4190,6 +4212,8 @@ let html = `
 
                 html += `</div></div>`;
                 listContainer.innerHTML = html;
+                listContainer.scrollTop = 0;
+                if (appContent) appContent.scrollTop = 0;
 
 window.__rankingScreenCache = {
   html,
@@ -4202,7 +4226,7 @@ window.__rankingScreenCache = {
   cachedAt: Date.now()
 };
 
-            } catch (e) { console.error(e); listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro ao carregar ranking.</div>`; }
+            } catch (e) { console.error(e); listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro ao carregar ranking.</div>`; listContainer.scrollTop = 0; if (appContent) appContent.scrollTop = 0; }
         }
         // ===============================
 // NOVO "i" DO RANKING (igual Android) — mantém o mesmo nome para não quebrar chamadas
@@ -6246,18 +6270,18 @@ const worstPosCount = (rankHistory.length && worstPos !== '-')
 
     const tableHtml = compRows.length ? `
       <div class="rounded-xl border border-white/10 overflow-hidden">
-        <div class="grid grid-cols-[1fr_70px_70px_70px] bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white/70">
+        <div class="grid grid-cols-[minmax(0,1fr)_52px_62px_44px] bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white/70">
           <div>Competição</div>
-          <div class="text-center">Jogos</div>
-          <div class="text-center">Acertos</div>
-          <div class="text-center">%</div>
+          <div class="text-right pr-1">Jogos</div>
+          <div class="text-right pr-1">Acertos</div>
+          <div class="text-right">%</div>
         </div>
         ${compRows.map(r => `
-          <div class="grid grid-cols-[1fr_70px_70px_70px] px-3 py-2 text-xs border-t border-white/10">
-            <div class="text-white font-bold truncate">${r.comp}</div>
-            <div class="text-center text-white/90 font-bold">${r.t}</div>
-            <div class="text-center text-[#FFD700] font-black">${r.h}</div>
-            <div class="text-center text-white font-black">${r.pct}%</div>
+          <div class="grid grid-cols-[minmax(0,1fr)_52px_62px_44px] px-3 py-2 text-xs border-t border-white/10">
+            <div class="text-white font-bold truncate pr-2" title="${escapeHtml(r.comp || "Sem nome")}">${escapeHtml(r.comp || "Sem nome")}</div>
+            <div class="text-right pr-1 text-white/90 font-bold tabular-nums">${r.t}</div>
+            <div class="text-right pr-1 text-[#FFD700] font-black tabular-nums">${r.h}</div>
+            <div class="text-right text-white font-black tabular-nums">${r.pct}%</div>
           </div>
         `).join('')}
       </div>
