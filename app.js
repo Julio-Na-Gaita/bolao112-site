@@ -2211,6 +2211,13 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
   `;
 };
 
+const getMatchUserStatus = (match, myVote) => {
+  if (match.winner) return { label: "Encerrado", tone: "danger", icon: "fa-lock" };
+  if (match.expired) return { label: "Aguardando resultado", tone: "warning", icon: "fa-hourglass-half" };
+  if (myVote) return { label: "Palpitado", tone: "success", icon: "fa-check-circle" };
+  return { label: "Aberto para palpite", tone: "default", icon: "fa-bolt" };
+};
+
 const renderMatchesScreenSkeleton = () => `
   <div class="space-y-4">
     ${renderDeferredHomeSkeleton()}
@@ -3102,6 +3109,13 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 const theme = getCompetitionTheme(m.competition || "");
                 const logo = compMap[m.competition] || "";
                 const cardStyle = `--match-accent:${theme.accent};--match-soft:${theme.soft};--match-soft-strong:${theme.softStrong};--match-chip-bg:${theme.chipBg};--match-chip-text:${theme.chipText};border-left-color:${statusAccent};`;
+                const userStatus = getMatchUserStatus(m, userVote);
+                const userStatusClass = {
+                  default: "status-chip--default",
+                  success: "status-chip--success",
+                  warning: "status-chip--warning",
+                  danger: "status-chip--danger"
+                }[userStatus.tone] || "status-chip--default";
                 
                 const sCount = serverCounts[m.id] || 0; 
                 const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0"); 
@@ -3137,7 +3151,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                     thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1"><span class="text-green-700">${pctA}%</span><span class="text-gray-400 text-[8px]">TERMÔMETRO (CINZA = NÃO VOTOU)</span><span class="text-red-700">${pctB}%</span></div><div class="w-full h-2.5 bg-gray-200 rounded-full flex overflow-hidden"><div style="flex: ${votesA}" class="bg-green-700 h-full border-r border-white/50"></div><div style="flex: ${absReal}" class="bg-gray-300 h-full border-r border-white/50"></div><div style="flex: ${votesB}" class="bg-red-700 h-full"></div></div><div class="flex justify-between text-[8px] text-gray-400 mt-1"><span>${m.teamA}: ${votesA}</span>${absReal > 0 ? `<span>Faltosos: ${absReal}</span>` : ''}<span>${m.teamB}: ${votesB}</span></div></div>`; 
                 }
 
-                html += `<div class="match-card-shell card-cut relative border-l-[6px] mb-6 overflow-hidden" style="${cardStyle}">
+                html += `<div class="match-card-shell card-cut relative border-l-[6px] mb-4 md:mb-6 overflow-hidden" style="${cardStyle}">
                             <div class="match-card-topbar"></div>
                             ${logo ? `<img src="${logo}" class="match-card-logo-ghost absolute inset-0 w-full h-full object-contain z-0 pointer-events-none p-8">` : ''}
                             <div class="relative z-10 p-3">
@@ -3172,6 +3186,14 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                                         </button>
                                     </div>
                                 </div>
+
+                                <div class="mb-3 flex flex-wrap items-center gap-2">
+                                    <span class="status-chip ${userStatusClass}">
+                                      <i class="fas ${userStatus.icon} mr-1"></i>${userStatus.label}
+                                    </span>
+                                    ${userVote ? `<span class="status-chip status-chip--default">Seu palpite: ${escapeHtml(userVote)}</span>` : ''}
+                                    ${!userVote && !m.expired ? `<span class="status-chip status-chip--warning">Falta palpitar</span>` : ''}
+                                </div>
                                 
                                 <div class="flex items-center justify-between px-1">
                                     ${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}
@@ -3179,6 +3201,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                                     ${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}
                                 </div>
                                 
+                                ${!userVote && !m.expired ? `<p class="mt-3 text-[10px] font-bold text-[#9a6700] bg-[#fff8e1] border border-[#f0d58c] rounded-xl px-3 py-2">Toque em um time para registrar seu palpite.</p>` : ''}
                                 ${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="match-winner-name">${escapeHtml(m.winner)}</p></div>` : ''}
                                 ${thermoHtml}
                             </div>
