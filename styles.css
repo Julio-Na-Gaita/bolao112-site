@@ -152,6 +152,99 @@ select:focus-visible {
     backdrop-filter: blur(12px);
 }
 
+.pwa-install-card {
+    width: min(620px, calc(100vw - 32px));
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid rgba(255, 215, 0, 0.38);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(14px);
+}
+
+.pwa-install-card__icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: #FFD700;
+    color: #004d00;
+    font-size: 18px;
+    box-shadow: 0 8px 20px rgba(255, 215, 0, 0.18);
+}
+
+.pwa-install-card__body {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.pwa-install-card__eyebrow {
+    margin: 0 0 2px;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #FFD700;
+}
+
+.pwa-install-card__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.pwa-install-card__text {
+    margin: 4px 0 0;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.pwa-install-card__button {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: #FFD700;
+    color: #003f00;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    box-shadow: 0 10px 22px rgba(255, 215, 0, 0.22);
+}
+
+.pwa-install-card__button.hidden {
+    display: none;
+}
+
+@media (max-width: 640px) {
+    .pwa-install-card {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .pwa-install-card__button {
+        width: 100%;
+    }
+}
+
 .status-chip {
     display: inline-flex;
     align-items: center;

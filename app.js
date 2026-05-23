@@ -131,6 +131,58 @@ const syncStaticVersionLabels = () => {
   });
 };
 
+let deferredPwaInstallPrompt = null;
+
+const isPwaStandalone = () =>
+  window.matchMedia?.('(display-mode: standalone)').matches ||
+  window.navigator.standalone === true;
+
+const isIosDevice = () =>
+  /iphone|ipad|ipod/i.test(window.navigator.userAgent) ||
+  (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+
+const updatePwaInstallCard = () => {
+  const card = document.getElementById('pwaInstallCard');
+  const text = document.getElementById('pwaInstallText');
+  const button = document.getElementById('btnInstallPwa');
+
+  if (!card || !text || !button) return;
+
+  button.classList.add('hidden');
+
+  if (isPwaStandalone()) {
+    text.textContent = 'Você já está usando o Bolão 112 FC como app instalado.';
+    card.classList.add('pwa-install-card--installed');
+    return;
+  }
+
+  card.classList.remove('pwa-install-card--installed');
+
+  if (deferredPwaInstallPrompt) {
+    text.textContent = 'Acesse pela tela inicial como um app, sem precisar procurar o site toda vez.';
+    button.classList.remove('hidden');
+    return;
+  }
+
+  if (isIosDevice()) {
+    text.textContent = 'No Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.';
+    return;
+  }
+
+  text.textContent = 'No Chrome, use o menu do navegador e escolha instalar ou adicionar à tela inicial.';
+};
+
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  deferredPwaInstallPrompt = event;
+  updatePwaInstallCard();
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredPwaInstallPrompt = null;
+  updatePwaInstallCard();
+});
+
 const formatUserText = (value = '') => escapeHtml(stripControlChars(String(value || "").normalize("NFC"))).replace(/\n/g, '<br>');
 
 const ensureExternalScript = (src, globalKey) => {
@@ -902,6 +954,16 @@ window.setupLoginPasswordEye = () => {
 window.addEventListener("DOMContentLoaded", () => {
   window.setupLoginPasswordEye();
   syncStaticVersionLabels();
+  updatePwaInstallCard();
+
+  document.getElementById('btnInstallPwa')?.addEventListener('click', async () => {
+    if (!deferredPwaInstallPrompt) return;
+
+    deferredPwaInstallPrompt.prompt();
+    await deferredPwaInstallPrompt.userChoice.catch(() => null);
+    deferredPwaInstallPrompt = null;
+    updatePwaInstallCard();
+  });
 });
 
 
