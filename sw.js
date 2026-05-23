@@ -7,7 +7,13 @@ const ASSETS = [
   '/index.html',
   `/styles.css?v=${APP_VERSION}`,
   `/app.js?v=${APP_VERSION}`,
-  `/favicon.png?v=${APP_VERSION}`
+  `/favicon.png?v=${APP_VERSION}`,
+  `/manifest.webmanifest?v=${APP_VERSION}`,
+  `/icon-192.png?v=${APP_VERSION}`,
+  `/icon-512.png?v=${APP_VERSION}`,
+  `/icon-maskable-192.png?v=${APP_VERSION}`,
+  `/icon-maskable-512.png?v=${APP_VERSION}`,
+  `/apple-touch-icon.png?v=${APP_VERSION}`
 ];
 
 

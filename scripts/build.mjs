@@ -32,7 +32,8 @@ const copyStaticAssets = async () => {
     '.mp4',
     '.webp',
     '.gif',
-    '.svg'
+    '.svg',
+    '.webmanifest'
   ]);
 
   const assetFiles = entries
@@ -109,12 +110,22 @@ const build = async () => {
   const versionedStylesPath = `${minifiedStylesPath}?v=${appVersion}`;
   const versionedAppPath = `${minifiedAppPath}?v=${appVersion}`;
   const versionedFaviconPath = `/favicon.png?v=${appVersion}`;
+  const versionedManifestPath = `/manifest.webmanifest?v=${appVersion}`;
+  const versionedIconPaths = [
+    `/icon-192.png?v=${appVersion}`,
+    `/icon-512.png?v=${appVersion}`,
+    `/icon-maskable-192.png?v=${appVersion}`,
+    `/icon-maskable-512.png?v=${appVersion}`,
+    `/apple-touch-icon.png?v=${appVersion}`
+  ];
   const precacheAssets = [
     '/',
     '/index.html',
     versionedStylesPath,
     versionedAppPath,
-    versionedFaviconPath
+    versionedFaviconPath,
+    versionedManifestPath,
+    ...versionedIconPaths
   ];
 
   const swContent = `const SW_URL = new URL(self.location.href);
