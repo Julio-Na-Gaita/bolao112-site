@@ -2,6 +2,11 @@
   "name": "bolao112-site",
   "version": "1.0.0",
   "private": true,
+  "scripts": {
+    "dev": "http-server . -p 5173 -c-1",
+    "preview": "http-server dist -p 4173 -c-1",
+    "build": "node scripts/build.mjs"
+  },
   "dependencies": {
     "firebase-admin": "^11.11.0",
     "protobufjs": "^7.2.6",
@@ -11,7 +16,7 @@
     "imagemin-pngquant": "^9.0.2",
     "terser": "^5.31.0"
   },
-  "scripts": {
-    "build": "node scripts/build.mjs"
+  "devDependencies": {
+    "http-server": "^14.1.1"
   }
 }
