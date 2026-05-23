@@ -2139,6 +2139,78 @@ const renderDeferredHomeSkeleton = () => `
   </div>
 `;
 
+const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) => {
+  const currentName = runtime.currentUser?.name || runtime.currentUser?.username || "Jogador";
+  const nextMatch = open[0] || waiting[0] || finished[0] || null;
+  const nextLabel = open.length
+    ? "Próximo jogo"
+    : waiting.length
+      ? "Aguardando resultado"
+      : "Painel rápido";
+
+  const nextDescription = nextMatch
+    ? `${escapeHtml(nextMatch.teamA)} x ${escapeHtml(nextMatch.teamB)}`
+    : "Sem confronto aberto no momento.";
+
+  const nextMeta = nextMatch?.deadlineDate
+    ? `Prazo: ${nextMatch.deadlineDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${nextMatch.deadlineDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false })}`
+    : "Use os atalhos abaixo para navegar.";
+
+  const pendingCount = open.filter((m) => !myVotesMap[m.id]).length;
+
+  return `
+    <section class="home-quick-panel surface-card mb-4 overflow-hidden">
+      <div class="home-quick-panel__top">
+        <div>
+          <p class="home-quick-panel__eyebrow">Bem-vindo, ${escapeHtml(currentName)}</p>
+          <h3 class="home-quick-panel__title">Seu painel rápido</h3>
+        </div>
+        <span class="status-chip status-chip--success">Ao vivo</span>
+      </div>
+
+      <div class="home-quick-panel__hero">
+        <div class="home-quick-panel__hero-label">${escapeHtml(nextLabel)}</div>
+        <div class="home-quick-panel__hero-title">${nextDescription}</div>
+        <div class="home-quick-panel__hero-meta">${escapeHtml(nextMeta)}</div>
+      </div>
+
+      <div class="home-quick-stats">
+        <div class="home-quick-stat">
+          <span class="home-quick-stat__value">${pendingCount}</span>
+          <span class="home-quick-stat__label">palpites pendentes</span>
+        </div>
+        <div class="home-quick-stat">
+          <span class="home-quick-stat__value">${open.length}</span>
+          <span class="home-quick-stat__label">jogos abertos</span>
+        </div>
+        <div class="home-quick-stat">
+          <span class="home-quick-stat__value">${finished.length}</span>
+          <span class="home-quick-stat__label">finalizados</span>
+        </div>
+      </div>
+
+      <div class="home-quick-actions">
+        <button type="button" class="home-quick-action btn-press" onclick="showTab('matches')">
+          <i class="fas fa-futbol"></i>
+          <span>Palpites</span>
+        </button>
+        <button type="button" class="home-quick-action btn-press" onclick="showTab('ranking')">
+          <i class="fas fa-trophy"></i>
+          <span>Ranking</span>
+        </button>
+        <button type="button" class="home-quick-action btn-press" onclick="showTab('ranking'); setTimeout(() => { if (window.openRankingInfo) window.openRankingInfo(); }, 180)">
+          <i class="fas fa-crown"></i>
+          <span>Rei do Mês</span>
+        </button>
+        <button type="button" class="home-quick-action btn-press" onclick="showTab('profile')">
+          <i class="fas fa-user"></i>
+          <span>Perfil</span>
+        </button>
+      </div>
+    </section>
+  `;
+};
+
 const renderMatchesScreenSkeleton = () => `
   <div class="space-y-4">
     ${renderDeferredHomeSkeleton()}
@@ -2568,6 +2640,7 @@ const renderHomeSectionsWeb = async ({
   extrasPending = false
 }) => {
   let html = extrasPending ? renderDeferredHomeSkeleton() : "";
+  html += renderHomeQuickPanel({ runtime, open, waiting, finished, myVotesMap });
   const firstActiveBanner = Object.values(bannersMap).find(item => item.active) || null;
   const pendingOpenMatches = open.filter(m => !myVotesMap[m.id]);
 
