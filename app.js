@@ -131,6 +131,12 @@ const syncStaticVersionLabels = () => {
   });
 };
 
+const setHomeMode = (enabled) => {
+  const appContent = document.getElementById('appContent');
+  if (!appContent) return;
+  appContent.classList.toggle('home-mode', !!enabled);
+};
+
 let deferredPwaInstallPrompt = null;
 
 const isPwaStandalone = () =>
@@ -1327,6 +1333,7 @@ window.continueAfterLoginGates();
                 window.currentUser = null;
 window.currentUid = null;
 currentUser = null;
+setHomeMode(true);
 
 if (__appStateUnsub) {
   try { __appStateUnsub(); } catch (e) {}
@@ -1342,6 +1349,7 @@ document.getElementById('bottomNav').classList.add('hidden');
         });
 // finaliza a entrada no app (chamar só quando estiver liberado)
 window.finalizeAppEntryAfterLogin = () => {
+  setHomeMode(false);
   document.getElementById('mainHeader').classList.remove('hidden');
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('mainScreens').classList.remove('hidden');

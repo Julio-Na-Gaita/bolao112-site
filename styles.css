@@ -67,7 +67,7 @@
 
         /* Container principal que rola (Substitui o scroll do body) */
         /* Container principal que rola (Substitui o scroll do body) */
-        #appContent {
+#appContent {
             flex: 1; /* Ocupa todo o espaço restante */
             overflow-y: auto; /* Habilita a rolagem vertical */
             overflow-x: hidden; /* Evita rolagem lateral */
@@ -76,6 +76,10 @@
             will-change: scroll-position;
             padding-bottom: 120px; /* Garante espaço para não cortar o fim da lista */
         }
+
+#appContent.home-mode {
+    padding-bottom: 14px !important;
+}
 
         /* Ajuste para o Topo e Fundo do iPhone (Notch e Barra Home) */
         .pt-safe { padding-top: env(safe-area-inset-top, 20px); }
@@ -154,7 +158,7 @@ select:focus-visible {
 
 .public-home-hero {
     min-height: 0;
-    padding-top: 28px;
+    padding-top: 20px;
 }
 
 .public-home-panel {
@@ -170,33 +174,33 @@ select:focus-visible {
 
 .public-home-copy {
     line-height: 1.55;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
 }
 
 .public-benefit-list {
     width: min(620px, calc(100vw - 32px));
-    margin: 0 auto 22px;
+    margin: 0 auto 12px;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
 }
 
 .public-benefit-list--compact {
-    gap: 8px;
+    gap: 6px;
 }
 
 .public-benefit-item {
-    min-height: 58px;
+    min-height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 10px;
+    gap: 6px;
+    padding: 7px 10px;
     border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 12px;
+    border-radius: 999px;
     background: rgba(0, 0, 0, 0.28);
     color: rgba(255, 255, 255, 0.9);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 900;
     line-height: 1.25;
     backdrop-filter: blur(10px);
@@ -204,7 +208,7 @@ select:focus-visible {
 
 .public-benefit-item i {
     color: #FFD700;
-    font-size: 14px;
+    font-size: 12px;
 }
 
 .public-cta-row {
@@ -322,7 +326,7 @@ select:focus-visible {
 @media (max-width: 640px) {
     .public-home-hero {
         justify-content: flex-start;
-        padding: 18px 16px 28px;
+        padding: 14px 14px 8px;
     }
 
     .public-home-panel {
@@ -330,32 +334,37 @@ select:focus-visible {
     }
 
     .public-home-kicker {
-        margin-bottom: 14px;
+        margin-bottom: 10px;
     }
 
     .public-home-title {
-        font-size: 34px !important;
-        line-height: 0.96;
+        font-size: 32px !important;
+        line-height: 0.94;
     }
 
     .public-home-copy {
         max-width: 330px;
-        margin-bottom: 12px;
-        font-size: 12px;
+        margin-bottom: 10px;
+        font-size: 11px;
     }
 
     .public-benefit-list {
-        grid-template-columns: 1fr;
+        width: min(360px, calc(100vw - 24px));
+        margin-bottom: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
         gap: 6px;
-        margin-bottom: 12px;
     }
 
     .public-benefit-item {
-        min-height: 38px;
-        justify-content: flex-start;
-        text-align: left;
-        padding: 8px 10px;
-        font-size: 10px;
+        flex: 1 1 92px;
+        max-width: 120px;
+        min-height: 30px;
+        justify-content: center;
+        text-align: center;
+        padding: 6px 8px;
+        font-size: 9px;
     }
 
     .public-cta-row {
@@ -364,7 +373,7 @@ select:focus-visible {
         margin-right: auto;
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
+        gap: 6px;
     }
 
     .public-cta-primary,
@@ -379,8 +388,8 @@ select:focus-visible {
     .pwa-install-card {
         align-items: flex-start;
         flex-wrap: wrap;
-        gap: 12px;
-        padding: 12px;
+        gap: 10px;
+        padding: 10px 12px;
     }
 
     .pwa-install-card__button {
