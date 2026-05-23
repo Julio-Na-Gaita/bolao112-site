@@ -181,6 +181,10 @@ select:focus-visible {
     gap: 10px;
 }
 
+.public-benefit-list--compact {
+    gap: 8px;
+}
+
 .public-benefit-item {
     min-height: 58px;
     display: flex;
@@ -207,6 +211,10 @@ select:focus-visible {
     flex-wrap: wrap;
     align-items: center;
     margin-bottom: 0;
+}
+
+.public-cta-grid {
+    display: flex;
 }
 
 .public-cta-primary {
@@ -314,7 +322,7 @@ select:focus-visible {
 @media (max-width: 640px) {
     .public-home-hero {
         justify-content: flex-start;
-        padding: 22px 16px 72px;
+        padding: 18px 16px 28px;
     }
 
     .public-home-panel {
@@ -322,38 +330,41 @@ select:focus-visible {
     }
 
     .public-home-kicker {
-        margin-bottom: 18px;
+        margin-bottom: 14px;
     }
 
     .public-home-title {
-        font-size: 36px !important;
-        line-height: 0.98;
+        font-size: 34px !important;
+        line-height: 0.96;
     }
 
     .public-home-copy {
         max-width: 330px;
-        margin-bottom: 16px;
-        font-size: 13px;
+        margin-bottom: 12px;
+        font-size: 12px;
     }
 
     .public-benefit-list {
         grid-template-columns: 1fr;
-        gap: 8px;
-        margin-bottom: 16px;
+        gap: 6px;
+        margin-bottom: 12px;
     }
 
     .public-benefit-item {
-        min-height: 44px;
+        min-height: 38px;
         justify-content: flex-start;
         text-align: left;
-        padding: 10px 12px;
+        padding: 8px 10px;
+        font-size: 10px;
     }
 
     .public-cta-row {
         width: min(420px, calc(100vw - 32px));
         margin-left: auto;
         margin-right: auto;
-        gap: 10px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
     }
 
     .public-cta-primary,
@@ -361,7 +372,7 @@ select:focus-visible {
     .public-cta-whatsapp,
     .public-cta-instagram {
         width: 100%;
-        min-height: 42px;
+        min-height: 40px;
         justify-content: center;
     }
 
