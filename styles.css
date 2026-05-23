@@ -152,6 +152,85 @@ select:focus-visible {
     backdrop-filter: blur(12px);
 }
 
+.public-home-hero {
+    min-height: 0;
+    padding-top: 28px;
+}
+
+.public-home-panel {
+    width: min(720px, 100%);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.public-home-title {
+    line-height: 0.95;
+    letter-spacing: 0;
+}
+
+.public-home-copy {
+    line-height: 1.55;
+    margin-bottom: 18px;
+}
+
+.public-benefit-list {
+    width: min(620px, calc(100vw - 32px));
+    margin: 0 auto 22px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.public-benefit-item {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.28);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1.25;
+    backdrop-filter: blur(10px);
+}
+
+.public-benefit-item i {
+    color: #FFD700;
+    font-size: 14px;
+}
+
+.public-cta-row {
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.public-cta-primary {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 20px;
+    border-radius: 999px;
+    background: #FFD700;
+    color: #003f00;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    box-shadow: 0 12px 26px rgba(255, 215, 0, 0.28);
+}
+
+.public-cta-secondary,
+.public-cta-whatsapp,
+.public-cta-instagram {
+    min-height: 38px;
+}
+
 .pwa-install-card {
     width: min(620px, calc(100vw - 32px));
     margin-left: auto;
@@ -162,7 +241,7 @@ select:focus-visible {
     padding: 14px;
     border: 1px solid rgba(255, 215, 0, 0.38);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.12);
+    background: linear-gradient(135deg, rgba(0, 100, 0, 0.36), rgba(255, 255, 255, 0.12));
     color: #fff;
     box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(14px);
@@ -233,6 +312,59 @@ select:focus-visible {
 }
 
 @media (max-width: 640px) {
+    .public-home-hero {
+        justify-content: flex-start;
+        padding: 22px 16px 72px;
+    }
+
+    .public-home-panel {
+        padding-top: 4px;
+    }
+
+    .public-home-kicker {
+        margin-bottom: 18px;
+    }
+
+    .public-home-title {
+        font-size: 36px !important;
+        line-height: 0.98;
+    }
+
+    .public-home-copy {
+        max-width: 330px;
+        margin-bottom: 16px;
+        font-size: 13px;
+    }
+
+    .public-benefit-list {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .public-benefit-item {
+        min-height: 44px;
+        justify-content: flex-start;
+        text-align: left;
+        padding: 10px 12px;
+    }
+
+    .public-cta-row {
+        width: min(420px, calc(100vw - 32px));
+        margin-left: auto;
+        margin-right: auto;
+        gap: 10px;
+    }
+
+    .public-cta-primary,
+    .public-cta-secondary,
+    .public-cta-whatsapp,
+    .public-cta-instagram {
+        width: 100%;
+        min-height: 42px;
+        justify-content: center;
+    }
+
     .pwa-install-card {
         align-items: flex-start;
         flex-wrap: wrap;
