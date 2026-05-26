@@ -18,6 +18,8 @@
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getMessaging, getToken, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
+let mainServiceWorkerRegistrationPromise = null;
+
         const registerServiceWorker = () => {
   if (!('serviceWorker' in navigator)) return;
   if (window.__bolaoSwBootstrapped) return;
@@ -40,6 +42,9 @@ const registration = await navigator.serviceWorker.register(
   `/sw.js?v=${swVersion}`,
   { updateViaCache: 'none' }
 );
+
+mainServiceWorkerRegistrationPromise = Promise.resolve(registration);
+window.__bolaoMainServiceWorkerRegistration = registration;
 
 await registration.update();
 
@@ -65,6 +70,17 @@ await registration.update();
       console.error('Erro ao registrar service worker:', error);
     }
   });
+};
+
+window.getMainServiceWorkerRegistration = async () => {
+  if (!('serviceWorker' in navigator)) return null;
+  if (window.__bolaoMainServiceWorkerRegistration) return window.__bolaoMainServiceWorkerRegistration;
+  if (!mainServiceWorkerRegistrationPromise) {
+    mainServiceWorkerRegistrationPromise = navigator.serviceWorker.ready.catch(() => null);
+  }
+  const registration = await mainServiceWorkerRegistrationPromise.catch(() => null);
+  if (registration) window.__bolaoMainServiceWorkerRegistration = registration;
+  return registration || null;
 };
 
 registerServiceWorker();
@@ -106,7 +122,7 @@ let homeSectionCollapseState = {
   matches_done: true
 };
 
-const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.8');
+const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.9');
 const getAppVersionShort = () => getAppVersion().replace(/^web-/, '');
 const getAppVersionLabel = () => `Web v${getAppVersionShort()}`;
 const getAppVersionFullLabel = () => `Versão ${getAppVersionLabel()}`;
@@ -200,39 +216,89 @@ const isWebPushSupported = async () => {
   }
 };
 
-const hashNotificationToken = async (token) => {
-  const raw = String(token || "");
-  if (!window.crypto?.subtle) return btoa(raw).replace(/[^a-zA-Z0-9]/g, "").slice(0, 120);
-  const bytes = new TextEncoder().encode(raw);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+const registerWebPushTokenOnServer = async (token) => {
+  if (!currentUser || !token) return false;
+  const activeUser = auth.currentUser || currentUser;
+  const idToken = await activeUser.getIdToken(true);
+  const response = await fetch("/api/register-push-token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${idToken}`
+    },
+    body: JSON.stringify({
+      token,
+      platform: "web",
+      userAgent: navigator.userAgent || ""
+    })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result?.ok === false) {
+    const error = new Error(result?.error || "Não foi possível registrar este aparelho.");
+    error.code = result?.error || "register_push_error";
+    error.result = result;
+    throw error;
+  }
+  return true;
 };
 
-const saveNotificationTokenForCurrentUser = async (token) => {
-  if (!currentUser || !token) return;
-  const tokenId = await hashNotificationToken(token);
-  const userSnap = await getDoc(doc(db, "users", currentUser.uid)).catch(() => null);
-  const userData = userSnap?.data?.() || {};
-  const nowTs = Timestamp.fromDate(new Date());
+const isIosPwaHintRequired = () => isIosDevice() && !isPwaStandalone();
 
-  await setDoc(doc(db, "notification_tokens", tokenId), {
-    token,
-    uid: currentUser.uid,
-    name: userData.name || "",
-    username: userData.username || "",
-    email: currentUser.email || userData.email || "",
-    enabled: true,
-    platform: "web",
-    userAgent: navigator.userAgent || "",
-    createdAt: nowTs,
-    updatedAt: nowTs,
-    lastSeenAt: nowTs
-  }, { merge: true });
+const buildIosPushHelpHtml = () => {
+  if (!isIosDevice()) return "";
 
-  await setDoc(doc(db, "users", currentUser.uid), {
-    hasWebPushToken: true,
-    webPushUpdatedAt: nowTs
-  }, { merge: true });
+  return `
+    <div class="profile-push-ios-help">
+      <div class="profile-push-ios-help__title">
+        <i class="fab fa-apple"></i>
+        <span>iPhone / iPad</span>
+      </div>
+      <p>Para receber notificações no iPhone, use o Safari e adicione o Bolão à Tela de Início. Requer iOS 16.4 ou superior.</p>
+      <ol>
+        <li>Abra o Bolão pelo Safari.</li>
+        <li>Toque em Compartilhar.</li>
+        <li>Escolha “Adicionar à Tela de Início”.</li>
+        <li>Abra o Bolão pelo ícone criado.</li>
+        <li>Volte em Perfil e toque em “Ativar notificações deste aparelho”.</li>
+      </ol>
+    </div>
+  `;
+};
+
+const buildProfileWebPushSection = async (userData = {}) => {
+  const vapidKey = await getAdminCommunicationVapidKey();
+  const hasToken = userData.hasWebPushToken === true;
+  const pushStatus = !vapidKey
+    ? "Push ainda não configurado pelo admin"
+    : hasToken
+      ? "Notificações ativadas neste aparelho"
+      : "Toque para ativar neste aparelho";
+  const pushDescription = !vapidKey
+    ? "Configure a chave VAPID pública para liberar notificações neste app."
+    : isIosPwaHintRequired()
+      ? "No iPhone, adicione o Bolão à Tela de Início antes de ativar. Depois volte aqui e toque no botão."
+      : "Permita as notificações deste aparelho para receber avisos do Bolão 112 FC.";
+  const pushNote = isIosDevice()
+    ? "iOS 16.4+ e abertura pelo ícone da Tela de Início."
+    : "Funciona em navegadores compatíveis com Web Push.";
+
+  return `
+    <section class="profile-section mb-4">
+      ${renderProfileSectionHeader("Notificações", "Receba avisos deste aparelho", pushStatus)}
+      <div class="profile-push-card">
+        <div class="profile-push-card__copy">
+          <div class="profile-push-card__title">Ative as notificações deste aparelho</div>
+          <div class="profile-push-card__desc">${escapeHtml(pushDescription)}</div>
+          <div class="profile-push-card__note">${escapeHtml(pushNote)}</div>
+        </div>
+        <button type="button" onclick="window.requestWebPushPermissionAndSaveToken()" class="profile-push-card__button btn-press">
+          <i class="fas fa-bell"></i>
+          <span>Ativar notificações deste aparelho</span>
+        </button>
+      </div>
+      ${buildIosPushHelpHtml()}
+    </section>
+  `;
 };
 
 window.requestWebPushPermissionAndSaveToken = async () => {
@@ -248,17 +314,29 @@ window.requestWebPushPermissionAndSaveToken = async () => {
 
   const vapidKey = await getAdminCommunicationVapidKey();
   if (!vapidKey) {
-    alert("Push web ainda não configurado. Configure a chave VAPID do Firebase para ativar notificações.");
+    alert("Push ainda não configurado pelo admin.");
+    return null;
+  }
+
+  if (isIosPwaHintRequired()) {
+    alert("No iPhone, adicione o Bolão à Tela de Início antes de ativar as notificações.");
     return null;
   }
 
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
-    alert("Permissão de notificação não concedida.");
+    alert(permission === "denied" ? "Permissão negada." : "Permissão de notificação não concedida.");
     return null;
   }
 
-  const swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { updateViaCache: "none" });
+  const swRegistration = window.getMainServiceWorkerRegistration
+    ? await window.getMainServiceWorkerRegistration()
+    : await navigator.serviceWorker.ready.catch(() => null);
+  if (!swRegistration) {
+    alert("Não foi possível preparar o serviço de notificações neste aparelho.");
+    return null;
+  }
+
   const messaging = getMessaging(app);
   const token = await getToken(messaging, {
     vapidKey,
@@ -270,7 +348,18 @@ window.requestWebPushPermissionAndSaveToken = async () => {
     return null;
   }
 
-  await saveNotificationTokenForCurrentUser(token);
+  try {
+    await registerWebPushTokenOnServer(token);
+  } catch (error) {
+    console.error("Erro ao registrar token de push:", error);
+    if (error.code === "push_not_configured") {
+      alert("Push ainda não configurado pelo servidor.");
+      return null;
+    }
+    alert(error.message || "Não foi possível registrar este aparelho.");
+    return null;
+  }
+
   alert("Notificações ativadas neste aparelho.");
   return token;
 };
@@ -5520,6 +5609,14 @@ window.sendAdminManualPush = async () => {
       showAdminCommunicationToast("Push web ainda não está configurado no servidor. O comunicado foi salvo, mas a notificação não foi enviada.", "danger");
       return;
     }
+    if (error.code === "push_disabled") {
+      showAdminCommunicationToast("Push web está desligado nas configurações de segurança.", "danger");
+      return;
+    }
+    if (error.code === "push_rate_limited") {
+      showAdminCommunicationToast("Push bloqueado pela trava de segurança.", "danger");
+      return;
+    }
     showAdminCommunicationToast(error.message || "Não foi possível enviar o push.", "danger");
   }
 };
@@ -5595,9 +5692,16 @@ window.sendAdminWhatsappNotice = async () => {
       sentPush = true;
     } catch (error) {
       console.error("Erro ao enviar push do aviso:", error);
-      showAdminCommunicationToast(error.code === "push_not_configured"
-        ? "Push web ainda não está configurado no servidor. O aviso foi salvo, mas a notificação não foi enviada."
-        : "Não foi possível enviar o push do aviso.", "danger");
+      showAdminCommunicationToast(
+        error.code === "push_not_configured"
+          ? "Push web ainda não está configurado no servidor. O aviso foi salvo, mas a notificação não foi enviada."
+          : error.code === "push_disabled"
+            ? "Push web está desligado nas configurações de segurança."
+            : error.code === "push_rate_limited"
+              ? "Push bloqueado pela trava de segurança."
+              : "Não foi possível enviar o push do aviso.",
+        "danger"
+      );
     }
   }
 
@@ -9385,6 +9489,7 @@ async function loadProfile() {
             </div>`;
 
             const soundEnabled = isSoundEnabled();
+            const webPushSectionHtml = await buildProfileWebPushSection(u);
             const accountActionsHtml = `
               <section class="profile-section mb-4">
                 ${renderProfileSectionHeader("Conta", "Ações principais do seu acesso", "Essencial")}
@@ -9496,6 +9601,7 @@ async function loadProfile() {
                 <input type="file" id="uploadPhoto" accept="image/*" class="hidden" onchange="handlePhotoUpload(this)">
 
                 ${accountActionsHtml}
+                ${webPushSectionHtml}
                 ${shortcutsSectionHtml}
                 ${preferencesSectionHtml}
 

@@ -30,6 +30,14 @@ const isInvalidTokenError = (code = '') =>
     'messaging/invalid-argument'
   ].includes(code);
 
+const getFortalezaDateKey = () =>
+  new Intl.DateTimeFormat('sv-SE', {
+    timeZone: 'America/Fortaleza',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
@@ -50,6 +58,28 @@ export default async function handler(req, res) {
 
     if (!adminSnap.exists || adminSnap.data()?.isAdmin !== true) {
       return res.status(403).json({ ok: false, error: 'forbidden' });
+    }
+
+    const webPushRef = db.collection('settings').doc('webPush');
+    const webPushSnap = await webPushRef.get();
+    if (!webPushSnap.exists) {
+      return res.status(403).json({ ok: false, error: 'push_disabled' });
+    }
+
+    const webPushData = webPushSnap.data() || {};
+    if (webPushData.enabled !== true) {
+      return res.status(403).json({ ok: false, error: 'push_disabled' });
+    }
+
+    const dailyLimit = Number.isFinite(Number(webPushData.dailyLimit)) && Number(webPushData.dailyLimit) > 0
+      ? Number(webPushData.dailyLimit)
+      : 5;
+    const todayKey = getFortalezaDateKey();
+    const sentDate = String(webPushData.sentDate || '');
+    const sentCount = sentDate === todayKey ? Number(webPushData.sentCount || 0) : 0;
+
+    if (sentCount >= dailyLimit) {
+      return res.status(429).json({ ok: false, error: 'push_rate_limited', dailyLimit, sentCount });
     }
 
     const { title, message, targetMode = 'all', targetUids = [] } = req.body || {};
@@ -127,6 +157,15 @@ export default async function handler(req, res) {
       }, { merge: true }));
       await batch.commit();
     }
+
+    await webPushRef.set({
+      enabled: true,
+      dailyLimit,
+      sentDate: todayKey,
+      sentCount: sentCount + 1,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedByUid: decoded.uid
+    }, { merge: true });
 
     return res.status(200).json({
       ok: true,
