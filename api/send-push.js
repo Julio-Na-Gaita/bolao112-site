@@ -93,6 +93,20 @@ const getFortalezaDateKey = () =>
     day: '2-digit'
   }).format(new Date());
 
+const refreshUserPushAggregate = async (db, uid) => {
+  if (!uid) return;
+  const snap = await db.collection('notification_tokens')
+    .where('uid', '==', uid)
+    .where('enabled', '==', true)
+    .get();
+
+  await db.collection('users').doc(uid).set({
+    hasWebPushToken: snap.size > 0,
+    webPushTokenCount: snap.size,
+    webPushUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
@@ -179,6 +193,7 @@ export default async function handler(req, res) {
     let successCount = 0;
     let failureCount = 0;
     const invalidRefs = [];
+    const invalidUids = new Set();
     const successRefs = [];
     const errorUpdates = [];
 
@@ -213,6 +228,8 @@ export default async function handler(req, res) {
 
         if (isInvalidTokenError(code)) {
           invalidRefs.push(ref);
+          const uid = String(tokenDocs[originalIndex]?.data?.()?.uid || '').trim();
+          if (uid) invalidUids.add(uid);
         }
       });
     }
@@ -247,6 +264,8 @@ export default async function handler(req, res) {
       }, { merge: true }));
       await batch.commit();
     }
+
+    await Promise.all(Array.from(invalidUids).map((uid) => refreshUserPushAggregate(db, uid)));
 
     await webPushRef.set({
       enabled: true,

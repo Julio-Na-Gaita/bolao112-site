@@ -21,6 +21,19 @@ if (!admin.apps.length && process.env.FIREBASE_PROJECT_ID && process.env.FIREBAS
 const hashToken = (token = '') =>
   createHash('sha256').update(String(token || '')).digest('hex');
 
+const normalizePlatform = (value = '') => {
+  const platform = String(value || '').toLowerCase();
+  return ['android', 'ios', 'desktop', 'web'].includes(platform) ? platform : 'unknown';
+};
+
+const countEnabledTokensForUser = async (db, uid) => {
+  const snap = await db.collection('notification_tokens')
+    .where('uid', '==', uid)
+    .where('enabled', '==', true)
+    .get();
+  return snap.size;
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'method_not_allowed' });
@@ -54,8 +67,8 @@ export default async function handler(req, res) {
 
     const tokenId = hashToken(rawToken);
     const now = admin.firestore.FieldValue.serverTimestamp();
-    const platform = String(req.body?.platform || 'web').trim() || 'web';
-    const userAgent = String(req.body?.userAgent || '').trim();
+    const platform = normalizePlatform(req.body?.platform || 'web');
+    const userAgent = String(req.body?.userAgent || '').trim().slice(0, 240);
 
     await db.collection('notification_tokens').doc(tokenId).set({
       token: rawToken,
@@ -71,8 +84,15 @@ export default async function handler(req, res) {
       lastSeenAt: now
     }, { merge: true });
 
+    const tokenCount = await countEnabledTokensForUser(db, decoded.uid);
+
     await userRef.set({
       hasWebPushToken: true,
+      webPushTokenCount: tokenCount,
+      webPushLastStatus: 'active',
+      webPushLastPlatform: platform,
+      webPushLastUserAgent: userAgent,
+      webPushLastActivatedAt: now,
       webPushUpdatedAt: now
     }, { merge: true });
 

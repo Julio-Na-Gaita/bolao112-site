@@ -171,6 +171,7 @@ let adminCleanupState = {
 let adminFinancialState = {
   users: [],
   whitelist: [],
+  pushStatuses: {},
   search: "",
   sortKey: "name",
   sortDir: "asc",
@@ -214,6 +215,36 @@ const isWebPushSupported = async () => {
   } catch (error) {
     console.warn("Push web indisponível:", error);
     return false;
+  }
+};
+
+const getWebPushPlatform = () => {
+  const ua = window.navigator.userAgent || "";
+  if (isIosDevice()) return "ios";
+  if (/android/i.test(ua)) return "android";
+  if (/windows|macintosh|linux|cros/i.test(ua)) return "desktop";
+  return "unknown";
+};
+
+const updateUserPushStatusOnServer = async (status) => {
+  try {
+    if (!currentUser || !status) return;
+    const activeUser = auth.currentUser || currentUser;
+    const idToken = await activeUser.getIdToken(true);
+    await fetch("/api/update-push-status", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        status,
+        platform: getWebPushPlatform(),
+        userAgent: navigator.userAgent || ""
+      })
+    });
+  } catch (error) {
+    console.warn("Não foi possível salvar status de push:", error);
   }
 };
 
@@ -284,7 +315,7 @@ const registerWebPushTokenOnServer = async (token) => {
     },
     body: JSON.stringify({
       token,
-      platform: "web",
+      platform: getWebPushPlatform(),
       userAgent: navigator.userAgent || ""
     })
   });
@@ -313,9 +344,11 @@ const buildIosPushHelpHtml = () => {
       <ol>
         <li>Abra o Bolão pelo Safari.</li>
         <li>Toque em Compartilhar.</li>
-        <li>Escolha “Adicionar à Tela de Início”.</li>
+        <li>Toque em Adicionar à Tela de Início.</li>
         <li>Abra o Bolão pelo ícone criado.</li>
-        <li>Volte em Perfil e toque em “Ativar notificações deste aparelho”.</li>
+        <li>Faça login.</li>
+        <li>Vá em Perfil.</li>
+        <li>Toque em Ativar notificações deste aparelho.</li>
       </ol>
     </div>
   `;
@@ -323,20 +356,32 @@ const buildIosPushHelpHtml = () => {
 
 const buildProfileWebPushSection = async (userData = {}) => {
   const vapidKey = await getAdminCommunicationVapidKey();
+  const supported = await isWebPushSupported();
   const hasToken = userData.hasWebPushToken === true;
+  const platform = getWebPushPlatform();
   const pushStatus = !vapidKey
     ? "Push ainda não configurado pelo admin"
     : hasToken
       ? "Notificações ativadas neste aparelho"
-      : "Toque para ativar neste aparelho";
-  const pushDescription = !vapidKey
-    ? "Configure a chave VAPID pública para liberar notificações neste app."
-    : isIosPwaHintRequired()
-      ? "No iPhone, adicione o Bolão à Tela de Início antes de ativar. Depois volte aqui e toque no botão."
-      : "Permita as notificações deste aparelho para receber avisos do Bolão 112 FC.";
-  const pushNote = isIosDevice()
-    ? "iOS 16.4+ e abertura pelo ícone da Tela de Início."
-    : "Funciona em navegadores compatíveis com Web Push.";
+      : supported
+        ? "Toque para ativar neste aparelho"
+        : "Navegador incompatível";
+  const pushDescription = hasToken
+    ? "Você receberá avisos importantes do Bolão, inclusive quando o site/app estiver em segundo plano."
+    : !supported
+      ? "Este navegador ainda não suporta notificações web. Tente usar Chrome no Android ou Safari no iPhone com o Bolão adicionado à Tela de Início."
+      : !vapidKey
+        ? "Configure a chave VAPID pública para liberar notificações neste app."
+        : isIosPwaHintRequired()
+          ? "No iPhone, para receber notificações, é necessário adicionar o Bolão à Tela de Início e abrir pelo ícone criado. Depois disso, volte aqui e toque em “Ativar notificações deste aparelho”."
+          : platform === "android"
+            ? "Você pode receber notificações mesmo sem instalar o app. Basta permitir as notificações neste navegador. Para uma experiência melhor, recomendamos adicionar o Bolão à tela inicial."
+            : "Permita as notificações deste aparelho para receber avisos do Bolão 112 FC.";
+  const pushNote = hasToken
+    ? "Notificações ativadas neste aparelho."
+    : isIosDevice()
+      ? "Requer iOS 16.4 ou superior."
+      : "Funciona em navegadores compatíveis com Web Push.";
 
   return `
     <section class="profile-section mb-4">
@@ -364,23 +409,27 @@ window.requestWebPushPermissionAndSaveToken = async () => {
   }
 
   if (!await isWebPushSupported()) {
+    await updateUserPushStatusOnServer("unsupported");
     alert("Este navegador ainda não suporta push web neste aparelho.");
     return null;
   }
 
   const vapidKey = await getAdminCommunicationVapidKey();
   if (!vapidKey) {
+    await updateUserPushStatusOnServer("not_configured");
     alert("Push ainda não configurado pelo admin.");
     return null;
   }
 
   if (isIosPwaHintRequired()) {
+    await updateUserPushStatusOnServer("ios_not_installed");
     alert("No iPhone, adicione o Bolão à Tela de Início antes de ativar as notificações.");
     return null;
   }
 
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
+    await updateUserPushStatusOnServer(permission === "denied" ? "denied" : "error");
     alert(permission === "denied" ? "Permissão negada." : "Permissão de notificação não concedida.");
     return null;
   }
@@ -409,9 +458,11 @@ window.requestWebPushPermissionAndSaveToken = async () => {
   } catch (error) {
     console.error("Erro ao registrar token de push:", error);
     if (error.code === "push_not_configured") {
+      await updateUserPushStatusOnServer("not_configured");
       alert("Push ainda não configurado pelo servidor.");
       return null;
     }
+    await updateUserPushStatusOnServer("error");
     alert(error.message || "Não foi possível registrar este aparelho.");
     return null;
   }
@@ -8696,6 +8747,28 @@ async function loadAdminMatches() {
           return users;
         };
 
+        const loadAdminPushStatuses = async () => {
+          try {
+            const activeUser = auth.currentUser || currentUser;
+            if (!activeUser) return {};
+            const idToken = await activeUser.getIdToken(true);
+            const response = await fetch("/api/admin-push-status", {
+              method: "GET",
+              headers: {
+                "Authorization": `Bearer ${idToken}`
+              }
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || result?.ok === false) throw new Error(result?.error || "admin_push_status_error");
+            adminFinancialState.pushStatuses = result.users || {};
+            return adminFinancialState.pushStatuses;
+          } catch (error) {
+            console.warn("Não foi possível carregar status de push dos usuários:", error);
+            adminFinancialState.pushStatuses = {};
+            return {};
+          }
+        };
+
         const loadAdminWhitelistUsers = async () => {
           const snap = await getDocs(collection(db, "whitelist"));
           const items = [];
@@ -8728,6 +8801,23 @@ async function loadAdminMatches() {
           <span class="status-chip status-chip--${tone}">${escapeHtml(label)}</span>
         `;
 
+        const getFinancialPushStatusChip = (user = {}) => {
+          const status = adminFinancialState.pushStatuses?.[user.id || user.uid];
+          if (status?.active) {
+            const count = Number(status.tokenCount || 0);
+            return {
+              label: count > 1 ? `Push ativo · ${count} aparelhos` : "Push ativo",
+              tone: "success"
+            };
+          }
+
+          if (user.webPushLastStatus === "denied") return { label: "Permissão negada", tone: "warning" };
+          if (user.webPushLastStatus === "ios_not_installed") return { label: "iPhone: precisa instalar", tone: "warning" };
+          if (user.webPushLastStatus === "unsupported") return { label: "Navegador incompatível", tone: "warning" };
+          if (user.webPushLastStatus === "not_configured") return { label: "Push não configurado", tone: "default" };
+          return { label: "Sem push", tone: "default" };
+        };
+
         const renderFinancialUserCard = (user) => {
           const paid = isFinancialUserPaid(user);
           const versionLabel = String(user.appVersion || "Sem versão").trim();
@@ -8737,6 +8827,7 @@ async function loadAdminMatches() {
             : "REGULAMENTO PENDENTE";
           const debtLabel = user.debts > 0 ? `INADIMPLÊNCIA ${user.debts}` : "SEM MULTAS";
           const inactiveClass = user.isActive === false ? "admin-financial-card--inactive" : "";
+          const pushChip = getFinancialPushStatusChip(user);
 
           return `
             <div class="admin-financial-card ${inactiveClass}">
@@ -8759,6 +8850,7 @@ async function loadAdminMatches() {
                     ${renderFinancialUserChip(`Último login ${loginLabel}`, paid ? "success" : "warning")}
                     ${renderFinancialUserChip(rulesLabel, user.rulesAccepted === true ? "success" : "warning")}
                     ${renderFinancialUserChip(getFinancialPaymentsSummary(user), paid ? "success" : "danger")}
+                    ${renderFinancialUserChip(pushChip.label, pushChip.tone)}
                     ${renderFinancialUserChip(debtLabel, user.debts > 0 ? "danger" : "default")}
                     ${user.isAdmin ? renderFinancialUserChip("ADMIN", "default") : ""}
                     ${user.isActive === false ? renderFinancialUserChip("INATIVO", "danger") : ""}
@@ -8855,6 +8947,7 @@ async function loadAdminMatches() {
           adminFinancialState.loading = true;
           const [users] = await Promise.all([
             loadAdminFinancialUsers(),
+            loadAdminPushStatuses(),
             loadAdminWhitelistUsers().catch(() => [])
           ]);
           adminFinancialState.loading = false;
