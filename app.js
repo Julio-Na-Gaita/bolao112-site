@@ -5525,7 +5525,7 @@ const renderAdminCreationModal = () => {
         </div>
         <span class="status-chip status-chip--default">${competitionItems.length}</span>
       </div>
-      <p class="text-xs text-gray-500 leading-relaxed">Ative, arquive e restaure competições para manter o dropdown sincronizado com o app.</p>
+      <p class="text-xs text-gray-500 leading-relaxed">Gerencie as competições exibidas no app.</p>
       <button type="button" onclick="window.openCompetitionsManager()" class="w-full bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
         <i class="fas fa-trophy text-base"></i>
         Abrir Competições
@@ -5698,7 +5698,7 @@ const renderAdminCreationModal = () => {
           <div class="admin-creation-tabs">
             ${getTabButton("new-match", "Novo Confronto", "fa-futbol", adminCreationState.tab === "new-match", false)}
             ${getTabButton("rounds", "Rodadas", "fa-list-ol", adminCreationState.tab === "rounds", false)}
-            ${getTabButton("competitions", "Competições", "fa-trophy", adminCreationState.tab === "competitions", true)}
+            ${getTabButton("competitions", "Competições", "fa-trophy", adminCreationState.tab === "competitions", false)}
           </div>
         </div>
 
