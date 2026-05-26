@@ -30,6 +30,61 @@ const isInvalidTokenError = (code = '') =>
     'messaging/invalid-argument'
   ].includes(code);
 
+const buildPushMessage = ({ tokens = [], title, message, targetMode }) => ({
+  tokens,
+  notification: {
+    title,
+    body: message,
+  },
+  webpush: {
+    fcmOptions: {
+      link: 'https://bolao112-site.vercel.app/',
+    },
+  },
+  data: {
+    source: 'admin_communications_web',
+    targetMode,
+  },
+});
+
+const sendPushChunkWithoutBatch = async ({ messaging, tokens, title, message, targetMode }) => {
+  if (typeof messaging.sendEachForMulticast === 'function') {
+    return messaging.sendEachForMulticast(buildPushMessage({ tokens, title, message, targetMode }));
+  }
+
+  const responses = [];
+  for (const token of tokens) {
+    try {
+      await messaging.send({
+        token,
+        notification: {
+          title,
+          body: message,
+        },
+        webpush: {
+          fcmOptions: {
+            link: 'https://bolao112-site.vercel.app/',
+          },
+        },
+        data: {
+          source: 'admin_communications_web',
+          targetMode,
+        },
+      });
+      responses.push({ success: true });
+    } catch (error) {
+      responses.push({ success: false, error });
+    }
+  }
+
+  const successCount = responses.filter((response) => response.success).length;
+  return {
+    responses,
+    successCount,
+    failureCount: responses.length - successCount,
+  };
+};
+
 const getFortalezaDateKey = () =>
   new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'America/Fortaleza',
@@ -119,21 +174,12 @@ export default async function handler(req, res) {
 
     for (let chunkStart = 0; chunkStart < tokens.length; chunkStart += 500) {
       const tokenChunk = tokens.slice(chunkStart, chunkStart + 500);
-      const result = await admin.messaging().sendMulticast({
+      const result = await sendPushChunkWithoutBatch({
+        messaging: admin.messaging(),
         tokens: tokenChunk,
-        notification: {
-          title: cleanTitle,
-          body: cleanMessage,
-        },
-        webpush: {
-          fcmOptions: {
-            link: 'https://bolao112-site.vercel.app/',
-          },
-        },
-        data: {
-          source: 'admin_communications_web',
-          targetMode: cleanMode,
-        },
+        title: cleanTitle,
+        message: cleanMessage,
+        targetMode: cleanMode,
       });
 
       successCount += result.successCount || 0;
@@ -175,6 +221,10 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Erro ao enviar push web:', error);
-    return res.status(500).json({ ok: false, error: error?.message || 'push_send_error' });
+    return res.status(500).json({
+      ok: false,
+      error: 'push_send_error',
+      details: String(error?.message || 'Erro desconhecido ao enviar push.').slice(0, 240)
+    });
   }
 }

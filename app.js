@@ -5617,6 +5617,10 @@ window.sendAdminManualPush = async () => {
       showAdminCommunicationToast("Push bloqueado pela trava de segurança.", "danger");
       return;
     }
+    if (error.code === "push_send_error") {
+      showAdminCommunicationToast("Erro ao enviar push. Verifique a configuração do Firebase Admin e tente novamente.", "danger");
+      return;
+    }
     showAdminCommunicationToast(error.message || "Não foi possível enviar o push.", "danger");
   }
 };
@@ -5697,8 +5701,10 @@ window.sendAdminWhatsappNotice = async () => {
           ? "Push web ainda não está configurado no servidor. O aviso foi salvo, mas a notificação não foi enviada."
           : error.code === "push_disabled"
             ? "Push web está desligado nas configurações de segurança."
-            : error.code === "push_rate_limited"
-              ? "Push bloqueado pela trava de segurança."
+          : error.code === "push_rate_limited"
+            ? "Push bloqueado pela trava de segurança."
+            : error.code === "push_send_error"
+              ? "Erro ao enviar push. Verifique a configuração do Firebase Admin e tente novamente."
               : "Não foi possível enviar o push do aviso.",
         "danger"
       );
