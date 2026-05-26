@@ -430,6 +430,212 @@ select:focus-visible {
     color: var(--status-danger-text);
 }
 
+.admin-creation-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.admin-creation-tab {
+    min-height: 48px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px;
+    border-radius: 16px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: rgba(255,255,255,0.88);
+    color: #334155;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1.1;
+    box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+}
+
+.admin-creation-tab i {
+    color: #006400;
+    font-size: 14px;
+}
+
+.admin-creation-tab small {
+    color: #94a3b8;
+    font-size: 8px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.admin-creation-tab.is-active {
+    background: #006400;
+    color: #fff;
+    border-color: #006400;
+}
+
+.admin-creation-tab.is-active i {
+    color: #FFD700;
+}
+
+.admin-creation-tab.is-disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+}
+
+.admin-creation-panel {
+    border-radius: 22px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: rgba(255,255,255,0.95);
+    padding: 14px;
+    box-shadow: 0 18px 36px rgba(15,23,42,0.12);
+}
+
+.admin-mini-chip {
+    min-height: 54px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border-radius: 16px;
+    background: rgba(0,100,0,0.07);
+    color: #006400;
+    text-align: center;
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1.15;
+    padding: 6px;
+}
+
+.admin-mini-chip i {
+    color: #F9A825;
+    font-size: 13px;
+}
+
+.admin-compact-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.admin-creation-input {
+    width: 100%;
+    min-height: 46px;
+    border-radius: 16px;
+    border: 1px solid rgba(15,23,42,0.12);
+    background: rgba(255,255,255,0.96);
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 0 12px;
+    outline: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.admin-creation-input:focus {
+    border-color: #006400;
+    box-shadow: 0 0 0 3px rgba(0,100,0,0.1);
+}
+
+.admin-team-card {
+    position: relative;
+    border-radius: 20px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: rgba(248,250,252,0.86);
+    padding: 12px;
+}
+
+.admin-search-btn {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: #006400;
+    color: #FFD700;
+    box-shadow: 0 10px 18px rgba(0,100,0,0.18);
+}
+
+.admin-team-thumb {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    border-radius: 16px;
+    border: 1px solid rgba(15,23,42,0.1);
+    background: #fff;
+    overflow: hidden;
+}
+
+.admin-team-thumb--small {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+}
+
+.admin-team-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
+}
+
+.admin-team-suggestions {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 40;
+    max-height: 220px;
+    overflow-y: auto;
+    border-radius: 16px;
+    border: 1px solid rgba(15,23,42,0.1);
+    background: #fff;
+    box-shadow: 0 18px 38px rgba(15,23,42,0.18);
+}
+
+.admin-team-suggestion {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-bottom: 1px solid rgba(15,23,42,0.06);
+    background: #fff;
+}
+
+.admin-team-suggestion:last-child {
+    border-bottom: 0;
+}
+
+.admin-team-suggestion:active {
+    background: rgba(0,100,0,0.08);
+}
+
+.admin-check-row {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: rgba(255,255,255,0.9);
+    padding: 0 12px;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.admin-check-row--disabled {
+    opacity: 0.56;
+}
+
 .empty-state {
     border-radius: var(--radius-lg);
     padding: 16px;
@@ -926,24 +1132,6 @@ select:focus-visible {
 .match-team-name {
     font-size: 11px;
     font-weight: 800;
-}
-
-.match-status-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 12px;
-}
-
-.match-status-hint {
-    border-radius: 12px;
-    border: 1px solid rgba(240, 213, 141, 0.9);
-    background: rgba(255, 248, 225, 0.9);
-    color: #8d6e63;
-    font-size: 10px;
-    font-weight: 800;
-    line-height: 1.35;
-    padding: 8px 10px;
 }
 
 .ranking-hero {
@@ -1508,69 +1696,6 @@ select:focus-visible {
         min-height: 40px;
         font-size: 10px;
         border-radius: 12px;
-    }
-
-    .match-card-shell {
-        border-radius: 20px;
-    }
-
-    .match-card-topbar {
-        margin: 1px 1px 8px;
-    }
-
-    .match-card-shell .match-number-pill {
-        min-width: 32px;
-        padding: 3px 7px;
-        font-size: 11px;
-    }
-
-    .match-card-shell .match-competition-chip {
-        min-height: 28px;
-        padding: 0 10px;
-        font-size: 10px;
-    }
-
-    .match-card-shell .match-round-pill {
-        font-size: 9px;
-        padding: 2px 8px;
-    }
-
-    .match-card-shell .match-deadline-pill {
-        font-size: 10px;
-        line-height: 1.25;
-    }
-
-    .match-card-shell .match-action-btn {
-        width: 30px;
-        height: 30px;
-    }
-
-    .match-card-shell .match-action-btn i {
-        font-size: 14px;
-    }
-
-    .match-card-shell .match-team-name {
-        font-size: 10px;
-    }
-
-    .match-card-shell .match-versus {
-        font-size: 18px;
-    }
-
-    .match-status-row {
-        gap: 4px;
-        margin-bottom: 10px;
-    }
-
-    .match-status-row .status-chip {
-        min-height: 26px;
-        padding: 0 10px;
-        font-size: 9px;
-    }
-
-    .match-status-hint {
-        padding: 7px 9px;
-        font-size: 9px;
     }
 
     .extract-match-card {

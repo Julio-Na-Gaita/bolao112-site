@@ -15,7 +15,7 @@
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ADICIONADO: enableIndexedDbPersistence
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const registerServiceWorker = () => {
   if (!('serviceWorker' in navigator)) return;
@@ -121,6 +121,72 @@ const CHAT_ALLOWED_REACTIONS = Object.freeze([
 const SOUND_PREFERENCE_KEY = "bolao112_sound_enabled";
 
 let matchesLoadRequestSeq = 0;
+let adminCreationState = {
+  loading: false,
+  stage: "intro",
+  competitions: [],
+  rounds: [],
+  teams: []
+};
+let adminSessionProfile = null;
+
+const ADMIN_ROUND_FALLBACKS = Object.freeze([
+  "Rodada 1",
+  "Rodada 2",
+  "Rodada 3",
+  "Rodada 4",
+  "Rodada 5",
+  "Rodada 6",
+  "Rodada 7",
+  "Rodada 8",
+  "Rodada 9",
+  "Rodada 10",
+  "Playoffs Eliminatórias",
+  "Oitavas de final",
+  "Quartas de final",
+  "Semi final",
+  "Disputa de 3º Lugar",
+  "Final"
+]);
+
+const normalizeAdminText = (value = "") =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+const isHttpUrl = (value = "") => /^https?:\/\/\S+/i.test(String(value || "").trim());
+
+const formatAdminDateTimeInput = (value) => {
+  const date = toJsDate(value) || new Date();
+  const pad = (num) => String(num).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+const formatAdminDateTimeLabel = (value) => {
+  const date = toJsDate(value) || new Date();
+  return date.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+};
+
+const buildAdminWhatsAppMessage = ({ teamA, teamB, competition, round, deadline }) => {
+  const dateLabel = deadline ? formatAdminDateTimeLabel(deadline) : "";
+  return `📢 JOGO NOVO: 📢\n\n⚽ ${teamA} x ${teamB}\n🏆 ${competition} (${round})\n⏰ ${dateLabel}\n\n📲 VOTE AGORA: https://bolao112-site.vercel.app`;
+};
+
+const getAdminCreationTeamFieldIds = (side) => ({
+  name: `adminTeamName${side}`,
+  logo: `adminTeamLogo${side}`,
+  thumb: `adminTeamThumb${side}`,
+  thumbImg: `adminTeamThumbImg${side}`,
+  thumbFallback: `adminTeamThumbFallback${side}`,
+  suggestions: `adminTeamSuggestions${side}`
+});
 
 const syncStaticVersionLabels = () => {
   document.querySelectorAll('[data-app-version-label]').forEach((el) => {
@@ -271,6 +337,7 @@ const invalidateHomeRankingCaches = () => {
     "col:matches",
     "col:guesses",
     "col:users",
+    "col:teams",
     "col:match_comments",
     "col:polls",
     "col:banners",
@@ -2211,13 +2278,6 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
   `;
 };
 
-const getMatchUserStatus = (match, myVote) => {
-  if (match.winner) return { label: "Encerrado", tone: "danger", icon: "fa-lock" };
-  if (match.expired) return { label: "Aguardando resultado", tone: "warning", icon: "fa-hourglass-half" };
-  if (myVote) return { label: "Palpitado", tone: "success", icon: "fa-check-circle" };
-  return { label: "Aberto para palpite", tone: "default", icon: "fa-bolt" };
-};
-
 const renderMatchesScreenSkeleton = () => `
   <div class="space-y-4">
     ${renderDeferredHomeSkeleton()}
@@ -3109,13 +3169,6 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 const theme = getCompetitionTheme(m.competition || "");
                 const logo = compMap[m.competition] || "";
                 const cardStyle = `--match-accent:${theme.accent};--match-soft:${theme.soft};--match-soft-strong:${theme.softStrong};--match-chip-bg:${theme.chipBg};--match-chip-text:${theme.chipText};border-left-color:${statusAccent};`;
-                const userStatus = getMatchUserStatus(m, userVote);
-                const userStatusClass = {
-                  default: "status-chip--default",
-                  success: "status-chip--success",
-                  warning: "status-chip--warning",
-                  danger: "status-chip--danger"
-                }[userStatus.tone] || "status-chip--default";
                 
                 const sCount = serverCounts[m.id] || 0; 
                 const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0"); 
@@ -3151,7 +3204,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                     thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1"><span class="text-green-700">${pctA}%</span><span class="text-gray-400 text-[8px]">TERMÔMETRO (CINZA = NÃO VOTOU)</span><span class="text-red-700">${pctB}%</span></div><div class="w-full h-2.5 bg-gray-200 rounded-full flex overflow-hidden"><div style="flex: ${votesA}" class="bg-green-700 h-full border-r border-white/50"></div><div style="flex: ${absReal}" class="bg-gray-300 h-full border-r border-white/50"></div><div style="flex: ${votesB}" class="bg-red-700 h-full"></div></div><div class="flex justify-between text-[8px] text-gray-400 mt-1"><span>${m.teamA}: ${votesA}</span>${absReal > 0 ? `<span>Faltosos: ${absReal}</span>` : ''}<span>${m.teamB}: ${votesB}</span></div></div>`; 
                 }
 
-                html += `<div class="match-card-shell card-cut relative border-l-[6px] mb-4 md:mb-6 overflow-hidden" style="${cardStyle}">
+                html += `<div class="match-card-shell card-cut relative border-l-[6px] mb-6 overflow-hidden" style="${cardStyle}">
                             <div class="match-card-topbar"></div>
                             ${logo ? `<img src="${logo}" class="match-card-logo-ghost absolute inset-0 w-full h-full object-contain z-0 pointer-events-none p-8">` : ''}
                             <div class="relative z-10 p-3">
@@ -3186,14 +3239,6 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                                         </button>
                                     </div>
                                 </div>
-
-                                <div class="mb-3 flex flex-wrap items-center gap-2">
-                                    <span class="status-chip ${userStatusClass}">
-                                      <i class="fas ${userStatus.icon} mr-1"></i>${userStatus.label}
-                                    </span>
-                                    ${userVote ? `<span class="status-chip status-chip--default">Seu palpite: ${escapeHtml(userVote)}</span>` : ''}
-                                    ${!userVote && !m.expired ? `<span class="status-chip status-chip--warning">Falta palpitar</span>` : ''}
-                                </div>
                                 
                                 <div class="flex items-center justify-between px-1">
                                     ${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}
@@ -3201,7 +3246,6 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                                     ${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}
                                 </div>
                                 
-                                ${!userVote && !m.expired ? `<p class="mt-3 text-[10px] font-bold text-[#9a6700] bg-[#fff8e1] border border-[#f0d58c] rounded-xl px-3 py-2">Toque em um time para registrar seu palpite.</p>` : ''}
                                 ${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="match-winner-name">${escapeHtml(m.winner)}</p></div>` : ''}
                                 ${thermoHtml}
                             </div>
@@ -5028,12 +5072,748 @@ document.getElementById("modalContainer").innerHTML = `
 
         };
         
+const getCurrentAdminProfile = async (force = false) => {
+  const user = currentUser || auth.currentUser;
+  if (!user) return null;
+
+  if (!force && adminSessionProfile && adminSessionProfile.uid === user.uid) {
+    return adminSessionProfile;
+  }
+
+  try {
+    const snap = await getDoc(doc(db, "users", user.uid));
+    if (!snap.exists()) return null;
+
+    const data = snap.data() || {};
+    if (data.isAdmin !== true) return null;
+
+    adminSessionProfile = {
+      uid: user.uid,
+      email: user.email || data.email || "",
+      name: data.name || user.displayName || user.email || "Admin"
+    };
+
+    return adminSessionProfile;
+  } catch (error) {
+    console.error("Erro ao validar admin:", error);
+    return null;
+  }
+};
+
+const getTeamThumbHtml = (fieldSide, logoUrl = "") => {
+  const ids = getAdminCreationTeamFieldIds(fieldSide);
+  const hasLogo = isHttpUrl(logoUrl);
+
+  return `
+    <div id="${ids.thumb}" class="admin-team-thumb">
+      <img id="${ids.thumbImg}" src="${hasLogo ? logoUrl : ""}" class="${hasLogo ? "" : "hidden"}" alt="Logo do time">
+      <i id="${ids.thumbFallback}" class="fas fa-shield-alt text-gray-400 ${hasLogo ? "hidden" : ""}"></i>
+    </div>
+  `;
+};
+
+const buildAdminTeamSuggestions = (fieldSide) => {
+  const ids = getAdminCreationTeamFieldIds(fieldSide);
+  const input = document.getElementById(ids.name);
+  const panel = document.getElementById(ids.suggestions);
+  if (!input || !panel) return;
+
+  const queryText = normalizeAdminText(input.value);
+  const teams = Array.isArray(adminCreationState.teams) ? adminCreationState.teams : [];
+  const filtered = queryText
+    ? teams.filter((team) => {
+        const teamName = normalizeAdminText(team.name || "");
+        const normalizedName = normalizeAdminText(team.normalizedName || "");
+        return teamName.includes(queryText) || normalizedName.includes(queryText);
+      })
+    : teams.slice(0, 6);
+
+  if (!input.value.trim()) {
+    panel.classList.add("hidden");
+    panel.innerHTML = "";
+    return;
+  }
+
+  if (filtered.length === 0) {
+    panel.innerHTML = `<div class="px-3 py-2 text-[11px] text-gray-400">Nenhum time encontrado.</div>`;
+    panel.classList.remove("hidden");
+    return;
+  }
+
+  panel.innerHTML = filtered.slice(0, 6).map((team) => {
+    const logo = isHttpUrl(team.logoUrl || "") ? team.logoUrl : "";
+    return `
+      <button
+        type="button"
+        onmousedown="window.selectAdminTeam('${fieldSide}', '${escapeJsString(team.name || "")}', '${escapeJsString(logo)}')"
+        class="admin-team-suggestion"
+      >
+        <div class="admin-team-thumb admin-team-thumb--small">
+          ${logo ? `<img src="${escapeHtml(logo)}" alt="Logo do time">` : `<i class="fas fa-shield-alt text-gray-400"></i>`}
+        </div>
+        <div class="min-w-0 text-left">
+          <div class="text-[11px] font-black text-gray-800 truncate">${escapeHtml(team.name || "")}</div>
+          <div class="text-[9px] text-gray-400 uppercase font-bold">${logo ? "Logo salva" : "Sem logo"}</div>
+        </div>
+      </button>
+    `;
+  }).join("");
+
+  panel.classList.remove("hidden");
+};
+
+const renderAdminCreationModal = () => {
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  const competitionOptions = (adminCreationState.competitions || [])
+    .map((competition) => `<option value="${escapeHtml(competition)}"></option>`)
+    .join("");
+
+  const roundOptions = (adminCreationState.rounds || [])
+    .map((round) => `<option value="${escapeHtml(round)}"></option>`)
+    .join("");
+
+  const introCard = `
+    <div class="admin-creation-panel space-y-3">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Novo confronto</div>
+          <h4 class="text-lg font-black text-gray-900 leading-tight">Abra o cadastro e publique um jogo novo.</h4>
+        </div>
+        <span class="status-chip status-chip--success">Admin</span>
+      </div>
+      <p class="text-xs text-gray-500 leading-relaxed">
+        Escolha competição, rodada, times, logos e prazo de votação. O fluxo está pronto para a home web/PWA.
+      </p>
+      <button type="button" onclick="window.openNewMatchForm()" class="w-full bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+        <i class="fas fa-plus-circle text-base"></i>
+        Abrir Novo Confronto
+      </button>
+      <div class="grid grid-cols-3 gap-2 pt-1">
+        <div class="admin-mini-chip"><i class="fas fa-shield-alt"></i><span>Atualiza lista</span></div>
+        <div class="admin-mini-chip"><i class="fas fa-whatsapp"></i><span>Compartilha jogo</span></div>
+        <div class="admin-mini-chip"><i class="fas fa-mobile-screen-button"></i><span>Pronto para celular</span></div>
+      </div>
+    </div>
+  `;
+
+  const roundsSoonCard = `
+    <div class="admin-creation-panel text-center space-y-2">
+      <div class="text-[10px] font-black text-gray-400 uppercase tracking-[0.18em]">Rodadas</div>
+      <h4 class="text-base font-black text-gray-900">Será implementado em breve</h4>
+      <p class="text-xs text-gray-500 leading-relaxed">Aqui entrarão a gestão de fases e rodadas configuráveis.</p>
+    </div>
+  `;
+
+  const competitionsSoonCard = `
+    <div class="admin-creation-panel text-center space-y-2">
+      <div class="text-[10px] font-black text-gray-400 uppercase tracking-[0.18em]">Competições</div>
+      <h4 class="text-base font-black text-gray-900">Será implementado em breve</h4>
+      <p class="text-xs text-gray-500 leading-relaxed">O cadastro de competições ficará disponível nessa área depois.</p>
+    </div>
+  `;
+
+  const getTabButton = (key, label, icon, active = false, disabled = false) => `
+    <button
+      type="button"
+      ${disabled ? "disabled" : `onclick="window.switchAdminCreationTab('${key}')"` }
+      class="admin-creation-tab ${active ? "is-active" : ""} ${disabled ? "is-disabled" : ""}"
+    >
+      <i class="fas ${icon}"></i>
+      <span>${label}</span>
+      ${disabled ? '<small>Em breve</small>' : ''}
+    </button>
+  `;
+
+  const competitionValue = adminCreationState.competitions?.[0] || "";
+  const roundValue = adminCreationState.rounds?.[0] || "";
+
+  const formHtml = `
+    <div class="admin-creation-panel space-y-4">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Novo confronto</div>
+          <h4 class="text-lg font-black text-gray-900 leading-tight">Cadastro rápido do jogo</h4>
+        </div>
+        <button type="button" onclick="window.openAdminMenu()" class="text-xs font-black text-gray-500">
+          <i class="fas fa-arrow-left mr-1"></i> Voltar
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="admin-compact-label">Competição</label>
+          <input id="adminMatchCompetition" list="adminCompetitionOptions" type="text" value="${escapeHtml(competitionValue)}" class="admin-creation-input" placeholder="Escolha a competição">
+          <datalist id="adminCompetitionOptions">${competitionOptions}</datalist>
+        </div>
+        <div>
+          <label class="admin-compact-label">Rodada/Fase</label>
+          <input id="adminMatchRound" list="adminRoundOptions" type="text" value="${escapeHtml(roundValue)}" class="admin-creation-input" placeholder="Escolha a rodada">
+          <datalist id="adminRoundOptions">${roundOptions}</datalist>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <div class="admin-team-card">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <label class="admin-compact-label mb-0">Time A</label>
+            <button type="button" onclick="window.searchAdminTeamLogo('A')" class="admin-search-btn"><i class="fas fa-magnifying-glass"></i></button>
+          </div>
+          <div class="relative">
+            <input id="adminTeamNameA" type="text" class="admin-creation-input pr-10" placeholder="Digite ou pesquise o time" oninput="window.refreshAdminTeamSuggestions('A')" onfocus="window.refreshAdminTeamSuggestions('A')" onblur="window.hideAdminTeamSuggestionsDelayed('A')">
+            <div id="adminTeamSuggestionsA" class="admin-team-suggestions hidden"></div>
+          </div>
+          <div class="mt-3 flex items-center gap-3">
+            ${getTeamThumbHtml("A")}
+            <div class="flex-1">
+              <div class="text-[10px] font-bold uppercase text-gray-400 mb-1">Miniatura da logo</div>
+              <div class="text-xs text-gray-500">A imagem aparece quando o link da logo estiver preenchido.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-center text-[#006400] font-black text-sm">X</div>
+
+        <div class="admin-team-card">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <label class="admin-compact-label mb-0">Time B</label>
+            <button type="button" onclick="window.searchAdminTeamLogo('B')" class="admin-search-btn"><i class="fas fa-magnifying-glass"></i></button>
+          </div>
+          <div class="relative">
+            <input id="adminTeamNameB" type="text" class="admin-creation-input pr-10" placeholder="Digite ou pesquise o time" oninput="window.refreshAdminTeamSuggestions('B')" onfocus="window.refreshAdminTeamSuggestions('B')" onblur="window.hideAdminTeamSuggestionsDelayed('B')">
+            <div id="adminTeamSuggestionsB" class="admin-team-suggestions hidden"></div>
+          </div>
+          <div class="mt-3 flex items-center gap-3">
+            ${getTeamThumbHtml("B")}
+            <div class="flex-1">
+              <div class="text-[10px] font-bold uppercase text-gray-400 mb-1">Miniatura da logo</div>
+              <div class="text-xs text-gray-500">A imagem aparece quando o link da logo estiver preenchido.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="btnToggleAdminLogoFields" class="text-[11px] font-black uppercase text-[#006400]">
+          <i class="fas fa-link mr-1"></i> Mostrar links das logos
+        </button>
+        <div id="adminLogoFields" class="hidden mt-3 space-y-3">
+          <div>
+            <label class="admin-compact-label">Link Logo A</label>
+            <input id="adminTeamLogoA" type="url" class="admin-creation-input" placeholder="https://...">
+          </div>
+          <div>
+            <label class="admin-compact-label">Link Logo B</label>
+            <input id="adminTeamLogoB" type="url" class="admin-creation-input" placeholder="https://...">
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="admin-compact-label">Data e Hora limite para votação</label>
+        <input id="adminMatchDeadline" type="datetime-local" class="admin-creation-input">
+      </div>
+
+      <label class="admin-check-row">
+        <input id="adminMatchShareWhatsapp" type="checkbox" class="accent-[#006400]" checked>
+        <span>Compartilhar no WhatsApp</span>
+      </label>
+
+      <label class="admin-check-row admin-check-row--disabled" title="Será implementado depois no Android.">
+        <input type="checkbox" class="accent-[#006400]" disabled>
+        <span>Enviar Push</span>
+      </label>
+
+      <div id="adminCreationStatus" class="hidden rounded-2xl border px-3 py-2 text-xs font-black"></div>
+
+      <div class="grid grid-cols-3 gap-2">
+        <button type="button" onclick="window.saveAdminMatch(true)" class="bg-[#F9A825] text-white py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press">
+          Salvar +1
+        </button>
+        <button type="button" onclick="window.saveAdminMatch(false)" class="bg-[#006400] text-white py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press">
+          Salvar
+        </button>
+        <button type="button" onclick="window.closeModal()" class="bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  `;
+
+  const tabContent = adminCreationState.stage === "form"
+    ? formHtml
+    : {
+        "new-match": introCard,
+        rounds: roundsSoonCard,
+        competitions: competitionsSoonCard
+      }[adminCreationState.tab] || introCard;
+
+  cont.innerHTML = `
+    <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[88vh] flex flex-col">
+      <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+      <div class="relative z-10 flex flex-col h-full bg-white/90">
+        <div class="bg-[#006400] p-4 text-white flex items-center justify-between shadow-md shrink-0">
+          <button onclick="openAdminMenu()" class="mr-3"><i class="fas fa-arrow-left text-xl"></i></button>
+          <div class="flex-1">
+            <h3 class="font-black uppercase text-lg leading-none">Criação</h3>
+            <p class="text-[10px] text-[#FFD700] font-bold">Novo confronto, rodadas e competições</p>
+          </div>
+          <button onclick="closeModal()" class="ml-3"><i class="fas fa-times text-xl"></i></button>
+        </div>
+
+        <div class="px-3 pt-3 shrink-0">
+          <div class="admin-creation-tabs">
+            ${getTabButton("new-match", "Novo Confronto", "fa-futbol", adminCreationState.tab === "new-match", false)}
+            ${getTabButton("rounds", "Rodadas", "fa-list-ol", adminCreationState.tab === "rounds", true)}
+            ${getTabButton("competitions", "Competições", "fa-trophy", adminCreationState.tab === "competitions", true)}
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-3">
+          ${tabContent}
+        </div>
+      </div>
+    </div>
+  `;
+
+  const deadlineInput = document.getElementById("adminMatchDeadline");
+  if (deadlineInput && !deadlineInput.value) {
+    deadlineInput.value = formatAdminDateTimeInput(new Date(Date.now() + 60 * 60 * 1000));
+  }
+
+  const teamAName = document.getElementById("adminTeamNameA");
+  const teamBName = document.getElementById("adminTeamNameB");
+  const teamALogo = document.getElementById("adminTeamLogoA");
+  const teamBLogo = document.getElementById("adminTeamLogoB");
+  const toggleLinksBtn = document.getElementById("btnToggleAdminLogoFields");
+  const linksWrap = document.getElementById("adminLogoFields");
+
+  if (teamAName) teamAName.addEventListener("input", () => window.refreshAdminTeamSuggestions("A"));
+  if (teamBName) teamBName.addEventListener("input", () => window.refreshAdminTeamSuggestions("B"));
+  if (teamALogo) teamALogo.addEventListener("input", () => window.updateAdminTeamPreview("A"));
+  if (teamBLogo) teamBLogo.addEventListener("input", () => window.updateAdminTeamPreview("B"));
+  if (toggleLinksBtn && linksWrap) {
+    toggleLinksBtn.onclick = () => {
+      const hidden = linksWrap.classList.toggle("hidden");
+      toggleLinksBtn.innerHTML = hidden
+        ? '<i class="fas fa-link mr-1"></i> Mostrar links das logos'
+        : '<i class="fas fa-eye-slash mr-1"></i> Ocultar links das logos';
+    };
+  }
+
+  window.updateAdminTeamPreview("A");
+  window.updateAdminTeamPreview("B");
+};
+
+window.refreshAdminTeamSuggestions = (fieldSide) => {
+  buildAdminTeamSuggestions(fieldSide);
+};
+
+window.hideAdminTeamSuggestionsDelayed = (fieldSide) => {
+  setTimeout(() => {
+    const ids = getAdminCreationTeamFieldIds(fieldSide);
+    const panel = document.getElementById(ids.suggestions);
+    if (panel) {
+      panel.classList.add("hidden");
+    }
+  }, 130);
+};
+
+window.selectAdminTeam = (fieldSide, name, logoUrl) => {
+  const ids = getAdminCreationTeamFieldIds(fieldSide);
+  const nameInput = document.getElementById(ids.name);
+  const logoInput = document.getElementById(ids.logo);
+  const panel = document.getElementById(ids.suggestions);
+
+  if (nameInput) nameInput.value = name || "";
+  if (logoInput) logoInput.value = logoUrl || "";
+  if (panel) panel.classList.add("hidden");
+  window.updateAdminTeamPreview(fieldSide);
+};
+
+window.updateAdminTeamPreview = (fieldSide) => {
+  const ids = getAdminCreationTeamFieldIds(fieldSide);
+  const logoInput = document.getElementById(ids.logo);
+  const img = document.getElementById(ids.thumbImg);
+  const fallback = document.getElementById(ids.thumbFallback);
+  if (!logoInput || !img || !fallback) return;
+
+  const logoUrl = logoInput.value.trim();
+  const valid = isHttpUrl(logoUrl);
+
+  if (valid) {
+    img.src = logoUrl;
+    img.classList.remove("hidden");
+    fallback.classList.add("hidden");
+  } else {
+    img.src = "";
+    img.classList.add("hidden");
+    fallback.classList.remove("hidden");
+  }
+};
+
+window.searchAdminTeamLogo = (fieldSide) => {
+  const ids = getAdminCreationTeamFieldIds(fieldSide);
+  const nameInput = document.getElementById(ids.name);
+  const teamName = String(nameInput?.value || "").trim();
+
+  if (!teamName) {
+    alert("Digite o nome do time antes de pesquisar o escudo.");
+    return;
+  }
+
+  const query = encodeURIComponent(`escudo ${teamName} PNG`);
+  window.open(`https://www.google.com/search?q=${query}`, "_blank", "noopener");
+};
+
+window.openCreationModal = async () => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para acessar a criação.");
+    closeModal();
+    return;
+  }
+
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  adminCreationState = {
+    ...adminCreationState,
+    loading: true,
+    tab: "new-match",
+    stage: "intro"
+  };
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="bg-white p-6 text-center rounded shadow-xl">
+      <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
+      <p class="text-xs font-black text-gray-500 uppercase">Carregando criação...</p>
+    </div>
+  `;
+
+  try {
+    await loadAdminCreationState();
+    renderAdminCreationModal();
+  } catch (error) {
+    console.error("Erro ao abrir criação:", error);
+    cont.innerHTML = `
+      <div class="bg-white p-6 text-center rounded shadow-xl">
+        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar a criação.</p>
+        <button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
+      </div>
+    `;
+  }
+};
+
+window.switchAdminCreationTab = (tabKey) => {
+  if (tabKey !== "new-match") {
+    alert("Será implementado em breve.");
+    return;
+  }
+
+  adminCreationState.tab = tabKey;
+  adminCreationState.stage = "intro";
+  renderAdminCreationModal();
+};
+
+window.openNewMatchForm = () => {
+  adminCreationState.stage = "form";
+  renderAdminCreationModal();
+};
+
+const setAdminCreationStatus = (message = "", tone = "success") => {
+  const el = document.getElementById("adminCreationStatus");
+  if (!el) return;
+
+  if (!message) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+
+  el.classList.remove("hidden", "border-green-200", "bg-green-50", "text-green-700", "border-red-200", "bg-red-50", "text-red-700");
+  el.classList.add(
+    tone === "danger" ? "border-red-200" : "border-green-200",
+    tone === "danger" ? "bg-red-50" : "bg-green-50",
+    tone === "danger" ? "text-red-700" : "text-green-700"
+  );
+  el.textContent = message;
+};
+
+const loadAdminCreationState = async () => {
+  const [competitionSnap, matchesSnap, teamsSnap] = await Promise.all([
+    readWithRuntimeCache("doc:settings:competitions", () => getDoc(doc(db, "settings", "competitions")), { ttlMs: DATA_CACHE_TTL.cold, force: true }),
+    readWithRuntimeCache("col:matches", () => getDocs(collection(db, "matches")), { ttlMs: DATA_CACHE_TTL.hot, force: true }),
+    readWithRuntimeCache("col:teams", () => getDocs(collection(db, "teams")), { ttlMs: DATA_CACHE_TTL.cold, force: true }).catch((error) => {
+      console.warn("Não foi possível carregar teams. Autocomplete seguirá vazio.", error);
+      return null;
+    })
+  ]);
+
+  const competitions = [];
+  if (competitionSnap.exists()) {
+    const items = Array.isArray(competitionSnap.data().items) ? competitionSnap.data().items : [];
+    items.forEach((item) => {
+      if (!item || !item.name || item.active === false) return;
+      competitions.push(String(item.name).trim());
+    });
+  }
+
+  if (competitions.length === 0) {
+    const competitionSet = new Set();
+    matchesSnap.forEach((snap) => {
+      const data = snap.data() || {};
+      if (data.competition) competitionSet.add(String(data.competition).trim());
+    });
+    competitions.push(...competitionSet);
+  }
+
+  const competitionList = [...new Set(competitions.filter(Boolean))];
+
+  const rounds = new Set();
+  matchesSnap.forEach((snap) => {
+    const data = snap.data() || {};
+    if (data.round) rounds.add(String(data.round).trim());
+  });
+  ADMIN_ROUND_FALLBACKS.forEach((round) => rounds.add(round));
+
+  const teams = [];
+  if (teamsSnap) {
+    teamsSnap.forEach((snap) => {
+      const data = snap.data() || {};
+      const name = String(data.name || "").trim();
+      if (!name) return;
+      teams.push({
+        id: snap.id,
+        name,
+        logoUrl: String(data.logoUrl || data.logo || "").trim(),
+        normalizedName: String(data.normalizedName || normalizeAdminText(name))
+      });
+    });
+  }
+
+  teams.sort((a, b) => a.name.localeCompare(b.name));
+
+  adminCreationState = {
+    ...adminCreationState,
+    loading: false,
+    competitions: competitionList,
+    rounds: [...rounds],
+    teams
+  };
+};
+
+const persistAdminTeamIfNeeded = async (teamName = "", logoUrl = "") => {
+  const cleanName = String(teamName || "").trim();
+  const cleanLogo = String(logoUrl || "").trim();
+  if (!cleanName || !cleanLogo || !isHttpUrl(cleanLogo)) return null;
+
+  const normalizedName = normalizeAdminText(cleanName);
+  const existing = (adminCreationState.teams || []).find((team) => normalizeAdminText(team.name || team.normalizedName || "") === normalizedName);
+  if (existing) return existing;
+
+  const nowTs = Timestamp.fromDate(new Date());
+  try {
+    const docRef = await addDoc(collection(db, "teams"), {
+      name: cleanName,
+      logoUrl: cleanLogo,
+      normalizedName,
+      createdAt: nowTs,
+      updatedAt: nowTs
+    });
+
+    const savedTeam = {
+      id: docRef.id,
+      name: cleanName,
+      logoUrl: cleanLogo,
+      normalizedName
+    };
+
+    adminCreationState.teams = [savedTeam, ...(adminCreationState.teams || [])];
+    invalidateRuntimeCache("col:teams");
+    return savedTeam;
+  } catch (error) {
+    console.warn("Não foi possível salvar o time para autocomplete:", error);
+    return null;
+  }
+};
+
+const logAdminMatchCreation = async ({ matchId, teamA, teamB, competition, round, deadline }) => {
+  try {
+    const admin = await getCurrentAdminProfile();
+    if (!admin) return;
+
+    await addDoc(collection(db, "admin_audit_logs"), {
+      type: "create_match",
+      adminUid: admin.uid || "",
+      adminName: admin.name || "",
+      adminEmail: admin.email || "",
+      matchId: matchId || "",
+      teams: {
+        teamA,
+        teamB
+      },
+      competition,
+      round,
+      deadline: deadline ? Timestamp.fromDate(deadline) : null,
+      createdAt: Timestamp.fromDate(new Date())
+    });
+  } catch (error) {
+    console.warn("Falha ao registrar auditoria do confronto:", error);
+  }
+};
+
+const saveAdminMatchInternal = async (keepOpen = false) => {
+  setAdminCreationStatus("");
+
+  const competition = String(document.getElementById("adminMatchCompetition")?.value || "").trim();
+  const round = String(document.getElementById("adminMatchRound")?.value || "").trim();
+  const teamA = String(document.getElementById("adminTeamNameA")?.value || "").trim();
+  const teamB = String(document.getElementById("adminTeamNameB")?.value || "").trim();
+  const teamALogo = String(document.getElementById("adminTeamLogoA")?.value || "").trim();
+  const teamBLogo = String(document.getElementById("adminTeamLogoB")?.value || "").trim();
+  const deadlineValue = String(document.getElementById("adminMatchDeadline")?.value || "").trim();
+  const shareWhatsapp = document.getElementById("adminMatchShareWhatsapp")?.checked === true;
+
+  if (!competition) return alert("Informe a competição.");
+  if (!round) return alert("Informe a rodada/fase.");
+  if (!teamA) return alert("Informe o Time A.");
+  if (!teamB) return alert("Informe o Time B.");
+  if (normalizeAdminText(teamA) === normalizeAdminText(teamB)) return alert("O Time A e o Time B não podem ser iguais.");
+  if (!deadlineValue) return alert("Informe a data e hora limite para votação.");
+  if (teamALogo && !isHttpUrl(teamALogo)) return alert("O link da logo do Time A precisa começar com http:// ou https://.");
+  if (teamBLogo && !isHttpUrl(teamBLogo)) return alert("O link da logo do Time B precisa começar com http:// ou https://.");
+
+  const deadlineDate = new Date(deadlineValue);
+  if (Number.isNaN(deadlineDate.getTime())) return alert("A data e hora informadas são inválidas.");
+
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para criar confrontos.");
+    closeModal();
+    return;
+  }
+
+  try {
+    const savedTeamA = await persistAdminTeamIfNeeded(teamA, teamALogo);
+    const savedTeamB = await persistAdminTeamIfNeeded(teamB, teamBLogo);
+
+    const nowTs = Timestamp.fromDate(new Date());
+    const deadlineTs = Timestamp.fromDate(deadlineDate);
+
+    const matchPayload = {
+      competition,
+      round,
+      teamA,
+      teamB,
+      teamAUrl: teamALogo || savedTeamA?.logoUrl || "",
+      teamBUrl: teamBLogo || savedTeamB?.logoUrl || "",
+      deadline: deadlineTs,
+      createdAt: nowTs,
+      updatedAt: nowTs,
+      winner: "",
+      final: false,
+      stats: {},
+      createdByUid: admin.uid || "",
+      createdByName: admin.name || "",
+      createdByEmail: admin.email || ""
+    };
+
+    const matchRef = await addDoc(collection(db, "matches"), matchPayload);
+    await logAdminMatchCreation({
+      matchId: matchRef.id,
+      teamA,
+      teamB,
+      competition,
+      round,
+      deadline: deadlineDate
+    });
+
+    invalidateHomeRankingCaches();
+    await loadAdminMatches();
+    if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) {
+      await loadMatches({ force: true });
+    }
+    if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && typeof loadRanking === "function") {
+      await loadRanking({ force: true });
+    }
+
+    if (shareWhatsapp) {
+      const text = buildAdminWhatsAppMessage({
+        teamA,
+        teamB,
+        competition,
+        round,
+        deadline: deadlineDate
+      });
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+    }
+
+    if (keepOpen) {
+      const preservedDeadline = formatAdminDateTimeInput(deadlineDate);
+      const preservedWhatsapp = shareWhatsapp;
+
+      const teamANameInput = document.getElementById("adminTeamNameA");
+      const teamBNameInput = document.getElementById("adminTeamNameB");
+      const teamALogoInput = document.getElementById("adminTeamLogoA");
+      const teamBLogoInput = document.getElementById("adminTeamLogoB");
+      const deadlineInput = document.getElementById("adminMatchDeadline");
+      const whatsappInput = document.getElementById("adminMatchShareWhatsapp");
+
+      if (teamANameInput) teamANameInput.value = "";
+      if (teamBNameInput) teamBNameInput.value = "";
+      if (teamALogoInput) teamALogoInput.value = "";
+      if (teamBLogoInput) teamBLogoInput.value = "";
+      if (deadlineInput) deadlineInput.value = preservedDeadline;
+      if (whatsappInput) whatsappInput.checked = preservedWhatsapp;
+
+      window.updateAdminTeamPreview("A");
+      window.updateAdminTeamPreview("B");
+      setAdminCreationStatus("Confronto salvo. Preencha o próximo jogo.");
+      return;
+    }
+
+    alert("Confronto salvo com sucesso.");
+    closeModal();
+  } catch (error) {
+    console.error("Erro ao salvar confronto:", error);
+    setAdminCreationStatus("Não foi possível salvar o confronto.", "danger");
+    alert(`Não foi possível salvar o confronto. ${error?.message || ""}`.trim());
+  }
+};
+
+window.saveAdminMatch = async (keepOpen = false) => {
+  await saveAdminMatchInternal(keepOpen);
+};
+
+window.saveAdminMatchAndReset = async () => {
+  await saveAdminMatchInternal(true);
+};
+
         // --- LEGENDA MEDALHAS ATUALIZADA (MITO, DIAMANTE...) ---
 
-        window.openAdminMenu = () => {
+        window.openAdminMenu = async () => {
             const modal = document.getElementById('modalOverlay'); 
             const cont = document.getElementById('modalContainer'); 
             modal.classList.remove('hidden');
+
+            cont.innerHTML = `
+              <div class="bg-white p-6 text-center rounded shadow-xl">
+                <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
+                <p class="text-xs font-black text-gray-500 uppercase">Validando admin...</p>
+              </div>
+            `;
+
+            const admin = await getCurrentAdminProfile(true);
+            if (!admin) {
+              alert("Você não tem permissão para acessar o painel admin.");
+              closeModal();
+              return;
+            }
             
             cont.innerHTML = `
             <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh] flex flex-col">
@@ -5069,8 +5849,8 @@ document.getElementById("modalContainer").innerHTML = `
                         <div>
                             <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📢 COMUNICAÇÃO</h4>
                             <div class="grid grid-cols-2 gap-2">
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#6A1B9A] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-bell text-lg"></i> Enviar Push</button>
-                                <button onclick="openCompetitionsManager()" class="bg-[#F9A825] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-trophy text-lg"></i> Competições</button>
+                                <button disabled title="Será implementado em breve" class="bg-[#6A1B9A] text-white/80 py-3 rounded font-bold text-xs shadow flex flex-col items-center gap-1 opacity-60 cursor-not-allowed"><i class="fas fa-bell text-lg"></i> Enviar Push</button>
+                                <button onclick="openCreationModal()" class="bg-[#F9A825] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Criação</button>
                             </div>
                         </div>
 
