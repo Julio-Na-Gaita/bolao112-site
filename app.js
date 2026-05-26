@@ -15,7 +15,8 @@
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ADICIONADO: enableIndexedDbPersistence
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getMessaging, getToken, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
         const registerServiceWorker = () => {
   if (!('serviceWorker' in navigator)) return;
@@ -105,7 +106,7 @@ let homeSectionCollapseState = {
   matches_done: true
 };
 
-const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.7');
+const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.8');
 const getAppVersionShort = () => getAppVersion().replace(/^web-/, '');
 const getAppVersionLabel = () => `Web v${getAppVersionShort()}`;
 const getAppVersionFullLabel = () => `Versão ${getAppVersionLabel()}`;
@@ -161,12 +162,118 @@ let adminFinancialState = {
   editUserDraft: null
 };
 
+let adminCommunicationState = {
+  tab: "push",
+  pushTargetMode: "all",
+  pushSearch: "",
+  users: [],
+  selectedUids: new Set(),
+  whatsappCount: 0
+};
+
 const normalizeAdminText = (value = "") =>
   String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+
+const getAdminCommunicationVapidKey = async () => {
+  const inlineKey = String(window.BOLAO_FCM_VAPID_KEY || "").trim();
+  if (inlineKey) return inlineKey;
+
+  try {
+    const cfgSnap = await getDoc(doc(db, "settings", "config"));
+    return String(cfgSnap.data()?.webPushVapidKey || "").trim();
+  } catch (error) {
+    console.warn("Não foi possível carregar VAPID de settings/config:", error);
+    return "";
+  }
+};
+
+const isWebPushSupported = async () => {
+  try {
+    return "Notification" in window && "serviceWorker" in navigator && await isMessagingSupported();
+  } catch (error) {
+    console.warn("Push web indisponível:", error);
+    return false;
+  }
+};
+
+const hashNotificationToken = async (token) => {
+  const raw = String(token || "");
+  if (!window.crypto?.subtle) return btoa(raw).replace(/[^a-zA-Z0-9]/g, "").slice(0, 120);
+  const bytes = new TextEncoder().encode(raw);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+};
+
+const saveNotificationTokenForCurrentUser = async (token) => {
+  if (!currentUser || !token) return;
+  const tokenId = await hashNotificationToken(token);
+  const userSnap = await getDoc(doc(db, "users", currentUser.uid)).catch(() => null);
+  const userData = userSnap?.data?.() || {};
+  const nowTs = Timestamp.fromDate(new Date());
+
+  await setDoc(doc(db, "notification_tokens", tokenId), {
+    token,
+    uid: currentUser.uid,
+    name: userData.name || "",
+    username: userData.username || "",
+    email: currentUser.email || userData.email || "",
+    enabled: true,
+    platform: "web",
+    userAgent: navigator.userAgent || "",
+    createdAt: nowTs,
+    updatedAt: nowTs,
+    lastSeenAt: nowTs
+  }, { merge: true });
+
+  await setDoc(doc(db, "users", currentUser.uid), {
+    hasWebPushToken: true,
+    webPushUpdatedAt: nowTs
+  }, { merge: true });
+};
+
+window.requestWebPushPermissionAndSaveToken = async () => {
+  if (!currentUser) {
+    alert("Faça login para ativar notificações.");
+    return null;
+  }
+
+  if (!await isWebPushSupported()) {
+    alert("Este navegador ainda não suporta push web neste aparelho.");
+    return null;
+  }
+
+  const vapidKey = await getAdminCommunicationVapidKey();
+  if (!vapidKey) {
+    alert("Push web ainda não configurado. Configure a chave VAPID do Firebase para ativar notificações.");
+    return null;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    alert("Permissão de notificação não concedida.");
+    return null;
+  }
+
+  const swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js", { updateViaCache: "none" });
+  const messaging = getMessaging(app);
+  const token = await getToken(messaging, {
+    vapidKey,
+    serviceWorkerRegistration: swRegistration
+  });
+
+  if (!token) {
+    alert("Não foi possível obter o token de push deste aparelho.");
+    return null;
+  }
+
+  await saveNotificationTokenForCurrentUser(token);
+  alert("Notificações ativadas neste aparelho.");
+  return token;
+};
 
 const normalizeRoundName = (value = "") =>
   String(value || "")
@@ -5130,6 +5237,389 @@ const getCurrentAdminProfile = async (force = false) => {
   }
 };
 
+const showAdminCommunicationToast = (message, tone = "success") => {
+  if (typeof showFinancialToast === "function") {
+    showFinancialToast(message, tone);
+    return;
+  }
+  alert(message);
+};
+
+const logAdminCommunicationAction = async (type, payload = {}) => {
+  try {
+    const admin = await getCurrentAdminProfile();
+    if (!admin) return;
+    await addDoc(collection(db, "admin_audit_logs"), {
+      type,
+      source: "admin_communications",
+      ...payload,
+      adminUid: admin.uid || "",
+      adminName: admin.name || "",
+      adminEmail: admin.email || "",
+      createdAt: Timestamp.fromDate(new Date())
+    });
+  } catch (error) {
+    console.warn("Falha ao registrar auditoria de comunicado:", error);
+  }
+};
+
+const loadAdminCommunicationUsers = async () => {
+  const snap = await getDocs(collection(db, "users"));
+  const users = [];
+  snap.forEach((d) => {
+    const data = d.data() || {};
+    users.push({
+      id: d.id,
+      uid: d.id,
+      name: data.name || data.username || "Sem nome",
+      username: data.username || "",
+      email: data.email || "",
+      isActive: data.isActive !== false
+    });
+  });
+  users.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+  adminCommunicationState.users = users;
+  return users;
+};
+
+const sendAdminPushRequest = async ({ title, message, targetMode = "all", targetUids = [] }) => {
+  const token = await auth.currentUser.getIdToken(true);
+  const response = await fetch("/api/send-push", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({ title, message, targetMode, targetUids })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || result?.ok === false) {
+    const error = new Error(result?.error || "Não foi possível enviar o push.");
+    error.code = result?.error || "push_error";
+    error.result = result;
+    throw error;
+  }
+  return result;
+};
+
+const saveAdminCommunicationRecord = async (payload = {}) => {
+  const admin = await getCurrentAdminProfile(true);
+  return addDoc(collection(db, "admin_communications"), {
+    ...payload,
+    createdAt: Timestamp.fromDate(new Date()),
+    createdByUid: admin?.uid || "",
+    createdByName: admin?.name || "",
+    createdByEmail: admin?.email || "",
+    source: "admin_communications_web"
+  });
+};
+
+const renderAdminCommunicationsModal = () => {
+  const tab = adminCommunicationState.tab || "push";
+  const isPush = tab === "push";
+  const copy = isPush
+    ? "Abra a ferramenta de push para enviar notificações manuais aos usuários."
+    : "Abra a ferramenta de WhatsApp para avisar rapidamente sobre novos confrontos.";
+  const action = isPush ? "window.openAdminManualPushModal()" : "window.openAdminWhatsAppNoticeModal()";
+  const actionLabel = isPush ? "Abrir Push" : "Abrir WhatsApp";
+
+  window.openModal(`
+    <div class="admin-communications-modal">
+      <div class="admin-communications-header">
+        <div>
+          <h3>Comunicados</h3>
+          <p>Push e WhatsApp para o Bolão 112 FC</p>
+        </div>
+        <button type="button" onclick="window.closeModal()" class="admin-communications-close"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="admin-communications-body">
+        <div class="admin-communication-tabs">
+          <button type="button" onclick="window.switchAdminCommunicationTab('push')" class="${isPush ? "is-active" : ""}">
+            <i class="fas fa-bell"></i><span>Push</span>
+          </button>
+          <button type="button" onclick="window.switchAdminCommunicationTab('whatsapp')" class="${!isPush ? "is-active" : ""}">
+            <i class="fab fa-whatsapp"></i><span>WhatsApp</span>
+          </button>
+        </div>
+        <div class="admin-communication-panel">
+          <div class="admin-communication-icon ${isPush ? "is-push" : "is-whatsapp"}">
+            <i class="${isPush ? "fas fa-bullhorn" : "fab fa-whatsapp"}"></i>
+          </div>
+          <p>${escapeHtml(copy)}</p>
+        </div>
+      </div>
+      <div class="admin-communications-footer">
+        <button type="button" onclick="window.closeModal()" class="admin-communication-secondary">Cancelar</button>
+        <button type="button" onclick="${action}" class="admin-communication-primary">${actionLabel}</button>
+      </div>
+    </div>
+  `);
+};
+
+window.openAdminCommunicationsModal = async () => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para acessar comunicados.");
+    return;
+  }
+  adminCommunicationState.tab = "push";
+  renderAdminCommunicationsModal();
+};
+
+window.switchAdminCommunicationTab = (tab) => {
+  adminCommunicationState.tab = tab === "whatsapp" ? "whatsapp" : "push";
+  renderAdminCommunicationsModal();
+};
+
+const renderAdminManualPushModal = async () => {
+  const mode = adminCommunicationState.pushTargetMode || "all";
+  const isSelected = mode === "selected";
+  const search = normalizeAdminText(adminCommunicationState.pushSearch || "");
+  const selectedCount = adminCommunicationState.selectedUids.size;
+  const users = adminCommunicationState.users || [];
+  const filtered = search
+    ? users.filter((user) => normalizeAdminText([user.name, user.username, user.email].join(" ")).includes(search))
+    : users;
+
+  const usersHtml = filtered.length ? filtered.map((user) => {
+    const checked = adminCommunicationState.selectedUids.has(user.uid);
+    return `
+      <label class="admin-user-picker-row ${checked ? "is-selected" : ""}">
+        <input type="checkbox" ${checked ? "checked" : ""} onchange="window.toggleAdminPushUser('${escapeJsString(user.uid)}', this.checked, this)">
+        <span>
+          <strong>${escapeHtml(user.name || "Sem nome")}</strong>
+          <small>@${escapeHtml(user.username || user.uid)}${user.email ? ` • ${escapeHtml(user.email)}` : ""}</small>
+        </span>
+      </label>
+    `;
+  }).join("") : `<div class="admin-communication-empty">Nenhum usuário encontrado.</div>`;
+
+  window.openModal(`
+    <div class="admin-communications-modal admin-communications-modal--large">
+      <div class="admin-communications-header">
+        <div>
+          <h3>Enviar Push Manual</h3>
+          <p>${isSelected ? "Escolha exatamente quem deve receber a notificação." : "Envie avisos para todos os usuários."}</p>
+        </div>
+        <button type="button" onclick="window.openAdminCommunicationsModal()" class="admin-communications-close"><i class="fas fa-arrow-left"></i></button>
+      </div>
+      <div class="admin-communications-body">
+        <div class="admin-communication-tabs">
+          <button type="button" onclick="window.switchAdminPushTargetMode('all')" class="${!isSelected ? "is-active" : ""}">Todos</button>
+          <button type="button" onclick="window.switchAdminPushTargetMode('selected')" class="${isSelected ? "is-active" : ""}">Selecionados</button>
+        </div>
+        <div class="admin-push-form">
+          <label>Título</label>
+          <input id="adminPushTitle" class="admin-creation-input" value="${escapeHtml(window.__adminPushDraftTitle || "")}" placeholder="Título do comunicado">
+          <label>Mensagem</label>
+          <textarea id="adminPushMessage" class="admin-communication-textarea" placeholder="Mensagem para os usuários">${escapeHtml(window.__adminPushDraftMessage || "")}</textarea>
+        </div>
+        ${isSelected ? `
+          <div class="admin-user-picker">
+            <div class="admin-user-picker-top">
+              <input id="adminPushUserSearch" class="admin-creation-input" value="${escapeHtml(adminCommunicationState.pushSearch || "")}" placeholder="Buscar usuário" oninput="window.filterAdminPushUsers(this.value)">
+              <span>${selectedCount} usuário(s) selecionado(s)</span>
+            </div>
+            <div class="admin-user-picker-list">${usersHtml}</div>
+          </div>
+        ` : `
+          <button type="button" onclick="window.requestWebPushPermissionAndSaveToken()" class="admin-communication-enable-push">
+            <i class="fas fa-bell"></i> Ativar notificações deste aparelho
+          </button>
+        `}
+      </div>
+      <div class="admin-communications-footer">
+        <button type="button" onclick="window.openAdminCommunicationsModal()" class="admin-communication-secondary">Cancelar</button>
+        <button type="button" onclick="window.sendAdminManualPush()" class="admin-communication-primary">ENVIAR</button>
+      </div>
+    </div>
+  `);
+};
+
+window.openAdminManualPushModal = async () => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para enviar comunicados.");
+    return;
+  }
+  adminCommunicationState.pushTargetMode = "all";
+  adminCommunicationState.pushSearch = "";
+  adminCommunicationState.selectedUids = new Set();
+  await loadAdminCommunicationUsers();
+  await renderAdminManualPushModal();
+};
+
+window.switchAdminPushTargetMode = async (mode) => {
+  window.__adminPushDraftTitle = document.getElementById("adminPushTitle")?.value || window.__adminPushDraftTitle || "";
+  window.__adminPushDraftMessage = document.getElementById("adminPushMessage")?.value || window.__adminPushDraftMessage || "";
+  adminCommunicationState.pushTargetMode = mode === "selected" ? "selected" : "all";
+  await renderAdminManualPushModal();
+};
+
+window.filterAdminPushUsers = async (value = "") => {
+  window.__adminPushDraftTitle = document.getElementById("adminPushTitle")?.value || "";
+  window.__adminPushDraftMessage = document.getElementById("adminPushMessage")?.value || "";
+  adminCommunicationState.pushSearch = String(value || "");
+  await renderAdminManualPushModal();
+};
+
+window.toggleAdminPushUser = (uid, checked, input = null) => {
+  if (checked) adminCommunicationState.selectedUids.add(uid);
+  else adminCommunicationState.selectedUids.delete(uid);
+  const counter = document.querySelector(".admin-user-picker-top span");
+  if (counter) counter.textContent = `${adminCommunicationState.selectedUids.size} usuário(s) selecionado(s)`;
+  input?.closest?.(".admin-user-picker-row")?.classList.toggle("is-selected", checked);
+};
+
+window.sendAdminManualPush = async () => {
+  const title = String(document.getElementById("adminPushTitle")?.value || "").trim();
+  const message = String(document.getElementById("adminPushMessage")?.value || "").trim();
+  const targetMode = adminCommunicationState.pushTargetMode === "selected" ? "selected" : "all";
+  const targetUids = Array.from(adminCommunicationState.selectedUids);
+
+  if (!title) return showAdminCommunicationToast("Informe o título.", "danger");
+  if (!message) return showAdminCommunicationToast("Informe a mensagem.", "danger");
+  if (targetMode === "selected" && !targetUids.length) return showAdminCommunicationToast("Selecione pelo menos 1 usuário.", "danger");
+  if (!confirm("Enviar este comunicado agora?")) return;
+
+  const recordRef = await saveAdminCommunicationRecord({
+    type: "manual_push",
+    channel: "push",
+    title,
+    message,
+    targetMode,
+    targetUids: targetMode === "selected" ? targetUids : [],
+    status: "pending"
+  });
+
+  try {
+    const result = await sendAdminPushRequest({ title, message, targetMode, targetUids });
+    await updateDoc(recordRef, {
+      status: "sent",
+      sentAt: Timestamp.fromDate(new Date()),
+      result
+    });
+    await logAdminCommunicationAction("manual_push", {
+      title,
+      message,
+      targetMode,
+      targetCount: targetMode === "selected" ? targetUids.length : Number(result.totalTokens || 0)
+    });
+    showAdminCommunicationToast(Number(result.totalTokens || 0) === 0
+      ? "Nenhum aparelho com push web ativo ainda."
+      : `Push enviado para ${result.successCount || 0} aparelho(s).`);
+    window.closeModal();
+  } catch (error) {
+    console.error("Erro ao enviar push:", error);
+    await updateDoc(recordRef, {
+      status: "error",
+      error: error.code || error.message || "push_error",
+      updatedAt: Timestamp.fromDate(new Date())
+    });
+    if (error.code === "push_not_configured") {
+      showAdminCommunicationToast("Push web ainda não está configurado no servidor. O comunicado foi salvo, mas a notificação não foi enviada.", "danger");
+      return;
+    }
+    showAdminCommunicationToast(error.message || "Não foi possível enviar o push.", "danger");
+  }
+};
+
+const buildNewMatchesNoticeText = (count) => {
+  const line = count === 1
+    ? "1 novo confronto liberado para votação. Abra o app e deixe seu palpite!"
+    : `${count} novos confrontos liberados para votação. Abra o app e deixe seu palpite!`;
+  return `🔥 NOVOS CONFRONTOS DISPONÍVEIS! 🔥\n\n${line}\n\n📲 Acesse: https://bolao112-site.vercel.app`;
+};
+
+window.openAdminWhatsAppNoticeModal = async () => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para enviar comunicados.");
+    return;
+  }
+  adminCommunicationState.whatsappCount = 0;
+  const buttons = Array.from({ length: 20 }, (_, idx) => {
+    const n = idx + 1;
+    return `<button type="button" onclick="window.selectAdminWhatsappCount(${n})" id="adminWhatsappCount${n}" class="admin-whatsapp-number-button">${n}</button>`;
+  }).join("");
+
+  window.openModal(`
+    <div class="admin-communications-modal">
+      <div class="admin-communications-header">
+        <div>
+          <h3>Avisar Novos Confrontos</h3>
+          <p>Quantos confrontos foram adicionados?</p>
+        </div>
+        <button type="button" onclick="window.openAdminCommunicationsModal()" class="admin-communications-close"><i class="fas fa-arrow-left"></i></button>
+      </div>
+      <div class="admin-communications-body">
+        <div class="admin-whatsapp-grid">${buttons}</div>
+        <label class="admin-communication-check"><input id="adminWhatsappOpen" type="checkbox" checked> Abrir WhatsApp</label>
+        <label class="admin-communication-check"><input id="adminWhatsappPush" type="checkbox"> Enviar Push Notification</label>
+      </div>
+      <div class="admin-communications-footer">
+        <button type="button" onclick="window.openAdminCommunicationsModal()" class="admin-communication-secondary">Cancelar</button>
+        <button type="button" onclick="window.sendAdminWhatsappNotice()" class="admin-communication-primary">ENVIAR AVISO</button>
+      </div>
+    </div>
+  `);
+};
+
+window.selectAdminWhatsappCount = (count) => {
+  adminCommunicationState.whatsappCount = Number(count || 0);
+  document.querySelectorAll(".admin-whatsapp-number-button").forEach((btn) => btn.classList.remove("is-selected"));
+  document.getElementById(`adminWhatsappCount${count}`)?.classList.add("is-selected");
+};
+
+window.sendAdminWhatsappNotice = async () => {
+  const count = Number(adminCommunicationState.whatsappCount || 0);
+  if (!count) return showAdminCommunicationToast("Selecione a quantidade de confrontos.", "danger");
+
+  const openedWhatsapp = document.getElementById("adminWhatsappOpen")?.checked === true;
+  const shouldPush = document.getElementById("adminWhatsappPush")?.checked === true;
+  const whatsappText = buildNewMatchesNoticeText(count);
+  const pushTitle = "🔥 Novos confrontos disponíveis!";
+  const pushMessage = count === 1
+    ? "1 novo confronto foi liberado para votação. Abra o Bolão e deixe seu palpite!"
+    : `${count} novos confrontos foram liberados para votação. Abra o Bolão e deixe seus palpites!`;
+  let sentPush = false;
+
+  if (openedWhatsapp) {
+    const popup = window.open(`https://wa.me/?text=${encodeURIComponent(whatsappText)}`, "_blank");
+    if (!popup) showAdminCommunicationToast("O navegador bloqueou a abertura do WhatsApp. Toque novamente em Abrir WhatsApp.", "danger");
+  }
+
+  if (shouldPush) {
+    try {
+      await sendAdminPushRequest({ title: pushTitle, message: pushMessage, targetMode: "all", targetUids: [] });
+      sentPush = true;
+    } catch (error) {
+      console.error("Erro ao enviar push do aviso:", error);
+      showAdminCommunicationToast(error.code === "push_not_configured"
+        ? "Push web ainda não está configurado no servidor. O aviso foi salvo, mas a notificação não foi enviada."
+        : "Não foi possível enviar o push do aviso.", "danger");
+    }
+  }
+
+  await saveAdminCommunicationRecord({
+    type: "new_matches_notice",
+    channel: openedWhatsapp && shouldPush ? "whatsapp_push" : (openedWhatsapp ? "whatsapp" : "push"),
+    matchCount: count,
+    openedWhatsapp,
+    sentPush,
+    whatsappText,
+    pushTitle,
+    pushMessage
+  });
+  await logAdminCommunicationAction("new_matches_notice", {
+    matchCount: count,
+    openedWhatsapp,
+    sentPush
+  });
+  showAdminCommunicationToast("Aviso registrado!");
+  window.closeModal();
+};
+
 const getRoundsSettingsRef = () => doc(db, "settings", "rounds");
 
 const dedupeRoundNames = (items = []) => {
@@ -7348,7 +7838,7 @@ window.saveAdminMatchAndReset = async () => {
                         <div>
                             <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📢 COMUNICAÇÃO</h4>
                             <div class="grid grid-cols-1 gap-2">
-                                <button disabled title="Será implementado em breve" class="bg-[#6A1B9A] text-white/80 py-3 rounded font-bold text-xs shadow flex flex-col items-center gap-1 opacity-60 cursor-not-allowed"><i class="fas fa-bell text-lg"></i> Enviar Push</button>
+                                <button onclick="window.openAdminCommunicationsModal()" class="bg-[#6A1B9A] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-bullhorn text-lg"></i> Comunicados</button>
                             </div>
                         </div>
 

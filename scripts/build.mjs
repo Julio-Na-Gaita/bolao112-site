@@ -45,6 +45,17 @@ const copyStaticAssets = async () => {
     assetFiles.map((file) => copyFile(path.join(root, file), path.join(dist, file)))
   );
 
+  const extraRootFiles = ['firebase-messaging-sw.js'];
+  await Promise.all(extraRootFiles.map(async (file) => {
+    try {
+      await fs.access(path.join(root, file));
+      await copyFile(path.join(root, file), path.join(dist, file));
+      assetFiles.push(file);
+    } catch {
+      // optional integration file
+    }
+  }));
+
   return assetFiles;
 };
 

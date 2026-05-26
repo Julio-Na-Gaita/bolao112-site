@@ -2725,6 +2725,294 @@ select:focus-visible {
     background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
 }
 
+.admin-communications-modal {
+    width: min(94vw, 420px);
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: var(--shadow-strong);
+}
+
+.admin-communications-modal--large {
+    width: min(94vw, 480px);
+}
+
+.admin-communications-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    background: #6A1B9A;
+    color: #fff;
+}
+
+.admin-communications-header h3 {
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.admin-communications-header p {
+    margin-top: 5px;
+    color: rgba(255,255,255,0.82);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.admin-communications-close {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.admin-communications-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    background: #f8fafc;
+}
+
+.admin-communication-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.admin-communication-tabs button {
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 16px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: #fff;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 900;
+    box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+}
+
+.admin-communication-tabs button.is-active {
+    background: #111827;
+    color: #FFD700;
+    border-color: #111827;
+}
+
+.admin-communication-panel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 20px;
+    background: #fff;
+    border: 1px solid rgba(15,23,42,0.08);
+}
+
+.admin-communication-icon {
+    width: 46px;
+    height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 16px;
+    color: #fff;
+    font-size: 19px;
+}
+
+.admin-communication-icon.is-push {
+    background: #6A1B9A;
+}
+
+.admin-communication-icon.is-whatsapp {
+    background: #25D366;
+}
+
+.admin-communication-panel p {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.45;
+}
+
+.admin-communications-footer {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 8px;
+    padding: 12px 14px 14px;
+    border-top: 1px solid rgba(15,23,42,0.08);
+    background: #fff;
+}
+
+.admin-communication-secondary,
+.admin-communication-primary {
+    min-height: 46px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.admin-communication-secondary {
+    background: #e5e7eb;
+    color: #1f2937;
+}
+
+.admin-communication-primary {
+    background: #111827;
+    color: #fff;
+}
+
+.admin-push-form {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.admin-push-form label {
+    color: #475569;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.admin-communication-textarea {
+    width: 100%;
+    min-height: 104px;
+    resize: vertical;
+    border-radius: 16px;
+    border: 1px solid rgba(15,23,42,0.12);
+    background: #fff;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 12px;
+    outline: none;
+}
+
+.admin-user-picker {
+    display: grid;
+    gap: 10px;
+}
+
+.admin-user-picker-top {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-user-picker-top span {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.admin-user-picker-list {
+    max-height: 250px;
+    overflow-y: auto;
+    display: grid;
+    gap: 8px;
+}
+
+.admin-user-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: #fff;
+}
+
+.admin-user-picker-row.is-selected {
+    border-color: #6A1B9A;
+    background: #faf5ff;
+}
+
+.admin-user-picker-row input {
+    width: 18px;
+    height: 18px;
+}
+
+.admin-user-picker-row strong {
+    display: block;
+    color: #111827;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.admin-user-picker-row small {
+    display: block;
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.admin-communication-enable-push,
+.admin-communication-check {
+    width: 100%;
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid rgba(15,23,42,0.08);
+    color: #334155;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.admin-whatsapp-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.admin-whatsapp-number-button {
+    aspect-ratio: 1;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid rgba(15,23,42,0.08);
+    color: #334155;
+    font-size: 13px;
+    font-weight: 900;
+    box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+}
+
+.admin-whatsapp-number-button.is-selected {
+    background: #111827;
+    color: #FFD700;
+    border-color: #111827;
+}
+
+.admin-communication-empty {
+    border: 1px dashed rgba(15,23,42,0.14);
+    border-radius: 16px;
+    background: #fff;
+    padding: 14px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 900;
+    text-align: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         animation-duration: 0.01ms !important;
