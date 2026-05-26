@@ -126,21 +126,15 @@ let adminCreationState = {
   stage: "intro",
   competitions: [],
   rounds: [],
+  roundRecords: [],
+  editingRoundId: "",
   teams: []
 };
 let adminSessionProfile = null;
 
 const ADMIN_ROUND_FALLBACKS = Object.freeze([
-  "Rodada 1",
-  "Rodada 2",
-  "Rodada 3",
   "Rodada 4",
   "Rodada 5",
-  "Rodada 6",
-  "Rodada 7",
-  "Rodada 8",
-  "Rodada 9",
-  "Rodada 10",
   "Playoffs Eliminatórias",
   "Oitavas de final",
   "Quartas de final",
@@ -178,6 +172,14 @@ const buildAdminWhatsAppMessage = ({ teamA, teamB, competition, round, deadline 
   const dateLabel = deadline ? formatAdminDateTimeLabel(deadline) : "";
   return `📢 JOGO NOVO: 📢\n\n⚽ ${teamA} x ${teamB}\n🏆 ${competition} (${round})\n⏰ ${dateLabel}\n\n📲 VOTE AGORA: https://bolao112-site.vercel.app`;
 };
+
+const sortAdminRounds = (rounds = []) =>
+  [...rounds].sort((a, b) => {
+    const orderA = Number.isFinite(Number(a.order)) ? Number(a.order) : 9999;
+    const orderB = Number.isFinite(Number(b.order)) ? Number(b.order) : 9999;
+    if (orderA !== orderB) return orderA - orderB;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
 
 const getAdminCreationTeamFieldIds = (side) => ({
   name: `adminTeamName${side}`,
@@ -5100,6 +5102,94 @@ const getCurrentAdminProfile = async (force = false) => {
   }
 };
 
+const logAdminRoundAction = async (type, payload = {}) => {
+  try {
+    const admin = await getCurrentAdminProfile();
+    if (!admin) return;
+
+    await addDoc(collection(db, "admin_audit_logs"), {
+      type,
+      adminUid: admin.uid || "",
+      adminName: admin.name || "",
+      adminEmail: admin.email || "",
+      ...payload,
+      createdAt: Timestamp.fromDate(new Date())
+    });
+  } catch (error) {
+    console.warn("Falha ao registrar auditoria de rodada:", error);
+  }
+};
+
+const normalizeAdminRoundDoc = (snap) => {
+  const data = snap.data() || {};
+  const name = String(data.name || "").trim();
+  if (!name) return null;
+
+  return {
+    id: snap.id,
+    name,
+    normalizedName: String(data.normalizedName || normalizeAdminText(name)),
+    order: Number.isFinite(Number(data.order)) ? Number(data.order) : 9999,
+    active: data.active !== false,
+    createdAt: data.createdAt || null,
+    updatedAt: data.updatedAt || null
+  };
+};
+
+const seedAdminRoundsIfEmpty = async (snap) => {
+  if (!snap.empty) return false;
+
+  const admin = await getCurrentAdminProfile();
+  const batch = writeBatch(db);
+  const nowTs = Timestamp.fromDate(new Date());
+
+  ADMIN_ROUND_FALLBACKS.forEach((roundName, index) => {
+    const roundRef = doc(collection(db, "admin_rounds"));
+    batch.set(roundRef, {
+      name: roundName,
+      normalizedName: normalizeAdminText(roundName),
+      order: index + 1,
+      active: true,
+      createdAt: nowTs,
+      updatedAt: nowTs,
+      createdBy: admin?.uid || "",
+      updatedBy: admin?.uid || ""
+    });
+  });
+
+  await batch.commit();
+  invalidateRuntimeCache("col:admin_rounds");
+  return true;
+};
+
+const loadAdminRounds = async ({ seedIfEmpty = true } = {}) => {
+  let snap = await readWithRuntimeCache(
+    "col:admin_rounds",
+    () => getDocs(query(collection(db, "admin_rounds"), orderBy("order", "asc"))),
+    { ttlMs: DATA_CACHE_TTL.hot, force: true }
+  );
+
+  if (seedIfEmpty && snap.empty) {
+    await seedAdminRoundsIfEmpty(snap);
+    snap = await readWithRuntimeCache(
+      "col:admin_rounds",
+      () => getDocs(query(collection(db, "admin_rounds"), orderBy("order", "asc"))),
+      { ttlMs: DATA_CACHE_TTL.hot, force: true }
+    );
+  }
+
+  const rounds = [];
+  snap.forEach((docSnap) => {
+    const round = normalizeAdminRoundDoc(docSnap);
+    if (round && round.active) rounds.push(round);
+  });
+
+  return sortAdminRounds(rounds).map((round, index) => ({
+    ...round,
+    order: Number.isFinite(Number(round.order)) ? Number(round.order) : index + 1
+  }));
+};
+
 const getTeamThumbHtml = (fieldSide, logoUrl = "") => {
   const ids = getAdminCreationTeamFieldIds(fieldSide);
   const hasLogo = isHttpUrl(logoUrl);
@@ -5205,10 +5295,24 @@ const renderAdminCreationModal = () => {
   `;
 
   const roundsSoonCard = `
-    <div class="admin-creation-panel text-center space-y-2">
-      <div class="text-[10px] font-black text-gray-400 uppercase tracking-[0.18em]">Rodadas</div>
-      <h4 class="text-base font-black text-gray-900">Será implementado em breve</h4>
-      <p class="text-xs text-gray-500 leading-relaxed">Aqui entrarão a gestão de fases e rodadas configuráveis.</p>
+    <div class="admin-creation-panel space-y-3">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Rodadas</div>
+          <h4 class="text-lg font-black text-gray-900 leading-tight">Gerencie as fases do app.</h4>
+        </div>
+        <span class="status-chip status-chip--default">${(adminCreationState.roundRecords || []).length}</span>
+      </div>
+      <p class="text-xs text-gray-500 leading-relaxed">
+        As rodadas ativas aparecem no menu de Novo Confronto na mesma ordem definida aqui.
+      </p>
+      <button type="button" onclick="window.openAdminRoundsManager()" class="w-full bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+        <i class="fas fa-list-ol text-base"></i>
+        Abrir Rodadas
+      </button>
+      <div class="admin-round-preview">
+        ${(adminCreationState.roundRecords || []).slice(0, 4).map((round) => `<span>${escapeHtml(round.name)}</span>`).join("") || '<span>Nenhuma rodada ativa</span>'}
+      </div>
     </div>
   `;
 
@@ -5374,7 +5478,7 @@ const renderAdminCreationModal = () => {
         <div class="px-3 pt-3 shrink-0">
           <div class="admin-creation-tabs">
             ${getTabButton("new-match", "Novo Confronto", "fa-futbol", adminCreationState.tab === "new-match", false)}
-            ${getTabButton("rounds", "Rodadas", "fa-list-ol", adminCreationState.tab === "rounds", true)}
+            ${getTabButton("rounds", "Rodadas", "fa-list-ol", adminCreationState.tab === "rounds", false)}
             ${getTabButton("competitions", "Competições", "fa-trophy", adminCreationState.tab === "competitions", true)}
           </div>
         </div>
@@ -5518,7 +5622,7 @@ window.openCreationModal = async () => {
 };
 
 window.switchAdminCreationTab = (tabKey) => {
-  if (tabKey !== "new-match") {
+  if (tabKey === "competitions") {
     alert("Será implementado em breve.");
     return;
   }
@@ -5531,6 +5635,335 @@ window.switchAdminCreationTab = (tabKey) => {
 window.openNewMatchForm = () => {
   adminCreationState.stage = "form";
   renderAdminCreationModal();
+};
+
+const renderAdminRoundsManager = () => {
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  const rounds = sortAdminRounds(adminCreationState.roundRecords || []);
+  const editingId = adminCreationState.editingRoundId || "";
+  const listHtml = rounds.length
+    ? rounds.map((round, index) => {
+        const isEditing = editingId === round.id;
+        const isFirst = index === 0;
+        const isLast = index === rounds.length - 1;
+
+        return `
+          <div class="admin-round-card">
+            ${isEditing ? `
+              <div class="flex-1 min-w-0">
+                <input id="adminRoundEditName" type="text" value="${escapeHtml(round.name)}" class="admin-creation-input" placeholder="Nome da rodada">
+              </div>
+              <div class="admin-round-actions">
+                <button type="button" onclick="window.updateAdminRound('${round.id}')" class="admin-round-icon admin-round-icon--ok" aria-label="Salvar"><i class="fas fa-check"></i></button>
+                <button type="button" onclick="window.cancelAdminRoundEdit()" class="admin-round-icon" aria-label="Cancelar"><i class="fas fa-times"></i></button>
+              </div>
+            ` : `
+              <div class="admin-round-order">${index + 1}</div>
+              <div class="admin-round-name">${escapeHtml(round.name)}</div>
+              <div class="admin-round-actions">
+                <button type="button" onclick="window.moveAdminRound('${round.id}', -1)" ${isFirst ? "disabled" : ""} class="admin-round-icon" aria-label="Subir"><i class="fas fa-arrow-up"></i></button>
+                <button type="button" onclick="window.moveAdminRound('${round.id}', 1)" ${isLast ? "disabled" : ""} class="admin-round-icon" aria-label="Descer"><i class="fas fa-arrow-down"></i></button>
+                <button type="button" onclick="window.startAdminRoundEdit('${round.id}')" class="admin-round-icon" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" onclick="window.disableAdminRound('${round.id}')" class="admin-round-icon admin-round-icon--danger" aria-label="Remover"><i class="fas fa-trash"></i></button>
+              </div>
+            `}
+          </div>
+        `;
+      }).join("")
+    : `
+      <div class="admin-creation-panel text-center">
+        <p class="text-sm font-black text-gray-500">Nenhuma rodada ativa disponível.</p>
+      </div>
+    `;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[88vh] flex flex-col">
+      <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+      <div class="relative z-10 flex flex-col h-full bg-white/92">
+        <div class="bg-[#006400] p-4 text-white flex items-center shadow-md shrink-0">
+          <button onclick="openCreationModal()" class="mr-4"><i class="fas fa-arrow-left text-xl"></i></button>
+          <div>
+            <h3 class="font-black uppercase text-lg leading-none">Gerenciar Rodadas</h3>
+            <p class="text-[10px] text-[#FFD700] font-bold">Ordem do dropdown de Novo Confronto</p>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-3 space-y-3">
+          <div class="admin-creation-panel space-y-3">
+            <div class="flex gap-2">
+              <input id="adminRoundNewName" type="text" class="admin-creation-input flex-1" placeholder="Nova Rodada">
+              <button type="button" onclick="window.createAdminRound()" class="admin-round-add-btn btn-press" aria-label="Adicionar rodada">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <p class="text-[11px] font-bold text-gray-500">Use as setas para definir a ordem no app</p>
+            <div id="adminRoundsStatus" class="hidden rounded-2xl border px-3 py-2 text-xs font-black"></div>
+          </div>
+
+          <div class="space-y-2">
+            ${listHtml}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (editingId) {
+    setTimeout(() => document.getElementById("adminRoundEditName")?.focus(), 0);
+  } else {
+    setTimeout(() => document.getElementById("adminRoundNewName")?.focus(), 0);
+  }
+};
+
+const setAdminRoundsStatus = (message = "", tone = "success") => {
+  const el = document.getElementById("adminRoundsStatus");
+  if (!el) return;
+
+  if (!message) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+
+  el.classList.remove("hidden", "border-green-200", "bg-green-50", "text-green-700", "border-red-200", "bg-red-50", "text-red-700");
+  el.classList.add(
+    tone === "danger" ? "border-red-200" : "border-green-200",
+    tone === "danger" ? "bg-red-50" : "bg-green-50",
+    tone === "danger" ? "text-red-700" : "text-green-700"
+  );
+  el.textContent = message;
+};
+
+const refreshAdminRoundsState = async () => {
+  const rounds = await loadAdminRounds({ seedIfEmpty: true });
+  adminCreationState.roundRecords = rounds;
+  adminCreationState.rounds = rounds.map((round) => round.name);
+  invalidateRuntimeCache("col:admin_rounds");
+  return rounds;
+};
+
+const findAdminRoundDuplicate = (roundName, ignoreId = "") => {
+  const normalized = normalizeAdminText(roundName);
+  return (adminCreationState.roundRecords || []).find((round) =>
+    round.id !== ignoreId && normalizeAdminText(round.name || round.normalizedName || "") === normalized
+  );
+};
+
+const getAdminRoundPayloadBase = async () => {
+  const admin = await getCurrentAdminProfile();
+  return {
+    adminUid: admin?.uid || "",
+    adminName: admin?.name || "",
+    adminEmail: admin?.email || ""
+  };
+};
+
+window.openAdminRoundsManager = async () => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para gerenciar rodadas.");
+    closeModal();
+    return;
+  }
+
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="bg-white p-6 text-center rounded shadow-xl">
+      <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
+      <p class="text-xs font-black text-gray-500 uppercase">Carregando rodadas...</p>
+    </div>
+  `;
+
+  try {
+    adminCreationState.editingRoundId = "";
+    await refreshAdminRoundsState();
+    renderAdminRoundsManager();
+  } catch (error) {
+    console.error("Erro ao abrir rodadas:", error);
+    cont.innerHTML = `
+      <div class="bg-white p-6 text-center rounded shadow-xl">
+        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar as rodadas.</p>
+        <button onclick="openCreationModal()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
+      </div>
+    `;
+  }
+};
+
+window.createAdminRound = async () => {
+  const input = document.getElementById("adminRoundNewName");
+  const name = String(input?.value || "").trim().replace(/\s+/g, " ");
+  if (!name) return setAdminRoundsStatus("Informe o nome da rodada.", "danger");
+  if (findAdminRoundDuplicate(name)) return setAdminRoundsStatus("Essa rodada já existe.", "danger");
+
+  try {
+    const admin = await getCurrentAdminProfile(true);
+    if (!admin) return alert("Você não tem permissão para criar rodadas.");
+
+    const rounds = sortAdminRounds(adminCreationState.roundRecords || []);
+    const nextOrder = rounds.length ? Math.max(...rounds.map((round) => Number(round.order) || 0)) + 1 : 1;
+    const nowTs = Timestamp.fromDate(new Date());
+    const docRef = await addDoc(collection(db, "admin_rounds"), {
+      name,
+      normalizedName: normalizeAdminText(name),
+      order: nextOrder,
+      active: true,
+      createdAt: nowTs,
+      updatedAt: nowTs,
+      createdBy: admin.uid || "",
+      updatedBy: admin.uid || ""
+    });
+
+    await logAdminRoundAction("create_round", {
+      roundId: docRef.id,
+      roundName: name,
+      newValue: name
+    });
+
+    if (input) input.value = "";
+    await refreshAdminRoundsState();
+    renderAdminRoundsManager();
+    setAdminRoundsStatus("Rodada salva!");
+  } catch (error) {
+    console.error("Erro ao criar rodada:", error);
+    setAdminRoundsStatus("Não foi possível salvar a rodada.", "danger");
+  }
+};
+
+window.startAdminRoundEdit = (roundId) => {
+  adminCreationState.editingRoundId = roundId;
+  renderAdminRoundsManager();
+};
+
+window.cancelAdminRoundEdit = () => {
+  adminCreationState.editingRoundId = "";
+  renderAdminRoundsManager();
+};
+
+window.updateAdminRound = async (roundId) => {
+  const input = document.getElementById("adminRoundEditName");
+  const name = String(input?.value || "").trim().replace(/\s+/g, " ");
+  if (!name) return setAdminRoundsStatus("Informe o nome da rodada.", "danger");
+  if (findAdminRoundDuplicate(name, roundId)) return setAdminRoundsStatus("Essa rodada já existe.", "danger");
+
+  const currentRound = (adminCreationState.roundRecords || []).find((round) => round.id === roundId);
+  if (!currentRound) return setAdminRoundsStatus("Rodada não encontrada.", "danger");
+
+  try {
+    const admin = await getCurrentAdminProfile(true);
+    if (!admin) return alert("Você não tem permissão para editar rodadas.");
+
+    await updateDoc(doc(db, "admin_rounds", roundId), {
+      name,
+      normalizedName: normalizeAdminText(name),
+      updatedAt: Timestamp.fromDate(new Date()),
+      updatedBy: admin.uid || ""
+    });
+
+    await logAdminRoundAction("update_round", {
+      roundId,
+      roundName: name,
+      oldValue: currentRound.name,
+      newValue: name
+    });
+
+    adminCreationState.editingRoundId = "";
+    await refreshAdminRoundsState();
+    renderAdminRoundsManager();
+    setAdminRoundsStatus("Rodada atualizada!");
+  } catch (error) {
+    console.error("Erro ao atualizar rodada:", error);
+    setAdminRoundsStatus("Não foi possível atualizar a rodada.", "danger");
+  }
+};
+
+window.disableAdminRound = async (roundId) => {
+  const currentRound = (adminCreationState.roundRecords || []).find((round) => round.id === roundId);
+  if (!currentRound) return setAdminRoundsStatus("Rodada não encontrada.", "danger");
+  if (!confirm("Remover esta rodada da lista de opções?")) return;
+
+  try {
+    const admin = await getCurrentAdminProfile(true);
+    if (!admin) return alert("Você não tem permissão para remover rodadas.");
+
+    const nowTs = Timestamp.fromDate(new Date());
+    await updateDoc(doc(db, "admin_rounds", roundId), {
+      active: false,
+      updatedAt: nowTs,
+      disabledAt: nowTs,
+      updatedBy: admin.uid || "",
+      disabledBy: admin.uid || ""
+    });
+
+    await logAdminRoundAction("disable_round", {
+      roundId,
+      roundName: currentRound.name,
+      oldValue: currentRound.name,
+      newValue: "active:false"
+    });
+
+    adminCreationState.editingRoundId = "";
+    await refreshAdminRoundsState();
+    renderAdminRoundsManager();
+    setAdminRoundsStatus("Rodada removida da lista.");
+  } catch (error) {
+    console.error("Erro ao remover rodada:", error);
+    setAdminRoundsStatus("Não foi possível remover a rodada.", "danger");
+  }
+};
+
+window.moveAdminRound = async (roundId, direction) => {
+  const rounds = sortAdminRounds(adminCreationState.roundRecords || []);
+  const currentIndex = rounds.findIndex((round) => round.id === roundId);
+  if (currentIndex < 0) return;
+
+  const targetIndex = currentIndex + Number(direction || 0);
+  if (targetIndex < 0 || targetIndex >= rounds.length) return;
+
+  const currentRound = rounds[currentIndex];
+  const targetRound = rounds[targetIndex];
+  const currentOrder = currentRound.order;
+  const targetOrder = targetRound.order;
+
+  try {
+    const admin = await getCurrentAdminProfile(true);
+    if (!admin) return alert("Você não tem permissão para reordenar rodadas.");
+
+    const nowTs = Timestamp.fromDate(new Date());
+    const batch = writeBatch(db);
+    batch.update(doc(db, "admin_rounds", currentRound.id), {
+      order: targetOrder,
+      updatedAt: nowTs,
+      updatedBy: admin.uid || ""
+    });
+    batch.update(doc(db, "admin_rounds", targetRound.id), {
+      order: currentOrder,
+      updatedAt: nowTs,
+      updatedBy: admin.uid || ""
+    });
+    await batch.commit();
+
+    await logAdminRoundAction("reorder_round", {
+      roundId: currentRound.id,
+      roundName: currentRound.name,
+      oldOrder: currentOrder,
+      newOrder: targetOrder
+    });
+
+    await refreshAdminRoundsState();
+    renderAdminRoundsManager();
+    setAdminRoundsStatus("Ordem atualizada!");
+  } catch (error) {
+    console.error("Erro ao reordenar rodada:", error);
+    setAdminRoundsStatus("Não foi possível reordenar a rodada.", "danger");
+  }
 };
 
 const setAdminCreationStatus = (message = "", tone = "success") => {
@@ -5553,12 +5986,16 @@ const setAdminCreationStatus = (message = "", tone = "success") => {
 };
 
 const loadAdminCreationState = async () => {
-  const [competitionSnap, matchesSnap, teamsSnap] = await Promise.all([
+  const [competitionSnap, matchesSnap, teamsSnap, rounds] = await Promise.all([
     readWithRuntimeCache("doc:settings:competitions", () => getDoc(doc(db, "settings", "competitions")), { ttlMs: DATA_CACHE_TTL.cold, force: true }),
     readWithRuntimeCache("col:matches", () => getDocs(collection(db, "matches")), { ttlMs: DATA_CACHE_TTL.hot, force: true }),
     readWithRuntimeCache("col:teams", () => getDocs(collection(db, "teams")), { ttlMs: DATA_CACHE_TTL.cold, force: true }).catch((error) => {
       console.warn("Não foi possível carregar teams. Autocomplete seguirá vazio.", error);
       return null;
+    }),
+    loadAdminRounds({ seedIfEmpty: true }).catch((error) => {
+      console.warn("Não foi possível carregar rodadas.", error);
+      return [];
     })
   ]);
 
@@ -5582,13 +6019,6 @@ const loadAdminCreationState = async () => {
 
   const competitionList = [...new Set(competitions.filter(Boolean))];
 
-  const rounds = new Set();
-  matchesSnap.forEach((snap) => {
-    const data = snap.data() || {};
-    if (data.round) rounds.add(String(data.round).trim());
-  });
-  ADMIN_ROUND_FALLBACKS.forEach((round) => rounds.add(round));
-
   const teams = [];
   if (teamsSnap) {
     teamsSnap.forEach((snap) => {
@@ -5610,7 +6040,8 @@ const loadAdminCreationState = async () => {
     ...adminCreationState,
     loading: false,
     competitions: competitionList,
-    rounds: [...rounds],
+    rounds: rounds.map((round) => round.name),
+    roundRecords: rounds,
     teams
   };
 };
