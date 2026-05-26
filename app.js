@@ -105,7 +105,7 @@ let homeSectionCollapseState = {
   matches_done: true
 };
 
-const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.5');
+const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.6');
 const getAppVersionShort = () => getAppVersion().replace(/^web-/, '');
 const getAppVersionLabel = () => `Web v${getAppVersionShort()}`;
 const getAppVersionFullLabel = () => `Versão ${getAppVersionLabel()}`;
@@ -143,6 +143,12 @@ let adminQuickResultsState = {
   matches: [],
   selections: {},
   scrollTop: 0
+};
+let adminCleanupState = {
+  tab: "trash",
+  trashMatches: [],
+  finishedMatches: [],
+  search: ""
 };
 
 const normalizeAdminText = (value = "") =>
@@ -7306,7 +7312,7 @@ window.saveAdminMatchAndReset = async () => {
                             <div class="grid grid-cols-2 gap-2">
                                 <button onclick="openCreationModal()" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Criação</button>
                                 <button onclick="openQuickResultsModal()" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
-                                <button onclick="openTrashBin()" class="bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-trash text-lg"></i> Lixeira</button>
+                                <button onclick="openCleanupModal()" class="bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-broom text-lg"></i> Limpeza</button>
                             </div>
                         </div>
 
@@ -7380,14 +7386,452 @@ async function loadAdminMatches() {
             }); 
             listDiv.innerHTML = html || "Sem jogos."; 
         }
-        // --- LIXEIRA WEB ---
-        window.moveToTrash = async (matchId) => { if(!confirm("Mover para Lixeira?")) return; try { const snap = await getDoc(doc(db, "matches", matchId)); if(snap.exists()) { await setDoc(doc(db, "bin_matches", matchId), {...snap.data(), deletedAt: new Date()}); await deleteDoc(doc(db, "matches", matchId)); invalidateHomeRankingCaches();
-loadAdminMatches();
-loadMatches({ force: true }); } } catch(e){alert(e.message);} };
-        window.openTrashBin = async () => { const cont = document.getElementById('modalContainer'); const snap = await getDocs(collection(db, "bin_matches")); let html = `<div class="w-full bg-white h-[85vh] p-4 overflow-y-auto"><div class="flex justify-between mb-4"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left"></i></button><h3 class="font-bold">Lixeira</h3><div></div></div>`; if(snap.empty) html += "<p>Vazia.</p>"; else snap.forEach(d => { const m = d.data(); html += `<div class="border p-2 mb-2 rounded flex justify-between"><span>${m.teamA} x ${m.teamB}</span><button onclick="restoreMatch('${d.id}')" class="text-green-600 font-bold">Restaurar</button></div>`; }); html += "</div>"; cont.innerHTML = html; };
-        window.restoreMatch = async (matchId) => { try { const snap = await getDoc(doc(db, "bin_matches", matchId)); if(snap.exists()) { const d = snap.data(); delete d.deletedAt; await setDoc(doc(db, "matches", matchId), d); await deleteDoc(doc(db, "bin_matches", matchId)); invalidateHomeRankingCaches();
-openTrashBin();
-loadMatches({ force: true }); } } catch(e){alert(e.message);} };
+        // --- LIMPEZA / LIXEIRA WEB ---
+        const getAdminMatchSortDate = (match = {}) =>
+          toJsDate(match.deletedAt) ||
+          toJsDate(match.trashedAt) ||
+          toJsDate(match.deadline) ||
+          toJsDate(match.createdAt) ||
+          new Date(0);
+
+        const formatAdminCleanupDate = (value) => {
+          const date = toJsDate(value);
+          if (!date) return "";
+          return date.toLocaleString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        };
+
+        const renderAdminCleanupToast = (title, desc = "") => {
+          if (typeof window.showToast === "function") {
+            window.showToast(title, desc, "");
+          } else {
+            alert(desc ? `${title}\n${desc}` : title);
+          }
+        };
+
+        const logAdminCleanupAction = async (type, payload = {}) => {
+          try {
+            const admin = await getCurrentAdminProfile();
+            if (!admin) return;
+
+            await addDoc(collection(db, "admin_audit_logs"), {
+              type,
+              adminUid: admin.uid || "",
+              adminName: admin.name || "",
+              adminEmail: admin.email || "",
+              source: "admin_cleanup",
+              ...payload,
+              createdAt: Timestamp.fromDate(new Date())
+            });
+          } catch (error) {
+            console.warn("Falha ao registrar auditoria da limpeza:", error);
+          }
+        };
+
+        const refreshAdminCleanupState = async () => {
+          const [trashSnap, matchesSnap] = await Promise.all([
+            getDocs(collection(db, "bin_matches")),
+            getDocs(collection(db, "matches"))
+          ]);
+
+          const trashMatches = [];
+          trashSnap.forEach((d) => {
+            trashMatches.push({ id: d.id, ...d.data() });
+          });
+          trashMatches.sort((a, b) => getAdminMatchSortDate(b).getTime() - getAdminMatchSortDate(a).getTime());
+
+          const finishedMatches = [];
+          matchesSnap.forEach((d) => {
+            const data = d.data() || {};
+            if (!String(data.winner || "").trim()) return;
+            finishedMatches.push({ id: d.id, ...data });
+          });
+          finishedMatches.sort((a, b) => getAdminMatchSortDate(b).getTime() - getAdminMatchSortDate(a).getTime());
+
+          adminCleanupState.trashMatches = trashMatches;
+          adminCleanupState.finishedMatches = finishedMatches;
+          return adminCleanupState;
+        };
+
+        const getAdminCleanupTabButton = (tabKey, label, icon, count) => `
+          <button type="button" onclick="window.switchAdminCleanupTab('${tabKey}')" class="admin-cleanup-tab ${adminCleanupState.tab === tabKey ? "is-active" : ""}">
+            <i class="fas ${icon}"></i>
+            <span>${label}</span>
+            <small>${count}</small>
+          </button>
+        `;
+
+        const renderAdminCleanupModal = () => {
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          const tab = adminCleanupState.tab === "finished" ? "finished" : "trash";
+          const trashCount = adminCleanupState.trashMatches.length;
+          const finishedCount = adminCleanupState.finishedMatches.length;
+
+          const content = tab === "finished"
+            ? `
+              <div class="admin-creation-panel space-y-3">
+                <div>
+                  <div class="text-[10px] font-black text-red-600 uppercase tracking-[0.18em]">Finalizados</div>
+                  <h4 class="text-lg font-black text-gray-900 leading-tight">Limpeza em massa</h4>
+                </div>
+                <p class="text-xs font-bold text-gray-600 leading-relaxed">Move todos os confrontos finalizados para a lixeira em uma ação de limpeza em massa.</p>
+                <div class="grid grid-cols-1 gap-2">
+                  <div class="admin-cleanup-summary">
+                    <i class="fas fa-flag-checkered"></i>
+                    <span>${finishedCount} confrontos finalizados</span>
+                  </div>
+                </div>
+                <button type="button" onclick="window.confirmBulkCleanupFinishedMatches()" class="w-full bg-red-700 text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2 ${finishedCount ? "" : "opacity-50 cursor-not-allowed"}" ${finishedCount ? "" : "disabled"}>
+                  <i class="fas fa-triangle-exclamation"></i>
+                  Limpar Finalizados
+                </button>
+              </div>
+            `
+            : `
+              <div class="admin-creation-panel space-y-3">
+                <div>
+                  <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Lixeira</div>
+                  <h4 class="text-lg font-black text-gray-900 leading-tight">Confrontos removidos</h4>
+                </div>
+                <p class="text-xs font-bold text-gray-600 leading-relaxed">Abra a lixeira para restaurar ou apagar confrontos individualmente.</p>
+                <button type="button" onclick="window.openTrashBin()" class="w-full bg-gray-800 text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+                  <i class="fas fa-trash"></i>
+                  Abrir Lixeira
+                </button>
+              </div>
+            `;
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `
+            <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[86vh] flex flex-col">
+              <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+              <div class="relative z-10 flex flex-col h-full bg-white/92">
+                <div class="bg-[#006400] p-4 text-white flex items-center justify-between shadow-md shrink-0">
+                  <button onclick="openAdminMenu()" class="mr-3"><i class="fas fa-arrow-left text-xl"></i></button>
+                  <div class="flex-1">
+                    <h3 class="font-black uppercase text-lg leading-none">Limpeza</h3>
+                    <p class="text-[10px] text-[#FFD700] font-bold">Lixeira e finalizados</p>
+                  </div>
+                  <button onclick="closeModal()" class="ml-3"><i class="fas fa-times text-xl"></i></button>
+                </div>
+
+                <div class="px-3 pt-3 shrink-0">
+                  <div class="admin-cleanup-tabs">
+                    ${getAdminCleanupTabButton("trash", "Lixeira", "fa-trash", trashCount)}
+                    ${getAdminCleanupTabButton("finished", "Finalizados", "fa-flag-checkered", finishedCount)}
+                  </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-3">
+                  ${content}
+                </div>
+
+                <div class="admin-quick-results-footer shrink-0">
+                  <button type="button" onclick="closeModal()" class="w-full bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          `;
+        };
+
+        window.openCleanupModal = async () => {
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) {
+            alert("Você não tem permissão para acessar a limpeza.");
+            closeModal();
+            return;
+          }
+
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando limpeza...</p></div>`;
+
+          try {
+            adminCleanupState.tab = adminCleanupState.tab || "trash";
+            await refreshAdminCleanupState();
+            renderAdminCleanupModal();
+          } catch (error) {
+            console.error("Erro ao abrir limpeza:", error);
+            cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar a limpeza.</p><button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button></div>`;
+          }
+        };
+
+        window.switchAdminCleanupTab = (tabKey) => {
+          adminCleanupState.tab = tabKey === "finished" ? "finished" : "trash";
+          renderAdminCleanupModal();
+        };
+
+        window.moveToTrash = async (matchId) => {
+          if(!confirm("Mover para Lixeira?")) return;
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) return alert("Você não tem permissão para mover confrontos.");
+
+          try {
+            const snap = await getDoc(doc(db, "matches", matchId));
+            if(!snap.exists()) return alert("Confronto não encontrado.");
+
+            const nowTs = Timestamp.fromDate(new Date());
+            await setDoc(doc(db, "bin_matches", matchId), {
+              ...snap.data(),
+              deletedAt: nowTs,
+              deletedByUid: admin.uid || "",
+              deletedByName: admin.name || "",
+              deletedByEmail: admin.email || "",
+              deleteReason: "manual_admin_trash"
+            });
+            await deleteDoc(doc(db, "matches", matchId));
+            await logAdminCleanupAction("trash_match", {
+              matchIds: [matchId],
+              teams: [`${snap.data().teamA || ""} x ${snap.data().teamB || ""}`]
+            });
+
+            invalidateHomeRankingCaches();
+            await loadAdminMatches();
+            if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) await loadMatches({ force: true });
+            renderAdminCleanupToast("Confronto movido para a lixeira.");
+          } catch(e) {
+            alert(e.message);
+          }
+        };
+
+        const renderAdminTrashBin = () => {
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          modal.classList.remove("hidden");
+          const search = normalizeAdminText(adminCleanupState.search || "");
+          const list = search
+            ? adminCleanupState.trashMatches.filter((m) => normalizeAdminText(`${m.teamA || ""} ${m.teamB || ""} ${m.competition || ""} ${m.round || ""}`).includes(search))
+            : adminCleanupState.trashMatches;
+
+          const listHtml = list.length
+            ? list.map((m) => {
+                const deletedLabel = formatAdminCleanupDate(m.deletedAt || m.trashedAt);
+                const deadlineLabel = formatAdminCleanupDate(m.deadline);
+                return `
+                  <div class="admin-trash-card">
+                    <div class="admin-trash-card__main">
+                      <div class="admin-trash-title">${escapeHtml(m.teamA || "Time A")} x ${escapeHtml(m.teamB || "Time B")}</div>
+                      <div class="admin-trash-meta">${escapeHtml(m.competition || "Sem competição")}${m.round ? ` • ${escapeHtml(m.round)}` : ""}</div>
+                      <div class="admin-trash-meta">${deadlineLabel ? `Prazo: ${escapeHtml(deadlineLabel)}` : "Sem prazo"}${deletedLabel ? ` • Apagado: ${escapeHtml(deletedLabel)}` : ""}</div>
+                    </div>
+                    <div class="admin-trash-actions">
+                      <button type="button" onclick="window.permanentlyDeleteMatch('${escapeJsString(m.id)}')" class="admin-trash-btn admin-trash-btn--danger">APAGAR</button>
+                      <button type="button" onclick="window.restoreMatch('${escapeJsString(m.id)}')" class="admin-trash-btn admin-trash-btn--ok">↻ RESTAURAR</button>
+                    </div>
+                  </div>
+                `;
+              }).join("")
+            : `<div class="admin-quick-result-empty"><div class="text-base font-black text-gray-800">Lixeira vazia.</div><p class="mt-1 text-xs text-gray-500">Nenhum confronto removido encontrado.</p></div>`;
+
+          cont.innerHTML = `
+            <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[88vh] flex flex-col">
+              <div class="bg-[#006400] p-4 text-white flex items-start justify-between shadow-md shrink-0">
+                <div class="flex items-start gap-3">
+                  <button onclick="openCleanupModal()" class="mt-0.5"><i class="fas fa-arrow-left text-xl"></i></button>
+                  <div>
+                    <h3 class="font-black uppercase text-lg leading-none">LIXEIRA (RESTAURAR)</h3>
+                    <p class="text-[10px] text-[#FFD700] font-bold mt-1">Restaurar trará os palpites de volta.</p>
+                  </div>
+                </div>
+                <button type="button" onclick="closeModal()" class="ml-2"><i class="fas fa-times text-xl"></i></button>
+              </div>
+
+              <div class="p-3 border-b bg-white shrink-0">
+                <input id="adminTrashSearch" type="search" value="${escapeHtml(adminCleanupState.search || "")}" oninput="window.filterAdminTrash(this.value)" class="admin-creation-input" placeholder="Buscar confronto...">
+              </div>
+
+              <div class="flex-1 overflow-y-auto p-3 bg-gray-50 space-y-2">
+                ${listHtml}
+              </div>
+            </div>
+          `;
+
+          setTimeout(() => {
+            const input = document.getElementById("adminTrashSearch");
+            if (!input) return;
+            input.focus();
+            const len = input.value.length;
+            input.setSelectionRange?.(len, len);
+          }, 0);
+        };
+
+        window.openTrashBin = async () => {
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) {
+            alert("Você não tem permissão para abrir a lixeira.");
+            closeModal();
+            return;
+          }
+
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando lixeira...</p></div>`;
+
+          await refreshAdminCleanupState();
+          renderAdminTrashBin();
+        };
+
+        window.filterAdminTrash = (value = "") => {
+          adminCleanupState.search = String(value || "");
+          renderAdminTrashBin();
+        };
+
+        window.restoreMatch = async (matchId) => {
+          if (!confirm("Restaurar este confronto?")) return;
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) return alert("Você não tem permissão para restaurar confrontos.");
+
+          try {
+            const snap = await getDoc(doc(db, "bin_matches", matchId));
+            if(!snap.exists()) return alert("Confronto não encontrado na lixeira.");
+
+            const data = { ...snap.data() };
+            const teams = `${data.teamA || ""} x ${data.teamB || ""}`;
+            delete data.id;
+            delete data.deletedAt;
+            delete data.trashedAt;
+            delete data.deletedByUid;
+            delete data.deletedByName;
+            delete data.deletedByEmail;
+            delete data.trashedByUid;
+            delete data.trashedByName;
+            delete data.trashedByEmail;
+            delete data.deleteReason;
+
+            await setDoc(doc(db, "matches", matchId), data);
+            await deleteDoc(doc(db, "bin_matches", matchId));
+            await logAdminCleanupAction("restore_match", {
+              totalMatches: 1,
+              matchIds: [matchId],
+              teams: [teams]
+            });
+
+            invalidateHomeRankingCaches();
+            renderAdminCleanupToast("Confronto restaurado!");
+            await loadAdminMatches();
+            await window.openTrashBin();
+            if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) await loadMatches({ force: true });
+          } catch(e) {
+            alert(e.message);
+          }
+        };
+
+        window.permanentlyDeleteMatch = async (matchId) => {
+          if (!confirm("Apagar definitivamente este confronto? Essa ação não poderá ser desfeita.")) return;
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) return alert("Você não tem permissão para apagar confrontos.");
+
+          try {
+            const snap = await getDoc(doc(db, "bin_matches", matchId));
+            const data = snap.exists() ? snap.data() : {};
+            await deleteDoc(doc(db, "bin_matches", matchId));
+            await logAdminCleanupAction("permanent_delete_match", {
+              totalMatches: 1,
+              matchIds: [matchId],
+              teams: [`${data.teamA || ""} x ${data.teamB || ""}`]
+            });
+
+            renderAdminCleanupToast("Confronto apagado definitivamente.");
+            await window.openTrashBin();
+          } catch(e) {
+            alert(e.message);
+          }
+        };
+
+        window.confirmBulkCleanupFinishedMatches = async () => {
+          await refreshAdminCleanupState();
+          const total = adminCleanupState.finishedMatches.length;
+          if (!total) return alert("Nenhum confronto finalizado para limpar.");
+
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden">
+              <div class="bg-red-700 p-4 text-white">
+                <h3 class="font-black uppercase text-lg leading-tight">⚠️ PERIGO: Limpeza em Massa</h3>
+              </div>
+              <div class="p-4 space-y-4">
+                <p class="text-sm font-bold text-gray-800 leading-relaxed">Você tem certeza? Isso vai mover TODOS os jogos que já têm um vencedor definido para a Lixeira.</p>
+                <p class="text-xs font-bold text-gray-500 leading-relaxed">Essa ação só poderá ser revertida restaurando os jogos um por um na lixeira.</p>
+                <div class="rounded-2xl bg-red-50 border border-red-100 p-3 text-center text-red-700 font-black text-xs">${total} confrontos finalizados serão movidos</div>
+                <button type="button" onclick="window.bulkCleanupFinishedMatches()" class="w-full bg-red-700 text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press">SIM, LIMPAR TUDO</button>
+                <button type="button" onclick="window.openCleanupModal()" class="w-full bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
+              </div>
+            </div>
+          `;
+        };
+
+        window.bulkCleanupFinishedMatches = async () => {
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) return alert("Você não tem permissão para limpar confrontos.");
+
+          await refreshAdminCleanupState();
+          const matches = adminCleanupState.finishedMatches.filter((m) => String(m.winner || "").trim());
+          if (!matches.length) return alert("Nenhum confronto finalizado para limpar.");
+
+          try {
+            const nowTs = Timestamp.fromDate(new Date());
+            const matchIds = [];
+            const teams = [];
+
+            for (let i = 0; i < matches.length; i += 240) {
+              const chunk = matches.slice(i, i + 240);
+              const batch = writeBatch(db);
+
+              chunk.forEach((match) => {
+                const { id, ...matchPayload } = match;
+                matchIds.push(match.id);
+                teams.push(`${match.teamA || ""} x ${match.teamB || ""}`);
+                batch.set(doc(db, "bin_matches", match.id), {
+                  ...matchPayload,
+                  deletedAt: nowTs,
+                  deletedByUid: admin.uid || "",
+                  deletedByName: admin.name || "",
+                  deletedByEmail: admin.email || "",
+                  deleteReason: "bulk_finished_cleanup"
+                });
+                batch.delete(doc(db, "matches", match.id));
+              });
+
+              await batch.commit();
+            }
+
+            await logAdminCleanupAction("bulk_cleanup_finished_matches", {
+              totalMatches: matches.length,
+              matchIds,
+              teams
+            });
+
+            invalidateHomeRankingCaches();
+            renderAdminCleanupToast("Confrontos finalizados movidos para a lixeira.");
+            await loadAdminMatches();
+            adminCleanupState.tab = "trash";
+            await refreshAdminCleanupState();
+            renderAdminCleanupModal();
+            if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) await loadMatches({ force: true });
+          } catch(e) {
+            alert(e.message);
+          }
+        };
 
        // --- CORREÇÃO DO PAINEL FINANCEIRO E PAGAMENTO ---
 
