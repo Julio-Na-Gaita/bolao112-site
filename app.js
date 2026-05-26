@@ -105,7 +105,7 @@ let homeSectionCollapseState = {
   matches_done: true
 };
 
-const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.3');
+const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.4');
 const getAppVersionShort = () => getAppVersion().replace(/^web-/, '');
 const getAppVersionLabel = () => `Web v${getAppVersionShort()}`;
 const getAppVersionFullLabel = () => `Versão ${getAppVersionLabel()}`;
