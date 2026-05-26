@@ -5167,12 +5167,17 @@ const renderAdminCreationModal = () => {
   const cont = document.getElementById("modalContainer");
   if (!modal || !cont) return;
 
+  const competitionValue = adminCreationState.competitions?.[0] || "";
+  const roundValue = adminCreationState.rounds?.[0] || "";
+  const hasCompetitions = (adminCreationState.competitions || []).length > 0;
+  const hasRounds = (adminCreationState.rounds || []).length > 0;
+
   const competitionOptions = (adminCreationState.competitions || [])
-    .map((competition) => `<option value="${escapeHtml(competition)}"></option>`)
+    .map((competition) => `<option value="${escapeHtml(competition)}" ${competition === competitionValue ? "selected" : ""}>${escapeHtml(competition)}</option>`)
     .join("");
 
   const roundOptions = (adminCreationState.rounds || [])
-    .map((round) => `<option value="${escapeHtml(round)}"></option>`)
+    .map((round) => `<option value="${escapeHtml(round)}" ${round === roundValue ? "selected" : ""}>${escapeHtml(round)}</option>`)
     .join("");
 
   const introCard = `
@@ -5227,9 +5232,6 @@ const renderAdminCreationModal = () => {
     </button>
   `;
 
-  const competitionValue = adminCreationState.competitions?.[0] || "";
-  const roundValue = adminCreationState.rounds?.[0] || "";
-
   const formHtml = `
     <div class="admin-creation-panel space-y-4">
       <div class="flex items-start justify-between gap-3">
@@ -5245,13 +5247,19 @@ const renderAdminCreationModal = () => {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label class="admin-compact-label">Competição</label>
-          <input id="adminMatchCompetition" list="adminCompetitionOptions" type="text" value="${escapeHtml(competitionValue)}" class="admin-creation-input" placeholder="Escolha a competição">
-          <datalist id="adminCompetitionOptions">${competitionOptions}</datalist>
+          <select id="adminMatchCompetition" class="admin-creation-input" ${hasCompetitions ? "" : "disabled"}>
+            <option value="">Selecione</option>
+            ${competitionOptions}
+          </select>
+          ${hasCompetitions ? "" : '<p class="mt-2 text-[11px] font-bold text-red-600">Nenhuma competição ativa disponível.</p>'}
         </div>
         <div>
           <label class="admin-compact-label">Rodada/Fase</label>
-          <input id="adminMatchRound" list="adminRoundOptions" type="text" value="${escapeHtml(roundValue)}" class="admin-creation-input" placeholder="Escolha a rodada">
-          <datalist id="adminRoundOptions">${roundOptions}</datalist>
+          <select id="adminMatchRound" class="admin-creation-input" ${hasRounds ? "" : "disabled"}>
+            <option value="">Selecione</option>
+            ${roundOptions}
+          </select>
+          ${hasRounds ? "" : '<p class="mt-2 text-[11px] font-bold text-red-600">Nenhuma rodada ativa disponível.</p>'}
         </div>
       </div>
 
@@ -5833,8 +5841,8 @@ window.saveAdminMatchAndReset = async () => {
                         <div>
                             <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">⚽ GESTÃO DE JOGOS</h4>
                             <div class="grid grid-cols-2 gap-2">
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Novo Jogo</button>
-                                                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
+                                <button onclick="openCreationModal()" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Criação</button>
+                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
                                 <button onclick="openTrashBin()" class="bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-trash text-lg"></i> Lixeira</button>
                             </div>
                         </div>
@@ -5848,9 +5856,8 @@ window.saveAdminMatchAndReset = async () => {
 
                         <div>
                             <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📢 COMUNICAÇÃO</h4>
-                            <div class="grid grid-cols-2 gap-2">
+                            <div class="grid grid-cols-1 gap-2">
                                 <button disabled title="Será implementado em breve" class="bg-[#6A1B9A] text-white/80 py-3 rounded font-bold text-xs shadow flex flex-col items-center gap-1 opacity-60 cursor-not-allowed"><i class="fas fa-bell text-lg"></i> Enviar Push</button>
-                                <button onclick="openCreationModal()" class="bg-[#F9A825] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Criação</button>
                             </div>
                         </div>
 
