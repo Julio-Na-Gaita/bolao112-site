@@ -1385,6 +1385,257 @@ select:focus-visible {
     font-size: 16px;
 }
 
+.admin-financial-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom, 16px) + 18px);
+    transform: translateX(-50%) translateY(12px);
+    min-width: 220px;
+    max-width: min(92vw, 420px);
+    padding: 12px 16px;
+    border-radius: 18px;
+    background: rgba(15,23,42,0.95);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    text-align: center;
+    box-shadow: 0 18px 38px rgba(15,23,42,0.24);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 120;
+}
+
+.admin-financial-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.admin-financial-toast.is-danger {
+    background: #b91c1c;
+}
+
+.admin-financial-card {
+    border: 1px solid rgba(15,23,42,0.08);
+    border-radius: 20px;
+    background: rgba(255,255,255,0.94);
+    padding: 12px;
+    box-shadow: 0 10px 22px rgba(15,23,42,0.06);
+}
+
+.admin-financial-card--inactive {
+    opacity: 0.72;
+    border-style: dashed;
+    background: rgba(248,250,252,0.82);
+}
+
+.admin-financial-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: #fff;
+    flex-shrink: 0;
+}
+
+.admin-financial-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.admin-financial-name {
+    color: var(--text-main);
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.admin-financial-username {
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.admin-financial-edit {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: #006400;
+    color: #FFD700;
+    box-shadow: 0 10px 18px rgba(0,100,0,0.18);
+}
+
+.admin-financial-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.admin-financial-sortbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.admin-financial-sort {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: rgba(255,255,255,0.94);
+    color: #334155;
+    font-size: 11px;
+    font-weight: 900;
+    box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+}
+
+.admin-financial-sort.is-active {
+    background: #006400;
+    color: #fff;
+    border-color: #006400;
+}
+
+.admin-financial-sort small {
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.admin-financial-sort.is-active small {
+    color: #FFD700;
+}
+
+.admin-financial-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-financial-month-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.admin-financial-month {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: #f8fafc;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.admin-financial-month.is-paid {
+    background: #006400;
+    color: #fff;
+    border-color: #006400;
+}
+
+.admin-financial-debt-btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: #f3f4f6;
+    color: #475569;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.admin-financial-debt-btn--plus {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.admin-financial-debt-value {
+    min-width: 40px;
+    text-align: center;
+    color: #b91c1c;
+    font-size: 18px;
+    font-weight: 900;
+}
+
+.admin-invite-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: rgba(255,255,255,0.94);
+    box-shadow: 0 10px 22px rgba(15,23,42,0.06);
+}
+
+.admin-invite-name {
+    color: var(--text-main);
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.admin-invite-meta {
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.admin-invite-delete {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.admin-quick-result-empty {
+    border: 1px dashed rgba(15,23,42,0.14);
+    border-radius: 18px;
+    background: rgba(255,255,255,0.84);
+    padding: 16px;
+    text-align: center;
+}
+
+.admin-quick-results-footer {
+    padding: 12px 14px 14px;
+    border-top: 1px solid rgba(15,23,42,0.06);
+    background: rgba(255,255,255,0.96);
+}
+
+@media (min-width: 640px) {
+    .admin-financial-sortbar {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .admin-financial-month-grid {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 380px) {
     .profile-action-grid {
         grid-template-columns: 1fr;

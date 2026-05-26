@@ -105,7 +105,7 @@ let homeSectionCollapseState = {
   matches_done: true
 };
 
-const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.6');
+const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.7');
 const getAppVersionShort = () => getAppVersion().replace(/^web-/, '');
 const getAppVersionLabel = () => `Web v${getAppVersionShort()}`;
 const getAppVersionFullLabel = () => `Versão ${getAppVersionLabel()}`;
@@ -149,6 +149,16 @@ let adminCleanupState = {
   trashMatches: [],
   finishedMatches: [],
   search: ""
+};
+let adminFinancialState = {
+  users: [],
+  whitelist: [],
+  search: "",
+  sortKey: "name",
+  sortDir: "asc",
+  loading: false,
+  editUserId: "",
+  editUserDraft: null
 };
 
 const normalizeAdminText = (value = "") =>
@@ -1315,6 +1325,12 @@ window.continueAfterLoginGates = async () => {
 
   const userData = userSnap.exists() ? userSnap.data() : null;
 
+  if (userData && userData.isActive === false) {
+    alert("Seu acesso foi desativado. Fale com o administrador.");
+    try { await signOut(auth); } catch(e) {}
+    return;
+  }
+
   // 1) FORCE PASSWORD CHANGE (prioridade máxima)
   if (userData && userData.forcePasswordChange === true) {
     // Estrutura mínima (sem liberar menu)
@@ -1358,6 +1374,12 @@ window.continueAfterLoginGates = async () => {
 
                 if (userSnap.exists()) {
                     const data = userSnap.data();
+
+                    if (data.isActive === false) {
+                        alert("Seu acesso foi desativado. Fale com o administrador.");
+                        signOut(auth);
+                        return;
+                    }
                     
                     // Verifica se é TRIAL VENCIDO
                     if (data.isTrial === true && data.trialValidUntil) {
@@ -7318,7 +7340,7 @@ window.saveAdminMatchAndReset = async () => {
 
                         <div>
                             <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">👥 PESSOAS & FINANCEIRO</h4>
-                            <button onclick="openFinancialScreen()" class="w-full bg-[#C62828] text-white py-4 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2">
+                            <button onclick="window.openFinancialScreen()" class="w-full bg-[#C62828] text-white py-4 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2">
                                 <i class="fas fa-wallet text-lg"></i> GERENCIAR PAGAMENTOS & USUÁRIOS
                             </button>
                         </div>
@@ -7833,57 +7855,858 @@ async function loadAdminMatches() {
           }
         };
 
-       // --- CORREÇÃO DO PAINEL FINANCEIRO E PAGAMENTO ---
+       // --- PAINEL FINANCEIRO / USUÁRIOS ---
+        const FINANCIAL_MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+        const FINANCIAL_MONTH_LABELS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-        window.openFinancialScreen = async () => {
+        const getFinancialCurrentMonthIndex = () => new Date().getMonth();
+        const getFinancialCurrentMonthKey = () => FINANCIAL_MONTHS[getFinancialCurrentMonthIndex()];
+        const getFinancialCurrentMonthName = () => FINANCIAL_MONTH_LABELS[getFinancialCurrentMonthIndex()];
+        const getFinancialCurrentMonthYearKey = () => {
+          const now = new Date();
+          return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        };
+
+        const normalizeFinancialUsername = (value = "") => {
+          let text = String(value || "").trim().toLowerCase();
+          if (!text) return "";
+          if (text.includes("@")) text = text.split("@")[0];
+          text = text.replace(/^@+/, "").replace(/\s+/g, "");
+          return text;
+        };
+
+        const normalizeFinancialSearch = (value = "") =>
+          normalizeAdminText(value)
+            .replace(/\s+/g, " ")
+            .trim();
+
+        const formatFinancialDateTime = (value) => {
+          const date = toJsDate(value);
+          if (!date) return "Nunca";
+          return date.toLocaleString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        };
+
+        const parseFinancialVersionScore = (value = "") => {
+          const text = String(value || "").trim();
+          if (!text) return 0;
+          const nums = text.match(/\d+/g);
+          if (!nums || !nums.length) return 0;
+          return nums.slice(0, 4).reduce((acc, part) => (acc * 1000) + Number(part || 0), 0);
+        };
+
+        const isFinancialUserPaid = (user, monthKey = getFinancialCurrentMonthKey()) => {
+          if (!user) return false;
+          const year = new Date().getFullYear();
+          if (year < 2026) return true;
+          return user.payments?.[monthKey] === true;
+        };
+
+        const getFinancialUserLastLoginValue = (user) => {
+          const date = toJsDate(user?.lastAccess || user?.lastLogin || user?.lastLoginAt || user?.updatedAt || user?.createdAt);
+          return date ? date.getTime() : 0;
+        };
+
+        const getFinancialUserSearchBlob = (user = {}) =>
+          normalizeFinancialSearch([
+            user.name,
+            user.username,
+            user.nickName,
+            user.nickname,
+            user.apelido,
+            user.alias,
+            user.email
+          ].filter(Boolean).join(" "));
+
+        const sortFinancialUsers = (items = []) => {
+          const dir = adminFinancialState.sortDir === "desc" ? -1 : 1;
+          const key = adminFinancialState.sortKey || "name";
+          const monthKey = getFinancialCurrentMonthKey();
+          const list = [...items];
+
+          list.sort((a, b) => {
+            if (key === "status") {
+              const ap = isFinancialUserPaid(a, monthKey) ? 1 : 0;
+              const bp = isFinancialUserPaid(b, monthKey) ? 1 : 0;
+              if (ap !== bp) return (ap - bp) * (adminFinancialState.sortDir === "desc" ? -1 : 1);
+              return String(a.name || "").localeCompare(String(b.name || ""));
+            }
+
+            if (key === "version") {
+              const av = parseFinancialVersionScore(a.appVersion || "");
+              const bv = parseFinancialVersionScore(b.appVersion || "");
+              if (av !== bv) return (av - bv) * (adminFinancialState.sortDir === "desc" ? -1 : 1);
+              return String(a.name || "").localeCompare(String(b.name || ""));
+            }
+
+            if (key === "lastLogin") {
+              const ad = getFinancialUserLastLoginValue(a);
+              const bd = getFinancialUserLastLoginValue(b);
+              if (ad !== bd) return (ad - bd) * (adminFinancialState.sortDir === "desc" ? -1 : 1);
+              return String(a.name || "").localeCompare(String(b.name || ""));
+            }
+
+            const cmp = String(a.name || "").localeCompare(String(b.name || ""));
+            return cmp * (adminFinancialState.sortDir === "desc" ? -1 : 1);
+          });
+
+          return list;
+        };
+
+        const getFinancialActiveSortArrow = (key) => {
+          if (adminFinancialState.sortKey !== key) return "";
+          return adminFinancialState.sortDir === "desc" ? "↓" : "↑";
+        };
+
+        const showFinancialToast = (message, tone = "success") => {
+          const existing = document.getElementById("adminFinancialToast");
+          if (existing) existing.remove();
+
+          const el = document.createElement("div");
+          el.id = "adminFinancialToast";
+          el.className = `admin-financial-toast ${tone === "danger" ? "is-danger" : ""}`;
+          el.textContent = message;
+          document.body.appendChild(el);
+
+          requestAnimationFrame(() => el.classList.add("show"));
+          clearTimeout(window.__adminFinancialToastTimeout);
+          window.__adminFinancialToastTimeout = setTimeout(() => {
+            el.classList.remove("show");
+            setTimeout(() => el.remove(), 220);
+          }, 2200);
+        };
+
+        const logAdminFinancialAction = async (type, payload = {}) => {
+          try {
+            const admin = await getCurrentAdminProfile();
+            if (!admin) return;
+            await addDoc(collection(db, "admin_audit_logs"), {
+              type,
+              adminUid: admin.uid || "",
+              adminName: admin.name || "",
+              adminEmail: admin.email || "",
+              source: "admin_financial",
+              ...payload,
+              createdAt: Timestamp.fromDate(new Date())
+            });
+          } catch (error) {
+            console.warn("Falha ao registrar auditoria financeira:", error);
+          }
+        };
+
+        const loadAdminFinancialUsers = async () => {
+          const snap = await getDocs(collection(db, "users"));
+          const users = [];
+          snap.forEach((d) => {
+            const data = d.data() || {};
+            users.push({
+              id: d.id,
+              uid: d.id,
+              ...data,
+              name: data.name || data.username || "Sem nome",
+              username: data.username || "",
+              email: data.email || "",
+              nickName: data.nickName || data.nickname || data.apelido || "",
+              nickname: data.nickname || data.nickName || data.apelido || "",
+              lastAccessDate: toJsDate(data.lastAccess || data.lastLogin || data.lastLoginAt || data.updatedAt || data.createdAt),
+              debts: Number(data.debts || 0),
+              payments: data.payments || {},
+              passwordHint: data.passwordHint || "",
+              rulesAcceptedVersion: data.rulesAcceptedVersion || "",
+              rulesAcceptedAt: data.rulesAcceptedAt || null,
+              isAdmin: data.isAdmin === true,
+              isActive: data.isActive !== false
+            });
+          });
+          adminFinancialState.users = users;
+          return users;
+        };
+
+        const loadAdminWhitelistUsers = async () => {
+          const snap = await getDocs(collection(db, "whitelist"));
+          const items = [];
+          snap.forEach((d) => {
+            const data = d.data() || {};
+            const username = normalizeFinancialUsername(data.username || d.id);
+            if (!username) return;
+            items.push({
+              id: d.id,
+              username,
+              createdAt: data.createdAt || null,
+              createdByName: data.createdByName || "",
+              createdByEmail: data.createdByEmail || "",
+              createdByUid: data.createdByUid || ""
+            });
+          });
+          items.sort((a, b) => a.username.localeCompare(b.username));
+          adminFinancialState.whitelist = items;
+          return items;
+        };
+
+        const getFinancialPaymentsSummary = (user) => {
+          const monthKey = getFinancialCurrentMonthKey();
+          const monthName = getFinancialCurrentMonthName();
+          const paid = isFinancialUserPaid(user, monthKey);
+          return paid ? "PAGO" : `MÊS ${monthName} PENDENTE`;
+        };
+
+        const renderFinancialUserChip = (label, tone = "default") => `
+          <span class="status-chip status-chip--${tone}">${escapeHtml(label)}</span>
+        `;
+
+        const renderFinancialUserCard = (user) => {
+          const paid = isFinancialUserPaid(user);
+          const versionLabel = String(user.appVersion || "Sem versão").trim();
+          const loginLabel = formatFinancialDateTime(user.lastAccessDate);
+          const rulesLabel = user.rulesAccepted === true
+            ? `ACEITO ${user.rulesAcceptedVersion || ""}`.trim()
+            : "REGULAMENTO PENDENTE";
+          const debtLabel = user.debts > 0 ? `INADIMPLÊNCIA ${user.debts}` : "SEM MULTAS";
+          const inactiveClass = user.isActive === false ? "admin-financial-card--inactive" : "";
+
+          return `
+            <div class="admin-financial-card ${inactiveClass}">
+              <div class="flex items-start gap-3">
+                <div class="admin-financial-avatar">
+                  <img src="${getAvatarUrl(user.photoBase64, user.name || user.username)}" alt="${escapeHtml(user.name || user.username)}">
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <div class="admin-financial-name">${escapeHtml(user.name || "Sem nome")}</div>
+                      <div class="admin-financial-username">@${escapeHtml(user.username || user.id || "")}</div>
+                    </div>
+                    <button type="button" onclick="window.openFinancialUserModal('${escapeJsString(user.id)}')" class="admin-financial-edit">
+                      <i class="fas fa-pen"></i>
+                    </button>
+                  </div>
+                  <div class="admin-financial-badges">
+                    ${renderFinancialUserChip(versionLabel, "default")}
+                    ${renderFinancialUserChip(`Último login ${loginLabel}`, paid ? "success" : "warning")}
+                    ${renderFinancialUserChip(rulesLabel, user.rulesAccepted === true ? "success" : "warning")}
+                    ${renderFinancialUserChip(getFinancialPaymentsSummary(user), paid ? "success" : "danger")}
+                    ${renderFinancialUserChip(debtLabel, user.debts > 0 ? "danger" : "default")}
+                    ${user.isAdmin ? renderFinancialUserChip("ADMIN", "default") : ""}
+                    ${user.isActive === false ? renderFinancialUserChip("INATIVO", "danger") : ""}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        };
+
+        const renderFinancialScreenShell = (users = []) => {
+          const search = normalizeFinancialSearch(adminFinancialState.search || "");
+          const filtered = search
+            ? users.filter((user) => getFinancialUserSearchBlob(user).includes(search))
+            : users;
+          const sorted = sortFinancialUsers(filtered);
+          const monthKey = getFinancialCurrentMonthKey();
+          const pendingCount = sorted.filter((user) => !isFinancialUserPaid(user, monthKey) && user.isActive !== false).length;
+          const paidCount = sorted.filter((user) => isFinancialUserPaid(user, monthKey)).length;
+          const activeSort = adminFinancialState.sortKey;
+
+          const sortBtn = (key, label) => `
+            <button type="button" onclick="window.toggleFinancialSort('${key}')" class="admin-financial-sort ${activeSort === key ? "is-active" : ""}">
+              <span>${label}</span>
+              <small>${getFinancialActiveSortArrow(key)}</small>
+            </button>
+          `;
+
+          return `
+            <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[86vh] flex flex-col">
+              <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+              <div class="relative z-10 flex flex-col h-full bg-white/92">
+                <div class="bg-[#006400] p-4 text-white flex items-start justify-between shadow-md shrink-0">
+                  <div class="pr-3">
+                    <h3 class="font-black uppercase text-lg leading-none">GESTÃO FINANCEIRA</h3>
+                    <p class="text-[10px] text-[#FFD700] font-bold mt-1">${getFinancialCurrentMonthName()} • ${sorted.length} usuários</p>
+                  </div>
+                  <button type="button" onclick="closeModal()" class="ml-2"><i class="fas fa-times text-xl"></i></button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-3 space-y-3">
+                  <div class="admin-creation-panel space-y-3">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Resumo</div>
+                        <h4 class="text-lg font-black text-gray-900 leading-tight">Controle de acesso, mensalidade e multas.</h4>
+                      </div>
+                      <span class="status-chip status-chip--default">${pendingCount} pendentes</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      <button type="button" onclick="window.openInviteManager()" class="bg-[#6A1B9A] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+                        <i class="fas fa-link"></i> CONVITES
+                      </button>
+                      <button type="button" onclick="window.openFinancialAuditModal()" class="bg-red-600 text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+                        <i class="fas fa-bolt"></i> AUDITAR
+                      </button>
+                    </div>
+
+                    <div>
+                      <label class="admin-compact-label">Buscar participante</label>
+                      <input id="adminFinancialSearch" type="search" class="admin-creation-input" placeholder="Buscar participante" value="${escapeHtml(adminFinancialState.search || "")}" oninput="window.filterFinancialUsers(this.value)">
+                    </div>
+
+                    <div class="admin-financial-sortbar">
+                      ${sortBtn("name", "Nome")}
+                      ${sortBtn("status", "Status")}
+                      ${sortBtn("version", "Versão")}
+                      ${sortBtn("lastLogin", "Último login")}
+                    </div>
+                  </div>
+
+                  <div class="admin-financial-summary">
+                    <span class="status-chip status-chip--success">${paidCount} pagos</span>
+                    <span class="status-chip status-chip--warning">${pendingCount} pendentes</span>
+                    <span class="status-chip status-chip--default">${sorted.length} exibidos</span>
+                  </div>
+
+                  <div id="adminFinancialUsersList" class="space-y-2">
+                    ${sorted.length ? sorted.map((user) => renderFinancialUserCard(user)).join("") : `
+                      <div class="admin-quick-result-empty">
+                        <div class="text-base font-black text-gray-800">Nenhum participante encontrado.</div>
+                        <p class="mt-1 text-xs text-gray-500">Tente outro nome, usuário ou email.</p>
+                      </div>
+                    `}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        };
+
+        const refreshFinancialScreen = async () => {
+          adminFinancialState.loading = true;
+          const [users] = await Promise.all([
+            loadAdminFinancialUsers(),
+            loadAdminWhitelistUsers().catch(() => [])
+          ]);
+          adminFinancialState.loading = false;
+          return renderFinancialScreenShell(users);
+        };
+
+        window.toggleFinancialSort = (key) => {
+          const safeKey = ["name", "status", "version", "lastLogin"].includes(key) ? key : "name";
+          if (adminFinancialState.sortKey === safeKey) {
+            adminFinancialState.sortDir = adminFinancialState.sortDir === "asc" ? "desc" : "asc";
+          } else {
+            adminFinancialState.sortKey = safeKey;
+            adminFinancialState.sortDir = safeKey === "status" ? "desc" : "asc";
+          }
+          window.openFinancialScreen();
+        };
+
+        window.filterFinancialUsers = (value = "") => {
+          adminFinancialState.search = String(value || "");
+          window.openFinancialScreen();
+        };
+
+        const loadFinancialAuditSummary = async () => {
+          const monthKey = getFinancialCurrentMonthYearKey();
+          const pendingUsers = (adminFinancialState.users || []).filter((user) => !isFinancialUserPaid(user) && user.isActive !== false);
+          const logSnap = await getDocs(query(collection(db, "admin_audit_logs"), where("type", "==", "financial_audit")));
+          const alreadyApplied = [];
+          logSnap.forEach((d) => {
+            const data = d.data() || {};
+            if (String(data.month || "") === monthKey) {
+              alreadyApplied.push(data);
+            }
+          });
+
+          return {
+            monthKey,
+            pendingUsers,
+            alreadyApplied: alreadyApplied.length > 0
+          };
+        };
+
+        window.addFinancialInvite = async () => {
+          const input = document.getElementById("adminInviteInput");
+          const raw = String(input?.value || "").trim();
+          const username = normalizeFinancialUsername(raw);
+          if (!username) {
+            showFinancialToast("Informe um usuário.", "danger");
+            return;
+          }
+
+          const duplicate = (adminFinancialState.whitelist || []).some((item) => normalizeFinancialUsername(item.username || item.id || "") === username);
+          if (duplicate) {
+            showFinancialToast("Convite já existe.", "danger");
+            return;
+          }
+
+          try {
+            const admin = await getCurrentAdminProfile(true);
+            const nowTs = Timestamp.fromDate(new Date());
+            await setDoc(doc(db, "whitelist", username), {
+              username,
+              createdAt: nowTs,
+              createdByUid: admin?.uid || "",
+              createdByName: admin?.name || "",
+              createdByEmail: admin?.email || ""
+            }, { merge: true });
+
+            await logAdminFinancialAction("create_invite", { username });
+            if (input) input.value = "";
+            await loadAdminWhitelistUsers();
+            await renderAdminInviteManager();
+            showFinancialToast("Convite criado!");
+          } catch (error) {
+            console.error("Erro ao criar convite:", error);
+            showFinancialToast("Não foi possível criar o convite.", "danger");
+          }
+        };
+
+        window.revokeFinancialInvite = async (username) => {
+          const clean = normalizeFinancialUsername(username);
+          if (!clean) return;
+
+          const confirmText = `⚠️ REVOGAR ACESSO?\n\nVocê vai remover o convite de: ${clean}\nO usuário perderá o acesso ao app imediatamente.\nFique tranquilo: os pontos e histórico dele NÃO serão apagados.`;
+          if (!confirm(confirmText)) return;
+
+          try {
+            await deleteDoc(doc(db, "whitelist", clean));
+            await logAdminFinancialAction("revoke_invite", { username: clean });
+            await loadAdminWhitelistUsers();
+            await renderAdminInviteManager();
+            showFinancialToast("Acesso revogado.");
+          } catch (error) {
+            console.error("Erro ao revogar convite:", error);
+            showFinancialToast("Não foi possível revogar o acesso.", "danger");
+          }
+        };
+
+        window.openInviteManager = async () => {
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) {
+            alert("Você não tem permissão para acessar os convites.");
+            return;
+          }
+
+          await loadAdminWhitelistUsers().catch(() => []);
+          await renderAdminInviteManager();
+        };
+
+        window.openFinancialAuditModal = async () => {
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) {
+            alert("Você não tem permissão para auditar pagamentos.");
+            return;
+          }
+
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando auditoria...</p></div>`;
+
+          await loadAdminFinancialUsers();
+          const summary = await loadFinancialAuditSummary();
+          const pendingList = summary.pendingUsers.map((user) => `
+            <div class="text-xs text-red-600 font-bold">${escapeHtml(user.name || user.username || "Sem nome")}</div>
+          `).join("");
+
+          const blocked = new Date().getDate() <= 10;
+          cont.innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden">
+              <div class="bg-red-700 p-4 text-white">
+                <h3 class="font-black uppercase text-lg leading-tight">Auditoria: ${escapeHtml(getFinancialCurrentMonthName())}</h3>
+              </div>
+              <div class="p-4 space-y-3">
+                <div class="text-sm font-black text-gray-800">Usuários com pagamento pendente neste mês: ${summary.pendingUsers.length}</div>
+                <p class="text-xs text-gray-600 font-bold">Deseja aplicar +1 multa automática para todos?</p>
+                ${blocked ? `<div class="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-black text-red-700">A auditoria automática só pode ser aplicada após o dia 10.</div>` : ""}
+                ${pendingList ? `<div class="max-h-40 overflow-y-auto rounded-2xl border bg-gray-50 p-3 space-y-1">${pendingList || ""}</div>` : ""}
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                  <button type="button" onclick="window.openFinancialScreen()" class="bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
+                  <button type="button" onclick="window.applyFinancialAudit()" class="bg-red-700 text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press ${blocked || !summary.pendingUsers.length || summary.alreadyApplied ? "opacity-50 cursor-not-allowed" : ""}" ${blocked || !summary.pendingUsers.length || summary.alreadyApplied ? "disabled" : ""}>Aplicar Multas</button>
+                </div>
+              </div>
+            </div>
+          `;
+        };
+
+        window.applyFinancialAudit = async () => {
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) {
+            alert("Você não tem permissão para aplicar multas.");
+            return;
+          }
+
+          const day = new Date().getDate();
+          if (day <= 10) {
+            showFinancialToast("A auditoria automática só pode ser aplicada após o dia 10.", "danger");
+            return;
+          }
+
+          await loadAdminFinancialUsers();
+          const summary = await loadFinancialAuditSummary();
+          if (!summary.pendingUsers.length) {
+            showFinancialToast("Nenhum usuário pendente neste mês.", "danger");
+            return;
+          }
+
+          if (summary.alreadyApplied) {
+            showFinancialToast("A auditoria deste mês já foi aplicada.", "danger");
+            return;
+          }
+
+          if (!confirm("Aplicar +1 multa automática para todos os usuários pendentes?")) return;
+
+          try {
+            const chunks = [];
+            for (let i = 0; i < summary.pendingUsers.length; i += 450) {
+              chunks.push(summary.pendingUsers.slice(i, i + 450));
+            }
+
+            const affectedUsers = [];
+            for (const chunk of chunks) {
+              const batch = writeBatch(db);
+              chunk.forEach((user) => {
+                const nextDebts = Number(user.debts || 0) + 1;
+                batch.update(doc(db, "users", user.id), { debts: nextDebts });
+                affectedUsers.push({
+                  userId: user.id,
+                  username: user.username || "",
+                  name: user.name || "",
+                  debts: nextDebts
+                });
+              });
+              await batch.commit();
+            }
+
+            await logAdminFinancialAction("financial_audit", {
+              month: getFinancialCurrentMonthYearKey(),
+              totalPending: summary.pendingUsers.length,
+              totalApplied: summary.pendingUsers.length,
+              skippedAlreadyApplied: 0,
+              affectedUsers
+            });
+
+            invalidateHomeRankingCaches();
+            showFinancialToast("Multas aplicadas!");
+            await window.openFinancialScreen();
+          } catch (error) {
+            console.error("Erro ao aplicar auditoria financeira:", error);
+            showFinancialToast("Não foi possível aplicar as multas.", "danger");
+          }
+        };
+
+        const renderAdminInviteManager = async () => {
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          const items = [...(adminFinancialState.whitelist || [])].sort((a, b) => a.username.localeCompare(b.username));
+          const htmlItems = items.length ? items.map((item) => `
+            <div class="admin-invite-card">
+              <div class="min-w-0">
+                <div class="admin-invite-name">${escapeHtml(item.username)}</div>
+                <div class="admin-invite-meta">${item.createdAt ? `Criado em ${escapeHtml(formatFinancialDateTime(item.createdAt))}` : "Convite vigente"}</div>
+              </div>
+              <button type="button" onclick="window.revokeFinancialInvite('${escapeJsString(item.username)}')" class="admin-invite-delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          `).join("") : `<div class="admin-quick-result-empty"><div class="text-base font-black text-gray-800">Nenhum convite vigente.</div><p class="mt-1 text-xs text-gray-500">Adicione um usuário para liberar acesso ao app.</p></div>`;
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `
+            <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[86vh] flex flex-col">
+              <div class="bg-[#006400] p-4 text-white flex items-start justify-between shadow-md shrink-0">
+                <div class="pr-3">
+                  <h3 class="font-black uppercase text-lg leading-none">GERENCIAR CONVITES</h3>
+                  <p class="text-[10px] text-[#FFD700] font-bold mt-1">Controle de Acesso (Whitelist)</p>
+                </div>
+                <button type="button" onclick="window.openFinancialScreen()" class="ml-2"><i class="fas fa-times text-xl"></i></button>
+              </div>
+
+              <div class="flex-1 overflow-y-auto p-3 space-y-3">
+                <div class="admin-creation-panel space-y-3">
+                  <div>
+                    <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Novo Convite</div>
+                    <div class="mt-2 flex gap-2">
+                      <input id="adminInviteInput" type="text" class="admin-creation-input flex-1" placeholder="Usuário (sem @bolao...)" autocomplete="off">
+                      <button type="button" onclick="window.addFinancialInvite()" class="admin-search-btn"><i class="fas fa-plus"></i></button>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <h4 class="text-sm font-black text-gray-800">Vigentes (${items.length})</h4>
+                    <span class="status-chip status-chip--default">A-Z</span>
+                  </div>
+                </div>
+                <div class="space-y-2">${htmlItems}</div>
+              </div>
+              <div class="admin-quick-results-footer shrink-0">
+                <button type="button" onclick="window.openFinancialScreen()" class="w-full bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
+              </div>
+            </div>
+          `;
+          setTimeout(() => document.getElementById("adminInviteInput")?.focus(), 0);
+        };
+
+        const renderAdminFinancialUserEditModal = () => {
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont || !adminFinancialState.editUserDraft) return;
+
+          const draft = adminFinancialState.editUserDraft;
+          const monthBlocks = FINANCIAL_MONTHS.map((month, idx) => {
+            const paid = draft.payments?.[month] === true;
+            return `<button type="button" onclick="window.toggleFinancialUserMonth('${escapeJsString(month)}')" class="admin-financial-month ${paid ? "is-paid" : ""}">${month}</button>`;
+          }).join("");
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `
+            <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[88vh] flex flex-col">
+              <div class="bg-[#006400] p-4 text-white flex items-start justify-between shadow-md shrink-0">
+                <div class="pr-3">
+                  <h3 class="font-black uppercase text-lg leading-none">Gerenciar @${escapeHtml(draft.username || "")}</h3>
+                  <p class="text-[10px] text-[#FFD700] font-bold mt-1">${escapeHtml(draft.name || "Sem nome")}</p>
+                </div>
+                <button type="button" onclick="closeModal()" class="ml-2"><i class="fas fa-times text-xl"></i></button>
+              </div>
+
+              <div class="flex-1 overflow-y-auto p-3 space-y-3">
+                <div class="admin-creation-panel space-y-3">
+                  <div>
+                    <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Dica de senha</div>
+                    <div class="mt-1 text-sm font-bold text-gray-700">${escapeHtml(draft.passwordHint || "Sem dica")}</div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="window.openResetUserPasswordModal()" class="bg-black text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+                      <i class="fas fa-key"></i> RESETAR SENHA
+                    </button>
+                    <button type="button" onclick="window.toggleFinancialUserActive()" class="bg-gray-800 text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+                      <i class="fas fa-user-slash"></i> EXCLUIR USUÁRIO
+                    </button>
+                  </div>
+
+                  <div>
+                    <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Inadimplências</div>
+                    <div class="mt-2 flex items-center justify-center gap-3">
+                      <button type="button" onclick="window.adjustFinancialUserDebt(-1)" class="admin-financial-debt-btn"><i class="fas fa-minus"></i></button>
+                      <span class="admin-financial-debt-value">${Number(draft.debts || 0)}</span>
+                      <button type="button" onclick="window.adjustFinancialUserDebt(1)" class="admin-financial-debt-btn admin-financial-debt-btn--plus"><i class="fas fa-plus"></i></button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Pagamentos</div>
+                    <div class="admin-financial-month-grid mt-2">${monthBlocks}</div>
+                  </div>
+
+                  <div class="text-[11px] font-bold text-gray-500">
+                    Último login: ${escapeHtml(formatFinancialDateTime(draft.lastAccessDate))}
+                  </div>
+                </div>
+              </div>
+
+              <div class="admin-quick-results-footer shrink-0">
+                <div class="grid grid-cols-3 gap-2">
+                  <button type="button" onclick="closeModal()" class="bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
+                  <button type="button" onclick="window.saveFinancialUserEdit()" class="bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press col-span-2">Salvar</button>
+                </div>
+              </div>
+            </div>
+          `;
+        };
+        window.openFinancialUserModal = async (uid) => {
+          const user = (adminFinancialState.users || []).find((item) => item.id === uid);
+          if (!user) {
+            showFinancialToast("Usuário não encontrado.", "danger");
+            return;
+          }
+
+          adminFinancialState.editUserId = uid;
+          adminFinancialState.editUserDraft = {
+            ...user,
+            payments: { ...(user.payments || {}) },
+            debts: Number(user.debts || 0),
+            passwordHint: String(user.passwordHint || "").trim()
+          };
+          renderAdminFinancialUserEditModal();
+        };
+
+        window.toggleFinancialUserMonth = (month) => {
+          const draft = adminFinancialState.editUserDraft;
+          if (!draft) return;
+          draft.payments = draft.payments || {};
+          draft.payments[month] = !draft.payments[month];
+          renderAdminFinancialUserEditModal();
+        };
+
+        window.adjustFinancialUserDebt = (delta) => {
+          const draft = adminFinancialState.editUserDraft;
+          if (!draft) return;
+          draft.debts = Math.max(0, Number(draft.debts || 0) + Number(delta || 0));
+          renderAdminFinancialUserEditModal();
+        };
+
+        window.toggleFinancialUserActive = async () => {
+          const draft = adminFinancialState.editUserDraft;
+          if (!draft) return;
+
+          const confirmText = `⚠️ EXCLUIR USUÁRIO?\n\nVocê vai revogar o acesso de @${draft.username}.\n\nOs pontos, palpites, pagamentos e histórico serão preservados.`;
+          if (!confirm(confirmText)) return;
+
+          try {
+            const admin = await getCurrentAdminProfile(true);
+            const ref = doc(db, "users", draft.id);
+            await setDoc(ref, {
+              isActive: false,
+              disabledAt: Timestamp.fromDate(new Date()),
+              disabledByUid: admin?.uid || "",
+              disabledByName: admin?.name || "",
+              disabledByEmail: admin?.email || ""
+            }, { merge: true });
+
+            await deleteDoc(doc(db, "whitelist", normalizeFinancialUsername(draft.username || ""))).catch(() => {});
+            await logAdminFinancialAction("disable_user", {
+              targetUserId: draft.id,
+              username: draft.username || "",
+              name: draft.name || ""
+            });
+
+            showFinancialToast("Usuário desativado.");
+            adminFinancialState.editUserDraft.isActive = false;
+            await loadAdminFinancialUsers();
+            renderAdminFinancialUserEditModal();
+            await window.openFinancialScreen();
+          } catch (error) {
+            console.error("Erro ao desativar usuário:", error);
+            showFinancialToast("Não foi possível desativar o usuário.", "danger");
+          }
+        };
+
+        window.openResetUserPasswordModal = () => {
+          const draft = adminFinancialState.editUserDraft;
+          if (!draft) return;
+
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden">
+              <div class="bg-[#006400] p-4 text-white">
+                <h3 class="font-black uppercase text-lg leading-tight">🔁 Resetar senha</h3>
+              </div>
+              <div class="p-4 space-y-3">
+                <p class="text-sm font-bold text-gray-700">Defina uma nova senha para este usuário. Ele vai usar essa senha no próximo login.</p>
+                <div class="text-xs font-black text-gray-500 uppercase">Usuário alvo</div>
+                <div class="text-sm font-black text-gray-900">@${escapeHtml(draft.username || "")} • ${escapeHtml(draft.name || "")}</div>
+                <input id="financialResetPass" type="password" class="admin-creation-input" placeholder="Nova senha (mín. 6)">
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                  <button type="button" onclick="window.openFinancialUserModal('${escapeJsString(draft.id)}')" class="bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
+                  <button type="button" onclick="window.confirmResetUserPassword()" class="bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Resetar</button>
+                </div>
+              </div>
+            </div>
+          `;
+          setTimeout(() => document.getElementById("financialResetPass")?.focus(), 0);
+        };
+
+        window.confirmResetUserPassword = async () => {
+          const draft = adminFinancialState.editUserDraft;
+          const input = document.getElementById("financialResetPass");
+          const newPassword = String(input?.value || "").trim();
+          if (!draft) return;
+          if (newPassword.length < 6) {
+            showFinancialToast("A nova senha deve ter no mínimo 6 caracteres.", "danger");
+            return;
+          }
+
+          try {
+            const token = await auth.currentUser.getIdToken(true);
+            const response = await fetch("/api/admin-reset-user-password", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                idToken: token,
+                targetUid: draft.id,
+                newPassword
+              })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result?.error || "Não foi possível resetar a senha.");
+
+            await logAdminFinancialAction("reset_user_password", {
+              targetUserId: draft.id,
+              username: draft.username || "",
+              name: draft.name || ""
+            });
+            showFinancialToast("Senha resetada!");
+            await window.openFinancialUserModal(draft.id);
+          } catch (error) {
+            console.error("Erro ao resetar senha:", error);
+            showFinancialToast(error.message || "Não foi possível resetar a senha.", "danger");
+          }
+        };
+
+        window.saveFinancialUserEdit = async () => {
+          const draft = adminFinancialState.editUserDraft;
+          if (!draft) return;
+
+          try {
+            const admin = await getCurrentAdminProfile(true);
+            const payload = {
+              debts: Number(draft.debts || 0),
+              payments: draft.payments || {},
+              passwordHint: String(draft.passwordHint || "").trim(),
+              updatedAt: Timestamp.fromDate(new Date()),
+              updatedByUid: admin?.uid || "",
+              updatedByName: admin?.name || "",
+              updatedByEmail: admin?.email || ""
+            };
+
+            await setDoc(doc(db, "users", draft.id), payload, { merge: true });
+            await loadAdminFinancialUsers();
+            await logAdminFinancialAction("update_user_financial", {
+              targetUserId: draft.id,
+              username: draft.username || "",
+              debts: payload.debts
+            });
+            showFinancialToast("Usuário atualizado!");
+            await window.openFinancialScreen();
+          } catch (error) {
+            console.error("Erro ao salvar usuário:", error);
+            showFinancialToast("Não foi possível atualizar o usuário.", "danger");
+          }
+        };
+                // --- CORREÇÃO DO PAINEL FINANCEIRO E PAGAMENTO ---
+
+                window.openFinancialScreen = async () => {
+            const admin = await getCurrentAdminProfile(true);
+            if (!admin) {
+              alert("Você não tem permissão para acessar o financeiro.");
+              closeModal();
+              return;
+            }
+
             const modal = document.getElementById('modalOverlay');
             const cont = document.getElementById('modalContainer');
+            if (!modal || !cont) return;
+
             modal.classList.remove('hidden');
-            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
+            cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400]"></i><p class="text-xs font-black text-gray-500 uppercase mt-2">Carregando financeiro...</p></div>`;
 
             try {
-                // Busca dados atualizados
-                const snap = await getDocs(collection(db, "users"));
-                let usersList = [];
-                snap.forEach(d => { const u = d.data(); usersList.push({id: d.id, ...u}); });
-                usersList.sort((a,b) => (a.name||"").localeCompare(b.name||""));
-
-                let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 85vh; display:flex; flex-direction:column;">
-                    <div class="bg-[#006400] p-4 text-white flex justify-between items-center shrink-0">
-                        <h3 class="font-bold uppercase text-sm">Financeiro</h3>
-                        <button onclick="window.closeModal()"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="flex-1 overflow-y-auto p-2 bg-gray-50">`;
-
-                const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-                
-                usersList.forEach(u => {
-                    // Ícone de chave se tiver dica
-                    const hintIcon = u.passwordHint ? `<i class="fas fa-key text-orange-400 text-xs ml-2 cursor-pointer" onclick="alert('Dica: ${u.passwordHint}')" title="Ver Dica"></i>` : '';
-
-                    html += `<div class="bg-white border rounded p-2 mb-2 shadow-sm">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="font-bold text-xs text-gray-800 flex items-center">${u.name} ${hintIcon}</span>
-                            <div class="flex items-center gap-2">
-                                <button onclick="window.changeDebt('${u.id}', -1)" class="text-gray-400 bg-gray-100 p-1 rounded"><i class="fas fa-minus-circle"></i></button>
-                                <span class="text-red-600 font-black text-xs min-w-[30px] text-center">${u.debts||0}</span>
-                                <button onclick="window.changeDebt('${u.id}', 1)" class="text-red-500 bg-red-50 p-1 rounded"><i class="fas fa-plus-circle"></i></button>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-6 gap-1">`;
-                    
-                    months.forEach(m => {
-                        const isPaid = u.payments && u.payments[m];
-                        const bg = isPaid ? "bg-green-600 text-white border-green-600 shadow-md" : "bg-gray-100 text-gray-400 border-gray-200";
-                        // AQUI ESTAVA O ERRO: Passamos apenas ID e Mês. O JS resolve o resto.
-                       // Correção: Passamos apenas o ID e o Mês. O status é calculado na função.
-                    html += `<div onclick="window.togglePay('${u.id}', '${m}')" class="${bg} border text-[8px] font-bold py-1 rounded text-center cursor-pointer select-none hover:opacity-80 transition-all">${m}</div>`;
-                    });
-                    html += `</div></div>`;
-                });
-                
-                html += `</div><div class="p-2 bg-gray-100 border-t shrink-0"><button onclick="window.checkDelays()" class="w-full bg-red-600 text-white font-bold py-2 rounded text-xs shadow">AUDITORIA DE ATRASOS</button></div></div>`;
-                cont.innerHTML = html;
+                adminFinancialState.loading = true;
+                adminFinancialState.users = await loadAdminFinancialUsers();
+                await loadAdminWhitelistUsers().catch(() => []);
+                adminFinancialState.loading = false;
+                cont.innerHTML = renderFinancialScreenShell(adminFinancialState.users);
             } catch(e) {
                 console.error(e);
                 cont.innerHTML = '<div class="p-4 text-center text-red-500">Erro ao carregar dados.</div>';
@@ -7919,7 +8742,9 @@ async function loadAdminMatches() {
                 document.body.style.cursor = 'default';
             }
         };
-        window.checkDelays = async () => { const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]; const now = new Date(); const currMonth = months[now.getMonth()]; const day = now.getDate(); if (day <= 10) { alert(`Hoje é dia ${day}. Atrasos só após dia 10.`); return; } const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`; const snap = await getDocs(collection(db, "users")); let late = []; snap.forEach(d => { const u = d.data(); if (!u.payments || !u.payments[currMonth]) { late.push({id: d.id, name: u.name, debts: u.debts || 0}); } }); let html = `<div class="w-full bg-white h-[60vh] p-6 rounded shadow relative"><button onclick="openFinancialScreen()" class="absolute top-2 right-2"><i class="fas fa-times"></i></button><h3 class="font-bold text-red-700 text-lg mb-4">Auditoria: ${currMonth}</h3>`; if (late.length === 0) { html += `<p class="text-green-600 font-bold">✅ Ninguém está atrasado!</p>`; } else { html += `<div class="max-h-[30vh] overflow-y-auto mb-4 border p-2">`; late.forEach(l => { html += `<p class="text-xs text-red-500">• ${l.name}</p>`; }); html += `</div><p class="text-xs mb-4">Deseja adicionar +1 ponto de inadimplência para todos?</p><button onclick="applyBatchPenalty()" class="w-full bg-red-600 text-white font-bold py-3 rounded">APLICAR PENALIDADE</button>`; } html += `</div>`; cont.innerHTML = html; window.applyBatchPenalty = async () => { if(!confirm("Confirmar aplicação de multa em massa?")) return; const batch = writeBatch(db); late.forEach(l => { const ref = doc(db, "users", l.id); batch.update(ref, { debts: l.debts + 1 }); }); await batch.commit(); alert("Penalidades aplicadas!"); openFinancialScreen(); }; };
+        window.checkDelays = async () => {
+          await window.openFinancialAuditModal();
+        };
 
 const renderProfileSectionHeader = (title, subtitle, chipLabel = "") => `
   <div class="profile-section__header">
@@ -8243,7 +9068,7 @@ async function loadProfile() {
       
         document.getElementById('uploadPhoto').onchange = (e) => { const file = e.target.files[0]; if(file) { compressImage(file).then(async (base64) => { await updateDoc(doc(db, "users", currentUser.uid), { photoBase64: base64 }); loadProfile(); }).catch(err => { alert("Erro ao processar imagem."); console.error(err); }); } };
 
-        window.changeDebt = async (uid, delta) => { const ref = doc(db, "users", uid); const u = await getDoc(ref); let debts = u.data().debts || 0; debts += delta; if(debts < 0) debts = 0; await updateDoc(ref, { debts: debts }); openFinancialScreen(); };
+        window.changeDebt = async (uid, delta) => { const ref = doc(db, "users", uid); const u = await getDoc(ref); let debts = u.data().debts || 0; debts += delta; if(debts < 0) debts = 0; await updateDoc(ref, { debts: debts }); await window.openFinancialScreen(); };
         document.getElementById('financialCard').onclick = () => window.openPixPaymentModal();
         window.copyKeyOnly = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
         document.getElementById('btnCopyPix').onclick = () => { alert("Copie a chave manual abaixo por enquanto."); };
