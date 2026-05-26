@@ -105,7 +105,7 @@ let homeSectionCollapseState = {
   matches_done: true
 };
 
-const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.4');
+const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.5');
 const getAppVersionShort = () => getAppVersion().replace(/^web-/, '');
 const getAppVersionLabel = () => `Web v${getAppVersionShort()}`;
 const getAppVersionFullLabel = () => `Versão ${getAppVersionLabel()}`;
@@ -137,6 +137,13 @@ let adminCreationState = {
   teams: []
 };
 let adminSessionProfile = null;
+let adminQuickResultsState = {
+  loading: false,
+  saving: false,
+  matches: [],
+  selections: {},
+  scrollTop: 0
+};
 
 const normalizeAdminText = (value = "") =>
   String(value || "")
@@ -6801,6 +6808,334 @@ const logAdminMatchCreation = async ({ matchId, teamA, teamB, competition, round
   }
 };
 
+const setAdminQuickResultsStatus = (message = "", tone = "success") => {
+  const el = document.getElementById("adminQuickResultsStatus");
+  if (!el) return;
+
+  if (!message) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+
+  el.classList.remove("hidden", "border-green-200", "bg-green-50", "text-green-700", "border-red-200", "bg-red-50", "text-red-700");
+  el.classList.add(
+    tone === "danger" ? "border-red-200" : "border-green-200",
+    tone === "danger" ? "bg-red-50" : "bg-green-50",
+    tone === "danger" ? "text-red-700" : "text-green-700"
+  );
+  el.textContent = message;
+};
+
+const loadAdminQuickResultsState = async () => {
+  const snap = await getDocs(collection(db, "matches"));
+  const now = new Date();
+  const matches = [];
+
+  snap.forEach((d) => {
+    const m = { id: d.id, ...d.data() };
+    const deadlineDate = toJsDate(m.deadline);
+    if (!deadlineDate) return;
+    if (deadlineDate >= now) return;
+    if (m.winner) return;
+    matches.push({
+      ...m,
+      deadlineDate,
+      expired: true
+    });
+  });
+
+  matches.sort(matchComparator);
+
+  return { matches };
+};
+
+const renderAdminQuickResultsModal = () => {
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  const pendingMatches = Array.isArray(adminQuickResultsState.matches) ? adminQuickResultsState.matches : [];
+  const selectedCount = Object.keys(adminQuickResultsState.selections || {}).length;
+  const saveDisabled = selectedCount === 0 || adminQuickResultsState.saving === true;
+
+  const cardsHtml = pendingMatches.length
+    ? pendingMatches.map((m, index) => {
+        const selected = adminQuickResultsState.selections?.[m.id] || "";
+        const deadlineLabel = formatAdminDateTimeLabel(m.deadlineDate);
+        const competitionLabel = escapeHtml(String(m.competition || "Sem competição").trim());
+        const roundLabel = String(m.round || "").trim();
+        const teamASelected = selected === "A";
+        const teamBSelected = selected === "B";
+
+        return `
+          <div class="admin-quick-result-card">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Confronto #${index + 1}</div>
+                <div class="text-sm font-black text-gray-900 leading-tight break-words">${escapeHtml(m.teamA || "Time A")} x ${escapeHtml(m.teamB || "Time B")}</div>
+                <div class="mt-1 text-[10px] font-bold text-gray-500 break-words">${competitionLabel}${roundLabel ? ` • ${escapeHtml(roundLabel)}` : ""}</div>
+                <div class="mt-1 text-[10px] font-bold text-gray-400">Prazo encerrado em ${escapeHtml(deadlineLabel)}</div>
+              </div>
+              <span class="status-chip status-chip--warning">Pendente</span>
+            </div>
+
+            <div class="admin-quick-result-team-grid">
+              <button
+                type="button"
+                onclick="window.toggleAdminQuickResultWinner('${escapeJsString(m.id)}', 'A')"
+                class="admin-quick-result-team ${teamASelected ? 'is-selected' : ''}"
+              >
+                <span class="text-[9px] uppercase tracking-[0.18em]">Time A</span>
+                <span class="text-sm leading-tight break-words">${escapeHtml(m.teamA || "Time A")}</span>
+              </button>
+
+              <button
+                type="button"
+                onclick="window.toggleAdminQuickResultWinner('${escapeJsString(m.id)}', 'B')"
+                class="admin-quick-result-team ${teamBSelected ? 'is-selected' : ''}"
+              >
+                <span class="text-[9px] uppercase tracking-[0.18em]">Time B</span>
+                <span class="text-sm leading-tight break-words">${escapeHtml(m.teamB || "Time B")}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("")
+    : `
+      <div class="admin-quick-result-empty">
+        <div class="text-base font-black text-gray-800">Nenhum confronto pendente.</div>
+        <p class="mt-1 text-xs text-gray-500">Quando houver jogos aguardando resultado, eles aparecerão aqui para baixa rápida.</p>
+      </div>
+    `;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[88vh] flex flex-col">
+      <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+      <div class="relative z-10 flex flex-col h-full bg-white/92">
+        <div class="bg-[#006400] p-4 text-white flex items-start justify-between shadow-md shrink-0">
+          <div class="pr-3">
+            <h3 class="font-black uppercase text-lg leading-none">⚡ BAIXA RÁPIDA</h3>
+            <p class="text-[10px] text-[#FFD700] font-bold mt-1">Confrontos aguardando resultado</p>
+          </div>
+          <button type="button" onclick="closeModal()" class="ml-2"><i class="fas fa-times text-xl"></i></button>
+        </div>
+
+        <div id="adminQuickResultsScroll" class="flex-1 overflow-y-auto p-3 space-y-3">
+          <div class="admin-creation-panel space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Resumo</div>
+                <h4 class="text-lg font-black text-gray-900 leading-tight">Escolha o vencedor de cada confronto.</h4>
+              </div>
+              <span class="status-chip status-chip--default">${pendingMatches.length}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="admin-mini-chip">
+                <i class="fas fa-hourglass-half"></i>
+                <span>${pendingMatches.length} pendentes</span>
+              </div>
+              <div class="admin-mini-chip">
+                <i class="fas fa-circle-check"></i>
+                <span>${selectedCount} selecionados</span>
+              </div>
+            </div>
+            <div id="adminQuickResultsStatus" class="hidden rounded-2xl border px-3 py-2 text-xs font-black"></div>
+          </div>
+
+          <div class="space-y-2">
+            ${cardsHtml}
+          </div>
+        </div>
+
+        <div class="admin-quick-results-footer shrink-0">
+          <button
+            type="button"
+            onclick="window.saveAdminQuickResults()"
+            class="w-full py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2 ${saveDisabled ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-black text-white'}"
+            ${saveDisabled ? "disabled" : ""}
+          >
+            <i class="fas fa-floppy-disk text-base"></i>
+            SALVAR (${selectedCount}) RESULTADOS
+          </button>
+          <button
+            type="button"
+            onclick="closeModal()"
+            class="w-full mt-2 bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press"
+          >
+            CANCELAR
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    const scrollBox = document.getElementById("adminQuickResultsScroll");
+    if (scrollBox) scrollBox.scrollTop = adminQuickResultsState.scrollTop || 0;
+  }, 0);
+};
+
+window.toggleAdminQuickResultWinner = (matchId, side) => {
+  if (!matchId) return;
+  const nextSide = side === "B" ? "B" : "A";
+  adminQuickResultsState.selections = {
+    ...(adminQuickResultsState.selections || {}),
+    [matchId]: nextSide
+  };
+  adminQuickResultsState.scrollTop = document.getElementById("adminQuickResultsScroll")?.scrollTop || 0;
+  renderAdminQuickResultsModal();
+};
+
+window.openQuickResultsModal = async () => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para usar a Baixa Rápida.");
+    closeModal();
+    return;
+  }
+
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="bg-white p-6 text-center rounded shadow-xl">
+      <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
+      <p class="text-xs font-black text-gray-500 uppercase">Carregando baixa rápida...</p>
+    </div>
+  `;
+
+  try {
+    adminQuickResultsState = {
+      loading: true,
+      saving: false,
+      matches: [],
+      selections: {},
+      scrollTop: 0
+    };
+
+    const state = await loadAdminQuickResultsState();
+    adminQuickResultsState = {
+      ...adminQuickResultsState,
+      loading: false,
+      matches: state.matches || [],
+      selections: {}
+    };
+
+    renderAdminQuickResultsModal();
+  } catch (error) {
+    console.error("Erro ao abrir baixa rápida:", error);
+    cont.innerHTML = `
+      <div class="bg-white p-6 text-center rounded shadow-xl">
+        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar a baixa rápida.</p>
+        <button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
+      </div>
+    `;
+  }
+};
+
+const logAdminQuickResultsAction = async (payload = {}) => {
+  try {
+    const admin = await getCurrentAdminProfile();
+    if (!admin) return;
+
+    await addDoc(collection(db, "admin_audit_logs"), {
+      type: "quick_results",
+      adminUid: admin.uid || "",
+      adminName: admin.name || "",
+      adminEmail: admin.email || "",
+      source: "matches",
+      ...payload,
+      createdAt: Timestamp.fromDate(new Date())
+    });
+  } catch (error) {
+    console.warn("Falha ao registrar auditoria da baixa rápida:", error);
+  }
+};
+
+window.saveAdminQuickResults = async () => {
+  const pendingMatches = Array.isArray(adminQuickResultsState.matches) ? adminQuickResultsState.matches : [];
+  const selections = adminQuickResultsState.selections || {};
+  const selectedEntries = pendingMatches.filter((match) => selections[match.id]);
+
+  if (!selectedEntries.length) {
+    setAdminQuickResultsStatus("Selecione ao menos um vencedor.", "danger");
+    return;
+  }
+
+  if (!confirm("Salvar os resultados selecionados?")) return;
+
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para salvar resultados.");
+    return;
+  }
+
+  try {
+    adminQuickResultsState.saving = true;
+    renderAdminQuickResultsModal();
+
+    const batch = writeBatch(db);
+    const nowTs = Timestamp.fromDate(new Date());
+    const updatedMatches = [];
+
+    selectedEntries.forEach((match) => {
+      const winnerSide = selections[match.id] === "B" ? "B" : "A";
+      const winner = winnerSide === "A" ? (match.teamA || "") : (match.teamB || "");
+      const matchRef = doc(db, "matches", match.id);
+
+      batch.update(matchRef, {
+        winner,
+        finishedAt: nowTs,
+        updatedAt: nowTs,
+        updatedByUid: admin.uid || "",
+        updatedByName: admin.name || "",
+        updatedByEmail: admin.email || ""
+      });
+
+      updatedMatches.push({
+        matchId: match.id,
+        teamA: match.teamA || "",
+        teamB: match.teamB || "",
+        competition: match.competition || "",
+        winner
+      });
+    });
+
+    await batch.commit();
+    await logAdminQuickResultsAction({
+      totalResults: updatedMatches.length,
+      matches: updatedMatches
+    });
+
+    invalidateHomeRankingCaches();
+    invalidateRuntimeCache("col:matches");
+    await loadAdminMatches();
+    if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) {
+      await loadMatches({ force: true });
+    }
+    if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && typeof loadRanking === "function") {
+      await loadRanking({ force: true });
+    }
+
+    if (typeof window.showToast === "function") {
+      window.showToast("Resultados salvos!", "Baixa rápida concluída.", "");
+    } else {
+      alert("Resultados salvos!");
+    }
+
+    closeModal();
+  } catch (error) {
+    console.error("Erro ao salvar baixa rápida:", error);
+    adminQuickResultsState.saving = false;
+    setAdminQuickResultsStatus("Não foi possível salvar os resultados.", "danger");
+    renderAdminQuickResultsModal();
+  }
+};
+
 const saveAdminMatchInternal = async (keepOpen = false) => {
   setAdminCreationStatus("");
 
@@ -6970,7 +7305,7 @@ window.saveAdminMatchAndReset = async () => {
                             <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">⚽ GESTÃO DE JOGOS</h4>
                             <div class="grid grid-cols-2 gap-2">
                                 <button onclick="openCreationModal()" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Criação</button>
-                                <button onclick="alert('Funcionalidade nativa do Android.')" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
+                                <button onclick="openQuickResultsModal()" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
                                 <button onclick="openTrashBin()" class="bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-trash text-lg"></i> Lixeira</button>
                             </div>
                         </div>
@@ -7008,7 +7343,10 @@ async function loadAdminMatches() {
             snap.forEach(d => {
                 const m = d.data();
                 // Precisa da data para ordenar
-                if(m.deadline) m.deadlineDate = m.deadline.toDate();
+                if(m.deadline) {
+                    m.deadlineDate = m.deadline.toDate();
+                    m.expired = new Date() > m.deadlineDate;
+                }
                 all.push({id: d.id, ...m});
             });
 
@@ -7020,11 +7358,19 @@ async function loadAdminMatches() {
             [...all].reverse().forEach((m) => { 
                 // Encontra o índice na lista original ordenada
                 const number = all.findIndex(x => x.id === m.id) + 1;
+                const winnerLabel = escapeHtml(String(m.winner || ""));
+                const statusLabel = m.winner
+                  ? `Finalizado • ${winnerLabel}`
+                  : (m.expired ? "Aguardando resultado" : "Em aberto");
+                const statusClass = m.winner
+                  ? "text-green-700 bg-green-50"
+                  : (m.expired ? "text-amber-700 bg-amber-50" : "text-gray-500 bg-gray-100");
 
                 html += `<div class="flex justify-between items-center p-2 border-b border-gray-100">
                     <div class="flex flex-col truncate w-2/3">
                         <span class="font-bold text-black text-xs">#${number} ${m.teamA} x ${m.teamB}</span>
                         <span class="text-[10px] text-gray-400">${m.competition}</span>
+                        <span class="mt-1 inline-flex w-fit rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${statusClass}">${statusLabel}</span>
                     </div>
                     <div class="flex gap-2">
                         <button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button>
