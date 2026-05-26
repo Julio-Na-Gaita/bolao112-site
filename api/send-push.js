@@ -165,12 +165,22 @@ export default async function handler(req, res) {
     });
 
     if (!tokens.length) {
-      return res.status(200).json({ ok: true, totalTokens: 0, successCount: 0, failureCount: 0, message: 'no_tokens' });
+      return res.status(200).json({
+        ok: true,
+        totalTokens: 0,
+        successCount: 0,
+        failureCount: 0,
+        targetMode: cleanMode,
+        selectedCount: cleanMode === 'selected' ? selectedUids.length : undefined,
+        message: 'no_tokens'
+      });
     }
 
     let successCount = 0;
     let failureCount = 0;
     const invalidRefs = [];
+    const successRefs = [];
+    const errorUpdates = [];
 
     for (let chunkStart = 0; chunkStart < tokens.length; chunkStart += 500) {
       const tokenChunk = tokens.slice(chunkStart, chunkStart + 500);
@@ -187,11 +197,45 @@ export default async function handler(req, res) {
 
       result.responses?.forEach((response, idx) => {
         const code = response.error?.code || '';
-        if (!response.success && isInvalidTokenError(code)) {
-          const originalIndex = chunkStart + idx;
-          if (tokenDocs[originalIndex]?.ref) invalidRefs.push(tokenDocs[originalIndex].ref);
+        const originalIndex = chunkStart + idx;
+        const ref = tokenDocs[originalIndex]?.ref;
+        if (!ref) return;
+
+        if (response.success) {
+          successRefs.push(ref);
+          return;
+        }
+
+        errorUpdates.push({
+          ref,
+          code: String(code || response.error?.message || 'push_send_error').slice(0, 160)
+        });
+
+        if (isInvalidTokenError(code)) {
+          invalidRefs.push(ref);
         }
       });
+    }
+
+    for (const refs of chunkArray(successRefs, 450)) {
+      const batch = db.batch();
+      refs.forEach((ref) => batch.set(ref, {
+        lastSentAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastSendStatus: 'success',
+        lastSendError: admin.firestore.FieldValue.delete(),
+        lastSendErrorAt: admin.firestore.FieldValue.delete()
+      }, { merge: true }));
+      await batch.commit();
+    }
+
+    for (const updates of chunkArray(errorUpdates, 450)) {
+      const batch = db.batch();
+      updates.forEach(({ ref, code }) => batch.set(ref, {
+        lastSendStatus: 'error',
+        lastSendError: code,
+        lastSendErrorAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }));
+      await batch.commit();
     }
 
     for (const refs of chunkArray(invalidRefs, 450)) {
@@ -218,6 +262,8 @@ export default async function handler(req, res) {
       totalTokens: tokens.length,
       successCount,
       failureCount,
+      targetMode: cleanMode,
+      selectedCount: cleanMode === 'selected' ? selectedUids.length : undefined,
     });
   } catch (error) {
     console.error('Erro ao enviar push web:', error);

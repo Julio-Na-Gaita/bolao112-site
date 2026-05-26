@@ -16,7 +16,7 @@
 
         // ADICIONADO: enableIndexedDbPersistence
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getMessaging, getToken, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
 let mainServiceWorkerRegistrationPromise = null;
 
@@ -122,7 +122,8 @@ let homeSectionCollapseState = {
   matches_done: true
 };
 
-const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.9');
+// Não alterar APP_VERSION automaticamente. A versão visual só deve mudar quando solicitado pelo administrador.
+const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.5');
 const getAppVersionShort = () => getAppVersion().replace(/^web-/, '');
 const getAppVersionLabel = () => `Web v${getAppVersionShort()}`;
 const getAppVersionFullLabel = () => `Versão ${getAppVersionLabel()}`;
@@ -213,6 +214,61 @@ const isWebPushSupported = async () => {
   } catch (error) {
     console.warn("Push web indisponível:", error);
     return false;
+  }
+};
+
+let foregroundPushListenerReady = false;
+
+const showForegroundPushFallback = (title, body) => {
+  const message = [title, body].filter(Boolean).join("\n");
+  if (typeof showFinancialToast === "function") {
+    showFinancialToast(message || "Novo comunicado recebido.", "success");
+    return;
+  }
+  if (message) alert(message);
+};
+
+const setupForegroundPushListener = async () => {
+  if (foregroundPushListenerReady) return;
+  foregroundPushListenerReady = true;
+
+  try {
+    if (!await isWebPushSupported()) return;
+
+    const messaging = getMessaging(app);
+    onMessage(messaging, async (payload) => {
+      const title = payload?.notification?.title || payload?.data?.title || "Bolão 112 FC";
+      const body = payload?.notification?.body || payload?.data?.body || "";
+      const link = payload?.fcmOptions?.link || payload?.data?.link || "https://bolao112-site.vercel.app/";
+      const tag = payload?.messageId || `bolao112-${Date.now()}`;
+
+      if (Notification.permission !== "granted") {
+        showForegroundPushFallback(title, body);
+        return;
+      }
+
+      try {
+        const registration = window.getMainServiceWorkerRegistration
+          ? await window.getMainServiceWorkerRegistration()
+          : await navigator.serviceWorker.ready.catch(() => null);
+
+        if (!registration?.showNotification) throw new Error("service_worker_registration_unavailable");
+
+        await registration.showNotification(title, {
+          body,
+          icon: "/icon-192.png",
+          badge: "/icon-192.png",
+          data: { url: link },
+          tag
+        });
+      } catch (error) {
+        console.warn("Falha ao exibir push em primeiro plano:", error);
+        showForegroundPushFallback(title, body);
+      }
+    });
+  } catch (error) {
+    foregroundPushListenerReady = false;
+    console.warn("Não foi possível instalar listener de push em primeiro plano:", error);
   }
 };
 
@@ -360,7 +416,10 @@ window.requestWebPushPermissionAndSaveToken = async () => {
     return null;
   }
 
-  alert("Notificações ativadas neste aparelho.");
+  alert("Notificações ativadas neste aparelho.\n\nAgora feche o app ou deixe-o em segundo plano e envie um push de teste pelo admin.");
+  if (typeof loadProfile === "function" && !document.getElementById("profileScreen")?.classList.contains("hidden")) {
+    loadProfile();
+  }
   return token;
 };
 
@@ -1566,7 +1625,7 @@ window.continueAfterLoginGates = async () => {
             if (user) {
                 // --- TRAVA DE SEGURANÇA E TRIAL (NOVO) ---
                 const userDocRef = doc(db, "users", user.uid);
-                const userSnap = await getDoc(userDocRef);
+        const userSnap = await getDoc(userDocRef);
 
                 if (userSnap.exists()) {
                     const data = userSnap.data();
@@ -1608,6 +1667,7 @@ try { await updateDoc(userDocRef, { appVersion: getAppVersionLabel(), lastAccess
 
 // ✅ NOVO: inicia o gate de troca de senha obrigatória (Android parity)
 window.startForcePasswordWatcher(user);
+setupForegroundPushListener();
                 }
                 // ------------------------------------------
 
@@ -1620,6 +1680,7 @@ window.currentUid = user.uid;
 const userData = userSnap.exists() ? userSnap.data() : null;
 
 // ✅ Entra pelo funil único (Force PW -> Rules Gate -> App)
+setupForegroundPushListener();
 window.continueAfterLoginGates();
 
             } else {
@@ -1651,6 +1712,7 @@ window.finalizeAppEntryAfterLogin = () => {
 
   startWebAdminSync();
   applyRemoteBackgrounds();
+  setupForegroundPushListener();
 
   showTab('matches');
   calculatePot();
@@ -5594,9 +5656,14 @@ window.sendAdminManualPush = async () => {
       targetMode,
       targetCount: targetMode === "selected" ? targetUids.length : Number(result.totalTokens || 0)
     });
-    showAdminCommunicationToast(Number(result.totalTokens || 0) === 0
-      ? "Nenhum aparelho com push web ativo ainda."
-      : `Push enviado para ${result.successCount || 0} aparelho(s).`);
+    const totalTokens = Number(result.totalTokens || 0);
+    const successCount = Number(result.successCount || 0);
+    const failureCount = Number(result.failureCount || 0);
+    showAdminCommunicationToast(totalTokens === 0
+      ? "Nenhum aparelho com push ativo ainda."
+      : failureCount > 0
+        ? `Push enviado para ${successCount} aparelho(s). Alguns aparelhos falharam. Verifique notification_tokens no Firestore.`
+        : `Push enviado para ${successCount} aparelho(s). Se você estava com o app aberto, a notificação pode aparecer pelo handler em primeiro plano; se não aparecer, feche o app e teste novamente.`);
     window.closeModal();
   } catch (error) {
     console.error("Erro ao enviar push:", error);
@@ -5621,7 +5688,9 @@ window.sendAdminManualPush = async () => {
       showAdminCommunicationToast("Erro ao enviar push. Verifique a configuração do Firebase Admin e tente novamente.", "danger");
       return;
     }
-    showAdminCommunicationToast(error.message || "Não foi possível enviar o push.", "danger");
+    showAdminCommunicationToast(error.code === "push_send_error"
+      ? "Erro ao enviar push. Verifique a configuração do Firebase Admin e tente novamente."
+      : error.message || "Não foi possível enviar o push.", "danger");
   }
 };
 
@@ -9708,7 +9777,7 @@ window.openCalendar2026 = () => {
 
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.7.3) ---
+        // --- GUIA DO APP ATUALIZADO (v1.7.5) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `

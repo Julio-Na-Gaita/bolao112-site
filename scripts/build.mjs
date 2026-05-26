@@ -71,6 +71,7 @@ const optimizeImages = async () => {
 
 const extractAppVersion = (html) => {
   const match = html.match(/window\.APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+  // A versão visual é apenas lida daqui; não incrementamos automaticamente no build.
   return match?.[1] || 'web-dev';
 };
 

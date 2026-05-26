@@ -1,5 +1,5 @@
 const SW_URL = new URL(self.location.href);
-const APP_VERSION = SW_URL.searchParams.get('v') || 'web-1.7.9';
+const APP_VERSION = SW_URL.searchParams.get('v') || 'web-1.7.5';
 const CACHE_NAME = `bolao112-site-${APP_VERSION}`;
 
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
