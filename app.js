@@ -125,10 +125,15 @@ let adminCreationState = {
   loading: false,
   stage: "intro",
   competitions: [],
+  competitionItems: [],
   rounds: [],
   inactiveRounds: [],
+  selectedCompetition: "",
+  selectedRound: "",
   editingRoundName: "",
+  editingCompetitionName: "",
   roundsTab: "active",
+  competitionsTab: "active",
   teams: []
 };
 let adminSessionProfile = null;
@@ -3157,7 +3162,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 const dl = m.deadlineDate;
                 const statusAccent = m.final ? "#FFD700" : (m.expired ? (m.winner ? "#D32F2F" : "#FBC02D") : "#006400");
                 const theme = getCompetitionTheme(m.competition || "");
-                const logo = compMap[m.competition] || "";
+                const logo = m.competitionLogo || m.competitionLogoUrl || compMap[m.competition] || "";
                 const cardStyle = `--match-accent:${theme.accent};--match-soft:${theme.soft};--match-soft-strong:${theme.softStrong};--match-chip-bg:${theme.chipBg};--match-chip-text:${theme.chipText};border-left-color:${statusAccent};`;
                 
                 const sCount = serverCounts[m.id] || 0; 
@@ -5233,6 +5238,139 @@ const logAdminRoundAction = async (type, payload = {}) => {
   }
 };
 
+const getCompetitionsSettingsRef = () => doc(db, "settings", "competitions");
+
+const normalizeCompetitionName = (value = "") =>
+  String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const normalizeCompetitionItem = (item = {}) => ({
+  name: normalizeCompetitionName(item.name || ""),
+  logo: String(item.logo || "").trim(),
+  active: item.active === true
+});
+
+const dedupeCompetitionItems = (items = []) => {
+  const seen = new Set();
+  const output = [];
+
+  items.forEach((item) => {
+    const normalized = normalizeCompetitionItem(item);
+    if (!normalized.name) return;
+    const key = normalizeAdminText(normalized.name);
+    if (seen.has(key)) return;
+    seen.add(key);
+    output.push(normalized);
+  });
+
+  return output;
+};
+
+const readCompetitionSettingsState = (snap) => {
+  const data = snap?.data?.() || {};
+  return {
+    items: dedupeCompetitionItems(Array.isArray(data.items) ? data.items : [])
+  };
+};
+
+const ensureCompetitionSettingsDoc = async () => {
+  const ref = getCompetitionsSettingsRef();
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    const emptyState = { items: [] };
+    await setDoc(ref, emptyState, { merge: true });
+    return emptyState;
+  }
+
+  const current = readCompetitionSettingsState(snap);
+  const raw = snap.data() || {};
+  if (!Array.isArray(raw.items)) {
+    await setDoc(ref, { items: [] }, { merge: true });
+  }
+
+  return current;
+};
+
+const loadAdminCompetitions = async ({ force = false } = {}) => {
+  const state = await readWithRuntimeCache(
+    "doc:settings:competitions",
+    () => ensureCompetitionSettingsDoc(),
+    { ttlMs: DATA_CACHE_TTL.cold, force }
+  );
+
+  return {
+    items: dedupeCompetitionItems(state.items || [])
+  };
+};
+
+const logAdminCompetitionAction = async (type, payload = {}) => {
+  try {
+    const admin = await getCurrentAdminProfile();
+    if (!admin) return;
+
+    await addDoc(collection(db, "admin_audit_logs"), {
+      type,
+      adminUid: admin.uid || "",
+      adminName: admin.name || "",
+      adminEmail: admin.email || "",
+      source: "settings/competitions",
+      ...payload,
+      createdAt: Timestamp.fromDate(new Date())
+    });
+  } catch (error) {
+    console.warn("Falha ao registrar auditoria de competição:", error);
+  }
+};
+
+const persistCompetitionSettingsState = async (items = [], action = "update_competition", payload = {}) => {
+  const nextState = {
+    items: dedupeCompetitionItems(items)
+  };
+
+  await setDoc(
+    getCompetitionsSettingsRef(),
+    {
+      ...nextState,
+      updatedAt: Timestamp.fromDate(new Date())
+    },
+    { merge: true }
+  );
+
+  invalidateRuntimeCache("doc:settings:competitions");
+  await logAdminCompetitionAction(action, {
+    source: "settings/competitions",
+    oldItems: payload.oldItems || [],
+    newItems: payload.newItems || nextState.items,
+    ...payload
+  });
+
+  return nextState;
+};
+
+const refreshAdminCompetitionsState = async () => {
+  const state = await loadAdminCompetitions({ force: true });
+  adminCreationState.competitionItems = state.items || [];
+  adminCreationState.competitions = (state.items || []).filter((item) => item.active === true);
+  invalidateRuntimeCache("doc:settings:competitions");
+  return state;
+};
+
+const findAdminCompetitionDuplicate = (competitionName, ignoreName = "") => {
+  const normalized = normalizeAdminText(competitionName);
+  const ignoreNormalized = normalizeAdminText(ignoreName);
+  const active = (adminCreationState.competitionItems || []).find((item) => {
+    const itemNormalized = normalizeAdminText(item.name || "");
+    return itemNormalized === normalized && itemNormalized !== ignoreNormalized && item.active === true;
+  });
+  const inactive = (adminCreationState.competitionItems || []).find((item) => {
+    const itemNormalized = normalizeAdminText(item.name || "");
+    return itemNormalized === normalized && itemNormalized !== ignoreNormalized && item.active !== true;
+  });
+  return { active, inactive };
+};
+
 const getTeamThumbHtml = (fieldSide, logoUrl = "") => {
   const ids = getAdminCreationTeamFieldIds(fieldSide);
   const hasLogo = isHttpUrl(logoUrl);
@@ -5241,6 +5379,16 @@ const getTeamThumbHtml = (fieldSide, logoUrl = "") => {
     <div id="${ids.thumb}" class="admin-team-thumb">
       <img id="${ids.thumbImg}" src="${hasLogo ? logoUrl : ""}" class="${hasLogo ? "" : "hidden"}" alt="Logo do time">
       <i id="${ids.thumbFallback}" class="fas fa-shield-alt text-gray-400 ${hasLogo ? "hidden" : ""}"></i>
+    </div>
+  `;
+};
+
+const getCompetitionThumbHtml = (logoUrl = "") => {
+  const hasLogo = isHttpUrl(logoUrl);
+  return `
+    <div class="admin-competition-thumb">
+      <img id="adminCompetitionThumbImg" src="${hasLogo ? logoUrl : ""}" class="${hasLogo ? "" : "hidden"}" alt="Logo da competição">
+      <i id="adminCompetitionThumbFallback" class="fas fa-trophy text-gray-400 ${hasLogo ? "hidden" : ""}"></i>
     </div>
   `;
 };
@@ -5300,13 +5448,15 @@ const renderAdminCreationModal = () => {
   const cont = document.getElementById("modalContainer");
   if (!modal || !cont) return;
 
-  const competitionValue = adminCreationState.competitions?.[0] || "";
-  const roundValue = adminCreationState.rounds?.[0] || "";
-  const hasCompetitions = (adminCreationState.competitions || []).length > 0;
+  const activeCompetitions = Array.isArray(adminCreationState.competitions) ? adminCreationState.competitions : [];
+  const competitionItems = Array.isArray(adminCreationState.competitionItems) ? adminCreationState.competitionItems : activeCompetitions;
+  const competitionValue = adminCreationState.selectedCompetition || "";
+  const roundValue = adminCreationState.selectedRound || "";
+  const hasCompetitions = activeCompetitions.length > 0;
   const hasRounds = (adminCreationState.rounds || []).length > 0;
 
-  const competitionOptions = (adminCreationState.competitions || [])
-    .map((competition) => `<option value="${escapeHtml(competition)}" ${competition === competitionValue ? "selected" : ""}>${escapeHtml(competition)}</option>`)
+  const competitionOptions = activeCompetitions
+    .map((competition) => `<option value="${escapeHtml(competition.name || "")}" data-logo="${escapeHtml(competition.logo || "")}" ${competition.name === competitionValue ? "selected" : ""}>${escapeHtml(competition.name || "")}</option>`)
     .join("");
 
   const roundOptions = (adminCreationState.rounds || [])
@@ -5359,11 +5509,30 @@ const renderAdminCreationModal = () => {
     </div>
   `;
 
+  const competitionPreviewHtml = activeCompetitions.slice(0, 4).map((competition) => `
+    <span>
+      ${competition.logo ? `<img src="${escapeHtml(competition.logo)}" alt="">` : '<i class="fas fa-trophy"></i>'}
+      <b>${escapeHtml(competition.name || "")}</b>
+    </span>
+  `).join("") || '<span><i class="fas fa-trophy"></i><b>Nenhuma ativa</b></span>';
+
   const competitionsSoonCard = `
-    <div class="admin-creation-panel text-center space-y-2">
-      <div class="text-[10px] font-black text-gray-400 uppercase tracking-[0.18em]">Competições</div>
-      <h4 class="text-base font-black text-gray-900">Será implementado em breve</h4>
-      <p class="text-xs text-gray-500 leading-relaxed">O cadastro de competições ficará disponível nessa área depois.</p>
+    <div class="admin-creation-panel space-y-3">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Competições</div>
+          <h4 class="text-lg font-black text-gray-900 leading-tight">Gerencie nomes e logos oficiais.</h4>
+        </div>
+        <span class="status-chip status-chip--default">${competitionItems.length}</span>
+      </div>
+      <p class="text-xs text-gray-500 leading-relaxed">Ative, arquive e restaure competições para manter o dropdown sincronizado com o app.</p>
+      <button type="button" onclick="window.openCompetitionsManager()" class="w-full bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+        <i class="fas fa-trophy text-base"></i>
+        Abrir Competições
+      </button>
+      <div class="admin-competition-preview">
+        ${competitionPreviewHtml}
+      </div>
     </div>
   `;
 
@@ -5394,15 +5563,22 @@ const renderAdminCreationModal = () => {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label class="admin-compact-label">Competição</label>
-          <select id="adminMatchCompetition" class="admin-creation-input" ${hasCompetitions ? "" : "disabled"}>
+          <select id="adminMatchCompetition" class="admin-creation-input" ${hasCompetitions ? "" : "disabled"} onchange="window.handleAdminCompetitionChange()">
             <option value="">Selecione</option>
             ${competitionOptions}
           </select>
           ${hasCompetitions ? "" : '<p class="mt-2 text-[11px] font-bold text-red-600">Nenhuma competição ativa disponível.</p>'}
+          <div class="mt-2 flex items-center gap-3">
+            ${getCompetitionThumbHtml((competitionItems.find((item) => item.name === competitionValue) || {}).logo || "")}
+            <div class="flex-1">
+              <div class="text-[10px] font-bold uppercase text-gray-400 mb-1">Logo da competição</div>
+              <div class="text-xs text-gray-500">A imagem será usada no confronto e no destaque visual.</div>
+            </div>
+          </div>
         </div>
         <div>
           <label class="admin-compact-label">Rodada/Fase</label>
-          <select id="adminMatchRound" class="admin-creation-input" ${hasRounds ? "" : "disabled"}>
+          <select id="adminMatchRound" class="admin-creation-input" ${hasRounds ? "" : "disabled"} onchange="window.handleAdminRoundChange()">
             <option value="">Selecione</option>
             ${roundOptions}
           </select>
@@ -5609,6 +5785,38 @@ window.updateAdminTeamPreview = (fieldSide) => {
   }
 };
 
+window.updateAdminCompetitionPreview = () => {
+  const select = document.getElementById("adminMatchCompetition");
+  const img = document.getElementById("adminCompetitionThumbImg");
+  const fallback = document.getElementById("adminCompetitionThumbFallback");
+  if (!select || !img || !fallback) return;
+
+  const selected = select.selectedOptions?.[0];
+  const logoUrl = String(selected?.dataset?.logo || "").trim();
+  const valid = isHttpUrl(logoUrl);
+
+  if (valid) {
+    img.src = logoUrl;
+    img.classList.remove("hidden");
+    fallback.classList.add("hidden");
+  } else {
+    img.src = "";
+    img.classList.add("hidden");
+    fallback.classList.remove("hidden");
+  }
+};
+
+window.handleAdminCompetitionChange = () => {
+  const select = document.getElementById("adminMatchCompetition");
+  adminCreationState.selectedCompetition = String(select?.value || "").trim();
+  window.updateAdminCompetitionPreview();
+};
+
+window.handleAdminRoundChange = () => {
+  const select = document.getElementById("adminMatchRound");
+  adminCreationState.selectedRound = String(select?.value || "").trim();
+};
+
 window.searchAdminTeamLogo = (fieldSide) => {
   const ids = getAdminCreationTeamFieldIds(fieldSide);
   const nameInput = document.getElementById(ids.name);
@@ -5639,7 +5847,9 @@ window.openCreationModal = async () => {
     ...adminCreationState,
     loading: true,
     tab: "new-match",
-    stage: "intro"
+    stage: "intro",
+    selectedCompetition: "",
+    selectedRound: ""
   };
 
   modal.classList.remove("hidden");
@@ -5665,11 +5875,6 @@ window.openCreationModal = async () => {
 };
 
 window.switchAdminCreationTab = (tabKey) => {
-  if (tabKey === "competitions") {
-    alert("Será implementado em breve.");
-    return;
-  }
-
   adminCreationState.tab = tabKey;
   adminCreationState.stage = "intro";
   renderAdminCreationModal();
@@ -6043,6 +6248,435 @@ window.moveAdminRound = async (roundName, direction) => {
   }
 };
 
+const setAdminCompetitionsStatus = (message = "", tone = "success") => {
+  const el = document.getElementById("adminCompetitionsStatus");
+  if (!el) return;
+
+  if (!message) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+
+  el.classList.remove("hidden", "border-green-200", "bg-green-50", "text-green-700", "border-red-200", "bg-red-50", "text-red-700");
+  el.classList.add(
+    tone === "danger" ? "border-red-200" : "border-green-200",
+    tone === "danger" ? "bg-red-50" : "bg-green-50",
+    tone === "danger" ? "text-red-700" : "text-green-700"
+  );
+  el.textContent = message;
+};
+
+const renderAdminCompetitionsManager = () => {
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  const allItems = Array.isArray(adminCreationState.competitionItems) ? adminCreationState.competitionItems : [];
+  const activeItems = allItems.filter((item) => item.active === true);
+  const inactiveItems = allItems.filter((item) => item.active !== true);
+  const activeTab = adminCreationState.competitionsTab === "inactive" ? "inactive" : "active";
+  const list = activeTab === "inactive" ? inactiveItems : activeItems;
+  const editingName = normalizeCompetitionName(adminCreationState.editingCompetitionName || "");
+  const emptyMessage = activeTab === "inactive"
+    ? "Nenhuma competição arquivada disponível."
+    : "Nenhuma competição ativa disponível.";
+
+  const listHtml = list.length
+    ? list.map((item) => {
+        const safeName = normalizeCompetitionName(item.name || "");
+        const safeLogo = String(item.logo || "").trim();
+        const isEditing = editingName && normalizeAdminText(editingName) === normalizeAdminText(safeName);
+
+        return `
+          <div class="admin-competition-card ${activeTab === "inactive" ? "admin-competition-card--inactive" : ""}">
+            ${isEditing ? `
+              <div class="admin-competition-edit">
+                <div class="admin-competition-thumb admin-competition-thumb--small">
+                  ${safeLogo ? `<img src="${escapeHtml(safeLogo)}" alt="Logo da competição">` : `<i class="fas fa-trophy text-gray-400"></i>`}
+                </div>
+                <div class="flex-1 min-w-0 space-y-2">
+                  <input id="adminCompetitionEditName" type="text" value="${escapeHtml(safeName)}" class="admin-creation-input" placeholder="Nome da competição">
+                  <input id="adminCompetitionEditLogo" type="url" value="${escapeHtml(safeLogo)}" class="admin-creation-input" placeholder="URL do logo">
+                </div>
+                <div class="admin-competition-actions">
+                  <button type="button" onclick="window.updateAdminCompetition('${escapeJsString(safeName)}')" class="admin-competition-icon admin-competition-icon--ok" aria-label="Salvar"><i class="fas fa-check"></i></button>
+                  <button type="button" onclick="window.cancelAdminCompetitionEdit()" class="admin-competition-icon" aria-label="Cancelar"><i class="fas fa-times"></i></button>
+                </div>
+              </div>
+            ` : `
+              <div class="admin-competition-thumb">
+                ${safeLogo ? `<img src="${escapeHtml(safeLogo)}" alt="Logo da competição">` : `<i class="fas fa-trophy text-gray-400"></i>`}
+              </div>
+              <div class="admin-competition-name">${escapeHtml(safeName)}</div>
+              <div class="admin-competition-actions">
+                <button type="button" onclick="window.startAdminCompetitionEdit('${escapeJsString(safeName)}')" class="admin-competition-icon" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                ${activeTab === "active"
+                  ? `<button type="button" onclick="window.disableAdminCompetition('${escapeJsString(safeName)}')" class="admin-competition-icon admin-competition-icon--danger" aria-label="Arquivar"><i class="fas fa-box-archive"></i></button>`
+                  : `<button type="button" onclick="window.restoreAdminCompetition('${escapeJsString(safeName)}')" class="admin-competition-icon admin-competition-icon--ok" aria-label="Restaurar"><i class="fas fa-rotate-left"></i></button>`
+                }
+              </div>
+            `}
+          </div>
+        `;
+      }).join("")
+    : `
+      <div class="admin-creation-panel text-center">
+        <p class="text-sm font-black text-gray-500">${emptyMessage}</p>
+      </div>
+    `;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[88vh] flex flex-col">
+      <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+      <div class="relative z-10 flex flex-col h-full bg-white/92">
+        <div class="bg-[#006400] p-4 text-white flex items-center shadow-md shrink-0">
+          <button onclick="openCreationModal()" class="mr-4"><i class="fas fa-arrow-left text-xl"></i></button>
+          <div>
+            <h3 class="font-black uppercase text-lg leading-none">Competições</h3>
+            <p class="text-[10px] text-[#FFD700] font-bold">settings/competitions.items</p>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-3 space-y-3">
+          <div class="admin-creation-panel space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Nova Competição</div>
+                <h4 class="text-lg font-black text-gray-900 leading-tight">Cadastre nome, logo e ativação.</h4>
+              </div>
+              <span class="status-chip status-chip--default">${allItems.length}</span>
+            </div>
+
+            <div>
+              <label class="admin-compact-label">Nome</label>
+              <div class="flex gap-2">
+                <input id="adminCompetitionName" type="text" class="admin-creation-input flex-1" placeholder="Nome (ex: Brasileirão)">
+                <button type="button" onclick="window.searchAdminCompetitionLogo()" class="admin-search-btn"><i class="fas fa-magnifying-glass"></i></button>
+              </div>
+            </div>
+
+            <div>
+              <label class="admin-compact-label">URL do Logo</label>
+              <input id="adminCompetitionLogo" type="url" class="admin-creation-input" placeholder="https://..." oninput="window.updateAdminCompetitionFormPreview()">
+              <div class="mt-2 flex items-center gap-3">
+                ${getCompetitionThumbHtml("")}
+                <div class="flex-1">
+                  <div class="text-[10px] font-bold uppercase text-gray-400 mb-1">Miniatura da logo</div>
+                  <div class="text-xs text-gray-500">Cole um link para visualizar a imagem salva.</div>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" onclick="window.createAdminCompetition()" class="w-full bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+              <i class="fas fa-save text-base"></i>
+              Salvar
+            </button>
+
+            <div id="adminCompetitionsStatus" class="hidden rounded-2xl border px-3 py-2 text-xs font-black"></div>
+          </div>
+
+          <div class="admin-competition-tabs">
+            <button type="button" onclick="window.switchAdminCompetitionsTab('active')" class="admin-competition-tab ${activeTab === "active" ? "is-active" : ""}">Ativas <span>${activeItems.length}</span></button>
+            <button type="button" onclick="window.switchAdminCompetitionsTab('inactive')" class="admin-competition-tab ${activeTab === "inactive" ? "is-active" : ""}">Arquivadas <span>${inactiveItems.length}</span></button>
+          </div>
+
+          <div class="space-y-2">
+            ${listHtml}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    document.getElementById("adminCompetitionName")?.focus();
+    window.updateAdminCompetitionFormPreview();
+  }, 0);
+};
+
+window.openCompetitionsManager = async () => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para gerenciar competições.");
+    closeModal();
+    return;
+  }
+
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="bg-white p-6 text-center rounded shadow-xl">
+      <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
+      <p class="text-xs font-black text-gray-500 uppercase">Carregando competições...</p>
+    </div>
+  `;
+
+  try {
+    adminCreationState.editingCompetitionName = "";
+    adminCreationState.competitionsTab = "active";
+    await refreshAdminCompetitionsState();
+    renderAdminCompetitionsManager();
+  } catch (error) {
+    console.error("Erro ao abrir competições:", error);
+    cont.innerHTML = `
+      <div class="bg-white p-6 text-center rounded shadow-xl">
+        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar as competições.</p>
+        <button onclick="openCreationModal()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
+      </div>
+    `;
+  }
+};
+
+window.switchAdminCompetitionsTab = (tabKey) => {
+  adminCreationState.competitionsTab = tabKey === "inactive" ? "inactive" : "active";
+  adminCreationState.editingCompetitionName = "";
+  renderAdminCompetitionsManager();
+};
+
+window.updateAdminCompetitionFormPreview = () => {
+  const input = document.getElementById("adminCompetitionLogo");
+  const img = document.getElementById("adminCompetitionThumbImg");
+  const fallback = document.getElementById("adminCompetitionThumbFallback");
+  if (!input || !img || !fallback) return;
+
+  const logoUrl = String(input.value || "").trim();
+  const valid = isHttpUrl(logoUrl);
+
+  if (valid) {
+    img.src = logoUrl;
+    img.classList.remove("hidden");
+    fallback.classList.add("hidden");
+  } else {
+    img.src = "";
+    img.classList.add("hidden");
+    fallback.classList.remove("hidden");
+  }
+};
+
+window.searchAdminCompetitionLogo = () => {
+  const input = document.getElementById("adminCompetitionName");
+  const competitionName = String(input?.value || "").trim();
+
+  if (!competitionName) {
+    alert("Digite o nome da competição antes de pesquisar.");
+    return;
+  }
+
+  const query = encodeURIComponent(`escudo ${competitionName} PNG`);
+  window.open(`https://www.google.com/search?tbm=isch&q=${query}`, "_blank", "noopener");
+};
+
+window.startAdminCompetitionEdit = (competitionName) => {
+  adminCreationState.editingCompetitionName = normalizeCompetitionName(competitionName);
+  renderAdminCompetitionsManager();
+};
+
+window.cancelAdminCompetitionEdit = () => {
+  adminCreationState.editingCompetitionName = "";
+  renderAdminCompetitionsManager();
+};
+
+window.createAdminCompetition = async () => {
+  const nameInput = document.getElementById("adminCompetitionName");
+  const logoInput = document.getElementById("adminCompetitionLogo");
+  const name = normalizeCompetitionName(nameInput?.value || "");
+  const logo = String(logoInput?.value || "").trim();
+
+  if (!name) return setAdminCompetitionsStatus("Informe o nome da competição.", "danger");
+  if (!logo) return setAdminCompetitionsStatus("Informe a URL do logo.", "danger");
+  if (!isHttpUrl(logo)) return setAdminCompetitionsStatus("A URL do logo precisa começar com http:// ou https://.", "danger");
+
+  const duplicate = findAdminCompetitionDuplicate(name);
+  if (duplicate.active) return setAdminCompetitionsStatus("Essa competição já existe.", "danger");
+
+  try {
+    const state = await refreshAdminCompetitionsState();
+    const oldItems = [...(state.items || [])];
+
+    if (duplicate.inactive) {
+      if (!confirm("Essa competição está arquivada. Deseja restaurá-la?")) return;
+      const nextItems = oldItems.map((item) => {
+        if (normalizeAdminText(item.name || "") !== normalizeAdminText(name)) return item;
+        return {
+          ...item,
+          name,
+          logo,
+          active: true
+        };
+      });
+      const nextState = await persistCompetitionSettingsState(nextItems, "restore_competition", {
+        competitionName: name,
+        oldValue: duplicate.inactive,
+        newValue: { name, logo, active: true },
+        oldItems,
+        newItems: nextItems
+      });
+
+      if (nameInput) nameInput.value = "";
+      if (logoInput) logoInput.value = "";
+      adminCreationState.competitionItems = nextState.items;
+      adminCreationState.competitions = nextState.items.filter((item) => item.active === true);
+      renderAdminCompetitionsManager();
+      setAdminCompetitionsStatus("Competição restaurada!");
+      await loadAdminCreationState();
+      window.updateAdminCompetitionFormPreview();
+      return;
+    }
+
+    const nextItems = [...oldItems, { name, logo, active: true }];
+    const nextState = await persistCompetitionSettingsState(nextItems, "create_competition", {
+      competitionName: name,
+      newValue: { name, logo, active: true },
+      oldItems,
+      newItems: nextItems
+    });
+
+    if (nameInput) nameInput.value = "";
+    if (logoInput) logoInput.value = "";
+    adminCreationState.competitionItems = nextState.items;
+    adminCreationState.competitions = nextState.items.filter((item) => item.active === true);
+    renderAdminCompetitionsManager();
+    setAdminCompetitionsStatus("Competição salva!");
+    await loadAdminCreationState();
+    window.updateAdminCompetitionFormPreview();
+  } catch (error) {
+    console.error("Erro ao criar competição:", error);
+    setAdminCompetitionsStatus("Não foi possível salvar a competição.", "danger");
+  }
+};
+
+window.updateAdminCompetition = async (oldCompetitionName) => {
+  const nameInput = document.getElementById("adminCompetitionEditName");
+  const logoInput = document.getElementById("adminCompetitionEditLogo");
+  const name = normalizeCompetitionName(nameInput?.value || "");
+  const logo = String(logoInput?.value || "").trim();
+  const oldName = normalizeCompetitionName(oldCompetitionName);
+
+  if (!name) return setAdminCompetitionsStatus("Informe o nome da competição.", "danger");
+  if (!logo) return setAdminCompetitionsStatus("Informe a URL do logo.", "danger");
+  if (!isHttpUrl(logo)) return setAdminCompetitionsStatus("A URL do logo precisa começar com http:// ou https://.", "danger");
+
+  const duplicate = findAdminCompetitionDuplicate(name, oldName);
+  if (duplicate.active || duplicate.inactive) return setAdminCompetitionsStatus("Essa competição já existe.", "danger");
+
+  try {
+    const state = await refreshAdminCompetitionsState();
+    const items = [...(state.items || [])];
+    const index = items.findIndex((item) => normalizeAdminText(item.name || "") === normalizeAdminText(oldName));
+    if (index < 0) return setAdminCompetitionsStatus("Competição não encontrada.", "danger");
+
+    const oldItems = [...items];
+    items[index] = {
+      ...items[index],
+      name,
+      logo
+    };
+    const nextState = await persistCompetitionSettingsState(items, "update_competition", {
+      competitionName: name,
+      oldValue: oldItems[index],
+      newValue: items[index],
+      oldItems,
+      newItems: items
+    });
+
+    adminCreationState.editingCompetitionName = "";
+    adminCreationState.competitionItems = nextState.items;
+    adminCreationState.competitions = nextState.items.filter((item) => item.active === true);
+    renderAdminCompetitionsManager();
+    setAdminCompetitionsStatus("Competição atualizada!");
+    await loadAdminCreationState();
+    window.updateAdminCompetitionFormPreview();
+  } catch (error) {
+    console.error("Erro ao atualizar competição:", error);
+    setAdminCompetitionsStatus("Não foi possível atualizar a competição.", "danger");
+  }
+};
+
+window.disableAdminCompetition = async (competitionName) => {
+  const targetName = normalizeCompetitionName(competitionName);
+  if (!targetName) return;
+  if (!confirm("Arquivar esta competição? Ela deixará de aparecer em novos confrontos, mas continuará salva para restauração.")) return;
+
+  try {
+    const state = await refreshAdminCompetitionsState();
+    const oldItems = [...(state.items || [])];
+    const items = oldItems.map((item) => {
+      if (normalizeAdminText(item.name || "") !== normalizeAdminText(targetName)) return item;
+      return {
+        ...item,
+        active: false
+      };
+    });
+
+    if (!items.some((item) => normalizeAdminText(item.name || "") === normalizeAdminText(targetName))) {
+      return setAdminCompetitionsStatus("Competição não encontrada.", "danger");
+    }
+
+    const nextState = await persistCompetitionSettingsState(items, "disable_competition", {
+      competitionName: targetName,
+      oldValue: oldItems.find((item) => normalizeAdminText(item.name || "") === normalizeAdminText(targetName)) || null,
+      newValue: items.find((item) => normalizeAdminText(item.name || "") === normalizeAdminText(targetName)) || null,
+      oldItems,
+      newItems: items
+    });
+
+    adminCreationState.editingCompetitionName = "";
+    adminCreationState.competitionItems = nextState.items;
+    adminCreationState.competitions = nextState.items.filter((item) => item.active === true);
+    renderAdminCompetitionsManager();
+    setAdminCompetitionsStatus("Competição arquivada. Ela não aparecerá em novos confrontos, mas continua salva para restauração.");
+    await loadAdminCreationState();
+  } catch (error) {
+    console.error("Erro ao arquivar competição:", error);
+    setAdminCompetitionsStatus("Não foi possível arquivar a competição.", "danger");
+  }
+};
+
+window.restoreAdminCompetition = async (competitionName, nextLogo = "") => {
+  const targetName = normalizeCompetitionName(competitionName);
+  if (!targetName) return;
+
+  try {
+    const state = await refreshAdminCompetitionsState();
+    const oldItems = [...(state.items || [])];
+    let changed = false;
+    const items = oldItems.map((item) => {
+      if (normalizeAdminText(item.name || "") !== normalizeAdminText(targetName)) return item;
+      changed = true;
+      return {
+        ...item,
+        logo: isHttpUrl(nextLogo) ? nextLogo.trim() : item.logo || "",
+        active: true
+      };
+    });
+
+    if (!changed) return setAdminCompetitionsStatus("Competição não encontrada.", "danger");
+
+    const nextState = await persistCompetitionSettingsState(items, "restore_competition", {
+      competitionName: targetName,
+      oldValue: oldItems.find((item) => normalizeAdminText(item.name || "") === normalizeAdminText(targetName)) || null,
+      newValue: items.find((item) => normalizeAdminText(item.name || "") === normalizeAdminText(targetName)) || null,
+      oldItems,
+      newItems: items
+    });
+
+    adminCreationState.competitionItems = nextState.items;
+    adminCreationState.competitions = nextState.items.filter((item) => item.active === true);
+    adminCreationState.competitionsTab = "inactive";
+    renderAdminCompetitionsManager();
+    setAdminCompetitionsStatus("Competição restaurada!");
+    await loadAdminCreationState();
+  } catch (error) {
+    console.error("Erro ao restaurar competição:", error);
+    setAdminCompetitionsStatus("Não foi possível restaurar a competição.", "danger");
+  }
+};
+
 const setAdminCreationStatus = (message = "", tone = "success") => {
   const el = document.getElementById("adminCreationStatus");
   if (!el) return;
@@ -6063,8 +6697,11 @@ const setAdminCreationStatus = (message = "", tone = "success") => {
 };
 
 const loadAdminCreationState = async () => {
-  const [competitionSnap, matchesSnap, teamsSnap, roundsState] = await Promise.all([
-    readWithRuntimeCache("doc:settings:competitions", () => getDoc(doc(db, "settings", "competitions")), { ttlMs: DATA_CACHE_TTL.cold, force: true }),
+  const [competitionsState, matchesSnap, teamsSnap, roundsState] = await Promise.all([
+    loadAdminCompetitions({ force: true }).catch((error) => {
+      console.warn("Não foi possível carregar competições.", error);
+      return { items: [] };
+    }),
     readWithRuntimeCache("col:matches", () => getDocs(collection(db, "matches")), { ttlMs: DATA_CACHE_TTL.hot, force: true }),
     readWithRuntimeCache("col:teams", () => getDocs(collection(db, "teams")), { ttlMs: DATA_CACHE_TTL.cold, force: true }).catch((error) => {
       console.warn("Não foi possível carregar teams. Autocomplete seguirá vazio.", error);
@@ -6075,26 +6712,6 @@ const loadAdminCreationState = async () => {
       return { items: [], inactiveItems: [] };
     })
   ]);
-
-  const competitions = [];
-  if (competitionSnap.exists()) {
-    const items = Array.isArray(competitionSnap.data().items) ? competitionSnap.data().items : [];
-    items.forEach((item) => {
-      if (!item || !item.name || item.active === false) return;
-      competitions.push(String(item.name).trim());
-    });
-  }
-
-  if (competitions.length === 0) {
-    const competitionSet = new Set();
-    matchesSnap.forEach((snap) => {
-      const data = snap.data() || {};
-      if (data.competition) competitionSet.add(String(data.competition).trim());
-    });
-    competitions.push(...competitionSet);
-  }
-
-  const competitionList = [...new Set(competitions.filter(Boolean))];
 
   const teams = [];
   if (teamsSnap) {
@@ -6116,7 +6733,8 @@ const loadAdminCreationState = async () => {
   adminCreationState = {
     ...adminCreationState,
     loading: false,
-    competitions: competitionList,
+    competitionItems: (competitionsState.items || []).slice(),
+    competitions: (competitionsState.items || []).filter((item) => item.active === true),
     rounds: (roundsState.items || []).slice(),
     inactiveRounds: (roundsState.inactiveItems || []).slice(),
     teams
@@ -6215,6 +6833,7 @@ const saveAdminMatchInternal = async (keepOpen = false) => {
   }
 
   try {
+    const competitionItem = (adminCreationState.competitionItems || []).find((item) => normalizeAdminText(item.name || "") === normalizeAdminText(competition) && item.active === true) || null;
     const savedTeamA = await persistAdminTeamIfNeeded(teamA, teamALogo);
     const savedTeamB = await persistAdminTeamIfNeeded(teamB, teamBLogo);
 
@@ -6223,6 +6842,7 @@ const saveAdminMatchInternal = async (keepOpen = false) => {
 
     const matchPayload = {
       competition,
+      competitionLogo: competitionItem?.logo || "",
       round,
       teamA,
       teamB,
@@ -6422,20 +7042,6 @@ loadMatches({ force: true }); } } catch(e){alert(e.message);} };
         window.restoreMatch = async (matchId) => { try { const snap = await getDoc(doc(db, "bin_matches", matchId)); if(snap.exists()) { const d = snap.data(); delete d.deletedAt; await setDoc(doc(db, "matches", matchId), d); await deleteDoc(doc(db, "bin_matches", matchId)); invalidateHomeRankingCaches();
 openTrashBin();
 loadMatches({ force: true }); } } catch(e){alert(e.message);} };
-
-        window.openCompetitionsManager = async () => {
-            const cont = document.getElementById('modalContainer'); cont.innerHTML = `<div class="bg-white p-6 text-center"><i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i></div>`;
-            const docRef = doc(db, "settings", "competitions"); const snap = await getDoc(docRef);
-            let comps = snap.exists() ? (snap.data().items || []) : [];
-            const render = () => {
-                let html = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh]"><img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover"><div class="relative z-10 flex flex-col h-full bg-white/80 p-4"><div class="flex justify-between items-center mb-4"><button onclick="openAdminMenu()"><i class="fas fa-arrow-left text-black text-xl"></i></button><h3 class="font-bold text-black text-lg">Competições</h3><div class="w-6"></div></div><div class="bg-white p-3 rounded border mb-4"><h4 class="font-bold text-xs text-[#006400] mb-2">Nova/Editar</h4><input type="text" id="compName" placeholder="Nome (ex: Copa do Mundo)" class="w-full border p-2 text-xs rounded mb-2"><input type="text" id="compLogo" placeholder="URL do Logo" class="w-full border p-2 text-xs rounded mb-2"><button onclick="saveComp()" class="w-full bg-[#EF6C00] text-white py-2 rounded font-bold text-xs shadow">SALVAR</button></div><div class="flex-1 overflow-y-auto space-y-2">`;
-                comps.forEach((c, idx) => { html += `<div class="bg-white p-2 rounded border flex justify-between items-center shadow-sm"><div class="flex items-center gap-2"><img src="${c.logo}" class="w-8 h-8 object-contain bg-gray-100 rounded"> <span class="font-bold text-xs text-black">${c.name}</span></div><button onclick="deleteComp(${idx})" class="text-red-500"><i class="fas fa-trash"></i></button></div>`; });
-                html += `</div></div></div>`; cont.innerHTML = html;
-            };
-            window.saveComp = async () => { const n = document.getElementById('compName').value; const l = document.getElementById('compLogo').value; if(n) { comps.push({name:n, logo:l}); await setDoc(docRef, {items: comps}); render(); } };
-            window.deleteComp = async (idx) => { if(confirm("Remover?")) { comps.splice(idx, 1); await setDoc(docRef, {items: comps}); render(); } };
-            render();
-        };
 
        // --- CORREÇÃO DO PAINEL FINANCEIRO E PAGAMENTO ---
 
