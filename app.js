@@ -6139,8 +6139,24 @@ const drawAdminRoundSummaryImageCircle = (ctx, image, x, y, size, fallbackText, 
     ctx.shadowOffsetY = 0;
   }
   if (image) {
-    ctx.clip();
-    ctx.drawImage(image, x, y, size, size);
+    const inset = Math.max(8, Math.floor(size * 0.10));
+    const innerX = x + inset;
+    const innerY = y + inset;
+    const innerSize = size - (inset * 2);
+    const sourceRatio = image.width / image.height;
+    const targetRatio = innerSize / innerSize;
+    let drawW = innerSize;
+    let drawH = innerSize;
+    let drawX = innerX;
+    let drawY = innerY;
+    if (sourceRatio > targetRatio) {
+      drawH = innerSize / sourceRatio;
+      drawY = innerY + ((innerSize - drawH) / 2);
+    } else {
+      drawW = innerSize * sourceRatio;
+      drawX = innerX + ((innerSize - drawW) / 2);
+    }
+    ctx.drawImage(image, drawX, drawY, drawW, drawH);
   } else {
     ctx.fillStyle = colors.bg || "#f1f5f9";
     ctx.fillRect(x, y, size, size);
@@ -6237,14 +6253,23 @@ const buildAdminRoundSummaryStats = (selectedMatches = []) => {
     return String(a.user.uid || "").localeCompare(String(b.user.uid || ""));
   });
 
+  const bestPercentage = byBest.length ? byBest[0].percentage : null;
+  const bestHits = byBest.length ? byBest[0].hits : null;
+  const worstPercentage = byWorst.length ? byWorst[0].percentage : null;
+  const worstHits = byWorst.length ? byWorst[0].hits : null;
+  const craques = byBest.filter((item) => item.percentage === bestPercentage && item.hits === bestHits);
+  const perebas = byWorst.filter((item) => item.percentage === worstPercentage && item.hits === worstHits);
+
   const competitionNames = Array.from(new Set(selectedMatches.map((match) => String(match.competition || "").trim()).filter(Boolean)));
   const roundNames = Array.from(new Set(selectedMatches.map((match) => String(match.round || "").trim()).filter(Boolean)));
 
   return {
     participants,
     participantCount: participants.length,
-    craque: byBest[0] || null,
-    pereba: byWorst[0] || null,
+    craques,
+    perebas,
+    craque: craques[0] || null,
+    pereba: perebas[0] || null,
     competitionLabel: competitionNames.length === 1 ? competitionNames[0] : "Múltiplas competições",
     roundLabel: roundNames.length === 1 ? roundNames[0] : "Múltiplas fases"
   };
@@ -6556,7 +6581,9 @@ const buildAdminRoundSummaryCanvas = async (selectedMatches = []) => {
   const cardHeight = selectedMatches.length <= 4 ? 298 : selectedMatches.length <= 8 ? 270 : 246;
   const rows = Math.ceil(selectedMatches.length / cols);
   const cardsHeight = rows * cardHeight + Math.max(0, rows - 1) * gap;
-  const highlightHeight = 322;
+  const highlightMaxItems = Math.max(1, (stats.craques || []).length, (stats.perebas || []).length);
+  const highlightStride = 104;
+  const highlightHeight = 130 + ((highlightMaxItems - 1) * highlightStride);
   const footerHeight = 136;
   const topHeight = 332;
 
@@ -6743,15 +6770,16 @@ const buildAdminRoundSummaryCanvas = async (selectedMatches = []) => {
     ctx.fillText("x", centerX, teamY + (logoSize / 2) + 2);
     ctx.restore();
 
-    drawAdminRoundSummarySingleLineText(ctx, match.teamA || "", leftX + (logoSize / 2), teamTextY, cardWidth * 0.34, {
+    const nameMaxWidth = Math.max(114, Math.floor(cardWidth * 0.30));
+    drawAdminRoundSummarySingleLineText(ctx, match.teamA || "", leftX + (logoSize / 2), teamTextY, nameMaxWidth, {
       color: isWinnerA ? "#0b5f2a" : "#0f172a",
-      font: "27px Inter, system-ui, sans-serif",
+      font: "25px Inter, system-ui, sans-serif",
       weight: isWinnerA ? 900 : 800,
       align: "center"
     });
-    drawAdminRoundSummarySingleLineText(ctx, match.teamB || "", rightX + (logoSize / 2), teamTextY, cardWidth * 0.34, {
+    drawAdminRoundSummarySingleLineText(ctx, match.teamB || "", rightX + (logoSize / 2), teamTextY, nameMaxWidth, {
       color: isWinnerB ? "#0b5f2a" : "#0f172a",
-      font: "27px Inter, system-ui, sans-serif",
+      font: "25px Inter, system-ui, sans-serif",
       weight: isWinnerB ? 900 : 800,
       align: "center"
     });
@@ -6778,33 +6806,40 @@ const buildAdminRoundSummaryCanvas = async (selectedMatches = []) => {
 
   const highlightTop = highlightsY + 52;
   const highlightW = Math.floor((width - padding * 2 - 18) / 2);
-  const highlightH = 206;
-  const highlightGap = 18;
-
   const highlightEntries = [
     {
       x: padding,
       title: "Craques da rodada",
       accent: "#0b5f2a",
-      data: stats.craque,
-      badge: "CRAQUE"
+      badge: "CRAQUE",
+      items: Array.isArray(stats.craques) ? stats.craques : []
     },
     {
-      x: padding + highlightW + highlightGap,
+      x: padding + highlightW + 18,
       title: "Perebas da rodada",
       accent: "#b91c1c",
-      data: stats.pereba,
-      badge: "PEREBA"
+      badge: "PEREBA",
+      items: Array.isArray(stats.perebas) ? stats.perebas : []
     }
   ];
 
-  const highlightImages = await Promise.all(highlightEntries.map((entry) => loadAdminRoundSummaryImage(entry.data?.user?.photoBase64 || entry.data?.user?.photo || "")));
+  const highlightImages = [];
+  for (const entry of highlightEntries) {
+    const entryImages = [];
+    for (const item of entry.items) {
+      const avatarSource = getAvatarUrl(item.user?.photoBase64 || item.user?.photo || "", item.user?.name || item.user?.username || "");
+      entryImages.push(await loadAdminRoundSummaryImage(avatarSource));
+    }
+    highlightImages.push(entryImages);
+  }
 
-  highlightEntries.forEach((entry, idx) => {
-    drawAdminRoundSummaryCardShadow(ctx, entry.x, highlightTop, highlightW, highlightH, 28);
+  highlightEntries.forEach((entry, entryIndex) => {
+    const items = Array.isArray(entry.items) ? entry.items : [];
+    const blockHeight = 130 + (Math.max(1, items.length) - 1) * highlightStride;
+    drawAdminRoundSummaryCardShadow(ctx, entry.x, highlightTop, highlightW, blockHeight, 28);
     ctx.save();
     ctx.fillStyle = "#FBFDFC";
-    drawAdminRoundSummaryRoundRect(ctx, entry.x + 2, highlightTop + 2, highlightW - 4, highlightH - 4, 26);
+    drawAdminRoundSummaryRoundRect(ctx, entry.x + 2, highlightTop + 2, highlightW - 4, blockHeight - 4, 26);
     ctx.fill();
     drawAdminRoundSummaryRoundRect(ctx, entry.x + 20, highlightTop + 18, 14, 46, 7);
     ctx.fillStyle = entry.accent;
@@ -6823,40 +6858,55 @@ const buildAdminRoundSummaryCanvas = async (selectedMatches = []) => {
       text: entry.accent
     });
 
-    const item = entry.data;
-    if (!item) {
+    if (!items.length) {
       ctx.fillStyle = "#64748b";
       ctx.font = "800 22px Inter, system-ui, sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText("Sem dados", entry.x + 24, highlightTop + 80);
+      ctx.fillText("Sem dados", entry.x + 24, highlightTop + 82);
       return;
     }
 
-    drawAdminRoundSummaryImageCircle(ctx, highlightImages[idx], entry.x + 24, highlightTop + 74, 78, item.user?.name || item.user?.username || "?", {
-      bg: "#eef2f7",
-      text: entry.accent,
-      ring: entry.accent,
-      ringWidth: 6
-    });
+    items.forEach((item, itemIndex) => {
+      const rowY = highlightTop + 72 + (itemIndex * highlightStride);
+      if (itemIndex > 0) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(15, 23, 42, 0.08)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(entry.x + 22, rowY - 12);
+        ctx.lineTo(entry.x + highlightW - 22, rowY - 12);
+        ctx.stroke();
+        ctx.restore();
+      }
 
-    ctx.fillStyle = "#0f172a";
-    drawAdminRoundSummaryWrappedText(ctx, item.user?.name || item.user?.username || "Sem nome", entry.x + 118, highlightTop + 76, highlightW - 160, 28, {
-      color: "#0f172a",
-      font: "26px Inter, system-ui, sans-serif",
-      weight: 900,
-      maxLines: 2
-    });
+      const itemImage = highlightImages[entryIndex][itemIndex] || null;
+      const avatarName = item.user?.name || item.user?.username || "?";
+      drawAdminRoundSummaryImageCircle(ctx, itemImage, entry.x + 24, rowY, 68, avatarName, {
+        bg: "#eef2f7",
+        text: entry.accent,
+        ring: entry.accent,
+        ringWidth: 5,
+        badge: itemIndex === 0 && items.length === 1 ? entry.badge : ""
+      });
 
-    const scoreText = `${item.hits}/${item.considered} acerto(s) • ${Math.round(item.percentage * 100)}% de aproveitamento`;
-    ctx.fillStyle = "#475569";
-    ctx.font = "800 22px Inter, system-ui, sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText(scoreText, entry.x + 118, highlightTop + 124);
+      drawAdminRoundSummarySingleLineText(ctx, avatarName, entry.x + 108, rowY + 2, highlightW - 168, {
+        color: "#0f172a",
+        font: "24px Inter, system-ui, sans-serif",
+        weight: 900,
+        align: "left"
+      });
 
-    drawAdminRoundSummaryBadge(ctx, item.percentage >= 0.8 ? "ALTO APROVEITAMENTO" : "DISPUTA ACIRRADA", entry.x + 118, highlightTop + 156, {
-      bg: entry.accent === "#0b5f2a" ? "#ecfdf5" : "#fef2f2",
-      border: entry.accent,
-      text: entry.accent
+      const scoreText = `${item.hits}/${item.considered} acerto(s) • ${Math.round(item.percentage * 100)}% de aproveitamento`;
+      ctx.fillStyle = "#475569";
+      ctx.font = "800 20px Inter, system-ui, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(scoreText, entry.x + 108, rowY + 30);
+
+      drawAdminRoundSummaryBadge(ctx, item.percentage >= 0.8 ? "ALTO APROVEITAMENTO" : "DISPUTA ACIRRADA", entry.x + 108, rowY + 56, {
+        bg: entry.accent === "#0b5f2a" ? "#ecfdf5" : "#fef2f2",
+        border: entry.accent,
+        text: entry.accent
+      });
     });
   });
 
