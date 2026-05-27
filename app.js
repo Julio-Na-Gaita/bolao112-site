@@ -6902,11 +6902,6 @@ const buildAdminRoundSummaryCanvas = async (selectedMatches = []) => {
       ctx.textAlign = "left";
       ctx.fillText(scoreText, entry.x + 108, rowY + 30);
 
-      drawAdminRoundSummaryBadge(ctx, item.percentage >= 0.8 ? "ALTO APROVEITAMENTO" : "DISPUTA ACIRRADA", entry.x + 108, rowY + 56, {
-        bg: entry.accent === "#0b5f2a" ? "#ecfdf5" : "#fef2f2",
-        border: entry.accent,
-        text: entry.accent
-      });
     });
   });
 
