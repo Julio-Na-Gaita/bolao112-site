@@ -382,6 +382,9 @@ const buildProfileWebPushSection = async (userData = {}) => {
     : isIosDevice()
       ? "Requer iOS 16.4 ou superior."
       : "Funciona em navegadores compatíveis com Web Push.";
+  const pushButtonLabel = hasToken
+    ? "Revalidar notificações deste aparelho"
+    : "Ativar notificações deste aparelho";
 
   return `
     <section class="profile-section mb-4">
@@ -394,7 +397,7 @@ const buildProfileWebPushSection = async (userData = {}) => {
         </div>
         <button type="button" onclick="window.requestWebPushPermissionAndSaveToken()" class="profile-push-card__button btn-press">
           <i class="fas fa-bell"></i>
-          <span>Ativar notificações deste aparelho</span>
+          <span>${escapeHtml(pushButtonLabel)}</span>
         </button>
       </div>
       ${buildIosPushHelpHtml()}
@@ -8802,11 +8805,25 @@ async function loadAdminMatches() {
         `;
 
         const getFinancialPushStatusChip = (user = {}) => {
-          const status = adminFinancialState.pushStatuses?.[user.id || user.uid];
+          const status = adminFinancialState.pushStatuses?.[user.id || user.uid]
+            || adminFinancialState.pushStatuses?.[user.uid]
+            || adminFinancialState.pushStatuses?.[user.id];
+          const apiTokenCount = Number(status?.tokenCount || 0);
+          const userTokenCount = Number(user.webPushTokenCount || 0);
+          const userHasPush = user.hasWebPushToken === true
+            || user.webPushLastStatus === "active"
+            || userTokenCount > 0;
+
           if (status?.active) {
-            const count = Number(status.tokenCount || 0);
             return {
-              label: count > 1 ? `Push ativo · ${count} aparelhos` : "Push ativo",
+              label: apiTokenCount > 1 ? `Push ativo · ${apiTokenCount} aparelhos` : "Push ativo",
+              tone: "success"
+            };
+          }
+
+          if (userHasPush) {
+            return {
+              label: userTokenCount > 1 ? `Push ativo · ${userTokenCount} aparelhos` : "Push ativo",
               tone: "success"
             };
           }

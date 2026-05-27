@@ -91,7 +91,12 @@ export default async function handler(req, res) {
       };
     });
 
-    return res.status(200).json({ ok: true, users: byUid });
+    return res.status(200).json({
+      ok: true,
+      totalActiveTokens: tokenSnap.size,
+      totalUsersWithPush: Object.keys(byUid).length,
+      users: byUid
+    });
   } catch (error) {
     console.error('Erro ao consultar status de push:', error);
     return res.status(500).json({ ok: false, error: 'admin_push_status_error' });
