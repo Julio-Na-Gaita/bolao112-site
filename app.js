@@ -188,6 +188,21 @@ let adminCommunicationState = {
   selectedUids: new Set(),
   whatsappCount: 0
 };
+let adminRoundSummaryState = {
+  loading: false,
+  loadingImage: false,
+  quickFilter: "all",
+  competitionFilter: "",
+  roundFilter: "",
+  matches: [],
+  users: [],
+  guesses: [],
+  competitions: [],
+  rounds: [],
+  selectedIds: new Set(),
+  previewBlob: null,
+  previewUrl: ""
+};
 
 const normalizeAdminText = (value = "") =>
   String(value || "")
@@ -5853,6 +5868,990 @@ window.sendAdminWhatsappNotice = async () => {
   window.closeModal();
 };
 
+const ADMIN_SUMMARY_TIME_ZONE = "America/Fortaleza";
+
+const getAdminRoundSummaryDate = (value) => {
+  const date = toJsDate(value);
+  return date && !Number.isNaN(date.getTime()) ? date : null;
+};
+
+const getAdminRoundSummaryMatchDate = (match = {}) =>
+  getAdminRoundSummaryDate(match.finishedAt)
+  || getAdminRoundSummaryDate(match.displayDate)
+  || getAdminRoundSummaryDate(match.deadlineDate)
+  || getAdminRoundSummaryDate(match.deadline)
+  || getAdminRoundSummaryDate(match.createdAt)
+  || new Date(0);
+
+const getAdminRoundSummaryDateKey = (value) => {
+  const date = getAdminRoundSummaryDate(value);
+  if (!date) return "";
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: ADMIN_SUMMARY_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+
+  const map = {};
+  parts.forEach((part) => {
+    if (part.type !== "literal") map[part.type] = part.value;
+  });
+
+  return `${map.year || "0000"}-${map.month || "00"}-${map.day || "00"}`;
+};
+
+const formatAdminRoundSummaryDateLabel = (value) => {
+  const date = getAdminRoundSummaryDate(value);
+  if (!date) return "Data indisponível";
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+};
+
+const formatAdminRoundSummaryShortDate = (value) => {
+  const date = getAdminRoundSummaryDate(value);
+  if (!date) return "";
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+};
+
+const getAdminRoundSummaryInitials = (value = "") => {
+  const words = String(value || "").split(/\s+/).filter(Boolean);
+  if (!words.length) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return `${words[0][0] || ""}${words[words.length - 1][0] || ""}`.toUpperCase();
+};
+
+const getAdminRoundSummaryMatchLogo = (match = {}, side = "A") => {
+  const isA = side === "A";
+  return String(
+    isA
+      ? (match.teamAUrl || match.teamALogo || match.logoA || match.teamA_logo || match.teamALogoUrl || "")
+      : (match.teamBUrl || match.teamBLogo || match.logoB || match.teamB_logo || match.teamBLogoUrl || "")
+  ).trim();
+};
+
+const loadAdminRoundSummaryImage = (src = "") => new Promise((resolve) => {
+  const safeSrc = String(src || "").trim();
+  if (!safeSrc) return resolve(null);
+
+  try {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.referrerPolicy = "no-referrer";
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = safeSrc;
+  } catch (error) {
+    resolve(null);
+  }
+});
+
+const drawAdminRoundSummaryRoundRect = (ctx, x, y, w, h, r = 20) => {
+  if (ctx.roundRect) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+    return;
+  }
+
+  const radius = typeof r === "number" ? { tl: r, tr: r, br: r, bl: r } : {
+    tl: r.tl || 0,
+    tr: r.tr || 0,
+    br: r.br || 0,
+    bl: r.bl || 0
+  };
+
+  ctx.beginPath();
+  ctx.moveTo(x + radius.tl, y);
+  ctx.lineTo(x + w - radius.tr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius.tr);
+  ctx.lineTo(x + w, y + h - radius.br);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius.br, y + h);
+  ctx.lineTo(x + radius.bl, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius.bl);
+  ctx.lineTo(x, y + radius.tl);
+  ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+  ctx.closePath();
+};
+
+const drawAdminRoundSummaryCardShadow = (ctx, x, y, w, h, radius = 28) => {
+  ctx.save();
+  ctx.shadowColor = "rgba(15, 23, 42, 0.15)";
+  ctx.shadowBlur = 26;
+  ctx.shadowOffsetY = 8;
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  drawAdminRoundSummaryRoundRect(ctx, x, y, w, h, radius);
+  ctx.fill();
+  ctx.restore();
+};
+
+const wrapAdminRoundSummaryText = (ctx, text, maxWidth, maxLines = 2) => {
+  const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return [""];
+
+  const lines = [];
+  let current = "";
+
+  const pushCurrent = () => {
+    if (current) lines.push(current);
+    current = "";
+  };
+
+  const ellipsize = (value) => {
+    let output = String(value || "");
+    while (output && ctx.measureText(`${output}…`).width > maxWidth) {
+      output = output.slice(0, -1);
+    }
+    return `${output || value.slice(0, 1)}…`;
+  };
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (ctx.measureText(next).width <= maxWidth) {
+      current = next;
+      continue;
+    }
+
+    if (!current) {
+      current = word;
+      if (ctx.measureText(current).width > maxWidth) {
+        current = ellipsize(current);
+        pushCurrent();
+      }
+      continue;
+    }
+
+    pushCurrent();
+    current = word;
+    if (lines.length >= maxLines) break;
+  }
+
+  if (current && lines.length < maxLines) {
+    lines.push(current);
+  }
+
+  if (lines.length > maxLines) {
+    return lines.slice(0, maxLines);
+  }
+
+  if (lines.length === maxLines) {
+    const lastIdx = lines.length - 1;
+    while (ctx.measureText(lines[lastIdx]).width > maxWidth && lines[lastIdx].length > 1) {
+      lines[lastIdx] = lines[lastIdx].slice(0, -1);
+    }
+    if (ctx.measureText(lines[lastIdx]).width > maxWidth) {
+      lines[lastIdx] = ellipsize(lines[lastIdx]);
+    }
+    return lines;
+  }
+
+  if (current && lines.length < maxLines) lines.push(current);
+  return lines.slice(0, maxLines);
+};
+
+const drawAdminRoundSummaryWrappedText = (ctx, text, x, y, maxWidth, lineHeight, options = {}) => {
+  const {
+    color = "#0f172a",
+    font = "28px Inter, system-ui, sans-serif",
+    weight = 700,
+    align = "left",
+    maxLines = 2,
+    fill = true
+  } = options;
+
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.font = `${weight} ${font}`;
+  ctx.textAlign = align;
+  ctx.textBaseline = "top";
+  const lines = wrapAdminRoundSummaryText(ctx, text, maxWidth, maxLines);
+  lines.forEach((line, index) => {
+    if (fill) ctx.fillText(line, x, y + (index * lineHeight));
+  });
+  ctx.restore();
+  return lines.length;
+};
+
+const drawAdminRoundSummaryBadge = (ctx, text, x, y, colors = {}) => {
+  const value = String(text || "");
+  ctx.save();
+  ctx.font = "700 22px Inter, system-ui, sans-serif";
+  const width = Math.max(100, ctx.measureText(value).width + 36);
+  const height = 44;
+  ctx.fillStyle = colors.bg || "rgba(255,255,255,0.92)";
+  drawAdminRoundSummaryRoundRect(ctx, x, y, width, height, 22);
+  ctx.fill();
+  ctx.strokeStyle = colors.border || "rgba(15, 23, 42, 0.08)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = colors.text || "#0f172a";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(value, x + (width / 2), y + (height / 2) + 1);
+  ctx.restore();
+  return width;
+};
+
+const drawAdminRoundSummaryImageCircle = (ctx, image, x, y, size, fallbackText, colors = {}) => {
+  ctx.save();
+  drawAdminRoundSummaryRoundRect(ctx, x, y, size, size, size / 2);
+  ctx.fillStyle = colors.bg || "#f1f5f9";
+  ctx.fill();
+  if (image) {
+    ctx.clip();
+    ctx.drawImage(image, x, y, size, size);
+  } else {
+    ctx.fillStyle = colors.bg || "#f1f5f9";
+    ctx.fillRect(x, y, size, size);
+    ctx.fillStyle = colors.text || "#0f172a";
+    ctx.font = `900 ${Math.max(18, Math.floor(size * 0.32))}px Inter, system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(getAdminRoundSummaryInitials(fallbackText), x + (size / 2), y + (size / 2) + 1);
+  }
+  ctx.restore();
+};
+
+const getAdminRoundSummaryFilteredMatches = () => {
+  const quick = adminRoundSummaryState.quickFilter || "all";
+  const competition = normalizeAdminText(adminRoundSummaryState.competitionFilter || "");
+  const round = normalizeAdminText(adminRoundSummaryState.roundFilter || "");
+  const todayKey = getAdminRoundSummaryDateKey(new Date());
+
+  return [...(adminRoundSummaryState.matches || [])].filter((match) => {
+    if (quick === "today" && getAdminRoundSummaryDateKey(getAdminRoundSummaryMatchDate(match)) !== todayKey) {
+      return false;
+    }
+    if (competition && normalizeAdminText(match.competition || "") !== competition) return false;
+    if (round && normalizeAdminText(match.round || "") !== round) return false;
+    return true;
+  }).sort((a, b) => {
+    const dateDiff = getAdminRoundSummaryMatchDate(b).getTime() - getAdminRoundSummaryMatchDate(a).getTime();
+    if (dateDiff) return dateDiff;
+    return matchComparator(b, a);
+  });
+};
+
+const buildAdminRoundSummaryStats = (selectedMatches = []) => {
+  const guesses = Array.isArray(adminRoundSummaryState.guesses) ? adminRoundSummaryState.guesses : [];
+  const users = Array.isArray(adminRoundSummaryState.users) ? adminRoundSummaryState.users : [];
+  const selectedIds = new Set(selectedMatches.map((match) => match.id));
+  const guessLookup = {};
+
+  guesses.forEach((guess) => {
+    if (!guess?.userId || !guess?.matchId || !selectedIds.has(guess.matchId)) return;
+    guessLookup[`${guess.userId}__${guess.matchId}`] = guess;
+  });
+
+  const participants = [];
+  users.forEach((user) => {
+    let considered = 0;
+    let hits = 0;
+
+    selectedMatches.forEach((match) => {
+      const guess = guessLookup[`${user.uid}__${match.id}`];
+      if (!guess) return;
+      considered += 1;
+      if (String(guess.teamSelected || "").trim() === String(match.winner || "").trim()) hits += 1;
+    });
+
+    if (considered > 0) {
+      participants.push({
+        user,
+        considered,
+        hits,
+        percentage: considered > 0 ? (hits / considered) : 0
+      });
+    }
+  });
+
+  const byBest = [...participants].sort((a, b) => {
+    if (b.percentage !== a.percentage) return b.percentage - a.percentage;
+    if (b.hits !== a.hits) return b.hits - a.hits;
+    const nameDiff = String(a.user.name || a.user.username || a.user.uid || "").localeCompare(String(b.user.name || b.user.username || b.user.uid || ""));
+    if (nameDiff) return nameDiff;
+    return String(a.user.uid || "").localeCompare(String(b.user.uid || ""));
+  });
+
+  const byWorst = [...participants].sort((a, b) => {
+    if (a.percentage !== b.percentage) return a.percentage - b.percentage;
+    if (a.hits !== b.hits) return a.hits - b.hits;
+    const nameDiff = String(a.user.name || a.user.username || a.user.uid || "").localeCompare(String(b.user.name || b.user.username || b.user.uid || ""));
+    if (nameDiff) return nameDiff;
+    return String(a.user.uid || "").localeCompare(String(b.user.uid || ""));
+  });
+
+  const competitionNames = Array.from(new Set(selectedMatches.map((match) => String(match.competition || "").trim()).filter(Boolean)));
+  const roundNames = Array.from(new Set(selectedMatches.map((match) => String(match.round || "").trim()).filter(Boolean)));
+
+  return {
+    participants,
+    participantCount: participants.length,
+    craque: byBest[0] || null,
+    pereba: byWorst[0] || null,
+    competitionLabel: competitionNames.length === 1 ? competitionNames[0] : "Múltiplas competições",
+    roundLabel: roundNames.length === 1 ? roundNames[0] : "Múltiplas fases"
+  };
+};
+
+const loadAdminRoundSummaryData = async () => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) throw new Error("admin_required");
+
+  const [competitionsState, roundsState, matchesSnap, guessesSnap, usersSnap] = await Promise.all([
+    loadAdminCompetitions({ force: true }).catch(() => ({ items: [] })),
+    loadAdminRounds({ force: true, migrate: true }).catch(() => ({ items: [], inactiveItems: [] })),
+    getDocs(collection(db, "matches")),
+    getDocs(collection(db, "guesses")),
+    getDocs(collection(db, "users"))
+  ]);
+
+  const competitions = (competitionsState.items || []).filter((item) => item.active === true);
+  const rounds = dedupeRoundNames(roundsState.items || []);
+  const matches = [];
+  const guesses = [];
+  const users = [];
+
+  guessesSnap.forEach((snap) => {
+    const data = snap.data() || {};
+    guesses.push({ id: snap.id, ...data });
+  });
+
+  usersSnap.forEach((snap) => {
+    const data = snap.data() || {};
+    users.push({
+      uid: snap.id,
+      id: snap.id,
+      ...data,
+      name: data.name || data.username || "Sem nome",
+      username: data.username || "",
+      photoBase64: data.photoBase64 || data.photo || "",
+      createdDate: toJsDate(data.createdAt) || new Date(0)
+    });
+  });
+
+  matchesSnap.forEach((snap) => {
+    const data = snap.data() || {};
+    if (!String(data.winner || "").trim() && String(data.status || "").toLowerCase() !== "finalizado") return;
+
+    matches.push({
+      id: snap.id,
+      ...data,
+      teamA: String(data.teamA || "").trim(),
+      teamB: String(data.teamB || "").trim(),
+      competition: String(data.competition || "").trim(),
+      round: String(data.round || "").trim(),
+      winner: String(data.winner || "").trim(),
+      teamAUrl: String(data.teamAUrl || data.teamALogo || data.logoA || "").trim(),
+      teamBUrl: String(data.teamBUrl || data.teamBLogo || data.logoB || "").trim(),
+      displayDate: getAdminRoundSummaryMatchDate(data),
+      deadlineDate: getAdminRoundSummaryDate(data.deadline) || null,
+      finishedAtDate: getAdminRoundSummaryDate(data.finishedAt) || null
+    });
+  });
+
+  matches.sort((a, b) => {
+    const diff = getAdminRoundSummaryMatchDate(b).getTime() - getAdminRoundSummaryMatchDate(a).getTime();
+    if (diff) return diff;
+    return matchComparator(b, a);
+  });
+
+  adminRoundSummaryState.matches = matches;
+  adminRoundSummaryState.users = users;
+  adminRoundSummaryState.guesses = guesses;
+  adminRoundSummaryState.competitions = competitions;
+  adminRoundSummaryState.rounds = rounds;
+  adminRoundSummaryState.selectedIds = new Set(
+    Array.from(adminRoundSummaryState.selectedIds || []).filter((id) => matches.some((match) => match.id === id))
+  );
+};
+
+const getAdminRoundSummarySelectedMatches = () =>
+  (adminRoundSummaryState.matches || []).filter((match) => adminRoundSummaryState.selectedIds.has(match.id));
+
+const renderAdminRoundSummarySelectionModal = () => {
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  const allMatches = [...(adminRoundSummaryState.matches || [])];
+  const filteredMatches = getAdminRoundSummaryFilteredMatches();
+  const selectedMatches = getAdminRoundSummarySelectedMatches();
+  const stats = buildAdminRoundSummaryStats(selectedMatches);
+  const selectedCount = adminRoundSummaryState.selectedIds.size;
+  const todayActive = adminRoundSummaryState.quickFilter === "today";
+  const activeFilters = [];
+  if (todayActive) activeFilters.push("Hoje");
+  if (adminRoundSummaryState.competitionFilter) activeFilters.push(adminRoundSummaryState.competitionFilter);
+  if (adminRoundSummaryState.roundFilter) activeFilters.push(adminRoundSummaryState.roundFilter);
+
+  const competitionOptions = (adminRoundSummaryState.competitions || [])
+    .map((item) => `<option value="${escapeHtml(item.name || "")}" ${normalizeAdminText(item.name || "") === normalizeAdminText(adminRoundSummaryState.competitionFilter || "") ? "selected" : ""}>${escapeHtml(item.name || "")}</option>`)
+    .join("");
+  const roundOptions = (adminRoundSummaryState.rounds || [])
+    .map((item) => `<option value="${escapeHtml(item)}" ${normalizeAdminText(item || "") === normalizeAdminText(adminRoundSummaryState.roundFilter || "") ? "selected" : ""}>${escapeHtml(item)}</option>`)
+    .join("");
+
+  const listHtml = filteredMatches.length
+    ? filteredMatches.map((match) => {
+        const checked = adminRoundSummaryState.selectedIds.has(match.id);
+        const dateLabel = formatAdminRoundSummaryShortDate(match.displayDate);
+        const teamAlogo = getAdminRoundSummaryMatchLogo(match, "A");
+        const teamBlogo = getAdminRoundSummaryMatchLogo(match, "B");
+
+        return `
+          <button type="button" onclick="window.toggleAdminRoundSummaryMatch('${escapeJsString(match.id)}')" class="w-full text-left rounded-3xl border p-3 bg-white shadow-sm transition-all ${checked ? "border-[#006400] ring-2 ring-[#006400]/25" : "border-slate-200 hover:border-[#006400]/50"}">
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="min-w-0">
+                <div class="flex flex-wrap gap-1 mb-2">
+                  ${dateLabel ? `<span class="status-chip status-chip--default">${escapeHtml(dateLabel)}</span>` : ""}
+                  ${match.round ? `<span class="status-chip status-chip--default">${escapeHtml(match.round)}</span>` : ""}
+                </div>
+                <div class="text-sm font-black text-slate-900 leading-tight break-words">${escapeHtml(match.teamA || "Time A")} x ${escapeHtml(match.teamB || "Time B")}</div>
+                <div class="mt-1 text-[11px] font-bold text-slate-500 leading-snug">${escapeHtml(match.round || "Fase")} • ${escapeHtml(match.competition || "Competição")}</div>
+              </div>
+              <div class="shrink-0">
+                <span class="status-chip ${checked ? "status-chip--success" : "status-chip--default"}">${checked ? "Selecionado" : "Toque para selecionar"}</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+              <div class="flex flex-col items-center text-center min-w-0">
+                ${teamAlogo ? `<img src="${escapeHtml(teamAlogo)}" alt="" class="w-14 h-14 rounded-2xl object-contain bg-slate-50 border border-slate-100 p-1">` : `<div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center font-black text-slate-500">${escapeHtml(getAdminRoundSummaryInitials(match.teamA || ""))}</div>`}
+                <div class="mt-2 text-[11px] font-black text-slate-900 leading-tight line-clamp-2">${escapeHtml(match.teamA || "")}</div>
+              </div>
+              <div class="text-xl font-black text-[#006400] px-2">x</div>
+              <div class="flex flex-col items-center text-center min-w-0">
+                ${teamBlogo ? `<img src="${escapeHtml(teamBlogo)}" alt="" class="w-14 h-14 rounded-2xl object-contain bg-slate-50 border border-slate-100 p-1">` : `<div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center font-black text-slate-500">${escapeHtml(getAdminRoundSummaryInitials(match.teamB || ""))}</div>`}
+                <div class="mt-2 text-[11px] font-black text-slate-900 leading-tight line-clamp-2">${escapeHtml(match.teamB || "")}</div>
+              </div>
+            </div>
+          </button>
+        `;
+      }).join("")
+    : `
+      <div class="rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-center">
+        <p class="text-sm font-black text-slate-500">Nenhum jogo finalizado encontrado.</p>
+      </div>
+    `;
+
+  const filterLabel = activeFilters.length ? activeFilters.join(" • ") : "Sem filtros adicionais";
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="w-full max-w-3xl bg-white rounded-none shadow-2xl overflow-hidden relative h-[92vh] flex flex-col">
+      <div class="bg-[#006400] p-4 text-white flex items-start justify-between gap-3 shadow-md shrink-0">
+        <div class="min-w-0">
+          <h3 class="font-black uppercase text-lg leading-none">Selecionar Jogos do Resumo</h3>
+          <p class="text-[10px] text-[#FFD700] font-bold mt-1">Selecione os jogos que entrarão na prévia do WhatsApp.</p>
+        </div>
+        <button type="button" onclick="closeModal()" class="shrink-0 text-white/90"><i class="fas fa-times text-xl"></i></button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto bg-slate-50 p-3 space-y-3">
+        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm space-y-3">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Filtros</div>
+              <p class="text-xs font-bold text-slate-500 mt-1">Você pode combinar competição e rodada ao mesmo tempo.</p>
+            </div>
+            <span class="status-chip status-chip--default">${selectedCount} selecionado(s)</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" onclick="window.switchAdminRoundSummaryQuickFilter('all')" class="min-h-[44px] rounded-2xl border px-3 py-2 text-xs font-black ${adminRoundSummaryState.quickFilter === 'all' ? 'bg-[#111827] text-[#FFD700] border-[#111827]' : 'bg-white text-slate-600 border-slate-200'}">Todos</button>
+            <button type="button" onclick="window.switchAdminRoundSummaryQuickFilter('today')" class="min-h-[44px] rounded-2xl border px-3 py-2 text-xs font-black ${todayActive ? 'bg-[#111827] text-[#FFD700] border-[#111827]' : 'bg-white text-slate-600 border-slate-200'}">Hoje</button>
+            <button type="button" onclick="window.clearAdminRoundSummaryFilters()" class="min-h-[44px] rounded-2xl border px-3 py-2 text-xs font-black bg-white text-slate-600 border-slate-200">Limpar filtros</button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <select id="adminSummaryCompetitionFilter" class="admin-creation-input" onchange="window.setAdminRoundSummaryCompetitionFilter(this.value)">
+              <option value="">Competição</option>
+              ${competitionOptions}
+            </select>
+            <select id="adminSummaryRoundFilter" class="admin-creation-input" onchange="window.setAdminRoundSummaryRoundFilter(this.value)">
+              <option value="">Rodada</option>
+              ${roundOptions}
+            </select>
+          </div>
+
+          <p class="text-[11px] font-bold text-slate-500">Filtros ativos: ${escapeHtml(filterLabel)}</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="status-chip status-chip--default">Exibindo ${filteredMatches.length} de ${allMatches.length} jogos finalizados</div>
+          <div class="status-chip status-chip--${selectedCount ? "success" : "warning"}">Selecionados: ${selectedCount}</div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="window.selectAllAdminRoundSummaryMatches()" class="min-h-[44px] rounded-2xl bg-[#006400] text-white text-xs font-black shadow-lg btn-press">Selecionar todos</button>
+          <button type="button" onclick="window.clearAdminRoundSummarySelection()" class="min-h-[44px] rounded-2xl bg-slate-200 text-slate-800 text-xs font-black shadow-lg btn-press">Limpar</button>
+          <button type="button" onclick="window.invertAdminRoundSummarySelection()" class="min-h-[44px] rounded-2xl bg-slate-800 text-white text-xs font-black shadow-lg btn-press">Inverter</button>
+        </div>
+
+        <div class="space-y-2">
+          ${listHtml}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-2 p-3 border-t bg-white shrink-0">
+        <button type="button" onclick="window.generateAdminRoundSummaryImage()" class="min-h-[48px] rounded-2xl bg-[#006400] text-white text-xs font-black shadow-lg btn-press ${selectedCount ? "" : "opacity-40 cursor-not-allowed"}" ${selectedCount ? "" : "disabled"}>Gerar imagem do resumo</button>
+        <button type="button" onclick="window.closeModal()" class="min-h-[44px] rounded-2xl bg-slate-200 text-slate-800 text-xs font-black shadow-lg btn-press">Fechar</button>
+      </div>
+    </div>
+  `;
+};
+
+const renderAdminRoundSummaryPreviewModal = () => {
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  const previewUrl = adminRoundSummaryState.previewUrl || "";
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="w-full max-w-xl bg-white rounded-none shadow-2xl overflow-hidden relative h-[92vh] flex flex-col">
+      <div class="bg-[#006400] p-4 text-white flex items-start justify-between gap-3 shadow-md shrink-0">
+        <div class="min-w-0">
+          <h3 class="font-black uppercase text-lg leading-none">Imagem do Resumo</h3>
+          <p class="text-[10px] text-[#FFD700] font-bold mt-1">Prévia da imagem</p>
+        </div>
+        <button type="button" onclick="window.closeModal()" class="shrink-0 text-white/90"><i class="fas fa-times text-xl"></i></button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto bg-slate-50 p-3">
+        <div class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+          ${previewUrl ? `<img src="${escapeHtml(previewUrl)}" alt="Prévia do resumo da rodada" class="w-full h-auto rounded-2xl">` : `<div class="py-20 text-center text-sm font-black text-slate-500">Imagem indisponível.</div>`}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 p-3 border-t bg-white shrink-0">
+        <button type="button" onclick="window.backToAdminRoundSummarySelection()" class="min-h-[46px] rounded-2xl bg-slate-200 text-slate-800 text-xs font-black shadow-lg btn-press">Voltar</button>
+        <button type="button" onclick="window.shareAdminRoundSummaryImage()" class="min-h-[46px] rounded-2xl bg-[#006400] text-white text-xs font-black shadow-lg btn-press">Compartilhar</button>
+      </div>
+      <div class="px-3 pb-3 bg-white">
+        <button type="button" onclick="window.downloadAdminRoundSummaryImage()" class="w-full min-h-[44px] rounded-2xl bg-white text-slate-700 text-xs font-black border border-slate-200 shadow-sm btn-press">Baixar imagem</button>
+      </div>
+    </div>
+  `;
+};
+
+window.switchAdminRoundSummaryQuickFilter = (value) => {
+  adminRoundSummaryState.quickFilter = value === "today" ? "today" : "all";
+  renderAdminRoundSummarySelectionModal();
+};
+
+window.setAdminRoundSummaryCompetitionFilter = (value = "") => {
+  adminRoundSummaryState.competitionFilter = String(value || "").trim();
+  renderAdminRoundSummarySelectionModal();
+};
+
+window.setAdminRoundSummaryRoundFilter = (value = "") => {
+  adminRoundSummaryState.roundFilter = String(value || "").trim();
+  renderAdminRoundSummarySelectionModal();
+};
+
+window.clearAdminRoundSummaryFilters = () => {
+  adminRoundSummaryState.quickFilter = "all";
+  adminRoundSummaryState.competitionFilter = "";
+  adminRoundSummaryState.roundFilter = "";
+  renderAdminRoundSummarySelectionModal();
+};
+
+window.toggleAdminRoundSummaryMatch = (matchId) => {
+  const id = String(matchId || "").trim();
+  if (!id) return;
+  if (adminRoundSummaryState.selectedIds.has(id)) adminRoundSummaryState.selectedIds.delete(id);
+  else adminRoundSummaryState.selectedIds.add(id);
+  renderAdminRoundSummarySelectionModal();
+};
+
+window.selectAllAdminRoundSummaryMatches = () => {
+  getAdminRoundSummaryFilteredMatches().forEach((match) => adminRoundSummaryState.selectedIds.add(match.id));
+  renderAdminRoundSummarySelectionModal();
+};
+
+window.clearAdminRoundSummarySelection = () => {
+  adminRoundSummaryState.selectedIds = new Set();
+  renderAdminRoundSummarySelectionModal();
+};
+
+window.invertAdminRoundSummarySelection = () => {
+  const filtered = getAdminRoundSummaryFilteredMatches();
+  const next = new Set(adminRoundSummaryState.selectedIds || []);
+  filtered.forEach((match) => {
+    if (next.has(match.id)) next.delete(match.id);
+    else next.add(match.id);
+  });
+  adminRoundSummaryState.selectedIds = next;
+  renderAdminRoundSummarySelectionModal();
+};
+
+window.backToAdminRoundSummarySelection = () => {
+  renderAdminRoundSummarySelectionModal();
+};
+
+const buildAdminRoundSummaryCanvas = async (selectedMatches = []) => {
+  const stats = buildAdminRoundSummaryStats(selectedMatches);
+  const width = 1080;
+  const padding = 56;
+  const gap = 24;
+  const cols = selectedMatches.length === 1 ? 1 : 2;
+  const cardWidth = cols === 1 ? (width - padding * 2) : Math.floor((width - padding * 2 - gap) / 2);
+  const cardHeight = selectedMatches.length <= 4 ? 276 : selectedMatches.length <= 8 ? 248 : 224;
+  const rows = Math.ceil(selectedMatches.length / cols);
+  const cardsHeight = rows * cardHeight + Math.max(0, rows - 1) * gap;
+  const highlightHeight = 300;
+  const footerHeight = 120;
+  const topHeight = 280;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = 1;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas_unavailable");
+
+  const pills = [
+    `⚽ ${selectedMatches.length} confronto(s)`,
+    `👥 ${stats.participantCount} participante(s)`,
+    `🗂 ${stats.roundLabel}`,
+    `🏅 ${stats.competitionLabel}`
+  ];
+
+  let pillX = padding;
+  let pillY = 188;
+  let pillRowHeight = 0;
+  ctx.font = "800 24px Inter, system-ui, sans-serif";
+  pills.forEach((pill) => {
+    const pillWidth = Math.min(470, Math.max(240, ctx.measureText(pill).width + 48));
+    if (pillX + pillWidth > width - padding) {
+      pillX = padding;
+      pillY += pillRowHeight + 14;
+      pillRowHeight = 0;
+    }
+    const pillHeight = 52;
+    pillRowHeight = Math.max(pillRowHeight, pillHeight);
+    ctx.fillStyle = "rgba(255,255,255,0.95)";
+    drawAdminRoundSummaryRoundRect(ctx, pillX, pillY, pillWidth, pillHeight, 26);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(15, 23, 42, 0.08)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#0f172a";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(pill, pillX + (pillWidth / 2), pillY + (pillHeight / 2) + 1);
+    pillX += pillWidth + 12;
+  });
+
+  const cardsStartY = Math.max(300, pillY + pillRowHeight + 36);
+  const height = cardsStartY + cardsHeight + highlightHeight + footerHeight + 64;
+
+  const cardImages = await Promise.all(selectedMatches.flatMap((match) => [
+    loadAdminRoundSummaryImage(getAdminRoundSummaryMatchLogo(match, "A")),
+    loadAdminRoundSummaryImage(getAdminRoundSummaryMatchLogo(match, "B"))
+  ]));
+
+  canvas.height = height;
+  const topGradient = ctx.createLinearGradient(0, 0, 0, topHeight);
+  topGradient.addColorStop(0, "#0a7a2e");
+  topGradient.addColorStop(1, "#0b5f2a");
+  ctx.fillStyle = "#EEF4F0";
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = topGradient;
+  drawAdminRoundSummaryRoundRect(ctx, 0, 0, width, topHeight, 0);
+  ctx.fill();
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.beginPath();
+  ctx.arc(width - 120, 80, 110, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(120, 165, 85, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "900 60px Inter, system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("RESUMO DA RODADA", width / 2, 60);
+  ctx.font = "800 28px Inter, system-ui, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.88)";
+  ctx.fillText(formatAdminRoundSummaryDateLabel(new Date()), width / 2, 134);
+
+  let y = cardsStartY;
+  const startX = padding;
+
+  for (let index = 0; index < selectedMatches.length; index += 1) {
+    const match = selectedMatches[index];
+    const row = Math.floor(index / cols);
+    const col = index % cols;
+    const x = startX + (col * (cardWidth + gap));
+    const cardY = y + (row * (cardHeight + gap));
+
+    drawAdminRoundSummaryCardShadow(ctx, x, cardY, cardWidth, cardHeight, 28);
+
+    ctx.save();
+    ctx.fillStyle = "#0b5f2a";
+    ctx.font = "800 20px Inter, system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    const dateShort = formatAdminRoundSummaryShortDate(match.displayDate);
+    if (dateShort) {
+      ctx.fillText(dateShort, x + 26, cardY + 22);
+    }
+    ctx.textAlign = "right";
+    const metaY = cardY + 22;
+    const roundText = String(match.round || "").trim() || "Fase";
+    const compText = String(match.competition || "").trim() || "Competição";
+    const roundW = Math.min(cardWidth * 0.43, ctx.measureText(roundText).width + 22);
+    const compW = Math.min(cardWidth * 0.47, ctx.measureText(compText).width + 22);
+    drawAdminRoundSummaryBadge(ctx, compText, x + cardWidth - 26 - compW, metaY, {
+      bg: "rgba(0,100,0,0.08)",
+      border: "rgba(0,100,0,0.08)",
+      text: "#0b5f2a"
+    });
+    drawAdminRoundSummaryBadge(ctx, roundText, x + cardWidth - 26 - compW - roundW - 10, metaY, {
+      bg: "rgba(15,23,42,0.05)",
+      border: "rgba(15,23,42,0.08)",
+      text: "#334155"
+    });
+    ctx.restore();
+
+    const logoSize = Math.min(96, Math.max(72, Math.floor(cardWidth * 0.18)));
+    const teamY = cardY + 90;
+    const teamTextY = teamY + logoSize + 18;
+    const leftX = x + 30;
+    const rightX = x + cardWidth - 30 - logoSize;
+    const centerX = x + (cardWidth / 2);
+    const logoA = cardImages[index * 2] || null;
+    const logoB = cardImages[index * 2 + 1] || null;
+
+    drawAdminRoundSummaryImageCircle(ctx, logoA, leftX, teamY, logoSize, match.teamA, { bg: "#f1f5f9", text: "#0b5f2a" });
+    drawAdminRoundSummaryImageCircle(ctx, logoB, rightX, teamY, logoSize, match.teamB, { bg: "#f1f5f9", text: "#0b5f2a" });
+
+    ctx.save();
+    ctx.fillStyle = "#0b5f2a";
+    ctx.font = "900 34px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("x", centerX, teamY + (logoSize / 2) + 2);
+    ctx.restore();
+
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "900 28px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    drawAdminRoundSummaryWrappedText(ctx, match.teamA || "", leftX + (logoSize / 2), teamTextY, cardWidth * 0.34, 30, {
+      color: "#0f172a",
+      font: "28px Inter, system-ui, sans-serif",
+      weight: 900,
+      align: "center",
+      maxLines: 2
+    });
+    drawAdminRoundSummaryWrappedText(ctx, match.teamB || "", rightX + (logoSize / 2), teamTextY, cardWidth * 0.34, 30, {
+      color: "#0f172a",
+      font: "28px Inter, system-ui, sans-serif",
+      weight: 900,
+      align: "center",
+      maxLines: 2
+    });
+
+    ctx.fillStyle = "#64748b";
+    ctx.font = "800 20px Inter, system-ui, sans-serif";
+    ctx.fillText(match.winner ? `Vencedor: ${match.winner}` : "Jogo finalizado", centerX, cardY + cardHeight - 30);
+  }
+
+  const highlightsY = y + cardsHeight + 36;
+  ctx.fillStyle = "#0f172a";
+  ctx.font = "900 34px Inter, system-ui, sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillText("Craques da rodada", padding, highlightsY);
+  ctx.fillText("Perebas da rodada", width / 2 + 18, highlightsY);
+
+  const highlightTop = highlightsY + 52;
+  const highlightW = Math.floor((width - padding * 2 - 18) / 2);
+  const highlightH = 190;
+  const highlightGap = 18;
+
+  const highlightEntries = [
+    {
+      x: padding,
+      title: "Craques da rodada",
+      accent: "#0b5f2a",
+      data: stats.craque
+    },
+    {
+      x: padding + highlightW + highlightGap,
+      title: "Perebas da rodada",
+      accent: "#b91c1c",
+      data: stats.pereba
+    }
+  ];
+
+  const highlightImages = await Promise.all(highlightEntries.map((entry) => loadAdminRoundSummaryImage(entry.data?.user?.photoBase64 || entry.data?.user?.photo || "")));
+
+  highlightEntries.forEach((entry, idx) => {
+    drawAdminRoundSummaryCardShadow(ctx, entry.x, highlightTop, highlightW, highlightH, 28);
+    ctx.fillStyle = entry.accent;
+    ctx.font = "900 24px Inter, system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText(entry.title, entry.x + 24, highlightTop + 20);
+
+    const item = entry.data;
+    if (!item) {
+      ctx.fillStyle = "#64748b";
+      ctx.font = "800 22px Inter, system-ui, sans-serif";
+      ctx.fillText("sem dados", entry.x + 24, highlightTop + 74);
+      return;
+    }
+
+    drawAdminRoundSummaryImageCircle(ctx, highlightImages[idx], entry.x + 24, highlightTop + 68, 72, item.user?.name || item.user?.username || "?", {
+      bg: "#eef2f7",
+      text: entry.accent
+    });
+
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "900 26px Inter, system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    drawAdminRoundSummaryWrappedText(ctx, item.user?.name || item.user?.username || "Sem nome", entry.x + 112, highlightTop + 74, highlightW - 136, 30, {
+      color: "#0f172a",
+      font: "26px Inter, system-ui, sans-serif",
+      weight: 900,
+      maxLines: 2
+    });
+
+    ctx.fillStyle = "#475569";
+    ctx.font = "800 22px Inter, system-ui, sans-serif";
+    ctx.fillText(`${item.hits}/${item.considered} acerto(s) • ${Math.round(item.percentage * 100)}% de aproveitamento`, entry.x + 112, highlightTop + 120);
+  });
+
+  ctx.fillStyle = "#0b5f2a";
+  ctx.font = "900 28px Inter, system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillText("BOLÃO 112 F.C", width / 2, height - 72);
+
+  return canvas;
+};
+
+const downloadAdminRoundSummaryBlob = (blob) => {
+  if (!blob) return;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `resumo-da-rodada-${Date.now()}.png`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+};
+
+window.downloadAdminRoundSummaryImage = () => {
+  if (!adminRoundSummaryState.previewBlob) {
+    showAdminCommunicationToast("A imagem ainda não foi gerada.", "danger");
+    return;
+  }
+  downloadAdminRoundSummaryBlob(adminRoundSummaryState.previewBlob);
+  showAdminCommunicationToast("Imagem baixada para o aparelho.");
+};
+
+window.shareAdminRoundSummaryImage = async () => {
+  const blob = adminRoundSummaryState.previewBlob;
+  if (!blob) {
+    showAdminCommunicationToast("A imagem ainda não foi gerada.", "danger");
+    return;
+  }
+
+  const file = new File([blob], `resumo-da-rodada-${Date.now()}.png`, { type: "image/png" });
+  try {
+    if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+      await navigator.share({
+        title: "Resumo da Rodada",
+        files: [file]
+      });
+      return;
+    }
+  } catch (error) {
+    if (error?.name === "AbortError") return;
+    console.warn("Falha ao compartilhar a imagem:", error);
+  }
+
+  downloadAdminRoundSummaryBlob(blob);
+  showAdminCommunicationToast("Seu navegador não permite compartilhar a imagem diretamente. A imagem foi baixada para você enviar manualmente no WhatsApp.", "warning");
+};
+
+window.generateAdminRoundSummaryImage = async () => {
+  const selectedMatches = getAdminRoundSummarySelectedMatches();
+  if (!selectedMatches.length) {
+    showAdminCommunicationToast("Selecione ao menos 1 jogo para gerar o resumo.", "danger");
+    return;
+  }
+
+  try {
+    showAdminCommunicationToast("Gerando imagem do resumo...");
+    const canvas = await buildAdminRoundSummaryCanvas(selectedMatches);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png", 0.95));
+    if (!blob) throw new Error("blob_unavailable");
+
+    if (adminRoundSummaryState.previewUrl) {
+      try { URL.revokeObjectURL(adminRoundSummaryState.previewUrl); } catch (error) {}
+    }
+
+    adminRoundSummaryState.previewBlob = blob;
+    adminRoundSummaryState.previewUrl = URL.createObjectURL(blob);
+    renderAdminRoundSummaryPreviewModal();
+  } catch (error) {
+    console.error("Erro ao gerar imagem do resumo:", error);
+    showAdminCommunicationToast("Não foi possível gerar a imagem do resumo.", "danger");
+  }
+};
+
+window.openAdminRoundSummaryModal = async () => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para acessar o resumo da rodada.");
+    return;
+  }
+
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative">
+      <div class="p-6 text-center">
+        <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
+        <p class="text-xs font-black text-slate-500 uppercase">Carregando resumo...</p>
+      </div>
+    </div>
+  `;
+
+  try {
+    adminRoundSummaryState.loading = true;
+    adminRoundSummaryState.previewBlob = null;
+    if (adminRoundSummaryState.previewUrl) {
+      try { URL.revokeObjectURL(adminRoundSummaryState.previewUrl); } catch (error) {}
+      adminRoundSummaryState.previewUrl = "";
+    }
+    await loadAdminRoundSummaryData();
+    renderAdminRoundSummarySelectionModal();
+  } catch (error) {
+    console.error("Erro ao abrir resumo da rodada:", error);
+    cont.innerHTML = `
+      <div class="bg-white p-6 text-center rounded shadow-xl">
+        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar o resumo da rodada.</p>
+        <button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
+      </div>
+    `;
+  } finally {
+    adminRoundSummaryState.loading = false;
+  }
+};
+
 const getRoundsSettingsRef = () => doc(db, "settings", "rounds");
 
 const dedupeRoundNames = (items = []) => {
@@ -8069,9 +9068,10 @@ window.saveAdminMatchAndReset = async () => {
                         </div>
 
                         <div>
-                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📢 COMUNICAÇÃO</h4>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📢 COMUNICAÇÃO & FERRAMENTAS</h4>
                             <div class="grid grid-cols-1 gap-2">
                                 <button onclick="window.openAdminCommunicationsModal()" class="bg-[#6A1B9A] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-bullhorn text-lg"></i> Comunicados</button>
+                                <button onclick="window.openAdminRoundSummaryModal()" class="bg-[#1D4ED8] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-image text-lg"></i> Resumo da Rodada</button>
                             </div>
                         </div>
 
@@ -11041,6 +12041,11 @@ window.closeModal = () => {
   window.closeModal = function () {
     // se Rules Gate OU Force Password estiver ativo, impede fechar
     if (window.__rulesGateLock || window.__forcePwLock) return;
+    if (adminRoundSummaryState.previewUrl) {
+      try { URL.revokeObjectURL(adminRoundSummaryState.previewUrl); } catch (error) {}
+      adminRoundSummaryState.previewUrl = "";
+      adminRoundSummaryState.previewBlob = null;
+    }
     return __origCloseModal.apply(this, arguments);
   };
 })();
