@@ -2908,6 +2908,10 @@ window.refreshAppData = async ({ hardReload = false, source = "manual" } = {}) =
       });
     }
 
+    if (registration?.waiting) {
+      registration.waiting.postMessage({ type: "SKIP_WAITING" });
+    }
+
     if (hardReload) {
       window.location.reload();
     }
@@ -12311,7 +12315,7 @@ const link = document.createElement('a');
         };
        
 document.getElementById('btnRefresh').onclick = () => {
-  window.refreshAppData({ hardReload: false, source: "header-button" });
+  window.refreshAppData({ hardReload: true, source: "header-button" });
 };
 
 document.getElementById('btnLogout').onclick = () => {

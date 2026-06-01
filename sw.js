@@ -1,5 +1,5 @@
 ﻿const SW_URL = new URL(self.location.href);
-const APP_VERSION = SW_URL.searchParams.get('v') || 'web-1.7.6';
+const APP_VERSION = SW_URL.searchParams.get('v') || 'web-1.7.5';
 const CACHE_NAME = `bolao112-site-${APP_VERSION}`;
 
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
@@ -80,6 +80,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
 
   const isCriticalAsset =
     url.pathname === '/' ||
