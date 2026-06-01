@@ -2563,6 +2563,34 @@ const renderDeferredHomeSkeleton = () => `
   </div>
 `;
 
+const getHomePendingPaymentNotice = (user = {}) => {
+  const monthKey = typeof getFinancialCurrentMonthKey === "function" ? getFinancialCurrentMonthKey() : "";
+  const monthName = typeof getFinancialCurrentMonthName === "function" ? getFinancialCurrentMonthName() : "mês vigente";
+  if (!monthKey) return null;
+
+  const paid = user?.payments?.[monthKey] === true;
+  if (paid) return null;
+
+  const today = new Date();
+  const overdue = today.getDate() > 10;
+  return {
+    overdue,
+    title: overdue
+      ? `Mensalidade de ${monthName} em atraso`
+      : `Mensalidade de ${monthName} pendente`,
+    message: overdue
+      ? `Sua mensalidade de ${monthName} ainda está pendente. Regularize o pagamento para manter sua participação no Bolão 112 FC.`
+      : `Olá! Sua mensalidade de ${monthName} ainda está pendente. O pagamento pode ser realizado até o dia 10.`
+  };
+};
+
+window.openHomeFinancialSection = () => {
+  showTab("profile");
+  setTimeout(() => {
+    document.getElementById("financialSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 240);
+};
+
 const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) => {
   const currentName = runtime.currentUser?.name || runtime.currentUser?.username || "Jogador";
   const nextMatch = open[0] || waiting[0] || finished[0] || null;
@@ -2581,6 +2609,7 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
     : "Use os atalhos abaixo para navegar.";
 
   const pendingCount = open.filter((m) => !myVotesMap[m.id]).length;
+  const paymentNotice = getHomePendingPaymentNotice(runtime.currentUser || {});
 
   return `
     <section class="home-quick-panel surface-card mb-4 overflow-hidden">
@@ -2591,6 +2620,21 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
         </div>
         <span class="status-chip status-chip--success">Ao vivo</span>
       </div>
+
+      ${paymentNotice ? `
+        <div class="home-payment-notice ${paymentNotice.overdue ? "is-overdue" : "is-reminder"}">
+          <div class="home-payment-notice__icon">
+            <i class="fas ${paymentNotice.overdue ? "fa-exclamation-triangle" : "fa-bell"}"></i>
+          </div>
+          <div class="home-payment-notice__body">
+            <div class="home-payment-notice__title">${escapeHtml(paymentNotice.title)}</div>
+            <div class="home-payment-notice__message">${escapeHtml(paymentNotice.message)}</div>
+          </div>
+          <button type="button" class="home-payment-notice__action btn-press" onclick="window.openHomeFinancialSection()">
+            Ver financeiro
+          </button>
+        </div>
+      ` : ""}
 
       <div class="home-quick-panel__hero">
         <div class="home-quick-panel__hero-label">${escapeHtml(nextLabel)}</div>
