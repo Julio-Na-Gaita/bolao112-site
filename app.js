@@ -4014,9 +4014,9 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                                 </div>
                                 
                                 <div class="flex items-center justify-between px-1">
-                                    ${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired)}
+                                    ${createTeamBtn(m.id, m.teamA, m.teamAUrl, userVote===m.teamA, m.expired, "A")}
                                     <span class="match-versus">X</span>
-                                    ${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired)}
+                                    ${createTeamBtn(m.id, m.teamB, m.teamBUrl, userVote===m.teamB, m.expired, "B")}
                                 </div>
                                 
                                 ${m.winner ? `<div class="mt-3 text-center border-t pt-2"><span class="text-[10px] font-bold text-gray-400">VENCEDOR</span><p class="match-winner-name">${escapeHtml(m.winner)}</p></div>` : ''}
@@ -4029,10 +4029,8 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
 
         // --- FUNÇÕES DE VOTO OTIMIZADAS (SEM LAG) ---
         
-        function createTeamBtn(mid, name, url, selected, expired) { 
-            // Limpa o nome para criar um ID válido
-            const safeName = name.replace(/[^a-zA-Z0-9]/g, '');
-            const btnId = `btn-${mid}-${safeName}`;
+        function createTeamBtn(mid, name, url, selected, expired, side) { 
+            const btnId = `btn-${mid}-${side}`;
             
             const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800'; 
             const border = selected ? 'border-2 border-[#FFD700]' : ''; 
@@ -4042,17 +4040,17 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
             const hasImage = url && url !== "false" && url !== "null" && url.trim() !== "";
             
             const iconHtml = hasImage 
-                ? `<img src="${url}" class="w-10 h-10 object-contain mb-1" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                ? `<img src="${escapeHtml(url)}" class="w-10 h-10 object-contain mb-1" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
                    <i class="fas fa-shield-alt text-2xl mb-1 text-gray-400 hidden"></i>` 
                 : `<i class="fas fa-shield-alt text-2xl mb-1 text-gray-400"></i>`;
 
             // CORREÇÃO DO CLICK: Adicionado window.vote
-            return `<button id="${btnId}" onclick="window.vote('${mid}', '${name}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}">
+            return `<button id="${btnId}" data-team="${escapeHtml(name)}" onclick="window.vote('${escapeJsString(mid)}', '${side}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}">
                 ${iconHtml}
                 <span class="match-team-name text-center leading-tight px-1 line-clamp-2">${name}</span>
             </button>`; 
         }
-        window.vote = async (mid, team, btnId) => { 
+        window.vote = async (mid, side, btnId) => { 
             if(!currentUser) return; 
 
             // --- TRAVA DE SEGURANÇA (NOVO) ---
@@ -4075,6 +4073,11 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
             }
 
             const clickedBtn = document.getElementById(btnId);
+            const team = clickedBtn?.dataset?.team || "";
+            if (!team) {
+                console.warn("Botão de voto sem time associado:", { mid, side, btnId });
+                return;
+            }
             if(clickedBtn) {
                 clickedBtn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#006400] text-white border-2 border-[#FFD700]`;
             }
