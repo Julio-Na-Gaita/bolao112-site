@@ -3898,10 +3898,10 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                                     </div>
                                     
                                     <div class="flex gap-3 pt-1">
-                                        <button onclick="openMatchComments('${m.id}', '${m.teamA}', '${m.teamB}', '${m.winner||''}')" class="match-action-btn text-gray-500 hover:text-[#006400] transition-colors relative">
+                                        <button onclick="openMatchComments('${escapeJsString(m.id)}', '${escapeJsString(m.teamA || "")}', '${escapeJsString(m.teamB || "")}', '${escapeJsString(m.winner || "")}')" class="match-action-btn text-gray-500 hover:text-[#006400] transition-colors relative">
                                             <i class="fas fa-comment-dots text-xl"></i>${chatBadge}
                                         </button>
-                                        <button onclick="openVoters('${m.id}', '${m.teamA}', '${m.teamB}', '${m.teamAUrl}', '${m.teamBUrl}', ${m.expired}, '${m.winner||''}', '${dl.toISOString()}')" class="match-action-btn text-[#006400] hover:scale-110 transition-transform">
+                                        <button onclick="openVoters('${escapeJsString(m.id)}', '${escapeJsString(m.teamA || "")}', '${escapeJsString(m.teamB || "")}', '${escapeJsString(m.teamAUrl || "")}', '${escapeJsString(m.teamBUrl || "")}', ${m.expired}, '${escapeJsString(m.winner || "")}', '${escapeJsString(dl.toISOString())}')" class="match-action-btn text-[#006400] hover:scale-110 transition-transform">
                                             <i class="fas ${m.expired ? 'fa-eye' : 'fa-users'} text-xl"></i>
                                         </button>
                                     </div>
