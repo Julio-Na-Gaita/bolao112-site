@@ -16,7 +16,7 @@
 
         // ADICIONADO: enableIndexedDbPersistence
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+import { getMessaging, getToken, onMessage, deleteToken, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
 let mainServiceWorkerRegistrationPromise = null;
 
@@ -268,6 +268,107 @@ const updateUserPushStatusOnServer = async (status) => {
   } catch (error) {
     console.warn("Não foi possível salvar status de push:", error);
   }
+};
+
+const getProfileWebPushState = async (userData = {}) => {
+  const vapidKey = await getAdminCommunicationVapidKey();
+  const supported = await isWebPushSupported();
+  const status = String(userData.webPushLastStatus || "").trim().toLowerCase();
+  const tokenCount = Number(userData.webPushTokenCount || 0);
+  const hasToken = userData.hasWebPushToken === true || status === "active" || tokenCount > 0;
+  const disabled = status === "disabled";
+  const knownIssue = ["denied", "unsupported", "ios_not_installed", "not_configured", "error"].includes(status);
+  const active = hasToken && !disabled;
+
+  let chip = "DESLIGADO";
+  let desc = "Toque para ativar notificações neste aparelho.";
+  let note = supported
+    ? "Funciona neste navegador quando permitido."
+    : "Este navegador não suporta notificações web.";
+
+  if (active) {
+    chip = "LIGADO";
+    desc = "Notificações deste aparelho ativas. Toque para desligar.";
+    note = "Você receberá avisos importantes do Bolão, inclusive em segundo plano.";
+  } else if (knownIssue) {
+    chip = "REVALIDAR";
+    desc = status === "denied"
+      ? "Permissão negada. Toque para tentar novamente."
+      : status === "ios_not_installed"
+        ? "No iPhone, adicione à Tela de Início antes de ativar."
+        : status === "unsupported"
+          ? "Este navegador não suporta notificações web."
+          : status === "not_configured"
+            ? "Push ainda não configurado pelo admin."
+            : "Toque para tentar novamente.";
+    note = isIosDevice()
+      ? "Requer iOS 16.4 ou superior."
+      : "Você pode tentar novamente quando quiser.";
+  } else if (disabled) {
+    chip = "DESLIGADO";
+    desc = "Notificações deste aparelho desativadas.";
+    note = "Toque para ativar novamente.";
+  } else if (!vapidKey) {
+    chip = "DESLIGADO";
+    desc = "Push ainda não configurado pelo admin.";
+    note = "Configure a chave VAPID pública para liberar notificações.";
+  } else if (!supported) {
+    chip = "DESLIGADO";
+    desc = "Este navegador ainda não suporta notificações web.";
+  }
+
+  return {
+    active,
+    chip,
+    desc,
+    note,
+    hasToken,
+    supported,
+    vapidKey,
+    status
+  };
+};
+
+window.toggleProfileWebPushPreference = async () => {
+  if (!currentUser) {
+    alert("Faça login para ativar notificações.");
+    return;
+  }
+
+  const userData = getMergedCurrentUserData(currentUser || {});
+  const pushState = await getProfileWebPushState(userData);
+
+  if (pushState.active) {
+    try {
+      if (pushState.supported) {
+        const swRegistration = window.getMainServiceWorkerRegistration
+          ? await window.getMainServiceWorkerRegistration()
+          : await navigator.serviceWorker.ready.catch(() => null);
+        if (swRegistration) {
+          const messaging = getMessaging(app);
+          try {
+            await deleteToken(messaging, { serviceWorkerRegistration: swRegistration });
+          } catch (error) {
+            console.warn("Não foi possível remover o token local de push:", error);
+          }
+        }
+      }
+
+      await updateUserPushStatusOnServer("disabled");
+      if (typeof loadProfile === "function" && !document.getElementById("profileScreen")?.classList.contains("hidden")) {
+        await loadProfile();
+      }
+      if (typeof showFinancialToast === "function") showFinancialToast("Notificações deste aparelho desativadas.");
+      else alert("Notificações deste aparelho desativadas.");
+    } catch (error) {
+      console.error("Falha ao desativar notificações deste aparelho:", error);
+      if (typeof showFinancialToast === "function") showFinancialToast("Não foi possível desativar as notificações.", "danger");
+      else alert("Não foi possível desativar as notificações.");
+    }
+    return;
+  }
+
+  await window.requestWebPushPermissionAndSaveToken();
 };
 
 let foregroundPushListenerReady = false;
@@ -11528,7 +11629,7 @@ async function loadProfile() {
             </div>`;
 
             const soundEnabled = isSoundEnabled();
-            const webPushSectionHtml = await buildProfileWebPushSection(u);
+            const pushControlState = await getProfileWebPushState(u);
             const accountActionsHtml = `
               <section class="profile-section profile-section--compact mb-3">
                 ${renderProfileSectionHeader("Conta", "Ações principais do seu acesso", "Essencial")}
@@ -11549,11 +11650,12 @@ async function loadProfile() {
                     desc: "Mantenha sua conta protegida."
                   })}
                   ${renderProfileActionTile({
-                    onclick: "window.scrollToProfileSection('profileWebPushSection')",
+                    onclick: "window.toggleProfileWebPushPreference()",
                     iconClass: "fas fa-bell",
-                    iconToneClass: "bg-purple-50 text-purple-600",
+                    iconToneClass: pushControlState.active ? "bg-purple-50 text-purple-600" : pushControlState.chip === "REVALIDAR" ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-500",
                     title: "Notificações",
-                    desc: "Ative ou revalide neste aparelho."
+                    desc: pushControlState.desc,
+                    chip: pushControlState.chip
                   })}
                   ${renderProfileActionTile({
                     onclick: "window.toggleSoundPreference()",
@@ -11592,25 +11694,17 @@ async function loadProfile() {
                     title: "Guia do app",
                     desc: "Relembre funções e atalhos do sistema."
                   })}
+                  ${u.isAdmin ? renderProfileActionTile({
+                    onclick: "openAdminMenu()",
+                    iconClass: "fas fa-cogs",
+                    iconToneClass: "bg-gray-900 text-[#FFD700]",
+                    title: "Painel do Admin",
+                    desc: "Ferramentas administrativas do bolão.",
+                    chip: "Restrito"
+                  }) : ""}
                 </div>
               </section>
             `;
-
-            const adminSectionHtml = u.isAdmin ? `
-              <section class="profile-section profile-section--compact mb-4">
-                ${renderProfileSectionHeader("Admin", "Ferramentas administrativas do bolão", "Restrito")}
-                <div class="profile-action-list">
-                  ${renderProfileActionRow({
-                    onclick: "openAdminMenu()",
-                    iconClass: "fas fa-cogs",
-                    iconToneClass: "bg-white/10 text-[#FFD700]",
-                    title: "Painel do administrador",
-                    desc: "Gerencie confrontos, financeiro e configurações.",
-                    dark: true
-                  })}
-                </div>
-              </section>
-            ` : "";
             // HTML DA TELA DE PERFIL (GRADE LIMPA)
             const profileHTML = `
             <div id="profileScreen" class="animate-fade-in p-4">
@@ -11638,7 +11732,6 @@ async function loadProfile() {
                 <input type="file" id="uploadPhoto" accept="image/*" class="hidden" onchange="handlePhotoUpload(this)">
 
                 ${accountActionsHtml}
-                ${webPushSectionHtml}
                 ${shortcutsSectionHtml}
 
                 <div id="financialSection" class="profile-section profile-section--compact mb-4">
@@ -11653,8 +11746,6 @@ async function loadProfile() {
                     </div>
                     </div>
                 </div>
-
-                ${adminSectionHtml}
 
                 <div class="text-center pb-safe">
                     <div class="version-chip">${getAppVersionLabel()}</div>

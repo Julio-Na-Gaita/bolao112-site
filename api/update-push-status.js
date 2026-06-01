@@ -17,7 +17,7 @@ if (!admin.apps.length && process.env.FIREBASE_PROJECT_ID && process.env.FIREBAS
   });
 }
 
-const allowedStatuses = new Set(['denied', 'unsupported', 'ios_not_installed', 'not_configured', 'error']);
+const allowedStatuses = new Set(['denied', 'unsupported', 'ios_not_installed', 'not_configured', 'error', 'disabled']);
 const allowedPlatforms = new Set(['android', 'ios', 'desktop', 'unknown']);
 
 const countEnabledTokensForUser = async (db, uid) => {
@@ -25,6 +25,25 @@ const countEnabledTokensForUser = async (db, uid) => {
     .where('uid', '==', uid)
     .where('enabled', '==', true)
     .get();
+  return snap.size;
+};
+
+const disableAllTokensForUser = async (db, uid) => {
+  const snap = await db.collection('notification_tokens')
+    .where('uid', '==', uid)
+    .where('enabled', '==', true)
+    .get();
+
+  if (snap.empty) return 0;
+
+  const batch = db.batch();
+  snap.forEach((docSnap) => {
+    batch.update(docSnap.ref, {
+      enabled: false,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+  });
+  await batch.commit();
   return snap.size;
 };
 
@@ -52,7 +71,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ ok: false, error: 'invalid_status' });
     }
 
-    const tokenCount = await countEnabledTokensForUser(db, decoded.uid);
+    const disabledCount = status === 'disabled'
+      ? await disableAllTokensForUser(db, decoded.uid)
+      : 0;
+    const tokenCount = status === 'disabled'
+      ? 0
+      : await countEnabledTokensForUser(db, decoded.uid);
     await db.collection('users').doc(decoded.uid).set({
       hasWebPushToken: tokenCount > 0,
       webPushTokenCount: tokenCount,
@@ -62,7 +86,7 @@ export default async function handler(req, res) {
       webPushUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    return res.status(200).json({ ok: true, tokenCount });
+    return res.status(200).json({ ok: true, tokenCount, disabledCount });
   } catch (error) {
     console.error('Erro ao atualizar status de push:', error);
     return res.status(500).json({ ok: false, error: 'push_status_error' });
