@@ -2577,6 +2577,108 @@ const toJsDate = (value) => {
   return null;
 };
 
+const normalizeRankingMovementPositions = (raw = {}) => {
+  const result = {};
+  if (!raw || typeof raw !== "object") return result;
+  Object.entries(raw).forEach(([uid, value]) => {
+    const position = Number(value);
+    if (!uid || !Number.isFinite(position) || position <= 0) return;
+    result[uid] = Math.trunc(position);
+  });
+  return result;
+};
+
+const normalizeRankingMovementMap = (raw = {}) => {
+  const result = {};
+  if (!raw || typeof raw !== "object") return result;
+
+  Object.entries(raw).forEach(([uid, value]) => {
+    if (!uid || !value || typeof value !== "object") return;
+
+    const previousPosition = Number(value.previousPosition || value.previous || value.lastPosition || value.from || 0);
+    const currentPosition = Number(value.currentPosition || value.current || value.position || value.to || 0);
+    const delta = Number(value.delta || 0);
+
+    result[uid] = {
+      previousPosition: Number.isFinite(previousPosition) ? Math.trunc(previousPosition) : 0,
+      currentPosition: Number.isFinite(currentPosition) ? Math.trunc(currentPosition) : 0,
+      delta: Number.isFinite(delta) ? Math.trunc(delta) : 0
+    };
+  });
+
+  return result;
+};
+
+const getRankingMovementInfo = (uid = "") => {
+  const snapshot = window.__rankingMovementSnapshot || {};
+  return snapshot.movements?.[uid] || null;
+};
+
+const loadRankingMovementSnapshot = async ({ force = false } = {}) => {
+  if (!force && window.__rankingMovementSnapshot) return window.__rankingMovementSnapshot;
+
+  try {
+    const snap = await getDoc(doc(db, "settings", "rankingMovement"));
+    const data = snap.exists() ? (snap.data() || {}) : {};
+    const snapshot = {
+      positions: normalizeRankingMovementPositions(data.positions || {}),
+      movements: normalizeRankingMovementMap(data.movements || {}),
+      updatedAt: data.updatedAt || null,
+      updatedBy: data.updatedBy || "",
+      updatedByName: data.updatedByName || "",
+      updatedByEmail: data.updatedByEmail || "",
+      source: String(data.source || "").trim()
+    };
+
+    window.__rankingMovementSnapshot = snapshot;
+    return snapshot;
+  } catch (error) {
+    console.warn("Não foi possível carregar o snapshot de movimento do ranking:", error);
+    return window.__rankingMovementSnapshot || {
+      positions: {},
+      movements: {}
+    };
+  }
+};
+
+const buildRankingMovementSnapshot = (users = [], previousPositions = {}, meta = {}) => {
+  const positions = {};
+  const movements = {};
+
+  users.forEach((user, index) => {
+    const uid = String(user?.uid || user?.id || "").trim();
+    if (!uid) return;
+
+    const currentPosition = index + 1;
+    const previousPosition = Number(previousPositions?.[uid] || 0);
+    const delta = previousPosition > 0 ? previousPosition - currentPosition : 0;
+
+    positions[uid] = currentPosition;
+    movements[uid] = {
+      previousPosition: previousPosition > 0 ? previousPosition : currentPosition,
+      currentPosition,
+      delta: previousPosition > 0 ? delta : 0
+    };
+  });
+
+  return {
+    positions,
+    movements,
+    updatedAt: Timestamp.fromDate(new Date()),
+    updatedBy: String(meta?.updatedBy || "").trim(),
+    updatedByName: String(meta?.updatedByName || "").trim(),
+    updatedByEmail: String(meta?.updatedByEmail || "").trim(),
+    source: String(meta?.source || "").trim()
+  };
+};
+
+const persistRankingMovementSnapshot = async ({ users = [], previousPositions = {}, meta = {} } = {}) => {
+  const snapshot = buildRankingMovementSnapshot(users, previousPositions, meta);
+  await setDoc(doc(db, "settings", "rankingMovement"), snapshot, { merge: true });
+  window.__rankingMovementSnapshot = snapshot;
+  return snapshot;
+};
+
 const normalizeHomeSectionType = (raw = "") => {
   const value = String(raw || "").trim().toLowerCase();
   if ([
@@ -4341,6 +4443,7 @@ async function loadRanking(options = {}) {
     window.currentMonthlyRankingHistory = cachedRanking.currentMonthlyRankingHistory;
     window.currentMonthlyRankingSelectedMonth = cachedRanking.currentMonthlyRankingSelectedMonth;
     window.globalLastUpdateInfo = cachedRanking.lastUpdateInfo;
+    window.__rankingMovementSnapshot = cachedRanking.rankingMovementSnapshot || window.__rankingMovementSnapshot || { positions: {}, movements: {} };
     listContainer.scrollTop = 0;
     if (appContent) appContent.scrollTop = 0;
     return;
@@ -4357,6 +4460,7 @@ async function loadRanking(options = {}) {
       readWithRuntimeCache("col:guesses", () => getDocs(collection(db, "guesses")), { ttlMs: DATA_CACHE_TTL.hot, force }),
       readWithRuntimeCache("col:matches", () => getDocs(collection(db, "matches")), { ttlMs: DATA_CACHE_TTL.hot, force })
     ]);
+    const rankingMovementSnapshot = await loadRankingMovementSnapshot({ force });
 
                 // 1. DADOS BRUTOS & DATA MATCHES
                 const matches = [];
@@ -5058,12 +5162,13 @@ let html = `
                         `</div>`;
                     }
 
-                    let diffHtml = `<div class="ranking-move ranking-move--new">NOVO</div>`;
-                    if (u.lastRank > 0) {
-                      if (pos < u.lastRank) diffHtml = `<div class="ranking-move ranking-move--up"><i class="fas fa-caret-up"></i> ${u.lastRank - pos}</div>`;
-                      else if (pos > u.lastRank) diffHtml = `<div class="ranking-move ranking-move--down"><i class="fas fa-caret-down"></i> ${pos - u.lastRank}</div>`;
-                      else diffHtml = `<div class="ranking-move ranking-move--same">=</div>`;
-                    }
+                    const movementInfo = rankingMovementSnapshot?.movements?.[u.uid] || getRankingMovementInfo(u.uid);
+                    const movementDelta = Number(movementInfo?.delta || 0);
+                    const hasMovementHistory = Number(movementInfo?.previousPosition || 0) > 0;
+                    let diffHtml = `<div class="ranking-move ranking-move--neutral">–</div>`;
+                    if (movementDelta > 0) diffHtml = `<div class="ranking-move ranking-move--up"><i class="fas fa-caret-up"></i> ${movementDelta}</div>`;
+                    else if (movementDelta < 0) diffHtml = `<div class="ranking-move ranking-move--down"><i class="fas fa-caret-down"></i> ${Math.abs(movementDelta)}</div>`;
+                    else if (hasMovementHistory) diffHtml = `<div class="ranking-move ranking-move--same">=</div>`;
 
                     return `<div class="ranking-row ${rowClass}">
                         <div class="ranking-row__pos">
@@ -5099,6 +5204,7 @@ window.__rankingScreenCache = {
   currentMonthlyRanking: [...window.currentMonthlyRanking],
   currentMonthlyRankingHistory: [...window.currentMonthlyRankingHistory],
   currentMonthlyRankingSelectedMonth: window.currentMonthlyRankingSelectedMonth,
+  rankingMovementSnapshot: rankingMovementSnapshot ? JSON.parse(JSON.stringify(rankingMovementSnapshot)) : { positions: {}, movements: {} },
   lastUpdateInfo: window.globalLastUpdateInfo,
   cachedAt: Date.now()
 };
@@ -9432,6 +9538,26 @@ const logAdminQuickResultsAction = async (payload = {}) => {
   }
 };
 
+const refreshRankingMovementAfterOfficialChange = async (meta = {}) => {
+  try {
+    const previousSnapshot = await loadRankingMovementSnapshot({ force: true });
+    await loadRanking({ force: true });
+    await persistRankingMovementSnapshot({
+      users: Array.isArray(currentRankingData) ? currentRankingData : [],
+      previousPositions: previousSnapshot?.positions || {},
+      meta
+    });
+
+    if (!document.getElementById("rankingScreen")?.classList.contains("hidden")) {
+      await loadRanking({ force: true });
+    } else {
+      window.__rankingScreenCache = null;
+    }
+  } catch (error) {
+    console.warn("Falha ao atualizar snapshot do ranking:", error);
+  }
+};
+
 window.saveAdminQuickResults = async () => {
   const pendingMatches = Array.isArray(adminQuickResultsState.matches) ? adminQuickResultsState.matches : [];
   const selections = adminQuickResultsState.selections || {};
@@ -9493,9 +9619,12 @@ window.saveAdminQuickResults = async () => {
     if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) {
       await loadMatches({ force: true });
     }
-    if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && typeof loadRanking === "function") {
-      await loadRanking({ force: true });
-    }
+    await refreshRankingMovementAfterOfficialChange({
+      source: "quick_results",
+      updatedBy: admin.uid || "",
+      updatedByName: admin.name || "",
+      updatedByEmail: admin.email || ""
+    });
 
     if (typeof window.showToast === "function") {
       window.showToast("Resultados salvos!", "Baixa rápida concluída.", "");
@@ -11119,6 +11248,12 @@ async function loadAdminMatches() {
             });
 
             invalidateHomeRankingCaches();
+            await refreshRankingMovementAfterOfficialChange({
+              source: "financial_audit",
+              updatedBy: admin.uid || "",
+              updatedByName: admin.name || "",
+              updatedByEmail: admin.email || ""
+            });
             showFinancialToast("Multas aplicadas!");
             await window.openFinancialScreen();
           } catch (error) {
@@ -11304,6 +11439,14 @@ async function loadAdminMatches() {
               name: draft.name || ""
             });
 
+            invalidateHomeRankingCaches();
+            await refreshRankingMovementAfterOfficialChange({
+              source: "disable_user",
+              updatedBy: admin?.uid || "",
+              updatedByName: admin?.name || "",
+              updatedByEmail: admin?.email || ""
+            });
+
             showFinancialToast("Usuário desativado.");
             adminFinancialState.editUserDraft.isActive = false;
             await loadAdminFinancialUsers();
@@ -11403,6 +11546,13 @@ async function loadAdminMatches() {
               targetUserId: draft.id,
               username: draft.username || "",
               debts: payload.debts
+            });
+            invalidateHomeRankingCaches();
+            await refreshRankingMovementAfterOfficialChange({
+              source: "update_user_financial",
+              updatedBy: admin?.uid || "",
+              updatedByName: admin?.name || "",
+              updatedByEmail: admin?.email || ""
             });
             showFinancialToast("Usuário atualizado!");
             await window.openFinancialScreen();
