@@ -1250,7 +1250,7 @@ select:focus-visible {
 .profile-section {
     background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.92));
     border: 1px solid rgba(15,23,42,0.08);
-    border-radius: 24px;
+    border-radius: 22px;
     box-shadow: var(--shadow-soft);
     overflow: hidden;
 }
@@ -1260,7 +1260,7 @@ select:focus-visible {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px 16px 10px;
+    padding: 12px 14px 8px;
 }
 
 .profile-section__title {
@@ -1282,45 +1282,62 @@ select:focus-visible {
 .profile-action-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    padding: 0 16px 16px;
+    gap: 10px;
+    padding: 0 12px 12px;
+}
+
+.profile-actions-grid,
+.profile-shortcuts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding: 0 12px 12px;
 }
 
 .profile-action-tile {
-    min-height: 112px;
+    min-height: 96px;
     border: 1px solid rgba(15,23,42,0.08);
     border-radius: 20px;
     background: rgba(255,255,255,0.9);
     box-shadow: 0 10px 24px rgba(15,23,42,0.06);
-    padding: 16px 14px;
+    padding: 12px;
     text-align: left;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
+    min-width: 0;
 }
 
 .profile-action-tile__icon {
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
     border-radius: 999px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .profile-action-tile__title {
     color: var(--text-main);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 900;
+    line-height: 1.2;
 }
 
 .profile-action-tile__desc {
     color: #64748b;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    line-height: 1.45;
+    line-height: 1.35;
+}
+
+.profile-action-tile .status-chip {
+    width: fit-content;
+    margin-top: auto;
+    font-size: 8px;
+    padding: 4px 8px;
 }
 
 .profile-action-list {
@@ -1386,8 +1403,8 @@ select:focus-visible {
 }
 
 .profile-push-card {
-    margin: 0 12px 12px;
-    padding: 14px;
+    margin: 0 12px 10px;
+    padding: 12px;
     border-radius: 18px;
     border: 1px solid rgba(15,23,42,0.08);
     background: linear-gradient(180deg, rgba(240,253,244,0.98), rgba(255,255,255,0.96));
@@ -1728,8 +1745,12 @@ select:focus-visible {
     }
 }
 
-@media (max-width: 380px) {
+@media (max-width: 340px) {
     .profile-action-grid {
+        grid-template-columns: 1fr;
+    }
+    .profile-actions-grid,
+    .profile-shortcuts-grid {
         grid-template-columns: 1fr;
     }
 }

@@ -1,4 +1,4 @@
-              import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+﻿              import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { 
   getAuth, 
   signInWithEmailAndPassword, 
@@ -122,11 +122,11 @@ let homeSectionCollapseState = {
   matches_done: true
 };
 
-// Não alterar APP_VERSION automaticamente. A versão visual só deve mudar quando solicitado pelo administrador.
+// NÃ£o alterar APP_VERSION automaticamente. A versÃ£o visual sÃ³ deve mudar quando solicitado pelo administrador.
 const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.5');
 const getAppVersionShort = () => getAppVersion().replace(/^web-/, '');
 const getAppVersionLabel = () => `Web v${getAppVersionShort()}`;
-const getAppVersionFullLabel = () => `Versão ${getAppVersionLabel()}`;
+const getAppVersionFullLabel = () => `VersÃ£o ${getAppVersionLabel()}`;
 
 const CHAT_MAX_MESSAGE_LENGTH = 280;
 const CHAT_ALLOWED_REACTIONS = Object.freeze([
@@ -226,7 +226,7 @@ const getAdminCommunicationVapidKey = async () => {
     const cfgSnap = await getDoc(doc(db, "settings", "config"));
     return String(cfgSnap.data()?.webPushVapidKey || "").trim();
   } catch (error) {
-    console.warn("Não foi possível carregar VAPID de settings/config:", error);
+    console.warn("NÃ£o foi possÃ­vel carregar VAPID de settings/config:", error);
     return "";
   }
 };
@@ -235,7 +235,7 @@ const isWebPushSupported = async () => {
   try {
     return "Notification" in window && "serviceWorker" in navigator && await isMessagingSupported();
   } catch (error) {
-    console.warn("Push web indisponível:", error);
+    console.warn("Push web indisponÃ­vel:", error);
     return false;
   }
 };
@@ -266,7 +266,7 @@ const updateUserPushStatusOnServer = async (status) => {
       })
     });
   } catch (error) {
-    console.warn("Não foi possível salvar status de push:", error);
+    console.warn("NÃ£o foi possÃ­vel salvar status de push:", error);
   }
 };
 
@@ -290,7 +290,7 @@ const setupForegroundPushListener = async () => {
 
     const messaging = getMessaging(app);
     onMessage(messaging, async (payload) => {
-      const title = payload?.notification?.title || payload?.data?.title || "Bolão 112 FC";
+      const title = payload?.notification?.title || payload?.data?.title || "BolÃ£o 112 FC";
       const body = payload?.notification?.body || payload?.data?.body || "";
       const link = payload?.fcmOptions?.link || payload?.data?.link || "https://bolao112-site.vercel.app/";
       const tag = payload?.messageId || `bolao112-${Date.now()}`;
@@ -321,7 +321,7 @@ const setupForegroundPushListener = async () => {
     });
   } catch (error) {
     foregroundPushListenerReady = false;
-    console.warn("Não foi possível instalar listener de push em primeiro plano:", error);
+    console.warn("NÃ£o foi possÃ­vel instalar listener de push em primeiro plano:", error);
   }
 };
 
@@ -343,7 +343,7 @@ const registerWebPushTokenOnServer = async (token) => {
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || result?.ok === false) {
-    const error = new Error(result?.error || "Não foi possível registrar este aparelho.");
+    const error = new Error(result?.error || "NÃ£o foi possÃ­vel registrar este aparelho.");
     error.code = result?.error || "register_push_error";
     error.result = result;
     throw error;
@@ -362,15 +362,15 @@ const buildIosPushHelpHtml = () => {
         <i class="fab fa-apple"></i>
         <span>iPhone / iPad</span>
       </div>
-      <p>Para receber notificações no iPhone, use o Safari e adicione o Bolão à Tela de Início. Requer iOS 16.4 ou superior.</p>
+      <p>Para receber notificaÃ§Ãµes no iPhone, use o Safari e adicione o BolÃ£o Ã  Tela de InÃ­cio. Requer iOS 16.4 ou superior.</p>
       <ol>
-        <li>Abra o Bolão pelo Safari.</li>
+        <li>Abra o BolÃ£o pelo Safari.</li>
         <li>Toque em Compartilhar.</li>
-        <li>Toque em Adicionar à Tela de Início.</li>
-        <li>Abra o Bolão pelo ícone criado.</li>
-        <li>Faça login.</li>
-        <li>Vá em Perfil.</li>
-        <li>Toque em Ativar notificações deste aparelho.</li>
+        <li>Toque em Adicionar Ã  Tela de InÃ­cio.</li>
+        <li>Abra o BolÃ£o pelo Ã­cone criado.</li>
+        <li>FaÃ§a login.</li>
+        <li>VÃ¡ em Perfil.</li>
+        <li>Toque em Ativar notificaÃ§Ãµes deste aparelho.</li>
       </ol>
     </div>
   `;
@@ -382,38 +382,38 @@ const buildProfileWebPushSection = async (userData = {}) => {
   const hasToken = userData.hasWebPushToken === true;
   const platform = getWebPushPlatform();
   const pushStatus = !vapidKey
-    ? "Push ainda não configurado pelo admin"
+    ? "Push ainda nÃ£o configurado pelo admin"
     : hasToken
-      ? "Notificações ativadas neste aparelho"
+      ? "NotificaÃ§Ãµes ativadas neste aparelho"
       : supported
         ? "Toque para ativar neste aparelho"
-        : "Navegador incompatível";
+        : "Navegador incompatÃ­vel";
   const pushDescription = hasToken
-    ? "Você receberá avisos importantes do Bolão, inclusive quando o site/app estiver em segundo plano."
+    ? "VocÃª receberÃ¡ avisos importantes do BolÃ£o, inclusive quando o site/app estiver em segundo plano."
     : !supported
-      ? "Este navegador ainda não suporta notificações web. Tente usar Chrome no Android ou Safari no iPhone com o Bolão adicionado à Tela de Início."
+      ? "Este navegador ainda nÃ£o suporta notificaÃ§Ãµes web. Tente usar Chrome no Android ou Safari no iPhone com o BolÃ£o adicionado Ã  Tela de InÃ­cio."
       : !vapidKey
-        ? "Configure a chave VAPID pública para liberar notificações neste app."
+        ? "Configure a chave VAPID pÃºblica para liberar notificaÃ§Ãµes neste app."
         : isIosPwaHintRequired()
-          ? "No iPhone, para receber notificações, é necessário adicionar o Bolão à Tela de Início e abrir pelo ícone criado. Depois disso, volte aqui e toque em “Ativar notificações deste aparelho”."
+          ? "No iPhone, para receber notificaÃ§Ãµes, Ã© necessÃ¡rio adicionar o BolÃ£o Ã  Tela de InÃ­cio e abrir pelo Ã­cone criado. Depois disso, volte aqui e toque em â€œAtivar notificaÃ§Ãµes deste aparelhoâ€."
           : platform === "android"
-            ? "Você pode receber notificações mesmo sem instalar o app. Basta permitir as notificações neste navegador. Para uma experiência melhor, recomendamos adicionar o Bolão à tela inicial."
-            : "Permita as notificações deste aparelho para receber avisos do Bolão 112 FC.";
+            ? "VocÃª pode receber notificaÃ§Ãµes mesmo sem instalar o app. Basta permitir as notificaÃ§Ãµes neste navegador. Para uma experiÃªncia melhor, recomendamos adicionar o BolÃ£o Ã  tela inicial."
+            : "Permita as notificaÃ§Ãµes deste aparelho para receber avisos do BolÃ£o 112 FC.";
   const pushNote = hasToken
-    ? "Notificações ativadas neste aparelho."
+    ? "NotificaÃ§Ãµes ativadas neste aparelho."
     : isIosDevice()
       ? "Requer iOS 16.4 ou superior."
-      : "Funciona em navegadores compatíveis com Web Push.";
+      : "Funciona em navegadores compatÃ­veis com Web Push.";
   const pushButtonLabel = hasToken
-    ? "Revalidar notificações deste aparelho"
-    : "Ativar notificações deste aparelho";
+    ? "Revalidar notificaÃ§Ãµes deste aparelho"
+    : "Ativar notificaÃ§Ãµes deste aparelho";
 
   return `
-    <section class="profile-section mb-4">
-      ${renderProfileSectionHeader("Notificações", "Receba avisos deste aparelho", pushStatus)}
+    <section id="profileWebPushSection" class="profile-section profile-section--compact mb-3">
+      ${renderProfileSectionHeader("NotificaÃ§Ãµes", "Receba avisos deste aparelho", pushStatus)}
       <div class="profile-push-card">
         <div class="profile-push-card__copy">
-          <div class="profile-push-card__title">Ative as notificações deste aparelho</div>
+          <div class="profile-push-card__title">Ative as notificaÃ§Ãµes deste aparelho</div>
           <div class="profile-push-card__desc">${escapeHtml(pushDescription)}</div>
           <div class="profile-push-card__note">${escapeHtml(pushNote)}</div>
         </div>
@@ -429,33 +429,33 @@ const buildProfileWebPushSection = async (userData = {}) => {
 
 window.requestWebPushPermissionAndSaveToken = async () => {
   if (!currentUser) {
-    alert("Faça login para ativar notificações.");
+    alert("FaÃ§a login para ativar notificaÃ§Ãµes.");
     return null;
   }
 
   if (!await isWebPushSupported()) {
     await updateUserPushStatusOnServer("unsupported");
-    alert("Este navegador ainda não suporta push web neste aparelho.");
+    alert("Este navegador ainda nÃ£o suporta push web neste aparelho.");
     return null;
   }
 
   const vapidKey = await getAdminCommunicationVapidKey();
   if (!vapidKey) {
     await updateUserPushStatusOnServer("not_configured");
-    alert("Push ainda não configurado pelo admin.");
+    alert("Push ainda nÃ£o configurado pelo admin.");
     return null;
   }
 
   if (isIosPwaHintRequired()) {
     await updateUserPushStatusOnServer("ios_not_installed");
-    alert("No iPhone, adicione o Bolão à Tela de Início antes de ativar as notificações.");
+    alert("No iPhone, adicione o BolÃ£o Ã  Tela de InÃ­cio antes de ativar as notificaÃ§Ãµes.");
     return null;
   }
 
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
     await updateUserPushStatusOnServer(permission === "denied" ? "denied" : "error");
-    alert(permission === "denied" ? "Permissão negada." : "Permissão de notificação não concedida.");
+    alert(permission === "denied" ? "PermissÃ£o negada." : "PermissÃ£o de notificaÃ§Ã£o nÃ£o concedida.");
     return null;
   }
 
@@ -463,7 +463,7 @@ window.requestWebPushPermissionAndSaveToken = async () => {
     ? await window.getMainServiceWorkerRegistration()
     : await navigator.serviceWorker.ready.catch(() => null);
   if (!swRegistration) {
-    alert("Não foi possível preparar o serviço de notificações neste aparelho.");
+    alert("NÃ£o foi possÃ­vel preparar o serviÃ§o de notificaÃ§Ãµes neste aparelho.");
     return null;
   }
 
@@ -474,7 +474,7 @@ window.requestWebPushPermissionAndSaveToken = async () => {
   });
 
   if (!token) {
-    alert("Não foi possível obter o token de push deste aparelho.");
+    alert("NÃ£o foi possÃ­vel obter o token de push deste aparelho.");
     return null;
   }
 
@@ -484,15 +484,15 @@ window.requestWebPushPermissionAndSaveToken = async () => {
     console.error("Erro ao registrar token de push:", error);
     if (error.code === "push_not_configured") {
       await updateUserPushStatusOnServer("not_configured");
-      alert("Push ainda não configurado pelo servidor.");
+      alert("Push ainda nÃ£o configurado pelo servidor.");
       return null;
     }
     await updateUserPushStatusOnServer("error");
-    alert(error.message || "Não foi possível registrar este aparelho.");
+    alert(error.message || "NÃ£o foi possÃ­vel registrar este aparelho.");
     return null;
   }
 
-  alert("Notificações ativadas neste aparelho.\n\nAgora feche o app ou deixe-o em segundo plano e envie um push de teste pelo admin.");
+  alert("NotificaÃ§Ãµes ativadas neste aparelho.\n\nAgora feche o app ou deixe-o em segundo plano e envie um push de teste pelo admin.");
   if (typeof loadProfile === "function" && !document.getElementById("profileScreen")?.classList.contains("hidden")) {
     loadProfile();
   }
@@ -524,7 +524,7 @@ const formatAdminDateTimeLabel = (value) => {
 
 const buildAdminWhatsAppMessage = ({ teamA, teamB, competition, round, deadline }) => {
   const dateLabel = deadline ? formatAdminDateTimeLabel(deadline) : "";
-  return `📢 JOGO NOVO: 📢\n\n⚽ ${teamA} x ${teamB}\n🏆 ${competition} (${round})\n⏰ ${dateLabel}\n\n📲 VOTE AGORA: https://bolao112-site.vercel.app`;
+  return `ðŸ“¢ JOGO NOVO: ðŸ“¢\n\nâš½ ${teamA} x ${teamB}\nðŸ† ${competition} (${round})\nâ° ${dateLabel}\n\nðŸ“² VOTE AGORA: https://bolao112-site.vercel.app`;
 };
 
 const getAdminCreationTeamFieldIds = (side) => ({
@@ -571,7 +571,7 @@ const updatePwaInstallCard = () => {
   button.classList.add('hidden');
 
   if (isPwaStandalone()) {
-    text.textContent = 'Você já está usando o Bolão 112 FC como app instalado.';
+    text.textContent = 'VocÃª jÃ¡ estÃ¡ usando o BolÃ£o 112 FC como app instalado.';
     card.classList.add('pwa-install-card--installed');
     return;
   }
@@ -585,11 +585,11 @@ const updatePwaInstallCard = () => {
   }
 
   if (isIosDevice()) {
-    text.textContent = 'No Safari, toque em Compartilhar e depois em Adicionar à Tela de Início.';
+    text.textContent = 'No Safari, toque em Compartilhar e depois em Adicionar Ã  Tela de InÃ­cio.';
     return;
   }
 
-  text.textContent = 'No Chrome, use o menu do navegador e escolha instalar ou adicionar à tela inicial.';
+  text.textContent = 'No Chrome, use o menu do navegador e escolha instalar ou adicionar Ã  tela inicial.';
 };
 
 window.addEventListener('beforeinstallprompt', (event) => {
@@ -721,8 +721,8 @@ const renderMatchesScreenFromState = async (state) => {
   syncMatchesNavBadge(state.runtime?.pendingFastVoteCount || 0);
 };
 
-// --- NOVA FUNÇÃO DE ORDENAÇÃO (PADRÃO ANDROID) ---
-// Regra: 1. Prazo (Crescente) | 2. Criação (Crescente/Antigo 1º) | 3. ID (Fallback)
+// --- NOVA FUNÃ‡ÃƒO DE ORDENAÃ‡ÃƒO (PADRÃƒO ANDROID) ---
+// Regra: 1. Prazo (Crescente) | 2. CriaÃ§Ã£o (Crescente/Antigo 1Âº) | 3. ID (Fallback)
 const matchComparator = (a, b) => {
     // 1. Deadline
     const dateA = a.deadlineDate ? a.deadlineDate.getTime() : 0;
@@ -747,10 +747,10 @@ const matchComparator = (a, b) => {
 
     if (createdA !== createdB) return createdA - createdB;
 
-    // 3. ID (Último recurso)
+    // 3. ID (Ãšltimo recurso)
     return a.id.localeCompare(b.id);
 };
-       // --- ÁUDIO SIMPLES (SOMENTE POP) ---
+       // --- ÃUDIO SIMPLES (SOMENTE POP) ---
         const isSoundEnabled = () => {
   try {
     return localStorage.getItem(SOUND_PREFERENCE_KEY) !== "0";
@@ -782,21 +782,21 @@ window.toggleSoundPreference = () => {
     const audioSrc = resolveRemoteSoundAsset("POP", "som_pop.mp3");
     const audio = new Audio(audioSrc);
     audio.volume = 0.5;
-    audio.play().catch(e => console.log("Áudio bloqueado:", e));
+    audio.play().catch(e => console.log("Ãudio bloqueado:", e));
   } catch (e) {
     console.log(e);
   }
 };
         
-        // Garante que o som toque nas funções de voto existentes
-        // (Nota: As funções window.vote e window.votePoll já chamam playVoteSound(), 
-        // então só precisamos definir ela aqui em cima e tudo volta a funcionar).
-        // --- NOVO: FUNÇÃO GERADORA DE AVATAR (DiceBear) ---
+        // Garante que o som toque nas funÃ§Ãµes de voto existentes
+        // (Nota: As funÃ§Ãµes window.vote e window.votePoll jÃ¡ chamam playVoteSound(), 
+        // entÃ£o sÃ³ precisamos definir ela aqui em cima e tudo volta a funcionar).
+        // --- NOVO: FUNÃ‡ÃƒO GERADORA DE AVATAR (DiceBear) ---
         // --- GERADOR DE AVATAR (CORRIGIDO PARA FOTO REAL) ---
         const getAvatarUrl = (base64, name) => {
-            // Verifica se existe, se não é texto "null"/"undefined" e se é longo o suficiente para ser imagem
+            // Verifica se existe, se nÃ£o Ã© texto "null"/"undefined" e se Ã© longo o suficiente para ser imagem
             if (base64 && typeof base64 === 'string' && base64.length > 50 && base64 !== "null" && base64 !== "undefined") {
-                // Se já vier com o cabeçalho 'data:image', usa como está. Se não, adiciona.
+                // Se jÃ¡ vier com o cabeÃ§alho 'data:image', usa como estÃ¡. Se nÃ£o, adiciona.
                 if (base64.startsWith('data:image')) {
                     return base64;
                 } else {
@@ -811,13 +811,13 @@ window.toggleSoundPreference = () => {
             return `https://api.dicebear.com/7.x/adventurer/png?seed=${seed}&backgroundColor=${bg}`;
         };
 
-        // --- OTIMIZAÇÃO: ATIVAR CACHE OFFLINE ---
-        // Isso faz o site carregar instantaneamente na 2ª visita
+        // --- OTIMIZAÃ‡ÃƒO: ATIVAR CACHE OFFLINE ---
+        // Isso faz o site carregar instantaneamente na 2Âª visita
         enableIndexedDbPersistence(db).catch((err) => {
             if (err.code == 'failed-precondition') {
-                console.log('Muitas abas abertas. O cache funcionará em apenas uma.');
+                console.log('Muitas abas abertas. O cache funcionarÃ¡ em apenas uma.');
             } else if (err.code == 'unimplemented') {
-                console.log('Navegador não suporta persistência.');
+                console.log('Navegador nÃ£o suporta persistÃªncia.');
             }
         });
         // ----------------------------------------
@@ -850,7 +850,7 @@ const setForcePwError = (msg) => {
   box.innerText = msg;
 };
 
-// fecha modal só quando concluir troca (ou sair)
+// fecha modal sÃ³ quando concluir troca (ou sair)
 window.closeForcePasswordModal = () => {
   // libera a trava e fecha o modal
   window.__forcePwLock = false;
@@ -868,18 +868,18 @@ window.openForcePasswordModal = (firebaseUser) => {
   window.openModal(`
     <div id="forcePwModalRoot" class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden">
       <div class="bg-[#006400] p-4 text-white">
-        <div class="text-sm font-black uppercase tracking-wider">Troca de senha obrigatória</div>
+        <div class="text-sm font-black uppercase tracking-wider">Troca de senha obrigatÃ³ria</div>
         <div class="text-[11px] text-white/90 font-bold mt-1">
-          O admin resetou sua senha. Por segurança, você precisa criar uma nova senha agora para que só você saiba.
+          O admin resetou sua senha. Por seguranÃ§a, vocÃª precisa criar uma nova senha agora para que sÃ³ vocÃª saiba.
         </div>
       </div>
 
 <div class="p-4 space-y-3">
 
-  <!-- SENHA ATUAL (TEMPORÁRIA) -->
+  <!-- SENHA ATUAL (TEMPORÃRIA) -->
   <div>
     <label for="forcePwCurrent" class="block text-[11px] font-black text-gray-600 uppercase mb-1">
-      Senha atual (temporária)
+      Senha atual (temporÃ¡ria)
     </label>
 
     <div style="position: relative;">
@@ -890,7 +890,7 @@ window.openForcePasswordModal = (firebaseUser) => {
         class="w-full border rounded px-3 py-2 text-sm pr-10"
         placeholder="Digite a senha usada para entrar"
         autocomplete="current-password"
-        aria-label="Senha atual (temporária)"
+        aria-label="Senha atual (temporÃ¡ria)"
       />
       <button
         id="eyeForceCurrent"
@@ -913,7 +913,7 @@ window.openForcePasswordModal = (firebaseUser) => {
         name="newPassword"
         type="password"
         class="w-full border rounded px-3 py-2 text-sm pr-10"
-        placeholder="Mínimo 6 caracteres"
+        placeholder="MÃ­nimo 6 caracteres"
         autocomplete="new-password"
         aria-label="Nova senha"
       />
@@ -945,7 +945,7 @@ window.openForcePasswordModal = (firebaseUser) => {
       <button
         id="eyeForceConfirm"
         type="button"
-        aria-label="Mostrar/ocultar confirmação"
+        aria-label="Mostrar/ocultar confirmaÃ§Ã£o"
         style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:transparent; border:none; color:#666; font-size:16px; cursor:pointer; padding:6px;">
       </button>
     </div>
@@ -971,7 +971,7 @@ window.attachPasswordEye("forcePwNew", "eyeForceNew");
 window.attachPasswordEye("forcePwConfirm", "eyeForceConfirm");
 
         
-  // botão SAIR (única forma de fechar sem trocar)
+  // botÃ£o SAIR (Ãºnica forma de fechar sem trocar)
   document.getElementById("forcePwSignOutBtn").onclick = async () => {
     try { await signOut(auth); } catch(e) {}
     // libera e fecha
@@ -979,7 +979,7 @@ window.attachPasswordEye("forcePwConfirm", "eyeForceConfirm");
     window.closeModal();
   };
 
-  // botão SALVAR
+  // botÃ£o SALVAR
   document.getElementById("forcePwSaveBtn").onclick = async () => {
     setForcePwError("");
 
@@ -987,9 +987,9 @@ window.attachPasswordEye("forcePwConfirm", "eyeForceConfirm");
     const newPw = (document.getElementById("forcePwNew").value || "").trim();
     const confirmPw = (document.getElementById("forcePwConfirm").value || "").trim();
 
-    if (!currentPw) return setForcePwError("Digite sua senha atual (temporária).");
-    if (!newPw || newPw.length < 6) return setForcePwError("A nova senha deve ter no mínimo 6 caracteres.");
-    if (newPw !== confirmPw) return setForcePwError("A confirmação não confere com a nova senha.");
+    if (!currentPw) return setForcePwError("Digite sua senha atual (temporÃ¡ria).");
+    if (!newPw || newPw.length < 6) return setForcePwError("A nova senha deve ter no mÃ­nimo 6 caracteres.");
+    if (newPw !== confirmPw) return setForcePwError("A confirmaÃ§Ã£o nÃ£o confere com a nova senha.");
 
     const btnSave = document.getElementById("forcePwSaveBtn");
     const btnOut = document.getElementById("forcePwSignOutBtn");
@@ -1001,7 +1001,7 @@ window.attachPasswordEye("forcePwConfirm", "eyeForceConfirm");
       const email = firebaseUser?.email;
       if (!email) throw { code: "missing-email" };
 
-      // 1) Reautenticar com a senha temporária (a usada pra logar)
+      // 1) Reautenticar com a senha temporÃ¡ria (a usada pra logar)
       const cred = EmailAuthProvider.credential(email, currentPw);
       await reauthenticateWithCredential(firebaseUser, cred);
 
@@ -1014,7 +1014,7 @@ window.attachPasswordEye("forcePwConfirm", "eyeForceConfirm");
         lastPasswordChangedAt: serverTimestamp()
       });
 
-      // (opcional) se você guardar algo no localStorage relacionado a login, limpe aqui
+      // (opcional) se vocÃª guardar algo no localStorage relacionado a login, limpe aqui
       // localStorage.removeItem("SUA_CHAVE_AQUI");
 
       // 4) fecha e libera
@@ -1026,9 +1026,9 @@ window.attachPasswordEye("forcePwConfirm", "eyeForceConfirm");
 
       if (code === "auth/wrong-password") setForcePwError("Senha atual incorreta.");
       else if (code === "auth/too-many-requests") setForcePwError("Muitas tentativas. Aguarde e tente novamente.");
-      else if (code === "auth/requires-recent-login") setForcePwError("Por segurança, faça login novamente e tente de novo.");
-      else if (code === "permission-denied") setForcePwError("Sem permissão no Firestore. Contate o admin.");
-      else if (code === "unauthenticated") setForcePwError("Sessão inválida. Faça login novamente.");
+      else if (code === "auth/requires-recent-login") setForcePwError("Por seguranÃ§a, faÃ§a login novamente e tente de novo.");
+      else if (code === "permission-denied") setForcePwError("Sem permissÃ£o no Firestore. Contate o admin.");
+      else if (code === "unauthenticated") setForcePwError("SessÃ£o invÃ¡lida. FaÃ§a login novamente.");
       else setForcePwError("Erro ao trocar senha. Tente novamente.");
 
       btnSave.disabled = false;
@@ -1040,7 +1040,7 @@ window.attachPasswordEye("forcePwConfirm", "eyeForceConfirm");
 
 // listener em tempo real no users/{uid}
 window.startForcePasswordWatcher = (firebaseUser) => {
-  // derruba listener anterior (se trocar usuário)
+  // derruba listener anterior (se trocar usuÃ¡rio)
   if (window.__forcePwUnsub) {
     try { window.__forcePwUnsub(); } catch(e) {}
     window.__forcePwUnsub = null;
@@ -1057,7 +1057,7 @@ window.startForcePasswordWatcher = (firebaseUser) => {
     if (mustChange) {
       window.openForcePasswordModal(firebaseUser);
     } else {
-      // se estava aberto e já foi resolvido, fecha
+      // se estava aberto e jÃ¡ foi resolvido, fecha
       if (document.getElementById("forcePwModalRoot")) {
         window.closeForcePasswordModal();
 window.continueAfterLoginGates();
@@ -1105,7 +1105,7 @@ window.startCurrentUserDataWatcher = (firebaseUser) => {
         forceRanking: visibleTab === "ranking",
         forceProfile: visibleTab === "profile"
       }).catch((error) => {
-        console.error("Falha ao atualizar dados do usuário em tempo real:", error);
+        console.error("Falha ao atualizar dados do usuÃ¡rio em tempo real:", error);
       });
     }
   }, (err) => {
@@ -1131,13 +1131,13 @@ const toMillis = (v) => {
 
 // Decide se o gate deve valer (considerando officialStartAt opcional)
 const shouldGateBeActiveNow = (officialStartAt) => {
-  if (!officialStartAt) return true; // se não tiver, vale sempre
+  if (!officialStartAt) return true; // se nÃ£o tiver, vale sempre
   const now = Date.now();
   return now >= toMillis(officialStartAt);
 };
 
 
-        // COLETAR ESTE BLOCO AQUI (INÍCIO)
+        // COLETAR ESTE BLOCO AQUI (INÃCIO)
 // --- 2. SISTEMA DE REMOTE CONFIG (BANNERS E RECURSOS) ---
         const normalizeRemoteMap = (raw) => {
   const result = {};
@@ -1238,7 +1238,7 @@ const initRemoteConfig = () => {
     if (appConfig.bannerActive && appConfig.bannerBlocking) {
       const t = document.getElementById("maintTitle");
       const m = document.getElementById("maintMessage");
-      if (t) t.innerText = appConfig.bannerTitle || "EM MANUTENÇÃO";
+      if (t) t.innerText = appConfig.bannerTitle || "EM MANUTENÃ‡ÃƒO";
       if (m) m.innerText = appConfig.bannerMessage || "Voltamos logo!";
       maintScreen.classList.remove("hidden");
       alertBanner.classList.add("hidden");
@@ -1270,7 +1270,7 @@ if (currentUser && !document.getElementById("rankingScreen")?.classList.contains
         initRemoteConfig();
         // (FIM DO BLOCO)
 
-        // COMPRESSÃO
+        // COMPRESSÃƒO
         const compressImage = (file) => {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -1311,7 +1311,7 @@ if (currentUser && !document.getElementById("rankingScreen")?.classList.contains
                     imgEl.src = appScreenshots[currentImgIdx];
                     // Efeito de Fade In
                     imgEl.style.opacity = 1;
-                }, 500); // Troca a imagem após 0.5s (metade da transição)
+                }, 500); // Troca a imagem apÃ³s 0.5s (metade da transiÃ§Ã£o)
                 
             }, 4000); // Muda a cada 4 segundos
         }
@@ -1334,7 +1334,7 @@ if (currentUser && !document.getElementById("rankingScreen")?.classList.contains
             }
 
             try {
-                // Configura se deve manter logado (Local) ou só na sessão (Session)
+                // Configura se deve manter logado (Local) ou sÃ³ na sessÃ£o (Session)
                 const mode = remember ? browserLocalPersistence : browserSessionPersistence;
                 await setPersistence(auth, mode);
                 document.getElementById('mainHeader').classList.remove('hidden');
@@ -1343,18 +1343,18 @@ if (currentUser && !document.getElementById("rankingScreen")?.classList.contains
                 await signInWithEmailAndPassword(auth, `${user}@bolao112.com`, pass);
                 
                 // O navegador vai perguntar "Salvar Senha?" aqui. 
-                // Se o usuário salvar, na próxima vez o FaceID/Digital aparecerá automaticamente ao tocar no campo.
+                // Se o usuÃ¡rio salvar, na prÃ³xima vez o FaceID/Digital aparecerÃ¡ automaticamente ao tocar no campo.
                 
             } catch (e) {
                 console.error(e);
-                alert("Dados incorretos ou erro de conexão.");
+                alert("Dados incorretos ou erro de conexÃ£o.");
                 btn.innerHTML = originalText; 
                 btn.disabled = false;
             }
         };
 
 // ===============================
-// Password Eye Toggle (reutilizável)
+// Password Eye Toggle (reutilizÃ¡vel)
 // ===============================
 window.attachPasswordEye = (inputId, eyeBtnId) => {
   const input = document.getElementById(inputId);
@@ -1384,7 +1384,7 @@ window.setupLoginPasswordEye = () => {
   const passInput = document.getElementById("passInput");
   if (!passInput) return;
 
-  // se a função ainda não existe (ordem do arquivo), tenta de novo daqui a pouco
+  // se a funÃ§Ã£o ainda nÃ£o existe (ordem do arquivo), tenta de novo daqui a pouco
   if (typeof window.attachPasswordEye !== "function") {
     setTimeout(window.setupLoginPasswordEye, 50);
     return;
@@ -1392,7 +1392,7 @@ window.setupLoginPasswordEye = () => {
 
   // evita duplicar
   if (document.getElementById("loginEyeBtn")) {
-    // garante que o toggle está ligado
+    // garante que o toggle estÃ¡ ligado
     window.attachPasswordEye("passInput", "loginEyeBtn");
     return;
   }
@@ -1438,7 +1438,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
 
 
-// --- RECUPERAÇÃO DE SENHA (WEB) ---
+// --- RECUPERAÃ‡ÃƒO DE SENHA (WEB) ---
         document.getElementById('btnForgotPass').onclick = () => {
   const typedUser =
     (document.getElementById('userInput')?.value || "").trim().toLowerCase();
@@ -1453,11 +1453,11 @@ window.addEventListener("DOMContentLoaded", () => {
         <i class="fas fa-key text-[#FFD700] text-3xl mb-2"></i>
         <h3 class="text-[#006400] font-black uppercase text-lg mb-1">Esqueci minha senha</h3>
         <p class="text-xs text-gray-600 font-bold mb-4">
-          Escolha uma das opções abaixo:
+          Escolha uma das opÃ§Ãµes abaixo:
         </p>
 
         <div class="bg-gray-50 border rounded-lg p-3 text-left mb-4">
-          <p class="text-[10px] text-gray-500 font-black uppercase">Seu usuário (login)</p>
+          <p class="text-[10px] text-gray-500 font-black uppercase">Seu usuÃ¡rio (login)</p>
           <input
             type="text"
             id="recoverUser"
@@ -1466,19 +1466,19 @@ window.addEventListener("DOMContentLoaded", () => {
             class="w-full mt-2 p-3 bg-white border rounded-lg text-sm outline-none focus:border-[#006400] text-center font-bold"
           />
           <p class="text-[10px] text-gray-400 font-bold mt-2">
-            Dica: seu usuário é o que você usa para entrar (sem espaços).
+            Dica: seu usuÃ¡rio Ã© o que vocÃª usa para entrar (sem espaÃ§os).
           </p>
         </div>
 
         <!-- Resultado da dica -->
         <div id="hintResultArea" class="hidden mb-4 p-3 bg-orange-50 border border-orange-200 rounded">
-          <p class="text-[10px] text-orange-600 font-bold uppercase">💡 SUA DICA:</p>
+          <p class="text-[10px] text-orange-600 font-bold uppercase">ðŸ’¡ SUA DICA:</p>
           <p id="hintTextDisplay" class="text-sm font-black text-black mt-1"></p>
         </div>
 
         <p id="recoverMsg" class="text-xs text-red-500 font-bold mt-2"></p>
 
-        <!-- Ações -->
+        <!-- AÃ§Ãµes -->
         <div class="space-y-2 mt-4">
           <button id="btnSearchHint"
             class="w-full bg-[#006400] text-white py-3 font-black rounded-lg shadow-lg btn-press text-sm">
@@ -1497,13 +1497,13 @@ window.addEventListener("DOMContentLoaded", () => {
         </div>
 
         <p class="text-[10px] text-gray-400 font-bold mt-4">
-          Se o admin resetar sua senha, ao entrar novamente você será obrigado(a) a criar uma nova senha.
+          Se o admin resetar sua senha, ao entrar novamente vocÃª serÃ¡ obrigado(a) a criar uma nova senha.
         </p>
       </div>
     </div>
   `);
 
-  // 1) BOTÃO: buscar dica
+  // 1) BOTÃƒO: buscar dica
   document.getElementById('btnSearchHint').onclick = async () => {
     const user = (document.getElementById('recoverUser').value || "").trim().toLowerCase();
     const msg = document.getElementById('recoverMsg');
@@ -1513,7 +1513,7 @@ window.addEventListener("DOMContentLoaded", () => {
     area.classList.add('hidden');
 
     if (!user) {
-      msg.innerText = "Digite seu usuário para buscar a dica.";
+      msg.innerText = "Digite seu usuÃ¡rio para buscar a dica.";
       return;
     }
 
@@ -1532,10 +1532,10 @@ window.addEventListener("DOMContentLoaded", () => {
           area.classList.remove('hidden');
           msg.innerText = "";
         } else {
-          msg.innerText = "Você não cadastrou dica. Use a opção de avisar o admin.";
+          msg.innerText = "VocÃª nÃ£o cadastrou dica. Use a opÃ§Ã£o de avisar o admin.";
         }
       } else {
-        msg.innerText = "Usuário não encontrado. Confira se digitou corretamente.";
+        msg.innerText = "UsuÃ¡rio nÃ£o encontrado. Confira se digitou corretamente.";
       }
     } catch (e) {
       console.error(e);
@@ -1543,15 +1543,15 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // 2) BOTÃO: avisar admin no WhatsApp (não abre automaticamente ao clicar em 'Esqueci')
+  // 2) BOTÃƒO: avisar admin no WhatsApp (nÃ£o abre automaticamente ao clicar em 'Esqueci')
   document.getElementById('btnAskAdminReset').onclick = () => {
     const user = (document.getElementById('recoverUser').value || "").trim().toLowerCase();
     const when = new Date().toLocaleString('pt-BR');
 
     const phone = "5585988837389"; // Lincoln - 85988837389
     const msg = user
-      ? `Olá Lincoln! Preciso que você resete minha senha no Bolão 112 FC.\n\nUsuário: ${user}\nData/Hora: ${when}\n\n(Enviado pela versão WEB)`
-      : `Olá Lincoln! Preciso que você resete minha senha no Bolão 112 FC.\n\nNão lembro meu usuário.\nData/Hora: ${when}\n\n(Enviado pela versão WEB)`;
+      ? `OlÃ¡ Lincoln! Preciso que vocÃª resete minha senha no BolÃ£o 112 FC.\n\nUsuÃ¡rio: ${user}\nData/Hora: ${when}\n\n(Enviado pela versÃ£o WEB)`
+      : `OlÃ¡ Lincoln! Preciso que vocÃª resete minha senha no BolÃ£o 112 FC.\n\nNÃ£o lembro meu usuÃ¡rio.\nData/Hora: ${when}\n\n(Enviado pela versÃ£o WEB)`;
 
     const encoded = encodeURIComponent(msg);
 
@@ -1577,16 +1577,16 @@ window.addEventListener("DOMContentLoaded", () => {
                 <h3 class="text-[#006400] font-black uppercase text-center mb-6 text-lg">Criar Nova Conta</h3>
                 
                 <label class="block text-xs font-bold text-gray-500 mb-1">Nome Completo</label>
-                <input type="text" id="regName" placeholder="Ex: João da Silva" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
+                <input type="text" id="regName" placeholder="Ex: JoÃ£o da Silva" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
                 
-                <label class="block text-xs font-bold text-gray-500 mb-1">Usuário (Login)</label>
-                <input type="text" id="regUser" placeholder="Ex: joaosilva (sem espaços)" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
+                <label class="block text-xs font-bold text-gray-500 mb-1">UsuÃ¡rio (Login)</label>
+                <input type="text" id="regUser" placeholder="Ex: joaosilva (sem espaÃ§os)" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
                 
                 <label class="block text-xs font-bold text-gray-500 mb-1">Dica de Senha (Opcional)</label>
                 <input type="text" id="regHint" placeholder="Ex: Nome do meu cachorro" class="w-full p-3 bg-gray-50 border rounded-lg mb-3 text-sm outline-none focus:border-[#006400]">
                 
                 <label class="block text-xs font-bold text-gray-500 mb-1">Senha</label>
-                <input type="password" id="regPass" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]">
+                <input type="password" id="regPass" placeholder="MÃ­nimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]">
                 
                 <button id="btnDoRegister" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CADASTRAR</button>
             </div>`;
@@ -1602,7 +1602,7 @@ window.addEventListener("DOMContentLoaded", () => {
                 return;
             }
             if (user.includes(" ")) {
-                alert("O usuário não pode conter espaços.");
+                alert("O usuÃ¡rio nÃ£o pode conter espaÃ§os.");
                 return;
             }
 
@@ -1620,21 +1620,21 @@ window.addEventListener("DOMContentLoaded", () => {
                 let isTrial = false;
                 let trialDate = null;
 
-                // SE NÃO TIVER CONVITE: OFERECE O TESTE GRÁTIS
+                // SE NÃƒO TIVER CONVITE: OFERECE O TESTE GRÃTIS
                 if (!whitelistSnap.exists()) {
-                    const aceitaTeste = confirm("Convite oficial não encontrado.\n\nDeseja criar uma conta de TESTE GRÁTIS por 7 dias?");
+                    const aceitaTeste = confirm("Convite oficial nÃ£o encontrado.\n\nDeseja criar uma conta de TESTE GRÃTIS por 7 dias?");
                     
                     if (!aceitaTeste) {
                         btn.innerText = originalText;
                         btn.disabled = false;
-                        return; // Usuário desistiu
+                        return; // UsuÃ¡rio desistiu
                     }
 
                     // Configura modo Trial
                     isTrial = true;
-                    finalName = `${name} (Teste ⏳)`; // Adiciona identificação no nome
+                    finalName = `${name} (Teste â³)`; // Adiciona identificaÃ§Ã£o no nome
                     
-                    // Calcula data de expiração (Hoje + 7 dias)
+                    // Calcula data de expiraÃ§Ã£o (Hoje + 7 dias)
                     const d = new Date();
                     d.setDate(d.getDate() + 7);
                     trialDate = d;
@@ -1660,7 +1660,7 @@ window.addEventListener("DOMContentLoaded", () => {
                 });
 
                 if (isTrial) {
-                    alert(`Conta de Teste Criada!\n\nVocê tem acesso liberado até ${trialDate.toLocaleDateString()}.\nPara continuar depois disso, regularize sua mensalidade.`);
+                    alert(`Conta de Teste Criada!\n\nVocÃª tem acesso liberado atÃ© ${trialDate.toLocaleDateString()}.\nPara continuar depois disso, regularize sua mensalidade.`);
                 } else {
                     alert("Conta oficial criada com sucesso! Bem-vindo(a).");
                 }
@@ -1670,7 +1670,7 @@ window.addEventListener("DOMContentLoaded", () => {
             } catch (e) {
                 console.error(e);
                 let msg = "Erro ao criar conta.";
-                if (e.code === 'auth/email-already-in-use') msg = "Este usuário já existe.";
+                if (e.code === 'auth/email-already-in-use') msg = "Este usuÃ¡rio jÃ¡ existe.";
                 alert(msg);
                 btn.innerText = originalText;
                 btn.disabled = false;
@@ -1679,7 +1679,7 @@ window.addEventListener("DOMContentLoaded", () => {
          };  
 
 // ===============================
-// CENTRAL: decide gates pós-login (Force PW -> Rules Gate -> App)
+// CENTRAL: decide gates pÃ³s-login (Force PW -> Rules Gate -> App)
 // ===============================
 window.continueAfterLoginGates = async () => {
   if (!auth.currentUser) return;
@@ -1692,13 +1692,13 @@ window.continueAfterLoginGates = async () => {
     userSnap = await getDoc(userDocRef);
   } catch (e) {
     console.error("continueAfterLoginGates getDoc:", e);
-    // fallback seguro: mostra app mínimo mas sem liberar navegação
+    // fallback seguro: mostra app mÃ­nimo mas sem liberar navegaÃ§Ã£o
     document.getElementById('mainHeader').classList.remove('hidden');
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('mainScreens').classList.remove('hidden');
     document.getElementById('bottomNav').classList.add('hidden');
     document.getElementById('btnLogout').classList.remove('hidden');
-    alert("Erro ao carregar seus dados. Verifique sua conexão.");
+    alert("Erro ao carregar seus dados. Verifique sua conexÃ£o.");
     return;
   }
 
@@ -1710,9 +1710,9 @@ window.continueAfterLoginGates = async () => {
     return;
   }
 
-  // 1) FORCE PASSWORD CHANGE (prioridade máxima)
+  // 1) FORCE PASSWORD CHANGE (prioridade mÃ¡xima)
   if (userData && userData.forcePasswordChange === true) {
-    // Estrutura mínima (sem liberar menu)
+    // Estrutura mÃ­nima (sem liberar menu)
     document.getElementById('mainHeader').classList.remove('hidden');
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('mainScreens').classList.remove('hidden');
@@ -1747,7 +1747,7 @@ window.continueAfterLoginGates = async () => {
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // --- TRAVA DE SEGURANÇA E TRIAL (NOVO) ---
+                // --- TRAVA DE SEGURANÃ‡A E TRIAL (NOVO) ---
                 const userDocRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userDocRef);
 
@@ -1764,36 +1764,36 @@ window.continueAfterLoginGates = async () => {
                         return;
                     }
                     
-                    // Verifica se é TRIAL VENCIDO
+                    // Verifica se Ã© TRIAL VENCIDO
                     if (data.isTrial === true && data.trialValidUntil) {
                         const now = new Date();
                         const validUntil = data.trialValidUntil.toDate(); // Converte do Firestore
 
-                        // Se HOJE é maior que a validade
+                        // Se HOJE Ã© maior que a validade
                         if (now > validUntil) {
-                            // Verifica se pagou o mês atual (Salvação)
+                            // Verifica se pagou o mÃªs atual (SalvaÃ§Ã£o)
                             const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
                             const currentMonth = months[now.getMonth()];
                             const isPaid = data.payments && data.payments[currentMonth] === true;
 
                             if (!isPaid) {
-                                alert(`🚫 PERÍODO DE TESTE EXPIRADO!\n\nSua conta de teste venceu em ${validUntil.toLocaleDateString()}.\n\nPara continuar jogando e recuperar seu acesso, realize o pagamento da mensalidade com o Admin.`);
-                                signOut(auth); // Chuta o usuário para fora
+                                alert(`ðŸš« PERÃODO DE TESTE EXPIRADO!\n\nSua conta de teste venceu em ${validUntil.toLocaleDateString()}.\n\nPara continuar jogando e recuperar seu acesso, realize o pagamento da mensalidade com o Admin.`);
+                                signOut(auth); // Chuta o usuÃ¡rio para fora
                                 return;
                             } else {
-                                // Se pagou, remove o status de Trial automaticamente (Promoção para Oficial)
-                                await updateDoc(userDocRef, { isTrial: false, name: data.name.replace(" (Teste ⏳)", "") });
-                                alert("Parabéns! Sua mensalidade foi confirmada e sua conta agora é OFICIAL! 🚀");
+                                // Se pagou, remove o status de Trial automaticamente (PromoÃ§Ã£o para Oficial)
+                                await updateDoc(userDocRef, { isTrial: false, name: data.name.replace(" (Teste â³)", "") });
+                                alert("ParabÃ©ns! Sua mensalidade foi confirmada e sua conta agora Ã© OFICIAL! ðŸš€");
                                 location.reload(); // Recarrega para limpar o nome
                                 return;
                             }
                         }
                     }
 
-                    // ATUALIZANDO VERSÃO
+                    // ATUALIZANDO VERSÃƒO
 try { await updateDoc(userDocRef, { appVersion: getAppVersionLabel(), lastAccess: new Date() }); } catch(e) {}
 
-// ✅ NOVO: inicia o gate de troca de senha obrigatória (Android parity)
+// âœ… NOVO: inicia o gate de troca de senha obrigatÃ³ria (Android parity)
 window.startForcePasswordWatcher(user);
 setupForegroundPushListener();
 startCurrentUserDataWatcher(user);
@@ -1805,10 +1805,10 @@ currentUser = user;
 window.currentUser = user;
 window.currentUid = user.uid;
 
-// userData (do seu userSnap que você já buscou lá em cima)
+// userData (do seu userSnap que vocÃª jÃ¡ buscou lÃ¡ em cima)
 const userData = userSnap.exists() ? userSnap.data() : null;
 
-// ✅ Entra pelo funil único (Force PW -> Rules Gate -> App)
+// âœ… Entra pelo funil Ãºnico (Force PW -> Rules Gate -> App)
 setupForegroundPushListener();
 window.continueAfterLoginGates();
 
@@ -1835,7 +1835,7 @@ document.getElementById('bottomNav').classList.add('hidden');
 
             }
         });
-// finaliza a entrada no app (chamar só quando estiver liberado)
+// finaliza a entrada no app (chamar sÃ³ quando estiver liberado)
 window.finalizeAppEntryAfterLogin = () => {
   setHomeMode(false);
   document.getElementById('mainHeader').classList.remove('hidden');
@@ -1866,7 +1866,7 @@ window.finalizeAppEntryAfterLogin = () => {
   .filter(t => document.getElementById(`${t}Screen`) && document.getElementById(`nav-${t}`));
 
 
-  // Esconde todas e “desativa” no menu
+  // Esconde todas e â€œdesativaâ€ no menu
   tabs.forEach(t => {
     document.getElementById(`${t}Screen`).classList.add('hidden');
     const navBtn = document.getElementById(`nav-${t}`);
@@ -1886,7 +1886,7 @@ window.finalizeAppEntryAfterLogin = () => {
   nav.classList.remove('text-gray-400');
   nav.classList.add('text-[#006400]');
 
-  // Chamadas de carregamento por aba (só se existirem)
+  // Chamadas de carregamento por aba (sÃ³ se existirem)
   if (tab === 'matches' && typeof loadMatches === 'function') loadMatches();
 if (tab === 'ranking' && typeof loadRanking === 'function') loadRanking();
 if (tab === 'rules' && typeof renderRules === 'function') renderRules();
@@ -1900,7 +1900,7 @@ if (tab === 'ranking') {
 };
       
 
-        // --- NOVA LÓGICA DE REGRAS (COM CABEÇALHO E DATA) ---
+        // --- NOVA LÃ“GICA DE REGRAS (COM CABEÃ‡ALHO E DATA) ---
         
         // Cache guarda objeto completo agora: { items: [], dateDisplay: "...", version: "...", updatedAt: Date|null, officialStartAt: Date|null }
 let cachedRulesData = null;
@@ -1908,16 +1908,16 @@ let cachedRulesData = null;
 async function renderRules(forceRefresh = false) {
   const list = document.getElementById('rulesList');
 
-  // Se já tem conteúdo renderizado visualmente, não faz nada (exceto se pedir refresh)
+  // Se jÃ¡ tem conteÃºdo renderizado visualmente, nÃ£o faz nada (exceto se pedir refresh)
   if (!forceRefresh && list && list.children.length > 0) return;
 
   // Mostra Loading
   if (list) {
-    list.innerHTML = `<div class="text-center p-6"><i class="fas fa-circle-notch fa-spin text-[#006400] text-2xl"></i><p class="text-xs text-gray-500 mt-2">Buscando atualizações...</p></div>`;
+    list.innerHTML = `<div class="text-center p-6"><i class="fas fa-circle-notch fa-spin text-[#006400] text-2xl"></i><p class="text-xs text-gray-500 mt-2">Buscando atualizaÃ§Ãµes...</p></div>`;
   }
 
   try {
-    // Se não temos cache ou pedimos refresh, buscamos no Firebase
+    // Se nÃ£o temos cache ou pedimos refresh, buscamos no Firebase
     if (!cachedRulesData || forceRefresh) {
       const docRef = doc(db, "settings", "rules");
       const snap = await getDoc(docRef);
@@ -1925,7 +1925,7 @@ async function renderRules(forceRefresh = false) {
       if (snap.exists()) {
         const d = snap.data();
 
-        // Formata a data de atualização
+        // Formata a data de atualizaÃ§Ã£o
         let dateStr = "Data desconhecida";
         let updatedAtDate = null;
         if (d.updatedAt) {
@@ -1957,12 +1957,12 @@ async function renderRules(forceRefresh = false) {
     // Se a lista estiver vazia
     if (!cachedRulesData.items || cachedRulesData.items.length === 0) {
       if (list) {
-        list.innerHTML = `<div class="text-center p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-xs">O regulamento está sendo atualizado pelo Administrador.</div>`;
+        list.innerHTML = `<div class="text-center p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-xs">O regulamento estÃ¡ sendo atualizado pelo Administrador.</div>`;
       }
       return;
     }
 
-    // 1. Gera o HTML do Cabeçalho
+    // 1. Gera o HTML do CabeÃ§alho
     const headerHtml = `
       <div class="flex flex-col items-center justify-center mb-6 pt-2">
         <div class="bg-[#006400] text-white px-4 py-1 rounded-full shadow-md border-2 border-[#FFD700] mb-2">
@@ -1981,7 +1981,7 @@ async function renderRules(forceRefresh = false) {
             cachedRulesData.version
               ? `<p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
                    <i class="fas fa-hashtag text-[#006400] mr-1"></i>
-                   Versão: <span class="text-black">${cachedRulesData.version}</span>
+                   VersÃ£o: <span class="text-black">${cachedRulesData.version}</span>
                  </p>`
               : ``
           }
@@ -2009,7 +2009,7 @@ async function renderRules(forceRefresh = false) {
   } catch (e) {
     console.error("Erro ao buscar regras:", e);
     if (list) {
-      list.innerHTML = `<div class="text-center text-red-500 text-xs p-4">Erro ao carregar o regulamento.<br>Verifique sua conexão.</div>`;
+      list.innerHTML = `<div class="text-center text-red-500 text-xs p-4">Erro ao carregar o regulamento.<br>Verifique sua conexÃ£o.</div>`;
     }
   }
 }
@@ -2017,9 +2017,9 @@ async function renderRules(forceRefresh = false) {
 
         const SectionHeader = (title, color) => `<div class="card-container mb-3"><div class="bg-white/90 border border-[${color}] rounded-tl-2xl rounded-br-2xl p-2 text-center shadow-sm"><h4 class="font-bold text-[${color}] uppercase tracking-wider text-xs" style="color: ${color};">${title}</h4></div></div>`;
 
-// --- FUNÇÃO SINO INTELIGENTE (LISTA ONDE TEM MENSAGEM) ---
-          // --- FUNÇÃO SINO: SEM ALERT E COM LAYOUT CORRIGIDO ---
-        // --- FUNÇÃO SINO: SEM ALERT E COM LAYOUT CORRIGIDO ---
+// --- FUNÃ‡ÃƒO SINO INTELIGENTE (LISTA ONDE TEM MENSAGEM) ---
+          // --- FUNÃ‡ÃƒO SINO: SEM ALERT E COM LAYOUT CORRIGIDO ---
+        // --- FUNÃ‡ÃƒO SINO: SEM ALERT E COM LAYOUT CORRIGIDO ---
         window.updateBadges = () => {
             const unreadGames = [];
             let totalUnread = 0;
@@ -2071,7 +2071,7 @@ async function renderRules(forceRefresh = false) {
                           data-unread-index="${idx}"
                           class="js-unread-game w-full p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-green-50 transition-colors btn-press text-left"
                         >
-                            <span class="text-xs font-bold text-gray-700">💬 ⚽ ${escapeHtml(game.title)}</span>
+                            <span class="text-xs font-bold text-gray-700">ðŸ’¬ âš½ ${escapeHtml(game.title)}</span>
                             <span class="text-[9px] text-green-700 font-black uppercase tracking-wider bg-green-100 px-2 py-1 rounded">${game.unreadCount > 9 ? "+9" : game.unreadCount}</span>
                         </button>
                     `).join("");
@@ -2115,19 +2115,19 @@ async function renderRules(forceRefresh = false) {
                 newBell.onclick = () => alert("Nenhuma nova mensagem.");
             }
         };
-// --- CORREÇÃO DE IMAGENS DO GOOGLE DRIVE ---
+// --- CORREÃ‡ÃƒO DE IMAGENS DO GOOGLE DRIVE ---
         const fixDriveUrl = (url) => {
             if (!url) return "";
             if (url.includes("drive.google.com") && url.includes("id=")) {
                 const match = url.match(/id=([a-zA-Z0-9_-]+)/);
                 if (match && match[1]) {
-                    // Usa o domínio lh3 que é mais permissivo para imagens
+                    // Usa o domÃ­nio lh3 que Ã© mais permissivo para imagens
                     return `https://lh3.googleusercontent.com/d/${match[1]}`;
                 }
             }
             return url;
         };
-     // 2. Renderiza Banner (Correção de Link e Tamanho)
+     // 2. Renderiza Banner (CorreÃ§Ã£o de Link e Tamanho)
         const renderBanner = (bannerData) => {
             if (!bannerData || !bannerData.active) return '';
             
@@ -2171,7 +2171,7 @@ async function renderRules(forceRefresh = false) {
             </div>`;
         };
 
-        // 3. Renderiza Enquete (Correção de Clique)
+        // 3. Renderiza Enquete (CorreÃ§Ã£o de Clique)
         const renderPoll = (poll) => {
   if (!poll || !poll.active) return "";
 
@@ -2220,7 +2220,7 @@ async function renderRules(forceRefresh = false) {
       ${optionsHtml}
 
       <div class="text-[11px] font-bold text-gray-500 mt-2">
-        ${totalVotes} votos • ${isExpired ? "Finalizada" : "Toque na opção para votar"}
+        ${totalVotes} votos â€¢ ${isExpired ? "Finalizada" : "Toque na opÃ§Ã£o para votar"}
       </div>
     </div>
   `;
@@ -2228,7 +2228,7 @@ async function renderRules(forceRefresh = false) {
 
 window.votePoll = async (pid, idx) => {
   if (!currentUser) {
-    alert("Faça login para votar.");
+    alert("FaÃ§a login para votar.");
     return;
   }
 
@@ -2237,7 +2237,7 @@ window.votePoll = async (pid, idx) => {
     const snap = await getDoc(ref);
 
     if (!snap.exists()) {
-      alert("Enquete não encontrada.");
+      alert("Enquete nÃ£o encontrada.");
       return;
     }
 
@@ -2264,32 +2264,32 @@ window.votePoll = async (pid, idx) => {
   }
 };
 
-        // --- FUNÇÃO DE NOTÍCIAS (COM LINHA DO TEMPO) ---
+        // --- FUNÃ‡ÃƒO DE NOTÃCIAS (COM LINHA DO TEMPO) ---
        const generateNewsFeed = (newsSnap, guessesData, finishedMatches, users, expiredMatches = []) => {
             let segments = [];
             const addSegment = (text, color) => segments.push(`<span style="color: ${color}; font-weight: 900; margin: 0 10px;">${text}</span>`);
             
-            // --- 1. ENGINE (Lógica Android: Timeline + Zebra Ajustada) ---
+            // --- 1. ENGINE (LÃ³gica Android: Timeline + Zebra Ajustada) ---
             let rankingSnapshot = [];
 
             if (users.length > 0) {
-                // Prepara usuários com data (Verifica se é Timestamp ou Date)
+                // Prepara usuÃ¡rios com data (Verifica se Ã© Timestamp ou Date)
                 const usersWithDate = users.map(u => {
                     let cDate = new Date(0);
                     if (u.createdAt) {
-                        // Se tiver .toDate é Firebase, senão já é Data normal
+                        // Se tiver .toDate Ã© Firebase, senÃ£o jÃ¡ Ã© Data normal
                         cDate = (typeof u.createdAt.toDate === 'function') ? u.createdAt.toDate() : u.createdAt;
                     }
                     return { ...u, createdDate: cDate };
                 });
 
-                // Zebra: Calcula com base apenas nos usuários VÁLIDOS na data
+                // Zebra: Calcula com base apenas nos usuÃ¡rios VÃLIDOS na data
                 const zebraMatchIds = [];
                 finishedMatches.forEach(m => {
                     const validUsersCount = usersWithDate.filter(u => u.createdDate < m.deadlineDate).length;
                     const hits = guessesData.filter(g => g.matchId === m.id && g.teamSelected === m.winner).length;
                     
-                    // Lógica <= 0.20
+                    // LÃ³gica <= 0.20
                     if (validUsersCount > 0 && (hits / validUsersCount) <= 0.20) {
                         zebraMatchIds.push(m.id);
                     }
@@ -2303,7 +2303,7 @@ window.votePoll = async (pid, idx) => {
                     const matchesChronological = [...finishedMatches].sort((a,b) => (a.deadlineDate || 0) - (b.deadlineDate || 0));
 
                     matchesChronological.forEach(m => {
-                        // FILTRO LINHA DO TEMPO: Ignora se jogo foi antes do usuário nascer
+                        // FILTRO LINHA DO TEMPO: Ignora se jogo foi antes do usuÃ¡rio nascer
                         if (u.createdDate > m.deadlineDate) return;
 
                         const g = userGuesses.find(x => x.matchId === m.id);
@@ -2313,10 +2313,10 @@ window.votePoll = async (pid, idx) => {
                             pts += (m.round && m.round.toLowerCase() === 'final') ? 6 : 3;
                             victories++; simStreak++;
                             if (m.round && m.round.toLowerCase() === 'final') finalsWon++;
-                            if (simStreak === 3) userMedals.push("🔥");
-                            if (simStreak === 5) userMedals.push("🎯");
-                            if (simStreak === 10) userMedals.push("👽");
-                            if (zebraMatchIds.includes(m.id)) userMedals.push("🦓");
+                            if (simStreak === 3) userMedals.push("ðŸ”¥");
+                            if (simStreak === 5) userMedals.push("ðŸŽ¯");
+                            if (simStreak === 10) userMedals.push("ðŸ‘½");
+                            if (zebraMatchIds.includes(m.id)) userMedals.push("ðŸ¦“");
                         } else { simStreak = 0; }
                     });
 
@@ -2326,14 +2326,14 @@ window.votePoll = async (pid, idx) => {
                     for(const k in byComp) {
                         if(byComp[k].length === 8) {
                             const hits = byComp[k].filter(m => userGuesses.find(g=>g.matchId===m.id && g.teamSelected===m.winner)).length;
-                            if(hits === 8) { pts += 3; userMedals.push("💎"); }
+                            if(hits === 8) { pts += 3; userMedals.push("ðŸ’Ž"); }
                         }
                     }
-// --- MEDALHA FANTASMA 👻 (Lógica de Sequência Inversa com ID) ---
+// --- MEDALHA FANTASMA ðŸ‘» (LÃ³gica de SequÃªncia Inversa com ID) ---
                 let ghostStreak = 0;
-                // Pega jogos expirados onde o usuário JÁ EXISTIA
-                // Ordena: Data Decrescente (Mais novo 1º) -> Desempate: ID Decrescente (Z->A)
-                // Isso garante que a verificação siga a ordem exata de processamento reverso
+                // Pega jogos expirados onde o usuÃ¡rio JÃ EXISTIA
+                // Ordena: Data Decrescente (Mais novo 1Âº) -> Desempate: ID Decrescente (Z->A)
+                // Isso garante que a verificaÃ§Ã£o siga a ordem exata de processamento reverso
                 const validExpiredDesc = expiredMatches
                     .filter(m => u.createdDate < m.deadlineDate)
                     .sort((a,b) => matchComparator(b, a)); // Inverso
@@ -2343,16 +2343,16 @@ window.votePoll = async (pid, idx) => {
                     if (!hasVote) {
                         ghostStreak++;
                     } else {
-                        break; // Votou neste, quebra a sequência imediatamente
+                        break; // Votou neste, quebra a sequÃªncia imediatamente
                     }
                 }
                 
                 if (ghostStreak >= 3) {
-                // CORREÇÃO: Usa addSegment para aparecer no letreiro
-                addSegment(`👻 ${u.name.toUpperCase()} VIROU FANTASMA! NÃO VOTA HÁ ${ghostStreak} JOGOS!`, "#9E9E9E");
+                // CORREÃ‡ÃƒO: Usa addSegment para aparecer no letreiro
+                addSegment(`ðŸ‘» ${u.name.toUpperCase()} VIROU FANTASMA! NÃƒO VOTA HÃ ${ghostStreak} JOGOS!`, "#9E9E9E");
             }
 
-                // --- MEDALHA MÃO DE ALFACE 🥬 (Mesma Lógica Inversa) ---
+                // --- MEDALHA MÃƒO DE ALFACE ðŸ¥¬ (Mesma LÃ³gica Inversa) ---
                 let lettuceStreak = 0;
                 const validFinishedDesc = finishedMatches
                     .filter(m => u.createdDate < m.deadlineDate)
@@ -2367,16 +2367,16 @@ window.votePoll = async (pid, idx) => {
                             break; 
                         }
                     } else {
-                        break; // Ausência conta como fantasma, interrompe alface
+                        break; // AusÃªncia conta como fantasma, interrompe alface
                     }
                 }
                 
                 if (lettuceStreak >= 3) {
-                // CORREÇÃO:
-                addSegment(`🥬 ${u.name.toUpperCase()} TÁ COM MÃO DE ALFACE! ERROU ${lettuceStreak} SEGUIDOS!`, "#EF5350");
+                // CORREÃ‡ÃƒO:
+                addSegment(`ðŸ¥¬ ${u.name.toUpperCase()} TÃ COM MÃƒO DE ALFACE! ERROU ${lettuceStreak} SEGUIDOS!`, "#EF5350");
             }
-                    if (finalsWon > 0) userMedals.push("🔮");
-                    if (victories >= 50) { const qtd = Math.floor(victories / 50); for(let i=0; i<qtd; i++) userMedals.push("🎓"); }
+                    if (finalsWon > 0) userMedals.push("ðŸ”®");
+                    if (victories >= 50) { const qtd = Math.floor(victories / 50); for(let i=0; i<qtd; i++) userMedals.push("ðŸŽ“"); }
 
                     const debts = u.debts || 0;
                     pts -= (debts * 3);
@@ -2389,39 +2389,39 @@ window.votePoll = async (pid, idx) => {
                     };
                 }).filter(u => u !== null);
 
-                // Ordenação (Mantida)
+                // OrdenaÃ§Ã£o (Mantida)
                 rankingSnapshot.sort((a, b) => {
                     if (b.pts !== a.pts) return b.pts - a.pts;
                     if (a.debts !== b.debts) return a.debts - b.debts;
                     const c = (user, i) => user.userMedals.filter(m => m === i).length;
                     let diff;
-                    diff = c(b,"👽")-c(a,"👽"); if(diff) return diff;
-                    diff = c(b,"💎")-c(a,"💎"); if(diff) return diff;
-                    diff = c(b,"👑")-c(a,"👑"); if(diff) return diff;
-                    diff = c(b,"🎯")-c(a,"🎯"); if(diff) return diff;
-                    diff = c(b,"🦓")-c(a,"🦓"); if(diff) return diff;
-                    diff = c(b,"🔥")-c(a,"🔥"); if(diff) return diff;
-                    diff = c(b,"🔮")-c(a,"🔮"); if(diff) return diff;
-                    diff = c(b,"🎓")-c(a,"🎓"); if(diff) return diff;
+                    diff = c(b,"ðŸ‘½")-c(a,"ðŸ‘½"); if(diff) return diff;
+                    diff = c(b,"ðŸ’Ž")-c(a,"ðŸ’Ž"); if(diff) return diff;
+                    diff = c(b,"ðŸ‘‘")-c(a,"ðŸ‘‘"); if(diff) return diff;
+                    diff = c(b,"ðŸŽ¯")-c(a,"ðŸŽ¯"); if(diff) return diff;
+                    diff = c(b,"ðŸ¦“")-c(a,"ðŸ¦“"); if(diff) return diff;
+                    diff = c(b,"ðŸ”¥")-c(a,"ðŸ”¥"); if(diff) return diff;
+                    diff = c(b,"ðŸ”®")-c(a,"ðŸ”®"); if(diff) return diff;
+                    diff = c(b,"ðŸŽ“")-c(a,"ðŸŽ“"); if(diff) return diff;
                     return 0;
                 });
             }
 
-            // --- 2. GERAÇÃO DE FRASES ---
+            // --- 2. GERAÃ‡ÃƒO DE FRASES ---
             if (finishedMatches.length > 0 && rankingSnapshot.length > 0) {
                 const lider = rankingSnapshot[0];
                 const lanterna = rankingSnapshot[rankingSnapshot.length - 1];
 
-                addSegment(`👑 SEGUE O LÍDER! O ${lider.name} TÁ TRANQUILO COM SEUS ${lider.pts} PTS!`, "#FFD700");
-                if (rankingSnapshot.length >= 2) addSegment(`🥈 O ${rankingSnapshot[1].name} TÁ NA COLA DO LÍDER!`, "#C0C0C0");
-                if (rankingSnapshot.length >= 3) addSegment(`🥉 ${rankingSnapshot[2].name} FECHA O PÓDIO!`, "#CD7F32");
-                if (rankingSnapshot.length >= 4) addSegment(`👀 OLHO NO ${rankingSnapshot[3].name}! TÁ CHEGANDO!`, "#4FC3F7");
+                addSegment(`ðŸ‘‘ SEGUE O LÃDER! O ${lider.name} TÃ TRANQUILO COM SEUS ${lider.pts} PTS!`, "#FFD700");
+                if (rankingSnapshot.length >= 2) addSegment(`ðŸ¥ˆ O ${rankingSnapshot[1].name} TÃ NA COLA DO LÃDER!`, "#C0C0C0");
+                if (rankingSnapshot.length >= 3) addSegment(`ðŸ¥‰ ${rankingSnapshot[2].name} FECHA O PÃ“DIO!`, "#CD7F32");
+                if (rankingSnapshot.length >= 4) addSegment(`ðŸ‘€ OLHO NO ${rankingSnapshot[3].name}! TÃ CHEGANDO!`, "#4FC3F7");
                 
                 if (rankingSnapshot.length >= 6) { 
                     const idxPorteiro = rankingSnapshot.length - 5; 
-                    if(idxPorteiro >= 0) addSegment(`⚓ CUIDADO ${rankingSnapshot[idxPorteiro].name}! O Z-4 TÁ TE PUXANDO!`, "#FF6D00");
+                    if(idxPorteiro >= 0) addSegment(`âš“ CUIDADO ${rankingSnapshot[idxPorteiro].name}! O Z-4 TÃ TE PUXANDO!`, "#FF6D00");
                 }
-                if (rankingSnapshot.length > 1) addSegment(`🔦 ALÔ ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA NÃO?`, "#FF5252");
+                if (rankingSnapshot.length > 1) addSegment(`ðŸ”¦ ALÃ” ${lanterna.name}! CANSOU DE SEGURAR A LANTERNA NÃƒO?`, "#FF5252");
 
                 const recent10 = [...finishedMatches].sort((a,b) => (b.deadlineDate||0)-(a.deadlineDate||0)).slice(0, 10);
                 
@@ -2440,17 +2440,17 @@ window.votePoll = async (pid, idx) => {
                         }
                     }
                     if (!isNegative) {
-                        if (streak >= 10) addSegment(`👽 ${u.name} É DE OUTRO MUNDO (${streak} ACERTOS)!`, "#64DD17");
-                        else if (streak >= 5) addSegment(`🎯 ${u.name} VIROU MITO! (${streak} ACERTOS)`, "#FFD700");
-                        else if (streak >= 3) addSegment(`🔥 ${u.name} TÁ ON FIRE! (${streak} ACERTOS)`, "#00E676");
-                    } else if (streak >= 3) addSegment(`🥬 ${u.name} TÁ COM MÃO DE ALFACE! (${streak} ERROS)`, "#FF5252");
+                        if (streak >= 10) addSegment(`ðŸ‘½ ${u.name} Ã‰ DE OUTRO MUNDO (${streak} ACERTOS)!`, "#64DD17");
+                        else if (streak >= 5) addSegment(`ðŸŽ¯ ${u.name} VIROU MITO! (${streak} ACERTOS)`, "#FFD700");
+                        else if (streak >= 3) addSegment(`ðŸ”¥ ${u.name} TÃ ON FIRE! (${streak} ACERTOS)`, "#00E676");
+                    } else if (streak >= 3) addSegment(`ðŸ¥¬ ${u.name} TÃ COM MÃƒO DE ALFACE! (${streak} ERROS)`, "#FF5252");
 
-                    // Dorminhoco (Ignora se o usuário é mais novo que o último jogo)
+                    // Dorminhoco (Ignora se o usuÃ¡rio Ã© mais novo que o Ãºltimo jogo)
                     if (recent10.length > 0) {
                         const lastM = recent10[0];
                         if (u.createdDate < lastM.deadlineDate) {
                             const voted = guessesData.some(x => x.userId === u.uid && x.matchId === lastM.id);
-                            if (!voted) addSegment(`💤 O BURRÃO DO ${u.name} NÃO VOTOU NO ÚLTIMO CONFRONTO!`, "#9E9E9E");
+                            if (!voted) addSegment(`ðŸ’¤ O BURRÃƒO DO ${u.name} NÃƒO VOTOU NO ÃšLTIMO CONFRONTO!`, "#9E9E9E");
                         }
                     }
                 });
@@ -2462,7 +2462,7 @@ window.votePoll = async (pid, idx) => {
                     else addSegment(item, "#EF6C00");
                 });
             }
-            if (segments.length === 0) addSegment("⚽ BEM-VINDO AO BOLÃO 112 F.C! FAÇA SEU PALPITE!", "#FFD700");
+            if (segments.length === 0) addSegment("âš½ BEM-VINDO AO BOLÃƒO 112 F.C! FAÃ‡A SEU PALPITE!", "#FFD700");
             return segments.join(' | ') + " | " + segments.join(' | ');
         };
 
@@ -2726,7 +2726,7 @@ window.refreshAppData = async ({ hardReload = false, source = "manual" } = {}) =
 
 const getHomePendingPaymentNotice = (user = {}) => {
   const monthKey = typeof getFinancialCurrentMonthKey === "function" ? getFinancialCurrentMonthKey() : "";
-  const monthName = typeof getFinancialCurrentMonthName === "function" ? getFinancialCurrentMonthName() : "mês vigente";
+  const monthName = typeof getFinancialCurrentMonthName === "function" ? getFinancialCurrentMonthName() : "mÃªs vigente";
   if (!monthKey) return null;
 
   const paid = user?.payments?.[monthKey] === true;
@@ -2740,8 +2740,8 @@ const getHomePendingPaymentNotice = (user = {}) => {
       ? `Mensalidade de ${monthName} em atraso`
       : `Mensalidade de ${monthName} pendente`,
     message: overdue
-      ? `Sua mensalidade de ${monthName} ainda está pendente. Regularize o pagamento para manter sua participação no Bolão 112 FC.`
-      : `Olá! Sua mensalidade de ${monthName} ainda está pendente. O pagamento pode ser realizado até o dia 10.`
+      ? `Sua mensalidade de ${monthName} ainda estÃ¡ pendente. Regularize o pagamento para manter sua participaÃ§Ã£o no BolÃ£o 112 FC.`
+      : `OlÃ¡! Sua mensalidade de ${monthName} ainda estÃ¡ pendente. O pagamento pode ser realizado atÃ© o dia 10.`
   };
 };
 
@@ -2758,17 +2758,17 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
   const currentName = currentUserData?.name || currentUserData?.username || "Jogador";
   const nextMatch = open[0] || waiting[0] || finished[0] || null;
   const nextLabel = open.length
-    ? "Próximo jogo"
+    ? "PrÃ³ximo jogo"
     : waiting.length
       ? "Aguardando resultado"
-      : "Painel rápido";
+      : "Painel rÃ¡pido";
 
   const nextDescription = nextMatch
     ? `${escapeHtml(nextMatch.teamA)} x ${escapeHtml(nextMatch.teamB)}`
     : "Sem confronto aberto no momento.";
 
   const nextMeta = nextMatch?.deadlineDate
-    ? `Prazo: ${nextMatch.deadlineDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${nextMatch.deadlineDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false })}`
+    ? `Prazo: ${nextMatch.deadlineDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} Ã s ${nextMatch.deadlineDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false })}`
     : "Use os atalhos abaixo para navegar.";
 
   const pendingCount = open.filter((m) => !myVotesMap[m.id]).length;
@@ -2779,7 +2779,7 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
       <div class="home-quick-panel__top">
         <div>
           <p class="home-quick-panel__eyebrow">Bem-vindo, ${escapeHtml(currentName)}</p>
-          <h3 class="home-quick-panel__title">Seu painel rápido</h3>
+          <h3 class="home-quick-panel__title">Seu painel rÃ¡pido</h3>
         </div>
         <span class="status-chip status-chip--success">Ao vivo</span>
       </div>
@@ -2831,7 +2831,7 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
         </button>
         <button type="button" class="home-quick-action btn-press" onclick="showTab('ranking'); setTimeout(() => { if (window.openRankingInfo) window.openRankingInfo(); }, 180)">
           <i class="fas fa-crown"></i>
-          <span>Rei do Mês</span>
+          <span>Rei do MÃªs</span>
         </button>
         <button type="button" class="home-quick-action btn-press" onclick="showTab('profile')">
           <i class="fas fa-user"></i>
@@ -3016,7 +3016,7 @@ const renderCollapsibleSection = ({ sectionKey, title, count, accentClass, tone 
   }
 
   const isCollapsed = !!homeSectionCollapseState[sectionKey];
-  const chevron = isCollapsed ? "▾" : "▴";
+  const chevron = isCollapsed ? "â–¾" : "â–´";
 
   return `
     <section class="mb-4 surface-card overflow-hidden matches-section-shell matches-section--${tone}">
@@ -3196,7 +3196,7 @@ const renderFastVoteBlock = async (pendingOpenMatches, allUsersData, myVotesMap)
 
   return `
     <div class="mb-3">
-      <h3 class="text-base font-black text-[#006400] mb-2">⚡ VOTO RÁPIDO (${pendingOpenMatches.length})</h3>
+      <h3 class="text-base font-black text-[#006400] mb-2">âš¡ VOTO RÃPIDO (${pendingOpenMatches.length})</h3>
       ${await renderMatchList(pendingOpenMatches, allUsersData, globalServerCounts, myVotesMap)}
     </div>
   `;
@@ -3207,7 +3207,7 @@ const renderMatchesOpenBlock = async (open, allUsersData, myVotesMap) => {
 
   return renderCollapsibleSection({
     sectionKey: "matches_open",
-    title: "✅ DISPONÍVEIS",
+    title: "âœ… DISPONÃVEIS",
     count: open.length,
     accentClass: "text-[#006400]",
     tone: "success",
@@ -3226,7 +3226,7 @@ const renderMatchesWaitingBlock = async (waiting, allUsersData, myVotesMap) => {
 
   return renderCollapsibleSection({
     sectionKey: "matches_wait",
-    title: "⏳ AGUARDANDO",
+    title: "â³ AGUARDANDO",
     count: waiting.length,
     accentClass: "text-[#8A6D00]",
     tone: "warning",
@@ -3245,7 +3245,7 @@ const renderMatchesDoneBlock = async (finished, allUsersData, myVotesMap) => {
 
   return renderCollapsibleSection({
     sectionKey: "matches_done",
-    title: "🏁 FINALIZADOS",
+    title: "ðŸ FINALIZADOS",
     count: finished.length,
     accentClass: "text-[#B71C1C]",
     tone: "danger",
@@ -3638,7 +3638,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
   }
 }
 
-        // --- RENDERIZA LISTA DE JOGOS (COM DATA NO BOTÃO DE VOTANTES) ---
+        // --- RENDERIZA LISTA DE JOGOS (COM DATA NO BOTÃƒO DE VOTANTES) ---
         const normalizeCompetitionKey = (value = "") => String(value || "")
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "")
@@ -3752,10 +3752,10 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 const votesB = m.stats[m.teamB] || 0; 
                 const totalVotes = votesA + votesB; 
                 
-                // --- CÁLCULO CIRÚRGICO DO TERMÔMETRO ---
-                // Conta apenas usuários que existiam ANTES do prazo do jogo
+                // --- CÃLCULO CIRÃšRGICO DO TERMÃ”METRO ---
+                // Conta apenas usuÃ¡rios que existiam ANTES do prazo do jogo
                 const validCount = usersList.filter(u => (u.createdDate || u.createdAt || new Date(0)) < m.deadlineDate).length;
-                // Garante que o total seja pelo menos 1 ou o número de votos (segurança contra inconsistência)
+                // Garante que o total seja pelo menos 1 ou o nÃºmero de votos (seguranÃ§a contra inconsistÃªncia)
                 const safeTotalUsers = Math.max(validCount || 1, totalVotes);
                 // ---------------------------------------
 
@@ -3767,7 +3767,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                     const absReal = abstencoes < 0 ? 0 : abstencoes; 
                     const pctA = Math.round((votesA / safeTotalUsers) * 100); 
                     const pctB = Math.round((votesB / safeTotalUsers) * 100); 
-                    thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1"><span class="text-green-700">${pctA}%</span><span class="text-gray-400 text-[8px]">TERMÔMETRO (CINZA = NÃO VOTOU)</span><span class="text-red-700">${pctB}%</span></div><div class="w-full h-2.5 bg-gray-200 rounded-full flex overflow-hidden"><div style="flex: ${votesA}" class="bg-green-700 h-full border-r border-white/50"></div><div style="flex: ${absReal}" class="bg-gray-300 h-full border-r border-white/50"></div><div style="flex: ${votesB}" class="bg-red-700 h-full"></div></div><div class="flex justify-between text-[8px] text-gray-400 mt-1"><span>${m.teamA}: ${votesA}</span>${absReal > 0 ? `<span>Faltosos: ${absReal}</span>` : ''}<span>${m.teamB}: ${votesB}</span></div></div>`; 
+                    thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1"><span class="text-green-700">${pctA}%</span><span class="text-gray-400 text-[8px]">TERMÃ”METRO (CINZA = NÃƒO VOTOU)</span><span class="text-red-700">${pctB}%</span></div><div class="w-full h-2.5 bg-gray-200 rounded-full flex overflow-hidden"><div style="flex: ${votesA}" class="bg-green-700 h-full border-r border-white/50"></div><div style="flex: ${absReal}" class="bg-gray-300 h-full border-r border-white/50"></div><div style="flex: ${votesB}" class="bg-red-700 h-full"></div></div><div class="flex justify-between text-[8px] text-gray-400 mt-1"><span>${m.teamA}: ${votesA}</span>${absReal > 0 ? `<span>Faltosos: ${absReal}</span>` : ''}<span>${m.teamB}: ${votesB}</span></div></div>`; 
                 }
 
                 html += `<div class="match-card-shell card-cut relative border-l-[6px] mb-6 overflow-hidden" style="${cardStyle}">
@@ -3820,18 +3820,18 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
             return html;
         }
 
-        // --- FUNÇÕES DE VOTO OTIMIZADAS (SEM LAG) ---
+        // --- FUNÃ‡Ã•ES DE VOTO OTIMIZADAS (SEM LAG) ---
         
         function createTeamBtn(mid, name, url, selected, expired) { 
-            // Limpa o nome para criar um ID válido
+            // Limpa o nome para criar um ID vÃ¡lido
             const safeName = name.replace(/[^a-zA-Z0-9]/g, '');
             const btnId = `btn-${mid}-${safeName}`;
             
             const bg = selected ? 'bg-[#006400] text-white' : 'bg-[#EEEEEE] text-gray-800'; 
             const border = selected ? 'border-2 border-[#FFD700]' : ''; 
             
-            // LÓGICA DE CORREÇÃO DE IMAGEM
-            // Verifica se a URL existe e não é "false" ou "null"
+            // LÃ“GICA DE CORREÃ‡ÃƒO DE IMAGEM
+            // Verifica se a URL existe e nÃ£o Ã© "false" ou "null"
             const hasImage = url && url !== "false" && url !== "null" && url.trim() !== "";
             
             const iconHtml = hasImage 
@@ -3839,7 +3839,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                    <i class="fas fa-shield-alt text-2xl mb-1 text-gray-400 hidden"></i>` 
                 : `<i class="fas fa-shield-alt text-2xl mb-1 text-gray-400"></i>`;
 
-            // CORREÇÃO DO CLICK: Adicionado window.vote
+            // CORREÃ‡ÃƒO DO CLICK: Adicionado window.vote
             return `<button id="${btnId}" onclick="window.vote('${mid}', '${name}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}">
                 ${iconHtml}
                 <span class="match-team-name text-center leading-tight px-1 line-clamp-2">${name}</span>
@@ -3848,20 +3848,20 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
         window.vote = async (mid, team, btnId) => { 
             if(!currentUser) return; 
 
-            // --- TRAVA DE SEGURANÇA (NOVO) ---
-            // Verifica se o usuário realmente existe no banco antes de aceitar o voto
+            // --- TRAVA DE SEGURANÃ‡A (NOVO) ---
+            // Verifica se o usuÃ¡rio realmente existe no banco antes de aceitar o voto
             const userRef = doc(db, "users", currentUser.uid);
             const userSnap = await getDoc(userRef);
 
             if (!userSnap.exists()) {
-                alert("Sessão inválida ou duplicada.\n\nVocê será desconectado para corrigir seu cadastro. Por favor, faça login novamente.");
+                alert("SessÃ£o invÃ¡lida ou duplicada.\n\nVocÃª serÃ¡ desconectado para corrigir seu cadastro. Por favor, faÃ§a login novamente.");
                 await signOut(auth);
                 location.reload();
                 return;
             }
             // ----------------------------------
             
-            // 1. ATUALIZAÇÃO VISUAL IMEDIATA (Otimista)
+            // 1. ATUALIZAÃ‡ÃƒO VISUAL IMEDIATA (Otimista)
             const buttons = document.getElementsByClassName(`match-btn-${mid}`);
             for (let btn of buttons) {
                 btn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#EEEEEE] text-gray-800`;
@@ -3883,8 +3883,8 @@ playVoteSound();
 invalidateHomeRankingCaches();
         };
         
-       // --- FUNÇÃO QUEM VOTOU / QUEM FALTA (CORRIGIDA COM FILTRO DE DATA) ---
-        // Recebe deadlineIso como último argumento
+       // --- FUNÃ‡ÃƒO QUEM VOTOU / QUEM FALTA (CORRIGIDA COM FILTRO DE DATA) ---
+        // Recebe deadlineIso como Ãºltimo argumento
         window.openVoters = async (matchId, ta, tb, taUrl, tbUrl, isExpired, winner, deadlineIso) => {
             const container = document.getElementById('modalContainer');
             document.getElementById('modalOverlay').classList.remove('hidden');
@@ -3892,33 +3892,33 @@ invalidateHomeRankingCaches();
             container.innerHTML = `
                 <div class="bg-white rounded-lg p-6 shadow-xl relative w-80 text-center">
                     <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-4"></i>
-                    <p class="font-bold text-gray-500">Analisando lista de presença...</p>
+                    <p class="font-bold text-gray-500">Analisando lista de presenÃ§a...</p>
                 </div>`;
 
             try {
                 // Converte a data do prazo para objeto Date
                 const matchDeadline = new Date(deadlineIso);
 
-                // 1. Busca Usuários e Palpites
+                // 1. Busca UsuÃ¡rios e Palpites
                 const [uSnap, gSnap] = await Promise.all([
                     getDocs(collection(db, "users")),
                     getDocs(query(collection(db, "guesses"), where("matchId", "==", matchId)))
                 ]);
 
-                // 2. Mapeia Usuários (Com Data de Criação)
+                // 2. Mapeia UsuÃ¡rios (Com Data de CriaÃ§Ã£o)
                 const userMap = {};
                 const allUsers = [];
                 
                 uSnap.forEach(doc => {
                     const d = doc.data();
-                   // --- CORREÇÃO CRÍTICA AQUI ---
-                    // Se não tiver data, assume AGORA (new Date()), para não aparecer em jogos velhos.
+                   // --- CORREÃ‡ÃƒO CRÃTICA AQUI ---
+                    // Se nÃ£o tiver data, assume AGORA (new Date()), para nÃ£o aparecer em jogos velhos.
                     // Antes estava new Date(0) [1970], o que causava o bug.
                     const created = d.createdAt ? d.createdAt.toDate() : new Date();
                     
                     const u = { 
                         id: doc.id, 
-                        name: d.name || "Anônimo", 
+                        name: d.name || "AnÃ´nimo", 
                         photo: d.photoBase64 || "",
                         createdAt: created 
                     };
@@ -3954,19 +3954,19 @@ invalidateHomeRankingCaches();
                 });
 
                 // 3. Identifica quem FALTOU (Com Filtro de Data)
-                // AQUI ESTÁ A CORREÇÃO: Só entra na lista se criado ANTES do jogo
+                // AQUI ESTÃ A CORREÃ‡ÃƒO: SÃ³ entra na lista se criado ANTES do jogo
                 const missingList = allUsers.filter(u => {
-                    // Se já votou, não é faltoso
+                    // Se jÃ¡ votou, nÃ£o Ã© faltoso
                     if (votedIds.has(u.id)) return false;
                     
-                    // Se entrou DEPOIS do jogo, não é faltoso (ignora)
+                    // Se entrou DEPOIS do jogo, nÃ£o Ã© faltoso (ignora)
                     if (u.createdAt > matchDeadline) return false;
 
-                    // Caso contrário, é faltoso
+                    // Caso contrÃ¡rio, Ã© faltoso
                     return true;
                 });
 
-                // Ordenação
+                // OrdenaÃ§Ã£o
                 if(winner) {
                     votersList.sort((a,b) => (b.isWinner === a.isWinner) ? a.name.localeCompare(b.name) : (b.isWinner ? 1 : -1));
                 } else {
@@ -3976,7 +3976,7 @@ invalidateHomeRankingCaches();
 
                 // Renderiza HTML dos Votantes
                 let listHtml = "";
-                if(votersList.length === 0) listHtml = `<p class="text-center text-gray-400 text-xs py-2">Ninguém votou ainda.</p>`;
+                if(votersList.length === 0) listHtml = `<p class="text-center text-gray-400 text-xs py-2">NinguÃ©m votou ainda.</p>`;
                 else {
                     votersList.forEach(v => {
                         let bgClass = "bg-white/80";
@@ -4005,7 +4005,7 @@ invalidateHomeRankingCaches();
                 // Renderiza HTML dos Faltosos
                 let missingHtml = "";
                 if(missingList.length > 0) {
-                    const titleMissing = isExpired ? "😡 NÃO VOTARAM (MÃO DE ALFACE)" : "⏳ FALTA VOTAR";
+                    const titleMissing = isExpired ? "ðŸ˜¡ NÃƒO VOTARAM (MÃƒO DE ALFACE)" : "â³ FALTA VOTAR";
                     const colorMissing = isExpired ? "text-red-600" : "text-yellow-600";
                     
                     missingHtml += `<div class="mt-4 mb-2 border-t border-gray-300 pt-2"><h4 class="text-xs font-black ${colorMissing} uppercase text-center mb-2">${titleMissing} (${missingList.length})</h4><div class="grid grid-cols-4 gap-2">`;
@@ -4023,13 +4023,13 @@ invalidateHomeRankingCaches();
                 }
 
                 // Montagem Final
-                const title = isExpired ? "PALPITES REGISTRADOS" : "QUEM JÁ VOTOU?";
+                const title = isExpired ? "PALPITES REGISTRADOS" : "QUEM JÃ VOTOU?";
                 container.innerHTML = `
                 <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 80vh; display:flex; flex-direction:column;">
                     <img src="bg_dialog_votantes.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none z-0">
                     <div class="p-4 border-b border-gray-200 bg-gray-50/95 text-center relative z-10 backdrop-blur-sm">
                         <h3 class="font-black text-[#006400] text-lg uppercase tracking-wide">${title}</h3>
-                        ${!isExpired ? '<p class="text-[10px] text-gray-500 font-bold mt-1">Os palpites são revelados após o prazo.</p>' : ''}
+                        ${!isExpired ? '<p class="text-[10px] text-gray-500 font-bold mt-1">Os palpites sÃ£o revelados apÃ³s o prazo.</p>' : ''}
                     </div>
                     <div class="p-4 overflow-y-auto relative z-10 flex-1">
                         ${listHtml}
@@ -4058,7 +4058,7 @@ invalidateHomeRankingCaches();
                 console.error(e);
                 container.innerHTML = `<div class="bg-white p-6 rounded text-center"><p class="text-red-500 font-bold">Erro ao carregar lista.</p><button onclick="closeModal()" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded">Fechar</button></div>`;
             }
-              // Se veio do extrato, habilita o botão VOLTAR
+              // Se veio do extrato, habilita o botÃ£o VOLTAR
 const backBtn = document.getElementById('btnBackToHistory');
 if (backBtn) {
   backBtn.onclick = () => {
@@ -4066,7 +4066,7 @@ if (backBtn) {
     window.__returnToHistoryIdx = null; // limpa retorno (evita voltar infinito)
     closeModal(); // fecha lista de palpites
     if (typeof window.showModalHistory === 'function' && typeof idx === 'number') {
-      window.showModalHistory(idx); // reabre extrato do mesmo usuário
+      window.showModalHistory(idx); // reabre extrato do mesmo usuÃ¡rio
     }
   };
 }
@@ -4077,7 +4077,7 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
 
   try {
     if (!matchId) return;
-// ✅ COLE ESSE BLOCO AQUI (logo depois do if (!matchId) return;)
+// âœ… COLE ESSE BLOCO AQUI (logo depois do if (!matchId) return;)
     window.__returnToHistoryIdx =
       (typeof fromHistoryIdx === 'number')
         ? fromHistoryIdx
@@ -4099,17 +4099,17 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
 
     const m = (window.cachedMatches || []).find(x => x.id === matchId);
     if (!m) {
-      alert("Confronto não encontrado. Recarregue a página e tente novamente.");
+      alert("Confronto nÃ£o encontrado. Recarregue a pÃ¡gina e tente novamente.");
       return;
     }
 
-    // Normaliza deadlineDate (no seu loadMatches você já cria m.deadlineDate)
+    // Normaliza deadlineDate (no seu loadMatches vocÃª jÃ¡ cria m.deadlineDate)
     const dl = m.deadlineDate instanceof Date
       ? m.deadlineDate
       : (m.deadline && typeof m.deadline.toDate === 'function' ? m.deadline.toDate() : null);
 
     if (!dl) {
-      alert("Confronto sem prazo válido.");
+      alert("Confronto sem prazo vÃ¡lido.");
       return;
     }
 
@@ -4181,11 +4181,11 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
                     if (!isExpired) {
                         rivalDisplay = `<span class="text-gray-400 italic"><i class="fas fa-lock"></i> Sigilo</span>`;
                     } else {
-                        rivalDisplay = rivalV || "❌";
+                        rivalDisplay = rivalV || "âŒ";
                         if(rivalV === m.winner) rivalDisplay = `<span class="text-green-600 font-bold">${rivalV}</span>`;
                     }
 
-                    let myDisplay = myV || "❌";
+                    let myDisplay = myV || "âŒ";
                     if(myV === m.winner) myDisplay = `<span class="text-green-600 font-bold">${myV}</span>`;
 
                     html += `
@@ -4220,8 +4220,8 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
         };
 
         // --- RANKING COM NOVAS MEDALHAS (MITO E DIAMANTE) ---
-        // Variável global para armazenar a info da última atualização
-        window.globalLastUpdateInfo = "Aguardando atualização...";
+        // VariÃ¡vel global para armazenar a info da Ãºltima atualizaÃ§Ã£o
+        window.globalLastUpdateInfo = "Aguardando atualizaÃ§Ã£o...";
 
        // --- RANKING FINAL (PARIDADE ANDROID: REIS, ZEBRAS E SORT COMPLEXO) ---
 async function loadRanking(options = {}) {
@@ -4280,47 +4280,47 @@ matches.forEach((m, idx) => {
 });
 
 // IMPORTANTE:
-// finishedMatchesChrono = ordem oficial para cálculo de medalhas/streaks
+// finishedMatchesChrono = ordem oficial para cÃ¡lculo de medalhas/streaks
 // finishedMatchesDisplay = ordem visual mais recente primeiro
 const finishedMatchesChrono = matches.filter(m => m.winner);
 const finishedMatchesDisplay = [...finishedMatchesChrono].sort((a, b) => matchComparator(b, a));
 
-// Mantém esta cópia só para o rodapé da última atualização
+// MantÃ©m esta cÃ³pia sÃ³ para o rodapÃ© da Ãºltima atualizaÃ§Ã£o
 const finishedMatches = [...finishedMatchesChrono];
 
                 
-               // 1.1 Info Rodapé (Última Atualização Real)
+               // 1.1 Info RodapÃ© (Ãšltima AtualizaÃ§Ã£o Real)
                 if (finishedMatches.length > 0) {
                     finishedMatches.sort((a, b) => {
                         const dateA = a.finishedAt ? a.finishedAt.toDate() : a.deadlineDate;
                         const dateB = b.finishedAt ? b.finishedAt.toDate() : b.deadlineDate;
 
                         // 1. TRUQUE DO LOTE: Arredonda para segundos para ignorar milissegundos
-                        // Isso força o EMPATE de tempo na "Baixa Rápida"
+                        // Isso forÃ§a o EMPATE de tempo na "Baixa RÃ¡pida"
                         const timeA = Math.floor(dateA.getTime() / 1000);
                         const timeB = Math.floor(dateB.getTime() / 1000);
 
-                        // Se os horários (segundos) forem diferentes, o mais recente ganha
+                        // Se os horÃ¡rios (segundos) forem diferentes, o mais recente ganha
                         if (timeB !== timeA) {
                             return timeB - timeA;
                         }
 
-                        // 2. CRITÉRIO DE DESEMPATE (Empate Técnico de Horário)
-                        // AQUI ESTÁ O SEGREDO: Usamos o matchComparator INVERTIDO (b, a).
-                        // O matchComparator define quem é o #53 e quem é o #54.
+                        // 2. CRITÃ‰RIO DE DESEMPATE (Empate TÃ©cnico de HorÃ¡rio)
+                        // AQUI ESTÃ O SEGREDO: Usamos o matchComparator INVERTIDO (b, a).
+                        // O matchComparator define quem Ã© o #53 e quem Ã© o #54.
                         // Ao fazer (b, a), garantimos que o #54 fique acima do #53 na lista de "Recentes".
                         return matchComparator(b, a);
                     });
 
-                    // Pega o campeão da ordenação (o mais recente e com maior "número")
+                    // Pega o campeÃ£o da ordenaÃ§Ã£o (o mais recente e com maior "nÃºmero")
                     const last = finishedMatches[0];
                     
                     const d = last.finishedAt ? last.finishedAt.toDate() : last.deadlineDate;
                     const dt = d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}) + " " + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
                     
-                    window.globalLastUpdateInfo = `Última atualização: ${dt}\n${last.teamA} x ${last.teamB}`;
+                    window.globalLastUpdateInfo = `Ãšltima atualizaÃ§Ã£o: ${dt}\n${last.teamA} x ${last.teamB}`;
                 }
-                // 2. PREPARAÇÃO DE USUÁRIOS (TIMELINE)
+                // 2. PREPARAÃ‡ÃƒO DE USUÃRIOS (TIMELINE)
                 const allGuesses = [];
 gSnap.forEach(d => allGuesses.push(d.data()));
 
@@ -4350,11 +4350,11 @@ allGuesses.forEach((guess) => {
                 });
 
                 // =================================================================
-                // 3. CÁLCULO DAS ZEBRAS (REGRA: <= 20% DOS VÁLIDOS NA ÉPOCA)
+                // 3. CÃLCULO DAS ZEBRAS (REGRA: <= 20% DOS VÃLIDOS NA Ã‰POCA)
                 // =================================================================
                 const zebraMatchIds = [];
                 finishedMatches.forEach(m => {
-                    // Filtra usuários que JÁ EXISTIAM na data desse jogo
+                    // Filtra usuÃ¡rios que JÃ EXISTIAM na data desse jogo
                     const validUsersAtTime = users.filter(u => u.createdDate < m.deadlineDate).length;
                     
                     if (validUsersAtTime > 0) {
@@ -4375,7 +4375,7 @@ const currentMonthIndex = now.getMonth();
 const monthNames = [
   "JANEIRO",
   "FEVEREIRO",
-  "MARÇO",
+  "MARÃ‡O",
   "ABRIL",
   "MAIO",
   "JUNHO",
@@ -4391,7 +4391,7 @@ const pointsByMonth = {};
 for (let i = 0; i < 12; i++) pointsByMonth[i] = {};
 
                 // =================================================================
-                // 5. CÁLCULO PRINCIPAL (PONTOS ATUAIS)
+                // 5. CÃLCULO PRINCIPAL (PONTOS ATUAIS)
                 // =================================================================
                 let monthlyData = [];
 
@@ -4406,7 +4406,7 @@ for (let i = 0; i < 12; i++) pointsByMonth[i] = {};
   const rawMedals = Array.isArray(u.medals) ? u.medals : [];
   const existingMedals = rawMedals.filter(
     (icon) =>
-      !["👽", "💎", "🎯", "🦓", "🔥", "🔮", "🎓", "🥬", "👻"].includes(icon),
+      !["ðŸ‘½", "ðŸ’Ž", "ðŸŽ¯", "ðŸ¦“", "ðŸ”¥", "ðŸ”®", "ðŸŽ“", "ðŸ¥¬", "ðŸ‘»"].includes(icon),
   );
   const activeMedals = [...existingMedals];
   const hist = [];
@@ -4417,7 +4417,7 @@ for (let i = 0; i < 12; i++) pointsByMonth[i] = {};
     userGuesses.map((g) => [g.matchId, g]),
   );
 
- // ORDENAÇÃO OFICIAL: usa a ordem cronológica real, igual ao Android
+ // ORDENAÃ‡ÃƒO OFICIAL: usa a ordem cronolÃ³gica real, igual ao Android
 const chronoMatches = finishedMatchesChrono;
   const cloneHistoryMedal = (medal) => ({
   icon: medal.icon,
@@ -4428,7 +4428,7 @@ const chronoMatches = finishedMatchesChrono;
 
 const registerMatchMedal = (medal) => {
   trophyRoom.push(medal);
-  if (["👽", "💎", "🎯", "🦓", "🔥", "🔮", "🎓"].includes(medal.icon)) {
+  if (["ðŸ‘½", "ðŸ’Ž", "ðŸŽ¯", "ðŸ¦“", "ðŸ”¥", "ðŸ”®", "ðŸŽ“"].includes(medal.icon)) {
     activeMedals.push(medal.icon);
   }
 };
@@ -4452,7 +4452,7 @@ chronoMatches.forEach(m => {
 
   const g = userGuessesMap[m.id] || null;
   const isThisMonth = m.deadlineDate.getMonth() === currentMonthIndex && m.deadlineDate.getFullYear() === currentYear;
-  const dateStr = `📅 ${m.deadlineDate.getDate()}/${m.deadlineDate.getMonth()+1}`;
+  const dateStr = `ðŸ“… ${m.deadlineDate.getDate()}/${m.deadlineDate.getMonth()+1}`;
 
   if (g) {
   if (m.winner === g.teamSelected) {
@@ -4481,7 +4481,7 @@ chronoMatches.forEach(m => {
 
   if (simStreak === 3)
     registerMatchMedalForHistory({
-      icon: "🔥",
+      icon: "ðŸ”¥",
       name: "ON FIRE",
       desc: "Palpitou 3 acertos seguidos.",
       date: dateStr,
@@ -4490,7 +4490,7 @@ chronoMatches.forEach(m => {
 
   if (simStreak === 5)
     registerMatchMedalForHistory({
-      icon: "🎯",
+      icon: "ðŸŽ¯",
       name: "MITO",
       desc: "Palpitou 5 acertos seguidos.",
       date: dateStr,
@@ -4499,7 +4499,7 @@ chronoMatches.forEach(m => {
 
   if (simStreak === 10)
     registerMatchMedalForHistory({
-      icon: "👽",
+      icon: "ðŸ‘½",
       name: "ALIEN",
       desc: "Palpitou 10 acertos seguidos!",
       date: dateStr,
@@ -4508,8 +4508,8 @@ chronoMatches.forEach(m => {
 
   if (zebraMatchIds.includes(m.id))
     registerMatchMedalForHistory({
-      icon: "🦓",
-      name: "CAÇADOR DE ZEBRAS",
+      icon: "ðŸ¦“",
+      name: "CAÃ‡ADOR DE ZEBRAS",
       desc: `Acertou a zebra em ${m.teamA} x ${m.teamB}`,
       date: dateStr,
       hiddenInList: false,
@@ -4517,16 +4517,16 @@ chronoMatches.forEach(m => {
 
   if (isFinal)
     registerMatchMedalForHistory({
-      icon: "🔮",
-      name: "MÃE DINAH",
-      desc: `Cravou o campeão em ${m.teamA} x ${m.teamB}`,
+      icon: "ðŸ”®",
+      name: "MÃƒE DINAH",
+      desc: `Cravou o campeÃ£o em ${m.teamA} x ${m.teamB}`,
       date: dateStr,
       hiddenInList: false,
     });
 
   if (victories > 0 && victories % 50 === 0)
     registerMatchMedalForHistory({
-      icon: "🎓",
+      icon: "ðŸŽ“",
       name: `VETERANO Nvl ${victories / 50}`,
       desc: `Conquistou ${victories} acertos.`,
       date: dateStr,
@@ -4538,7 +4538,7 @@ chronoMatches.forEach(m => {
   matchNumber: m.matchNumber || null,
   ts: m.deadlineDate,
   created: m.createdAt,
-  text: `${dateStr} - ✅ Acerto ${m.teamA} x ${m.teamB}`,
+  text: `${dateStr} - âœ… Acerto ${m.teamA} x ${m.teamB}`,
   label: `${dateStr} - Acerto`,
   teamA: m.teamA,
   teamB: m.teamB,
@@ -4563,7 +4563,7 @@ chronoMatches.forEach(m => {
     matchNumber: m.matchNumber || null,
     ts: m.deadlineDate,
     created: m.createdAt,
-    text: `${dateStr} - ❌ Errou ${m.teamA} x ${m.teamB}`,
+    text: `${dateStr} - âŒ Errou ${m.teamA} x ${m.teamB}`,
     label: `${dateStr} - Errou`,
     teamA: m.teamA,
     teamB: m.teamB,
@@ -4592,8 +4592,8 @@ chronoMatches.forEach(m => {
     matchNumber: m.matchNumber || null,
     ts: m.deadlineDate,
     created: m.createdAt,
-    text: `${dateStr} - ⚪ Não votou ${m.teamA} x ${m.teamB}`,
-    label: `${dateStr} - Não votou`,
+    text: `${dateStr} - âšª NÃ£o votou ${m.teamA} x ${m.teamB}`,
+    label: `${dateStr} - NÃ£o votou`,
     teamA: m.teamA,
     teamB: m.teamB,
     teamAUrl: m.teamAUrl || "",
@@ -4622,10 +4622,10 @@ if (last3Matches.length === 3) {
   });
 
   if (wrongCount === 3) {
-    activeMedals.push("🥬");
+    activeMedals.push("ðŸ¥¬");
     trophyRoom.push({
-      icon: "🥬",
-      name: "MÃO DE ALFACE",
+      icon: "ðŸ¥¬",
+      name: "MÃƒO DE ALFACE",
       desc: "Status Atual: Errou 3 palpites seguidos.",
       date: "Atual",
       hiddenInList: false,
@@ -4633,9 +4633,9 @@ if (last3Matches.length === 3) {
   }
 
   if (noVoteCount === 3) {
-    activeMedals.push("👻");
+    activeMedals.push("ðŸ‘»");
     trophyRoom.push({
-      icon: "👻",
+      icon: "ðŸ‘»",
       name: "FANTASMA",
       desc: "Status Atual: Esqueceu de votar em 3 seguidos.",
       date: "Atual",
@@ -4678,12 +4678,12 @@ for (const competitionName in byComp) {
       }
 
       const diamondMedal = {
-  icon: "💎",
+  icon: "ðŸ’Ž",
   name: "DIAMANTE",
   desc: competitionName
     ? `Gabaritou as Oitavas (8/8) da ${competitionName}.`
     : "Gabaritou as Oitavas (8/8) de um torneio.",
-  date: `📅 ${lastOitavaDate.getDate()}/${lastOitavaDate.getMonth() + 1}`,
+  date: `ðŸ“… ${lastOitavaDate.getDate()}/${lastOitavaDate.getMonth() + 1}`,
   hiddenInList: false,
 };
 
@@ -4693,14 +4693,14 @@ attachMedalToHistItem(lastOitavaMatch?.id, diamondMedal);
 hist.push({
   id: `diamante_${competitionName || "torneio"}`,
   ts: lastOitavaDate,
-  text: `💎 BÔNUS: Gabarito Oitavas (+3 pts)`,
+  text: `ðŸ’Ž BÃ”NUS: Gabarito Oitavas (+3 pts)`,
   type: "good",
 });
     }
   }
 }
 
-// Patrão
+// PatrÃ£o
 const monthsNames = [
   "Jan",
   "Fev",
@@ -4729,35 +4729,35 @@ if (currentYear >= 2026) {
 }
 
 if (allPaid) {
-  activeMedals.push("💰");
+  activeMedals.push("ðŸ’°");
   trophyRoom.unshift({
-    icon: "💰",
-    name: "PATRÃO",
+    icon: "ðŸ’°",
+    name: "PATRÃƒO",
     desc: "Mensalidades em dia.",
     date: monthsNames[currentMonthIndex],
     hiddenInList: false,
   });
 }
-                    // Débitos
+                    // DÃ©bitos
                     if (d > 0) {
                         p -= (d * 3);
-                        hist.push({ ts: new Date(), text: `🔻 PENALIDADE: Inadimplência (-${d*3} pts)`, type: 'bad' });
+                        hist.push({ ts: new Date(), text: `ðŸ”» PENALIDADE: InadimplÃªncia (-${d*3} pts)`, type: 'bad' });
                     }
 
                     // Amauri (Oculto na lista, mas conta pro objeto)
-                    if (u.username === 'amauri') trophyRoom.push({icon: "🏆", name:"Campeão 2025", desc:"Lenda.", hiddenInList: true});
+                    if (u.username === 'amauri') trophyRoom.push({icon: "ðŸ†", name:"CampeÃ£o 2025", desc:"Lenda.", hiddenInList: true});
 
                     u.p = p;
 u.medals = activeMedals;
 u.trophyRoom = trophyRoom; 
-                   // ORDENAÇÃO DO EXTRATO: Inversa à lista de jogos (Mais recente no topo)
+                   // ORDENAÃ‡ÃƒO DO EXTRATO: Inversa Ã  lista de jogos (Mais recente no topo)
                     u.hist = hist.sort((a,b) => {
                         // 1. Data do Jogo (Decrescente)
                         const dateA = a.ts ? new Date(a.ts).getTime() : 0;
                         const dateB = b.ts ? new Date(b.ts).getTime() : 0;
                         if (dateA !== dateB) return dateB - dateA;
 
-                        // 2. Data de Criação (Decrescente - O jogo criado DEPOIS aparece EM CIMA)
+                        // 2. Data de CriaÃ§Ã£o (Decrescente - O jogo criado DEPOIS aparece EM CIMA)
                         let createdA = 0, createdB = 0;
                         if (a.created && a.created.seconds) createdA = a.created.seconds;
                         if (b.created && b.created.seconds) createdB = b.created.seconds;
@@ -4793,18 +4793,18 @@ for (let monthIdx = 0; monthIdx < 12; monthIdx++) {
     if (winnerIndex !== -1) {
       const winner = users[winnerIndex];
 
-      if (!winner.medals.includes("👑")) winner.medals.push("👑");
+      if (!winner.medals.includes("ðŸ‘‘")) winner.medals.push("ðŸ‘‘");
 
       const crownName = `REI DE ${monthNames[monthIdx]}`;
       const alreadyHasThisCrown = winner.trophyRoom.some(
-        (medal) => medal.icon === "👑" && medal.name === crownName,
+        (medal) => medal.icon === "ðŸ‘‘" && medal.name === crownName,
       );
 
       if (!alreadyHasThisCrown) {
         winner.trophyRoom.unshift({
-          icon: "👑",
+          icon: "ðŸ‘‘",
           name: crownName,
-          desc: `Campeão isolado do mês (${maxScore} pts).`,
+          desc: `CampeÃ£o isolado do mÃªs (${maxScore} pts).`,
           date: String(currentYear),
           hiddenInList: false,
         });
@@ -4821,40 +4821,40 @@ for (let monthIdx = 0; monthIdx < 12; monthIdx++) {
 }
 
                 // =================================================================
-                // 6. SORTING CRÍTICO (A LÓGICA DO ANDROID)
+                // 6. SORTING CRÃTICO (A LÃ“GICA DO ANDROID)
                 // =================================================================
-                // Ordem: Pontos > Débitos (Menor) > Alien > Diamante > Rei > Mito > Zebra > OnFire > Dinah > Veterano
-                const medalHierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
+                // Ordem: Pontos > DÃ©bitos (Menor) > Alien > Diamante > Rei > Mito > Zebra > OnFire > Dinah > Veterano
+                const medalHierarchy = ["ðŸ‘½", "ðŸ’Ž", "ðŸ‘‘", "ðŸŽ¯", "ðŸ¦“", "ðŸ”¥", "ðŸ”®", "ðŸŽ“"];
 
                 users.sort((a, b) => {
                     // 1. Pontos (Maior primeiro)
                     if (b.p !== a.p) return b.p - a.p;
                     
-                    // 2. Débitos (Menor primeiro - quem deve menos sobe)
+                    // 2. DÃ©bitos (Menor primeiro - quem deve menos sobe)
                     if (a.debts !== b.debts) return (a.debts||0) - (b.debts||0);
                     
                     // 3. Medalhas (Hierarquia Estrita)
                     for (let icon of medalHierarchy) {
-                        // Conta medalhas VISÍVEIS (ignora hiddenInList como o troféu do amauri se não estiver na hierarquia)
+                        // Conta medalhas VISÃVEIS (ignora hiddenInList como o trofÃ©u do amauri se nÃ£o estiver na hierarquia)
                         const countA = (a.medals || []).filter((medalIcon) => medalIcon === icon).length;
 const countB = (b.medals || []).filter((medalIcon) => medalIcon === icon).length;
 
   if (countB !== countA) return countB - countA; // Maior quantidade ganha
 }
                     
-                    // 4. Ordem Alfabética (Critério final de estabilidade)
+                    // 4. Ordem AlfabÃ©tica (CritÃ©rio final de estabilidade)
                     return (a.name || "").localeCompare(b.name || "");
                 });
 
-                // Z-4 (Após ordenação final)
+                // Z-4 (ApÃ³s ordenaÃ§Ã£o final)
                 if (users.length > 4) {
                     const z4StartIndex = users.length - 4;
                     for(let i = z4StartIndex; i < users.length; i++) {
                         if(users[i]) {
                              users[i].isZ4 = true;
-if (!users[i].medals.includes("⚓")) users[i].medals.push("⚓");
+if (!users[i].medals.includes("âš“")) users[i].medals.push("âš“");
 users[i].trophyRoom.push({
-  icon: "⚓",
+  icon: "âš“",
   name: "ZONA DE REBAIXAMENTO",
   desc: "Z-4",
   date: "Atual",
@@ -4889,7 +4889,7 @@ let html = `
     <div class="ranking-hero__content">
       <div>
         <h3 class="ranking-hero__title">CLASSIFICACAO</h3>
-        <p class="ranking-hero__subtitle">Temporada 2026 • ${users.length} participantes</p>
+        <p class="ranking-hero__subtitle">Temporada 2026 â€¢ ${users.length} participantes</p>
       </div>
 
       <div class="ranking-hero__actions">
@@ -4927,13 +4927,13 @@ let html = `
                 html += users.map((u, i) => {
                     const pos = i + 1;
                     let rowClass = "";
-                    let posIcon = `<span class="ranking-pos-plain">${pos}º</span>`;
+                    let posIcon = `<span class="ranking-pos-plain">${pos}Âº</span>`;
                     let nameClass = "ranking-name";
                     let avatarClass = "ranking-avatar";
 
-                    if (i === 0) { rowClass = "ranking-row--gold"; posIcon = "🥇"; avatarClass += " ranking-avatar--gold"; }
-                    else if (i === 1) { rowClass = "ranking-row--silver"; posIcon = "🥈"; avatarClass += " ranking-avatar--silver"; }
-                    else if (i === 2) { rowClass = "ranking-row--bronze"; posIcon = "🥉"; avatarClass += " ranking-avatar--bronze"; }
+                    if (i === 0) { rowClass = "ranking-row--gold"; posIcon = "ðŸ¥‡"; avatarClass += " ranking-avatar--gold"; }
+                    else if (i === 1) { rowClass = "ranking-row--silver"; posIcon = "ðŸ¥ˆ"; avatarClass += " ranking-avatar--silver"; }
+                    else if (i === 2) { rowClass = "ranking-row--bronze"; posIcon = "ðŸ¥‰"; avatarClass += " ranking-avatar--bronze"; }
                     else if (i === 3 || i === 4) { rowClass = "ranking-row--top5"; }
                     if (u.isZ4) { rowClass += " ranking-row--z4"; nameClass += " ranking-name--danger"; }
 
@@ -4943,7 +4943,7 @@ let html = `
   (icon) => (counts[icon] = (counts[icon] || 0) + 1),
 );
 
-                    const visualHierarchy = ["🏆", ...medalHierarchy, "💰", "👻", "🥬", "⚓"];
+                    const visualHierarchy = ["ðŸ†", ...medalHierarchy, "ðŸ’°", "ðŸ‘»", "ðŸ¥¬", "âš“"];
                     const orderedIcons = Object.keys(counts).sort((a,b) => {
                         let idxA = visualHierarchy.indexOf(a); if(idxA === -1) idxA = 99;
                         let idxB = visualHierarchy.indexOf(b); if(idxB === -1) idxB = 99;
@@ -5005,7 +5005,7 @@ window.__rankingScreenCache = {
             } catch (e) { console.error(e); listContainer.innerHTML = `<div class="text-center text-red-500 text-xs">Erro ao carregar ranking.</div>`; listContainer.scrollTop = 0; if (appContent) appContent.scrollTop = 0; }
         }
         // ===============================
-// NOVO "i" DO RANKING (igual Android) — mantém o mesmo nome para não quebrar chamadas
+// NOVO "i" DO RANKING (igual Android) â€” mantÃ©m o mesmo nome para nÃ£o quebrar chamadas
 // ===============================
 window.openRankingInfo = () => {
   window.openRankingInfoModal(window.globalLastUpdateInfo || "");
@@ -5013,14 +5013,14 @@ window.openRankingInfo = () => {
 
 window.openRankingInfoModal = (lastUpdateInfoText = "") => {
   const medals = [
-    { icon: "👽", name: "Alien", how: "Sequência de 10 acertos seguidos." },
-    { icon: "💎", name: "Diamante", how: "Gabaritar as Oitavas (8/8) de um torneio." },
-    { icon: "👑", name: "Rei do Mês", how: "Maior pontuador do mês (isolado)." },
-    { icon: "🎯", name: "Mito", how: "Sequência de 5 acertos seguidos." },
-    { icon: "🦓", name: "Zebra", how: "Acertar um confronto em que 80% ou mais erraram/não votaram." },
-    { icon: "🔥", name: "On Fire", how: "Sequência de 3 acertos seguidos." },
-    { icon: "🔮", name: "Mãe Dinah", how: "Acertar o campeão numa FINAL." },
-    { icon: "🎓", name: "Veterano", how: "A cada 50 vitórias acumuladas." },
+    { icon: "ðŸ‘½", name: "Alien", how: "SequÃªncia de 10 acertos seguidos." },
+    { icon: "ðŸ’Ž", name: "Diamante", how: "Gabaritar as Oitavas (8/8) de um torneio." },
+    { icon: "ðŸ‘‘", name: "Rei do MÃªs", how: "Maior pontuador do mÃªs (isolado)." },
+    { icon: "ðŸŽ¯", name: "Mito", how: "SequÃªncia de 5 acertos seguidos." },
+    { icon: "ðŸ¦“", name: "Zebra", how: "Acertar um confronto em que 80% ou mais erraram/nÃ£o votaram." },
+    { icon: "ðŸ”¥", name: "On Fire", how: "SequÃªncia de 3 acertos seguidos." },
+    { icon: "ðŸ”®", name: "MÃ£e Dinah", how: "Acertar o campeÃ£o numa FINAL." },
+    { icon: "ðŸŽ“", name: "Veterano", how: "A cada 50 vitÃ³rias acumuladas." },
 
   ];
 
@@ -5043,7 +5043,7 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
               <i class="fas fa-info-circle text-[#38BDF8]"></i>
               <div class="font-black uppercase tracking-wider text-lg">SOBRE O RANKING</div>
             </div>
-            <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Última Atualização</div>
+            <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Ãšltima AtualizaÃ§Ã£o</div>
           </div>
 
           <button onclick="window.closeModal()" class="text-white/80 hover:text-white">
@@ -5059,7 +5059,7 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
 
         <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-center">
           <div class="text-xs font-black text-[#A78BFA] uppercase tracking-wider">Valor das medalhas</div>
-          <div class="text-xs font-bold text-[#60A5FA] mt-1">*Por Ordem de Importância*</div>
+          <div class="text-xs font-bold text-[#60A5FA] mt-1">*Por Ordem de ImportÃ¢ncia*</div>
         </div>
 
         <div class="mt-4 rounded-xl border border-white/10 bg-white/5 overflow-hidden">
@@ -5101,7 +5101,7 @@ window.showKingModal = () => {
     : fallbackMonthIndex;
 
   const fallbackMonthNames = [
-    "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO",
+    "JANEIRO", "FEVEREIRO", "MARÃ‡O", "ABRIL", "MAIO", "JUNHO",
     "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"
   ];
 
@@ -5138,21 +5138,21 @@ window.showKingModal = () => {
   if (ranking.length === 0 || ranking.every(u => (u.points || 0) === 0)) {
     listHtml = `
       <div class="bg-white rounded-2xl border border-gray-200 px-4 py-6 text-center text-sm text-gray-500">
-        Nenhum ponto marcado neste mês ainda.
+        Nenhum ponto marcado neste mÃªs ainda.
       </div>
     `;
   } else {
     listHtml = ranking.map((u, i) => {
       const isKingRow = i === 0 && hasKing;
       const bg = isKingRow ? "bg-[#FFF9C4]" : "bg-white";
-      const icon = isKingRow ? "👑 " : "";
+      const icon = isKingRow ? "ðŸ‘‘ " : "";
       const bold = isKingRow ? "font-black" : "font-normal";
       const color = isKingRow ? "text-[#006400]" : "text-black";
 
       return `
         <div class="${bg} border border-gray-200 rounded-2xl px-4 py-3 flex items-center justify-between">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-8 text-sm font-black text-gray-500">${i + 1}º</div>
+            <div class="w-8 text-sm font-black text-gray-500">${i + 1}Âº</div>
             <div class="truncate text-sm ${bold} ${color}">${icon}${u.name}</div>
           </div>
           <div class="text-sm font-black ${color}">${u.points}</div>
@@ -5166,8 +5166,8 @@ window.showKingModal = () => {
       <div class="relative px-5 pt-5 pb-4 text-center bg-gradient-to-b from-[#006400] to-[#0B7A0B] text-white">
         <img src="bg_ranking.png" class="absolute inset-0 w-full h-full object-cover opacity-10" />
         <div class="relative z-10">
-          <h3 class="text-2xl font-black tracking-wide">👑 REI DE ${selectedMonth.monthName}</h3>
-          <p class="text-xs font-semibold text-white/80 mt-1">Classificação mensal</p>
+          <h3 class="text-2xl font-black tracking-wide">ðŸ‘‘ REI DE ${selectedMonth.monthName}</h3>
+          <p class="text-xs font-semibold text-white/80 mt-1">ClassificaÃ§Ã£o mensal</p>
         </div>
       </div>
 
@@ -5200,14 +5200,14 @@ window.showKingModal = () => {
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             const scoutClass = appConfig.scout ? "flex" : "hidden";
             
-            // CORREÇÃO 1: Mudado de u.photo para u.photoBase64
+            // CORREÃ‡ÃƒO 1: Mudado de u.photo para u.photoBase64
             let imageContent = `<img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-full h-full object-contain bg-black">`;
             
-            // --- LÓGICA DE STACKING E ORDENAÇÃO DE MEDALHAS ---
+            // --- LÃ“GICA DE STACKING E ORDENAÃ‡ÃƒO DE MEDALHAS ---
             let medalsHtml = "";
             if (u.trophyRoom && u.trophyRoom.length > 0) {
-                // 1. Ordem de prioridade (TROFÉU ADICIONADO NO INÍCIO)
-                const priorityOrder = ["🏆", "👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰", "👻", "🥬"];
+                // 1. Ordem de prioridade (TROFÃ‰U ADICIONADO NO INÃCIO)
+                const priorityOrder = ["ðŸ†", "ðŸ‘½", "ðŸ’Ž", "ðŸ‘‘", "ðŸŽ¯", "ðŸ¦“", "ðŸ”¥", "ðŸ”®", "ðŸŽ“", "ðŸ’°", "ðŸ‘»", "ðŸ¥¬"];
 
                 
                 // 2. Ordena
@@ -5268,7 +5268,7 @@ if (count > 1) {
 }
 
                     
-                    // Click: Se > 1 abre lista, senão Toast
+                    // Click: Se > 1 abre lista, senÃ£o Toast
                     const clickAction = count > 1 
                         ? `showMedalList('${name}')` 
                         : `showToast('${first.name}', '${first.desc}', '${first.date}')`;
@@ -5281,7 +5281,7 @@ if (count > 1) {
                     `;
                 }
             } else {
-                medalsHtml = `<span class="text-xs text-gray-400 italic">Ainda não possui troféus.</span>`;
+                medalsHtml = `<span class="text-xs text-gray-400 italic">Ainda nÃ£o possui trofÃ©us.</span>`;
             }
             // ----------------------------------------------------
 
@@ -5299,7 +5299,7 @@ if (count > 1) {
                         </div>
                         <div class="w-full mb-4">
                             <div class="bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#FFD700] border-y-2 border-[#B8860B] shadow-lg p-2 mb-3 transform skew-x-[-5deg]">
-                                <p class="text-[12px] text-[#3E2723] font-black uppercase tracking-[0.2em] transform skew-x-[5deg]">✨ Sala de Troféus ✨</p>
+                                <p class="text-[12px] text-[#3E2723] font-black uppercase tracking-[0.2em] transform skew-x-[5deg]">âœ¨ Sala de TrofÃ©us âœ¨</p>
                             </div>
                             <div class="flex flex-wrap justify-center py-2 px-2 min-h-[60px]">
                                 ${medalsHtml}
@@ -5308,9 +5308,9 @@ if (count > 1) {
                         </div>
                         <div id="medalToast" class="medal-toast"></div>
                         <div class="w-full space-y-2 mt-4">
-  <!-- 1) VER ESTATÍSTICAS -->
+  <!-- 1) VER ESTATÃSTICAS -->
   <button id="btnStatsAction" class="${scoutClass} w-full bg-black border border-[#FFD700] text-[#FFD700] font-bold py-3 rounded shadow-lg items-center justify-center gap-2 btn-press">
-    <i class="fas fa-chart-pie"></i> VER ESTATÍSTICAS
+    <i class="fas fa-chart-pie"></i> VER ESTATÃSTICAS
   </button>
 
   <!-- 2) COMPARAR PALPITES -->
@@ -5330,14 +5330,14 @@ if (count > 1) {
                     </div>
                 </div>`;
             
-            // CORREÇÃO 2: Mudado de u.photo para u.photoBase64 aqui também para o botão do scout
+            // CORREÃ‡ÃƒO 2: Mudado de u.photo para u.photoBase64 aqui tambÃ©m para o botÃ£o do scout
             const btnStats = document.getElementById('btnStatsAction'); if (btnStats) btnStats.onclick = () => window.showPlayerScout(u.uid, u.name, u.photoBase64);
             const btnCompare = document.getElementById('btnCompareAction'); if (btnCompare && !isMe) btnCompare.onclick = () => window.compareGuesses(u.uid, u.name);
         };
 
-        // --- NOVA FUNÇÃO PARA LISTA DE MEDALHAS (STACKING) COM FUNDO ---
+        // --- NOVA FUNÃ‡ÃƒO PARA LISTA DE MEDALHAS (STACKING) COM FUNDO ---
         window.showMedalList = (medalName) => {
-            // Recupera o usuário atual do modal aberto (usando o ID salvo no atributo data-uid)
+            // Recupera o usuÃ¡rio atual do modal aberto (usando o ID salvo no atributo data-uid)
             const modalEl = document.getElementById('profileModal');
             if(!modalEl) return;
             const uid = modalEl.getAttribute('data-uid');
@@ -5349,7 +5349,7 @@ if (count > 1) {
             
             const first = medals[0];
             
-            // Salva o conteúdo anterior para o botão voltar funcionar
+            // Salva o conteÃºdo anterior para o botÃ£o voltar funcionar
             const oldContent = document.getElementById('modalContainer').innerHTML;
             
             const listHtml = medals.map(m => `
@@ -5369,7 +5369,7 @@ if (count > 1) {
                     <div class="relative z-10 bg-white/80 p-4 border-b flex flex-col items-center">
                         <span class="text-5xl mb-2">${first.icon}</span>
                         <h3 class="font-black text-[#006400] text-lg uppercase">${first.name}</h3>
-                        <p class="text-xs text-gray-400">Histórico de Conquistas</p>
+                        <p class="text-xs text-gray-400">HistÃ³rico de Conquistas</p>
                     </div>
                     
                     <div class="relative z-10 flex-1 overflow-y-auto p-4">
@@ -5383,13 +5383,13 @@ if (count > 1) {
             `;
             
             document.getElementById('btnBackMedal').onclick = () => {
-                // Reconstrói o modal do perfil
+                // ReconstrÃ³i o modal do perfil
                 const idx = currentRankingData.findIndex(x => x.uid === uid);
                 window.showModalPhoto(idx);
             };
         };
 
-        // Função auxiliar para mostrar o Toast
+        // FunÃ§Ã£o auxiliar para mostrar o Toast
         window.showToast = (title, desc, date) => {
             const toast = document.getElementById('medalToast');
             if (!toast) return;
@@ -5450,7 +5450,7 @@ window.closeExtractMedalsInline = () => {
        window.showModalHistory = (idx) => { 
             const u = currentRankingData[idx]; 
             if(!u) return;
-               // Guarda de qual extrato estamos vindo (para o botão VOLTAR no modal de palpites)
+               // Guarda de qual extrato estamos vindo (para o botÃ£o VOLTAR no modal de palpites)
 window.__fromHistoryIdx = idx;
 window.__fromHistoryUid = u.uid;
 window.__extractMedalsCache = {};
@@ -5458,7 +5458,7 @@ window.__extractMedalsCache = {};
            const html = u.hist && u.hist.length > 0 ? u.hist.map((h, histIndex) => {
     const colorClass = h.type === 'bad' ? 'text-red-600' : 'text-[#2E7D32]';
 
-    // Só deixa clicável se tiver id de match e não for item especial
+    // SÃ³ deixa clicÃ¡vel se tiver id de match e nÃ£o for item especial
     const isMatch = h.id && !String(h.id).startsWith('diamante_');
 
     if (!isMatch) {
@@ -5481,7 +5481,7 @@ const dateText = h.ts instanceof Date
     ? h.ts.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
     : '';
 
-const isNoVote = (h.label || '').toLowerCase().includes('não votou');
+const isNoVote = (h.label || '').toLowerCase().includes('nÃ£o votou');
 const isHit = h.type === 'good' && !isNoVote;
 const ptsEarned = Number(h.ptsEarned || 0);
 const ptsText = `${ptsEarned > 0 ? '+' : ''}${ptsEarned}`;
@@ -5515,7 +5515,7 @@ const medalBadgeHtml = `
           class="extract-medal-btn"
           title="Ver medalhas deste confronto"
         >
-          <span class="text-[12px] leading-none">🏅</span>
+          <span class="text-[12px] leading-none">ðŸ…</span>
           ${medalsWonHere.length > 1
             ? `<span class="extract-medal-count">${medalsWonHere.length}</span>`
             : ``
@@ -5723,7 +5723,7 @@ const sendAdminPushRequest = async ({ title, message, targetMode = "all", target
   });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || result?.ok === false) {
-    const error = new Error(result?.error || "Não foi possível enviar o push.");
+    const error = new Error(result?.error || "NÃ£o foi possÃ­vel enviar o push.");
     error.code = result?.error || "push_error";
     error.result = result;
     throw error;
@@ -5747,7 +5747,7 @@ const renderAdminCommunicationsModal = () => {
   const tab = adminCommunicationState.tab || "push";
   const isPush = tab === "push";
   const copy = isPush
-    ? "Abra a ferramenta de push para enviar notificações manuais aos usuários."
+    ? "Abra a ferramenta de push para enviar notificaÃ§Ãµes manuais aos usuÃ¡rios."
     : "Abra a ferramenta de WhatsApp para avisar rapidamente sobre novos confrontos.";
   const action = isPush ? "window.openAdminManualPushModal()" : "window.openAdminWhatsAppNoticeModal()";
   const actionLabel = isPush ? "Abrir Push" : "Abrir WhatsApp";
@@ -5757,7 +5757,7 @@ const renderAdminCommunicationsModal = () => {
       <div class="admin-communications-header">
         <div>
           <h3>Comunicados</h3>
-          <p>Push e WhatsApp para o Bolão 112 FC</p>
+          <p>Push e WhatsApp para o BolÃ£o 112 FC</p>
         </div>
         <button type="button" onclick="window.closeModal()" class="admin-communications-close"><i class="fas fa-times"></i></button>
       </div>
@@ -5788,7 +5788,7 @@ const renderAdminCommunicationsModal = () => {
 window.openAdminCommunicationsModal = async () => {
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert("Você não tem permissão para acessar comunicados.");
+    alert("VocÃª nÃ£o tem permissÃ£o para acessar comunicados.");
     return;
   }
   adminCommunicationState.tab = "push";
@@ -5817,18 +5817,18 @@ const renderAdminManualPushModal = async () => {
         <input type="checkbox" ${checked ? "checked" : ""} onchange="window.toggleAdminPushUser('${escapeJsString(user.uid)}', this.checked, this)">
         <span>
           <strong>${escapeHtml(user.name || "Sem nome")}</strong>
-          <small>@${escapeHtml(user.username || user.uid)}${user.email ? ` • ${escapeHtml(user.email)}` : ""}</small>
+          <small>@${escapeHtml(user.username || user.uid)}${user.email ? ` â€¢ ${escapeHtml(user.email)}` : ""}</small>
         </span>
       </label>
     `;
-  }).join("") : `<div class="admin-communication-empty">Nenhum usuário encontrado.</div>`;
+  }).join("") : `<div class="admin-communication-empty">Nenhum usuÃ¡rio encontrado.</div>`;
 
   window.openModal(`
     <div class="admin-communications-modal admin-communications-modal--large">
       <div class="admin-communications-header">
         <div>
           <h3>Enviar Push Manual</h3>
-          <p>${isSelected ? "Escolha exatamente quem deve receber a notificação." : "Envie avisos para todos os usuários."}</p>
+          <p>${isSelected ? "Escolha exatamente quem deve receber a notificaÃ§Ã£o." : "Envie avisos para todos os usuÃ¡rios."}</p>
         </div>
         <button type="button" onclick="window.openAdminCommunicationsModal()" class="admin-communications-close"><i class="fas fa-arrow-left"></i></button>
       </div>
@@ -5838,22 +5838,22 @@ const renderAdminManualPushModal = async () => {
           <button type="button" onclick="window.switchAdminPushTargetMode('selected')" class="${isSelected ? "is-active" : ""}">Selecionados</button>
         </div>
         <div class="admin-push-form">
-          <label>Título</label>
-          <input id="adminPushTitle" class="admin-creation-input" value="${escapeHtml(window.__adminPushDraftTitle || "")}" placeholder="Título do comunicado">
+          <label>TÃ­tulo</label>
+          <input id="adminPushTitle" class="admin-creation-input" value="${escapeHtml(window.__adminPushDraftTitle || "")}" placeholder="TÃ­tulo do comunicado">
           <label>Mensagem</label>
-          <textarea id="adminPushMessage" class="admin-communication-textarea" placeholder="Mensagem para os usuários">${escapeHtml(window.__adminPushDraftMessage || "")}</textarea>
+          <textarea id="adminPushMessage" class="admin-communication-textarea" placeholder="Mensagem para os usuÃ¡rios">${escapeHtml(window.__adminPushDraftMessage || "")}</textarea>
         </div>
         ${isSelected ? `
           <div class="admin-user-picker">
             <div class="admin-user-picker-top">
-              <input id="adminPushUserSearch" class="admin-creation-input" value="${escapeHtml(adminCommunicationState.pushSearch || "")}" placeholder="Buscar usuário" oninput="window.filterAdminPushUsers(this.value)">
-              <span>${selectedCount} usuário(s) selecionado(s)</span>
+              <input id="adminPushUserSearch" class="admin-creation-input" value="${escapeHtml(adminCommunicationState.pushSearch || "")}" placeholder="Buscar usuÃ¡rio" oninput="window.filterAdminPushUsers(this.value)">
+              <span>${selectedCount} usuÃ¡rio(s) selecionado(s)</span>
             </div>
             <div class="admin-user-picker-list">${usersHtml}</div>
           </div>
         ` : `
           <button type="button" onclick="window.requestWebPushPermissionAndSaveToken()" class="admin-communication-enable-push">
-            <i class="fas fa-bell"></i> Ativar notificações deste aparelho
+            <i class="fas fa-bell"></i> Ativar notificaÃ§Ãµes deste aparelho
           </button>
         `}
       </div>
@@ -5868,7 +5868,7 @@ const renderAdminManualPushModal = async () => {
 window.openAdminManualPushModal = async () => {
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert("Você não tem permissão para enviar comunicados.");
+    alert("VocÃª nÃ£o tem permissÃ£o para enviar comunicados.");
     return;
   }
   adminCommunicationState.pushTargetMode = "all";
@@ -5896,7 +5896,7 @@ window.toggleAdminPushUser = (uid, checked, input = null) => {
   if (checked) adminCommunicationState.selectedUids.add(uid);
   else adminCommunicationState.selectedUids.delete(uid);
   const counter = document.querySelector(".admin-user-picker-top span");
-  if (counter) counter.textContent = `${adminCommunicationState.selectedUids.size} usuário(s) selecionado(s)`;
+  if (counter) counter.textContent = `${adminCommunicationState.selectedUids.size} usuÃ¡rio(s) selecionado(s)`;
   input?.closest?.(".admin-user-picker-row")?.classList.toggle("is-selected", checked);
 };
 
@@ -5906,9 +5906,9 @@ window.sendAdminManualPush = async () => {
   const targetMode = adminCommunicationState.pushTargetMode === "selected" ? "selected" : "all";
   const targetUids = Array.from(adminCommunicationState.selectedUids);
 
-  if (!title) return showAdminCommunicationToast("Informe o título.", "danger");
+  if (!title) return showAdminCommunicationToast("Informe o tÃ­tulo.", "danger");
   if (!message) return showAdminCommunicationToast("Informe a mensagem.", "danger");
-  if (targetMode === "selected" && !targetUids.length) return showAdminCommunicationToast("Selecione pelo menos 1 usuário.", "danger");
+  if (targetMode === "selected" && !targetUids.length) return showAdminCommunicationToast("Selecione pelo menos 1 usuÃ¡rio.", "danger");
   if (!confirm("Enviar este comunicado agora?")) return;
 
   const recordRef = await saveAdminCommunicationRecord({
@@ -5941,7 +5941,7 @@ window.sendAdminManualPush = async () => {
       ? "Nenhum aparelho com push ativo ainda."
       : failureCount > 0
         ? `Push enviado para ${successCount} aparelho(s). Alguns aparelhos falharam. Verifique notification_tokens no Firestore.`
-        : `Push enviado para ${successCount} aparelho(s). Se você estava com o app aberto, a notificação pode aparecer pelo handler em primeiro plano; se não aparecer, feche o app e teste novamente.`);
+        : `Push enviado para ${successCount} aparelho(s). Se vocÃª estava com o app aberto, a notificaÃ§Ã£o pode aparecer pelo handler em primeiro plano; se nÃ£o aparecer, feche o app e teste novamente.`);
     window.closeModal();
   } catch (error) {
     console.error("Erro ao enviar push:", error);
@@ -5951,38 +5951,38 @@ window.sendAdminManualPush = async () => {
       updatedAt: Timestamp.fromDate(new Date())
     });
     if (error.code === "push_not_configured") {
-      showAdminCommunicationToast("Push web ainda não está configurado no servidor. O comunicado foi salvo, mas a notificação não foi enviada.", "danger");
+      showAdminCommunicationToast("Push web ainda nÃ£o estÃ¡ configurado no servidor. O comunicado foi salvo, mas a notificaÃ§Ã£o nÃ£o foi enviada.", "danger");
       return;
     }
     if (error.code === "push_disabled") {
-      showAdminCommunicationToast("Push web está desligado nas configurações de segurança.", "danger");
+      showAdminCommunicationToast("Push web estÃ¡ desligado nas configuraÃ§Ãµes de seguranÃ§a.", "danger");
       return;
     }
     if (error.code === "push_rate_limited") {
-      showAdminCommunicationToast("Push bloqueado pela trava de segurança.", "danger");
+      showAdminCommunicationToast("Push bloqueado pela trava de seguranÃ§a.", "danger");
       return;
     }
     if (error.code === "push_send_error") {
-      showAdminCommunicationToast("Erro ao enviar push. Verifique a configuração do Firebase Admin e tente novamente.", "danger");
+      showAdminCommunicationToast("Erro ao enviar push. Verifique a configuraÃ§Ã£o do Firebase Admin e tente novamente.", "danger");
       return;
     }
     showAdminCommunicationToast(error.code === "push_send_error"
-      ? "Erro ao enviar push. Verifique a configuração do Firebase Admin e tente novamente."
-      : error.message || "Não foi possível enviar o push.", "danger");
+      ? "Erro ao enviar push. Verifique a configuraÃ§Ã£o do Firebase Admin e tente novamente."
+      : error.message || "NÃ£o foi possÃ­vel enviar o push.", "danger");
   }
 };
 
 const buildNewMatchesNoticeText = (count) => {
   const line = count === 1
-    ? "1 novo confronto liberado para votação. Abra o app e deixe seu palpite!"
-    : `${count} novos confrontos liberados para votação. Abra o app e deixe seu palpite!`;
-  return `🔥 NOVOS CONFRONTOS DISPONÍVEIS! 🔥\n\n${line}\n\n📲 Acesse: https://bolao112-site.vercel.app`;
+    ? "1 novo confronto liberado para votaÃ§Ã£o. Abra o app e deixe seu palpite!"
+    : `${count} novos confrontos liberados para votaÃ§Ã£o. Abra o app e deixe seu palpite!`;
+  return `ðŸ”¥ NOVOS CONFRONTOS DISPONÃVEIS! ðŸ”¥\n\n${line}\n\nðŸ“² Acesse: https://bolao112-site.vercel.app`;
 };
 
 window.openAdminWhatsAppNoticeModal = async () => {
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert("Você não tem permissão para enviar comunicados.");
+    alert("VocÃª nÃ£o tem permissÃ£o para enviar comunicados.");
     return;
   }
   adminCommunicationState.whatsappCount = 0;
@@ -6026,10 +6026,10 @@ window.sendAdminWhatsappNotice = async () => {
   const openedWhatsapp = document.getElementById("adminWhatsappOpen")?.checked === true;
   const shouldPush = document.getElementById("adminWhatsappPush")?.checked === true;
   const whatsappText = buildNewMatchesNoticeText(count);
-  const pushTitle = "🔥 Novos confrontos disponíveis!";
+  const pushTitle = "ðŸ”¥ Novos confrontos disponÃ­veis!";
   const pushMessage = count === 1
-    ? "1 novo confronto foi liberado para votação. Abra o Bolão e deixe seu palpite!"
-    : `${count} novos confrontos foram liberados para votação. Abra o Bolão e deixe seus palpites!`;
+    ? "1 novo confronto foi liberado para votaÃ§Ã£o. Abra o BolÃ£o e deixe seu palpite!"
+    : `${count} novos confrontos foram liberados para votaÃ§Ã£o. Abra o BolÃ£o e deixe seus palpites!`;
   let sentPush = false;
 
   if (openedWhatsapp) {
@@ -6045,14 +6045,14 @@ window.sendAdminWhatsappNotice = async () => {
       console.error("Erro ao enviar push do aviso:", error);
       showAdminCommunicationToast(
         error.code === "push_not_configured"
-          ? "Push web ainda não está configurado no servidor. O aviso foi salvo, mas a notificação não foi enviada."
+          ? "Push web ainda nÃ£o estÃ¡ configurado no servidor. O aviso foi salvo, mas a notificaÃ§Ã£o nÃ£o foi enviada."
           : error.code === "push_disabled"
-            ? "Push web está desligado nas configurações de segurança."
+            ? "Push web estÃ¡ desligado nas configuraÃ§Ãµes de seguranÃ§a."
           : error.code === "push_rate_limited"
-            ? "Push bloqueado pela trava de segurança."
+            ? "Push bloqueado pela trava de seguranÃ§a."
             : error.code === "push_send_error"
-              ? "Erro ao enviar push. Verifique a configuração do Firebase Admin e tente novamente."
-              : "Não foi possível enviar o push do aviso.",
+              ? "Erro ao enviar push. Verifique a configuraÃ§Ã£o do Firebase Admin e tente novamente."
+              : "NÃ£o foi possÃ­vel enviar o push do aviso.",
         "danger"
       );
     }
@@ -6113,7 +6113,7 @@ const getAdminRoundSummaryDateKey = (value) => {
 
 const formatAdminRoundSummaryDateLabel = (value) => {
   const date = getAdminRoundSummaryDate(value);
-  if (!date) return "Data indisponível";
+  if (!date) return "Data indisponÃ­vel";
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 
@@ -6207,10 +6207,10 @@ const wrapAdminRoundSummaryText = (ctx, text, maxWidth, maxLines = 2) => {
 
   const ellipsize = (value) => {
     let output = String(value || "");
-    while (output && ctx.measureText(`${output}…`).width > maxWidth) {
+    while (output && ctx.measureText(`${output}â€¦`).width > maxWidth) {
       output = output.slice(0, -1);
     }
-    return `${output || value.slice(0, 1)}…`;
+    return `${output || value.slice(0, 1)}â€¦`;
   };
 
   for (const word of words) {
@@ -6302,10 +6302,10 @@ const drawAdminRoundSummarySingleLineText = (ctx, text, x, y, maxWidth, options 
     output = output.slice(0, -1);
   }
   if (ellipsis && output !== value) {
-    while (output && ctx.measureText(`${output}…`).width > maxWidth) {
+    while (output && ctx.measureText(`${output}â€¦`).width > maxWidth) {
       output = output.slice(0, -1);
     }
-    output = `${output || value.slice(0, 1)}…`;
+    output = `${output || value.slice(0, 1)}â€¦`;
   }
   ctx.fillText(output, x, y);
   ctx.restore();
@@ -6479,8 +6479,8 @@ const buildAdminRoundSummaryStats = (selectedMatches = []) => {
     perebas,
     craque: craques[0] || null,
     pereba: perebas[0] || null,
-    competitionLabel: competitionNames.length === 1 ? competitionNames[0] : "Múltiplas competições",
-    roundLabel: roundNames.length === 1 ? roundNames[0] : "Múltiplas fases"
+    competitionLabel: competitionNames.length === 1 ? competitionNames[0] : "MÃºltiplas competiÃ§Ãµes",
+    roundLabel: roundNames.length === 1 ? roundNames[0] : "MÃºltiplas fases"
   };
 };
 
@@ -6598,7 +6598,7 @@ const renderAdminRoundSummarySelectionModal = () => {
                   ${match.round ? `<span class="status-chip status-chip--default">${escapeHtml(match.round)}</span>` : ""}
                 </div>
                 <div class="text-sm font-black text-slate-900 leading-tight break-words">${escapeHtml(match.teamA || "Time A")} x ${escapeHtml(match.teamB || "Time B")}</div>
-                <div class="mt-1 text-[11px] font-bold text-slate-500 leading-snug">${escapeHtml(match.round || "Fase")} • ${escapeHtml(match.competition || "Competição")}</div>
+                <div class="mt-1 text-[11px] font-bold text-slate-500 leading-snug">${escapeHtml(match.round || "Fase")} â€¢ ${escapeHtml(match.competition || "CompetiÃ§Ã£o")}</div>
               </div>
               <div class="shrink-0">
                 <span class="status-chip ${checked ? "status-chip--success" : "status-chip--default"}">${checked ? "Selecionado" : "Toque para selecionar"}</span>
@@ -6624,7 +6624,7 @@ const renderAdminRoundSummarySelectionModal = () => {
       </div>
     `;
 
-  const filterLabel = activeFilters.length ? activeFilters.join(" • ") : "Sem filtros adicionais";
+  const filterLabel = activeFilters.length ? activeFilters.join(" â€¢ ") : "Sem filtros adicionais";
 
   modal.classList.remove("hidden");
   cont.innerHTML = `
@@ -6632,7 +6632,7 @@ const renderAdminRoundSummarySelectionModal = () => {
       <div class="bg-[#006400] p-4 text-white flex items-start justify-between gap-3 shadow-md shrink-0">
         <div class="min-w-0">
           <h3 class="font-black uppercase text-lg leading-none">Selecionar Jogos do Resumo</h3>
-          <p class="text-[10px] text-[#FFD700] font-bold mt-1">Selecione os jogos que entrarão na prévia do WhatsApp.</p>
+          <p class="text-[10px] text-[#FFD700] font-bold mt-1">Selecione os jogos que entrarÃ£o na prÃ©via do WhatsApp.</p>
         </div>
         <button type="button" onclick="closeModal()" class="shrink-0 text-white/90"><i class="fas fa-times text-xl"></i></button>
       </div>
@@ -6642,7 +6642,7 @@ const renderAdminRoundSummarySelectionModal = () => {
           <div class="flex items-start justify-between gap-3">
             <div>
               <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Filtros</div>
-              <p class="text-xs font-bold text-slate-500 mt-1">Você pode combinar competição e rodada ao mesmo tempo.</p>
+              <p class="text-xs font-bold text-slate-500 mt-1">VocÃª pode combinar competiÃ§Ã£o e rodada ao mesmo tempo.</p>
             </div>
             <span class="status-chip status-chip--default">${selectedCount} selecionado(s)</span>
           </div>
@@ -6655,7 +6655,7 @@ const renderAdminRoundSummarySelectionModal = () => {
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <select id="adminSummaryCompetitionFilter" class="admin-creation-input" onchange="window.setAdminRoundSummaryCompetitionFilter(this.value)">
-              <option value="">Competição</option>
+              <option value="">CompetiÃ§Ã£o</option>
               ${competitionOptions}
             </select>
             <select id="adminSummaryRoundFilter" class="admin-creation-input" onchange="window.setAdminRoundSummaryRoundFilter(this.value)">
@@ -6703,14 +6703,14 @@ const renderAdminRoundSummaryPreviewModal = () => {
       <div class="bg-[#006400] p-4 text-white flex items-start justify-between gap-3 shadow-md shrink-0">
         <div class="min-w-0">
           <h3 class="font-black uppercase text-lg leading-none">Imagem do Resumo</h3>
-          <p class="text-[10px] text-[#FFD700] font-bold mt-1">Prévia da imagem</p>
+          <p class="text-[10px] text-[#FFD700] font-bold mt-1">PrÃ©via da imagem</p>
         </div>
         <button type="button" onclick="window.closeModal()" class="shrink-0 text-white/90"><i class="fas fa-times text-xl"></i></button>
       </div>
 
       <div class="flex-1 overflow-y-auto bg-slate-50 p-3">
         <div class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
-          ${previewUrl ? `<img src="${escapeHtml(previewUrl)}" alt="Prévia do resumo da rodada" class="w-full h-auto rounded-2xl">` : `<div class="py-20 text-center text-sm font-black text-slate-500">Imagem indisponível.</div>`}
+          ${previewUrl ? `<img src="${escapeHtml(previewUrl)}" alt="PrÃ©via do resumo da rodada" class="w-full h-auto rounded-2xl">` : `<div class="py-20 text-center text-sm font-black text-slate-500">Imagem indisponÃ­vel.</div>`}
         </div>
       </div>
 
@@ -6803,10 +6803,10 @@ const buildAdminRoundSummaryCanvas = async (selectedMatches = []) => {
   if (!ctx) throw new Error("canvas_unavailable");
 
   const pills = [
-    { icon: "⚽", text: `${selectedMatches.length} confronto(s)`, bg: "#fef3c7", iconBg: "#0b5f2a", iconColor: "#fff" },
-    { icon: "👥", text: `${stats.participantCount} participante(s)`, bg: "#ecfdf5", iconBg: "#0b5f2a", iconColor: "#fff" },
-    { icon: "🗂", text: stats.roundLabel, bg: "#eff6ff", iconBg: "#1d4ed8", iconColor: "#fff" },
-    { icon: "🏅", text: stats.competitionLabel, bg: "#f5f3ff", iconBg: "#7c3aed", iconColor: "#fff" }
+    { icon: "âš½", text: `${selectedMatches.length} confronto(s)`, bg: "#fef3c7", iconBg: "#0b5f2a", iconColor: "#fff" },
+    { icon: "ðŸ‘¥", text: `${stats.participantCount} participante(s)`, bg: "#ecfdf5", iconBg: "#0b5f2a", iconColor: "#fff" },
+    { icon: "ðŸ—‚", text: stats.roundLabel, bg: "#eff6ff", iconBg: "#1d4ed8", iconColor: "#fff" },
+    { icon: "ðŸ…", text: stats.competitionLabel, bg: "#f5f3ff", iconBg: "#7c3aed", iconColor: "#fff" }
   ];
 
   let pillX = padding;
@@ -6919,7 +6919,7 @@ const buildAdminRoundSummaryCanvas = async (selectedMatches = []) => {
     }
     const metaY = cardY + 20;
     const roundText = String(match.round || "").trim() || "Fase";
-    const compText = String(match.competition || "").trim() || "Competição";
+    const compText = String(match.competition || "").trim() || "CompetiÃ§Ã£o";
     const roundW = Math.min(cardWidth * 0.43, ctx.measureText(roundText).width + 22);
     const compW = Math.min(cardWidth * 0.48, ctx.measureText(compText).width + 22);
     drawAdminRoundSummaryBadge(ctx, compText, x + cardWidth - 26 - compW, metaY, {
@@ -7105,7 +7105,7 @@ const buildAdminRoundSummaryCanvas = async (selectedMatches = []) => {
         align: "left"
       });
 
-      const scoreText = `${item.hits}/${item.considered} acerto(s) • ${Math.round(item.percentage * 100)}% de aproveitamento`;
+      const scoreText = `${item.hits}/${item.considered} acerto(s) â€¢ ${Math.round(item.percentage * 100)}% de aproveitamento`;
       ctx.fillStyle = "#475569";
       ctx.font = "800 20px Inter, system-ui, sans-serif";
       ctx.textAlign = "left";
@@ -7118,7 +7118,7 @@ const buildAdminRoundSummaryCanvas = async (selectedMatches = []) => {
   ctx.font = "900 28px Inter, system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  ctx.fillText("BOLÃO 112 F.C", width / 2, height - 72);
+  ctx.fillText("BOLÃƒO 112 F.C", width / 2, height - 72);
 
   return canvas;
 };
@@ -7137,7 +7137,7 @@ const downloadAdminRoundSummaryBlob = (blob) => {
 
 window.downloadAdminRoundSummaryImage = () => {
   if (!adminRoundSummaryState.previewBlob) {
-    showAdminCommunicationToast("A imagem ainda não foi gerada.", "danger");
+    showAdminCommunicationToast("A imagem ainda nÃ£o foi gerada.", "danger");
     return;
   }
   downloadAdminRoundSummaryBlob(adminRoundSummaryState.previewBlob);
@@ -7147,7 +7147,7 @@ window.downloadAdminRoundSummaryImage = () => {
 window.shareAdminRoundSummaryImage = async () => {
   const blob = adminRoundSummaryState.previewBlob;
   if (!blob) {
-    showAdminCommunicationToast("A imagem ainda não foi gerada.", "danger");
+    showAdminCommunicationToast("A imagem ainda nÃ£o foi gerada.", "danger");
     return;
   }
 
@@ -7166,7 +7166,7 @@ window.shareAdminRoundSummaryImage = async () => {
   }
 
   downloadAdminRoundSummaryBlob(blob);
-  showAdminCommunicationToast("Seu navegador não permite compartilhar a imagem diretamente. A imagem foi baixada para você enviar manualmente no WhatsApp.", "warning");
+  showAdminCommunicationToast("Seu navegador nÃ£o permite compartilhar a imagem diretamente. A imagem foi baixada para vocÃª enviar manualmente no WhatsApp.", "warning");
 };
 
 window.generateAdminRoundSummaryImage = async () => {
@@ -7191,14 +7191,14 @@ window.generateAdminRoundSummaryImage = async () => {
     renderAdminRoundSummaryPreviewModal();
   } catch (error) {
     console.error("Erro ao gerar imagem do resumo:", error);
-    showAdminCommunicationToast("Não foi possível gerar a imagem do resumo.", "danger");
+    showAdminCommunicationToast("NÃ£o foi possÃ­vel gerar a imagem do resumo.", "danger");
   }
 };
 
 window.openAdminRoundSummaryModal = async () => {
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert("Você não tem permissão para acessar o resumo da rodada.");
+    alert("VocÃª nÃ£o tem permissÃ£o para acessar o resumo da rodada.");
     return;
   }
 
@@ -7229,7 +7229,7 @@ window.openAdminRoundSummaryModal = async () => {
     console.error("Erro ao abrir resumo da rodada:", error);
     cont.innerHTML = `
       <div class="bg-white p-6 text-center rounded shadow-xl">
-        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar o resumo da rodada.</p>
+        <p class="text-sm font-black text-red-600 mb-3">NÃ£o foi possÃ­vel carregar o resumo da rodada.</p>
         <button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
       </div>
     `;
@@ -7312,7 +7312,7 @@ const migrateAdminRoundsToSettings = async (settingsState) => {
     invalidateRuntimeCache("doc:settings:rounds");
     return nextState;
   } catch (error) {
-    console.warn("Falha na migração de admin_rounds para settings/rounds:", error);
+    console.warn("Falha na migraÃ§Ã£o de admin_rounds para settings/rounds:", error);
     return settingsState;
   }
 };
@@ -7463,7 +7463,7 @@ const logAdminCompetitionAction = async (type, payload = {}) => {
       createdAt: Timestamp.fromDate(new Date())
     });
   } catch (error) {
-    console.warn("Falha ao registrar auditoria de competição:", error);
+    console.warn("Falha ao registrar auditoria de competiÃ§Ã£o:", error);
   }
 };
 
@@ -7530,7 +7530,7 @@ const getCompetitionThumbHtml = (logoUrl = "") => {
   const hasLogo = isHttpUrl(logoUrl);
   return `
     <div class="admin-competition-thumb">
-      <img id="adminCompetitionThumbImg" src="${hasLogo ? logoUrl : ""}" class="${hasLogo ? "" : "hidden"}" alt="Logo da competição">
+      <img id="adminCompetitionThumbImg" src="${hasLogo ? logoUrl : ""}" class="${hasLogo ? "" : "hidden"}" alt="Logo da competiÃ§Ã£o">
       <i id="adminCompetitionThumbFallback" class="fas fa-trophy text-gray-400 ${hasLogo ? "hidden" : ""}"></i>
     </div>
   `;
@@ -7616,7 +7616,7 @@ const renderAdminCreationModal = () => {
         <span class="status-chip status-chip--success">Admin</span>
       </div>
       <p class="text-xs text-gray-500 leading-relaxed">
-        Escolha competição, rodada, times, logos e prazo de votação. O fluxo está pronto para a home web/PWA.
+        Escolha competiÃ§Ã£o, rodada, times, logos e prazo de votaÃ§Ã£o. O fluxo estÃ¡ pronto para a home web/PWA.
       </p>
       <button type="button" onclick="window.openNewMatchForm()" class="w-full bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
         <i class="fas fa-plus-circle text-base"></i>
@@ -7663,15 +7663,15 @@ const renderAdminCreationModal = () => {
     <div class="admin-creation-panel space-y-3">
       <div class="flex items-start justify-between gap-3">
         <div>
-          <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Competições</div>
+          <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">CompetiÃ§Ãµes</div>
           <h4 class="text-lg font-black text-gray-900 leading-tight">Gerencie nomes e logos oficiais.</h4>
         </div>
         <span class="status-chip status-chip--default">${competitionItems.length}</span>
       </div>
-      <p class="text-xs text-gray-500 leading-relaxed">Gerencie as competições exibidas no app.</p>
+      <p class="text-xs text-gray-500 leading-relaxed">Gerencie as competiÃ§Ãµes exibidas no app.</p>
       <button type="button" onclick="window.openCompetitionsManager()" class="w-full bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
         <i class="fas fa-trophy text-base"></i>
-        Abrir Competições
+        Abrir CompetiÃ§Ãµes
       </button>
       <div class="admin-competition-preview">
         ${competitionPreviewHtml}
@@ -7696,7 +7696,7 @@ const renderAdminCreationModal = () => {
       <div class="flex items-start justify-between gap-3">
         <div>
           <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Novo confronto</div>
-          <h4 class="text-lg font-black text-gray-900 leading-tight">Cadastro rápido do jogo</h4>
+          <h4 class="text-lg font-black text-gray-900 leading-tight">Cadastro rÃ¡pido do jogo</h4>
         </div>
         <button type="button" onclick="window.openAdminMenu()" class="text-xs font-black text-gray-500">
           <i class="fas fa-arrow-left mr-1"></i> Voltar
@@ -7705,17 +7705,17 @@ const renderAdminCreationModal = () => {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label class="admin-compact-label">Competição</label>
+          <label class="admin-compact-label">CompetiÃ§Ã£o</label>
           <select id="adminMatchCompetition" class="admin-creation-input" ${hasCompetitions ? "" : "disabled"} onchange="window.handleAdminCompetitionChange()">
             <option value="">Selecione</option>
             ${competitionOptions}
           </select>
-          ${hasCompetitions ? "" : '<p class="mt-2 text-[11px] font-bold text-red-600">Nenhuma competição ativa disponível.</p>'}
+          ${hasCompetitions ? "" : '<p class="mt-2 text-[11px] font-bold text-red-600">Nenhuma competiÃ§Ã£o ativa disponÃ­vel.</p>'}
           <div class="mt-2 flex items-center gap-3">
             ${getCompetitionThumbHtml((competitionItems.find((item) => item.name === competitionValue) || {}).logo || "")}
             <div class="flex-1">
-              <div class="text-[10px] font-bold uppercase text-gray-400 mb-1">Logo da competição</div>
-              <div class="text-xs text-gray-500">A imagem será usada no confronto e no destaque visual.</div>
+              <div class="text-[10px] font-bold uppercase text-gray-400 mb-1">Logo da competiÃ§Ã£o</div>
+              <div class="text-xs text-gray-500">A imagem serÃ¡ usada no confronto e no destaque visual.</div>
             </div>
           </div>
         </div>
@@ -7725,7 +7725,7 @@ const renderAdminCreationModal = () => {
             <option value="">Selecione</option>
             ${roundOptions}
           </select>
-          ${hasRounds ? "" : '<p class="mt-2 text-[11px] font-bold text-red-600">Nenhuma rodada ativa disponível.</p>'}
+          ${hasRounds ? "" : '<p class="mt-2 text-[11px] font-bold text-red-600">Nenhuma rodada ativa disponÃ­vel.</p>'}
         </div>
       </div>
 
@@ -7786,7 +7786,7 @@ const renderAdminCreationModal = () => {
       </div>
 
       <div>
-        <label class="admin-compact-label">Data e Hora limite para votação</label>
+        <label class="admin-compact-label">Data e Hora limite para votaÃ§Ã£o</label>
         <input id="adminMatchDeadline" type="datetime-local" class="admin-creation-input">
       </div>
 
@@ -7795,7 +7795,7 @@ const renderAdminCreationModal = () => {
         <span>Compartilhar no WhatsApp</span>
       </label>
 
-      <label class="admin-check-row admin-check-row--disabled" title="Será implementado depois no Android.">
+      <label class="admin-check-row admin-check-row--disabled" title="SerÃ¡ implementado depois no Android.">
         <input type="checkbox" class="accent-[#006400]" disabled>
         <span>Enviar Push</span>
       </label>
@@ -7831,8 +7831,8 @@ const renderAdminCreationModal = () => {
         <div class="bg-[#006400] p-4 text-white flex items-center justify-between shadow-md shrink-0">
           <button onclick="openAdminMenu()" class="mr-3"><i class="fas fa-arrow-left text-xl"></i></button>
           <div class="flex-1">
-            <h3 class="font-black uppercase text-lg leading-none">Criação</h3>
-            <p class="text-[10px] text-[#FFD700] font-bold">Novo confronto, rodadas e competições</p>
+            <h3 class="font-black uppercase text-lg leading-none">CriaÃ§Ã£o</h3>
+            <p class="text-[10px] text-[#FFD700] font-bold">Novo confronto, rodadas e competiÃ§Ãµes</p>
           </div>
           <button onclick="closeModal()" class="ml-3"><i class="fas fa-times text-xl"></i></button>
         </div>
@@ -7841,7 +7841,7 @@ const renderAdminCreationModal = () => {
           <div class="admin-creation-tabs">
             ${getTabButton("new-match", "Novo Confronto", "fa-futbol", adminCreationState.tab === "new-match", false)}
             ${getTabButton("rounds", "Rodadas", "fa-list-ol", adminCreationState.tab === "rounds", false)}
-            ${getTabButton("competitions", "Competições", "fa-trophy", adminCreationState.tab === "competitions", false)}
+            ${getTabButton("competitions", "CompetiÃ§Ãµes", "fa-trophy", adminCreationState.tab === "competitions", false)}
           </div>
         </div>
 
@@ -7977,7 +7977,7 @@ window.searchAdminTeamLogo = (fieldSide) => {
 window.openCreationModal = async () => {
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert("Você não tem permissão para acessar a criação.");
+    alert("VocÃª nÃ£o tem permissÃ£o para acessar a criaÃ§Ã£o.");
     closeModal();
     return;
   }
@@ -7999,7 +7999,7 @@ window.openCreationModal = async () => {
   cont.innerHTML = `
     <div class="bg-white p-6 text-center rounded shadow-xl">
       <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
-      <p class="text-xs font-black text-gray-500 uppercase">Carregando criação...</p>
+      <p class="text-xs font-black text-gray-500 uppercase">Carregando criaÃ§Ã£o...</p>
     </div>
   `;
 
@@ -8007,10 +8007,10 @@ window.openCreationModal = async () => {
     await loadAdminCreationState();
     renderAdminCreationModal();
   } catch (error) {
-    console.error("Erro ao abrir criação:", error);
+    console.error("Erro ao abrir criaÃ§Ã£o:", error);
     cont.innerHTML = `
       <div class="bg-white p-6 text-center rounded shadow-xl">
-        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar a criação.</p>
+        <p class="text-sm font-black text-red-600 mb-3">NÃ£o foi possÃ­vel carregar a criaÃ§Ã£o.</p>
         <button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
       </div>
     `;
@@ -8044,7 +8044,7 @@ const renderAdminRoundsManager = () => {
   const activeTab = adminCreationState.roundsTab === "inactive" ? "inactive" : "active";
   const list = activeTab === "inactive" ? inactiveRounds : activeRounds;
   const editingName = normalizeRoundName(adminCreationState.editingRoundName || "");
-  const emptyMessage = activeTab === "inactive" ? "Nenhuma rodada inativa disponível." : "Nenhuma rodada ativa disponível.";
+  const emptyMessage = activeTab === "inactive" ? "Nenhuma rodada inativa disponÃ­vel." : "Nenhuma rodada ativa disponÃ­vel.";
   const listHtml = list.length
     ? list.map((round, index) => {
         const safeRound = normalizeRoundName(round);
@@ -8116,7 +8116,7 @@ const renderAdminRoundsManager = () => {
               </div>
               <p class="text-[11px] font-bold text-gray-500">Use as setas para definir a ordem no app</p>
             ` : `
-              <p class="text-[11px] font-bold text-gray-500">Rodadas desativadas continuam salvas para restauração.</p>
+              <p class="text-[11px] font-bold text-gray-500">Rodadas desativadas continuam salvas para restauraÃ§Ã£o.</p>
             `}
 
             <div id="adminRoundsStatus" class="hidden rounded-2xl border px-3 py-2 text-xs font-black"></div>
@@ -8177,7 +8177,7 @@ const findAdminRoundDuplicate = (roundName, ignoreId = "") => {
 window.openAdminRoundsManager = async () => {
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert("Você não tem permissão para gerenciar rodadas.");
+    alert("VocÃª nÃ£o tem permissÃ£o para gerenciar rodadas.");
     closeModal();
     return;
   }
@@ -8203,7 +8203,7 @@ window.openAdminRoundsManager = async () => {
     console.error("Erro ao abrir rodadas:", error);
     cont.innerHTML = `
       <div class="bg-white p-6 text-center rounded shadow-xl">
-        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar as rodadas.</p>
+        <p class="text-sm font-black text-red-600 mb-3">NÃ£o foi possÃ­vel carregar as rodadas.</p>
         <button onclick="openCreationModal()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
       </div>
     `;
@@ -8215,9 +8215,9 @@ window.createAdminRound = async () => {
   const name = normalizeRoundName(input?.value || "");
   if (!name) return setAdminRoundsStatus("Informe o nome da rodada.", "danger");
   const duplicate = findAdminRoundDuplicate(name);
-  if (duplicate.active) return setAdminRoundsStatus("Essa rodada já existe.", "danger");
+  if (duplicate.active) return setAdminRoundsStatus("Essa rodada jÃ¡ existe.", "danger");
   if (duplicate.inactive) {
-    if (!confirm("Essa rodada está inativa. Deseja restaurá-la?")) return;
+    if (!confirm("Essa rodada estÃ¡ inativa. Deseja restaurÃ¡-la?")) return;
     return window.restoreAdminRound(duplicate.inactive);
   }
 
@@ -8239,7 +8239,7 @@ window.createAdminRound = async () => {
     await loadAdminCreationState();
   } catch (error) {
     console.error("Erro ao criar rodada:", error);
-    setAdminRoundsStatus("Não foi possível salvar a rodada.", "danger");
+    setAdminRoundsStatus("NÃ£o foi possÃ­vel salvar a rodada.", "danger");
   }
 };
 
@@ -8259,13 +8259,13 @@ window.updateAdminRound = async (oldRoundName) => {
   const oldName = normalizeRoundName(oldRoundName);
   if (!name) return setAdminRoundsStatus("Informe o nome da rodada.", "danger");
   const duplicate = findAdminRoundDuplicate(name, oldName);
-  if (duplicate.active || duplicate.inactive) return setAdminRoundsStatus("Essa rodada já existe.", "danger");
+  if (duplicate.active || duplicate.inactive) return setAdminRoundsStatus("Essa rodada jÃ¡ existe.", "danger");
 
   try {
     const state = await refreshAdminRoundsState();
     const items = [...(state.items || [])];
     const index = items.findIndex((item) => normalizeAdminText(item) === normalizeAdminText(oldName));
-    if (index < 0) return setAdminRoundsStatus("Rodada não encontrada.", "danger");
+    if (index < 0) return setAdminRoundsStatus("Rodada nÃ£o encontrada.", "danger");
 
     const oldItems = [...items];
     items[index] = name;
@@ -8286,19 +8286,19 @@ window.updateAdminRound = async (oldRoundName) => {
     await loadAdminCreationState();
   } catch (error) {
     console.error("Erro ao atualizar rodada:", error);
-    setAdminRoundsStatus("Não foi possível atualizar a rodada.", "danger");
+    setAdminRoundsStatus("NÃ£o foi possÃ­vel atualizar a rodada.", "danger");
   }
 };
 
 window.disableAdminRound = async (roundName) => {
   const targetName = normalizeRoundName(roundName);
   if (!targetName) return;
-  if (!confirm("Remover esta rodada da lista de opções?")) return;
+  if (!confirm("Remover esta rodada da lista de opÃ§Ãµes?")) return;
 
   try {
     const state = await refreshAdminRoundsState();
     const items = (state.items || []).filter((item) => normalizeAdminText(item) !== normalizeAdminText(targetName));
-    if (items.length === (state.items || []).length) return setAdminRoundsStatus("Rodada não encontrada.", "danger");
+    if (items.length === (state.items || []).length) return setAdminRoundsStatus("Rodada nÃ£o encontrada.", "danger");
 
     const inactiveItems = [...(state.inactiveItems || [])];
     if (!inactiveItems.some((item) => normalizeAdminText(item) === normalizeAdminText(targetName))) {
@@ -8317,11 +8317,11 @@ window.disableAdminRound = async (roundName) => {
     adminCreationState.rounds = nextState.items;
     adminCreationState.inactiveRounds = nextState.inactiveItems;
     renderAdminRoundsManager();
-    setAdminRoundsStatus("Rodada desativada. Ela não aparecerá em novos confrontos, mas continua salva para restauração.");
+    setAdminRoundsStatus("Rodada desativada. Ela nÃ£o aparecerÃ¡ em novos confrontos, mas continua salva para restauraÃ§Ã£o.");
     await loadAdminCreationState();
   } catch (error) {
     console.error("Erro ao remover rodada:", error);
-    setAdminRoundsStatus("Não foi possível remover a rodada.", "danger");
+    setAdminRoundsStatus("NÃ£o foi possÃ­vel remover a rodada.", "danger");
   }
 };
 
@@ -8332,7 +8332,7 @@ window.restoreAdminRound = async (roundName) => {
   try {
     const state = await refreshAdminRoundsState();
     const inactiveItems = (state.inactiveItems || []).filter((item) => normalizeAdminText(item) !== normalizeAdminText(targetName));
-    if (inactiveItems.length === (state.inactiveItems || []).length) return setAdminRoundsStatus("Rodada não encontrada.", "danger");
+    if (inactiveItems.length === (state.inactiveItems || []).length) return setAdminRoundsStatus("Rodada nÃ£o encontrada.", "danger");
 
     const items = [...(state.items || [])];
     if (!items.some((item) => normalizeAdminText(item) === normalizeAdminText(targetName))) {
@@ -8355,7 +8355,7 @@ window.restoreAdminRound = async (roundName) => {
     await loadAdminCreationState();
   } catch (error) {
     console.error("Erro ao restaurar rodada:", error);
-    setAdminRoundsStatus("Não foi possível restaurar a rodada.", "danger");
+    setAdminRoundsStatus("NÃ£o foi possÃ­vel restaurar a rodada.", "danger");
   }
 };
 
@@ -8387,7 +8387,7 @@ window.moveAdminRound = async (roundName, direction) => {
     await loadAdminCreationState();
   } catch (error) {
     console.error("Erro ao reordenar rodada:", error);
-    setAdminRoundsStatus("Não foi possível reordenar a rodada.", "danger");
+    setAdminRoundsStatus("NÃ£o foi possÃ­vel reordenar a rodada.", "danger");
   }
 };
 
@@ -8422,8 +8422,8 @@ const renderAdminCompetitionsManager = () => {
   const list = activeTab === "inactive" ? inactiveItems : activeItems;
   const editingName = normalizeCompetitionName(adminCreationState.editingCompetitionName || "");
   const emptyMessage = activeTab === "inactive"
-    ? "Nenhuma competição arquivada disponível."
-    : "Nenhuma competição ativa disponível.";
+    ? "Nenhuma competiÃ§Ã£o arquivada disponÃ­vel."
+    : "Nenhuma competiÃ§Ã£o ativa disponÃ­vel.";
 
   const listHtml = list.length
     ? list.map((item) => {
@@ -8436,10 +8436,10 @@ const renderAdminCompetitionsManager = () => {
             ${isEditing ? `
               <div class="admin-competition-edit">
                 <div class="admin-competition-thumb admin-competition-thumb--small">
-                  ${safeLogo ? `<img src="${escapeHtml(safeLogo)}" alt="Logo da competição">` : `<i class="fas fa-trophy text-gray-400"></i>`}
+                  ${safeLogo ? `<img src="${escapeHtml(safeLogo)}" alt="Logo da competiÃ§Ã£o">` : `<i class="fas fa-trophy text-gray-400"></i>`}
                 </div>
                 <div class="flex-1 min-w-0 space-y-2">
-                  <input id="adminCompetitionEditName" type="text" value="${escapeHtml(safeName)}" class="admin-creation-input" placeholder="Nome da competição">
+                  <input id="adminCompetitionEditName" type="text" value="${escapeHtml(safeName)}" class="admin-creation-input" placeholder="Nome da competiÃ§Ã£o">
                   <input id="adminCompetitionEditLogo" type="url" value="${escapeHtml(safeLogo)}" class="admin-creation-input" placeholder="URL do logo">
                 </div>
                 <div class="admin-competition-actions">
@@ -8449,7 +8449,7 @@ const renderAdminCompetitionsManager = () => {
               </div>
             ` : `
               <div class="admin-competition-thumb">
-                ${safeLogo ? `<img src="${escapeHtml(safeLogo)}" alt="Logo da competição">` : `<i class="fas fa-trophy text-gray-400"></i>`}
+                ${safeLogo ? `<img src="${escapeHtml(safeLogo)}" alt="Logo da competiÃ§Ã£o">` : `<i class="fas fa-trophy text-gray-400"></i>`}
               </div>
               <div class="admin-competition-name">${escapeHtml(safeName)}</div>
               <div class="admin-competition-actions">
@@ -8477,7 +8477,7 @@ const renderAdminCompetitionsManager = () => {
         <div class="bg-[#006400] p-4 text-white flex items-center shadow-md shrink-0">
           <button onclick="openCreationModal()" class="mr-4"><i class="fas fa-arrow-left text-xl"></i></button>
           <div>
-            <h3 class="font-black uppercase text-lg leading-none">Competições</h3>
+            <h3 class="font-black uppercase text-lg leading-none">CompetiÃ§Ãµes</h3>
             <p class="text-[10px] text-[#FFD700] font-bold">settings/competitions.items</p>
           </div>
         </div>
@@ -8486,8 +8486,8 @@ const renderAdminCompetitionsManager = () => {
           <div class="admin-creation-panel space-y-3">
             <div class="flex items-start justify-between gap-3">
               <div>
-                <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Nova Competição</div>
-                <h4 class="text-lg font-black text-gray-900 leading-tight">Cadastre nome, logo e ativação.</h4>
+                <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Nova CompetiÃ§Ã£o</div>
+                <h4 class="text-lg font-black text-gray-900 leading-tight">Cadastre nome, logo e ativaÃ§Ã£o.</h4>
               </div>
               <span class="status-chip status-chip--default">${allItems.length}</span>
             </div>
@@ -8495,7 +8495,7 @@ const renderAdminCompetitionsManager = () => {
             <div>
               <label class="admin-compact-label">Nome</label>
               <div class="flex gap-2">
-                <input id="adminCompetitionName" type="text" class="admin-creation-input flex-1" placeholder="Nome (ex: Brasileirão)">
+                <input id="adminCompetitionName" type="text" class="admin-creation-input flex-1" placeholder="Nome (ex: BrasileirÃ£o)">
                 <button type="button" onclick="window.searchAdminCompetitionLogo()" class="admin-search-btn"><i class="fas fa-magnifying-glass"></i></button>
               </div>
             </div>
@@ -8542,7 +8542,7 @@ const renderAdminCompetitionsManager = () => {
 window.openCompetitionsManager = async () => {
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert("Você não tem permissão para gerenciar competições.");
+    alert("VocÃª nÃ£o tem permissÃ£o para gerenciar competiÃ§Ãµes.");
     closeModal();
     return;
   }
@@ -8555,7 +8555,7 @@ window.openCompetitionsManager = async () => {
   cont.innerHTML = `
     <div class="bg-white p-6 text-center rounded shadow-xl">
       <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
-      <p class="text-xs font-black text-gray-500 uppercase">Carregando competições...</p>
+      <p class="text-xs font-black text-gray-500 uppercase">Carregando competiÃ§Ãµes...</p>
     </div>
   `;
 
@@ -8565,10 +8565,10 @@ window.openCompetitionsManager = async () => {
     await refreshAdminCompetitionsState();
     renderAdminCompetitionsManager();
   } catch (error) {
-    console.error("Erro ao abrir competições:", error);
+    console.error("Erro ao abrir competiÃ§Ãµes:", error);
     cont.innerHTML = `
       <div class="bg-white p-6 text-center rounded shadow-xl">
-        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar as competições.</p>
+        <p class="text-sm font-black text-red-600 mb-3">NÃ£o foi possÃ­vel carregar as competiÃ§Ãµes.</p>
         <button onclick="openCreationModal()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
       </div>
     `;
@@ -8606,7 +8606,7 @@ window.searchAdminCompetitionLogo = () => {
   const competitionName = String(input?.value || "").trim();
 
   if (!competitionName) {
-    alert("Digite o nome da competição antes de pesquisar.");
+    alert("Digite o nome da competiÃ§Ã£o antes de pesquisar.");
     return;
   }
 
@@ -8630,19 +8630,19 @@ window.createAdminCompetition = async () => {
   const name = normalizeCompetitionName(nameInput?.value || "");
   const logo = String(logoInput?.value || "").trim();
 
-  if (!name) return setAdminCompetitionsStatus("Informe o nome da competição.", "danger");
+  if (!name) return setAdminCompetitionsStatus("Informe o nome da competiÃ§Ã£o.", "danger");
   if (!logo) return setAdminCompetitionsStatus("Informe a URL do logo.", "danger");
-  if (!isHttpUrl(logo)) return setAdminCompetitionsStatus("A URL do logo precisa começar com http:// ou https://.", "danger");
+  if (!isHttpUrl(logo)) return setAdminCompetitionsStatus("A URL do logo precisa comeÃ§ar com http:// ou https://.", "danger");
 
   const duplicate = findAdminCompetitionDuplicate(name);
-  if (duplicate.active) return setAdminCompetitionsStatus("Essa competição já existe.", "danger");
+  if (duplicate.active) return setAdminCompetitionsStatus("Essa competiÃ§Ã£o jÃ¡ existe.", "danger");
 
   try {
     const state = await refreshAdminCompetitionsState();
     const oldItems = [...(state.items || [])];
 
     if (duplicate.inactive) {
-      if (!confirm("Essa competição está arquivada. Deseja restaurá-la?")) return;
+      if (!confirm("Essa competiÃ§Ã£o estÃ¡ arquivada. Deseja restaurÃ¡-la?")) return;
       const nextItems = oldItems.map((item) => {
         if (normalizeAdminText(item.name || "") !== normalizeAdminText(name)) return item;
         return {
@@ -8665,7 +8665,7 @@ window.createAdminCompetition = async () => {
       adminCreationState.competitionItems = nextState.items;
       adminCreationState.competitions = nextState.items.filter((item) => item.active === true);
       renderAdminCompetitionsManager();
-      setAdminCompetitionsStatus("Competição restaurada!");
+      setAdminCompetitionsStatus("CompetiÃ§Ã£o restaurada!");
       await loadAdminCreationState();
       window.updateAdminCompetitionFormPreview();
       return;
@@ -8684,12 +8684,12 @@ window.createAdminCompetition = async () => {
     adminCreationState.competitionItems = nextState.items;
     adminCreationState.competitions = nextState.items.filter((item) => item.active === true);
     renderAdminCompetitionsManager();
-    setAdminCompetitionsStatus("Competição salva!");
+    setAdminCompetitionsStatus("CompetiÃ§Ã£o salva!");
     await loadAdminCreationState();
     window.updateAdminCompetitionFormPreview();
   } catch (error) {
-    console.error("Erro ao criar competição:", error);
-    setAdminCompetitionsStatus("Não foi possível salvar a competição.", "danger");
+    console.error("Erro ao criar competiÃ§Ã£o:", error);
+    setAdminCompetitionsStatus("NÃ£o foi possÃ­vel salvar a competiÃ§Ã£o.", "danger");
   }
 };
 
@@ -8700,18 +8700,18 @@ window.updateAdminCompetition = async (oldCompetitionName) => {
   const logo = String(logoInput?.value || "").trim();
   const oldName = normalizeCompetitionName(oldCompetitionName);
 
-  if (!name) return setAdminCompetitionsStatus("Informe o nome da competição.", "danger");
+  if (!name) return setAdminCompetitionsStatus("Informe o nome da competiÃ§Ã£o.", "danger");
   if (!logo) return setAdminCompetitionsStatus("Informe a URL do logo.", "danger");
-  if (!isHttpUrl(logo)) return setAdminCompetitionsStatus("A URL do logo precisa começar com http:// ou https://.", "danger");
+  if (!isHttpUrl(logo)) return setAdminCompetitionsStatus("A URL do logo precisa comeÃ§ar com http:// ou https://.", "danger");
 
   const duplicate = findAdminCompetitionDuplicate(name, oldName);
-  if (duplicate.active || duplicate.inactive) return setAdminCompetitionsStatus("Essa competição já existe.", "danger");
+  if (duplicate.active || duplicate.inactive) return setAdminCompetitionsStatus("Essa competiÃ§Ã£o jÃ¡ existe.", "danger");
 
   try {
     const state = await refreshAdminCompetitionsState();
     const items = [...(state.items || [])];
     const index = items.findIndex((item) => normalizeAdminText(item.name || "") === normalizeAdminText(oldName));
-    if (index < 0) return setAdminCompetitionsStatus("Competição não encontrada.", "danger");
+    if (index < 0) return setAdminCompetitionsStatus("CompetiÃ§Ã£o nÃ£o encontrada.", "danger");
 
     const oldItems = [...items];
     items[index] = {
@@ -8731,19 +8731,19 @@ window.updateAdminCompetition = async (oldCompetitionName) => {
     adminCreationState.competitionItems = nextState.items;
     adminCreationState.competitions = nextState.items.filter((item) => item.active === true);
     renderAdminCompetitionsManager();
-    setAdminCompetitionsStatus("Competição atualizada!");
+    setAdminCompetitionsStatus("CompetiÃ§Ã£o atualizada!");
     await loadAdminCreationState();
     window.updateAdminCompetitionFormPreview();
   } catch (error) {
-    console.error("Erro ao atualizar competição:", error);
-    setAdminCompetitionsStatus("Não foi possível atualizar a competição.", "danger");
+    console.error("Erro ao atualizar competiÃ§Ã£o:", error);
+    setAdminCompetitionsStatus("NÃ£o foi possÃ­vel atualizar a competiÃ§Ã£o.", "danger");
   }
 };
 
 window.disableAdminCompetition = async (competitionName) => {
   const targetName = normalizeCompetitionName(competitionName);
   if (!targetName) return;
-  if (!confirm("Arquivar esta competição? Ela deixará de aparecer em novos confrontos, mas continuará salva para restauração.")) return;
+  if (!confirm("Arquivar esta competiÃ§Ã£o? Ela deixarÃ¡ de aparecer em novos confrontos, mas continuarÃ¡ salva para restauraÃ§Ã£o.")) return;
 
   try {
     const state = await refreshAdminCompetitionsState();
@@ -8757,7 +8757,7 @@ window.disableAdminCompetition = async (competitionName) => {
     });
 
     if (!items.some((item) => normalizeAdminText(item.name || "") === normalizeAdminText(targetName))) {
-      return setAdminCompetitionsStatus("Competição não encontrada.", "danger");
+      return setAdminCompetitionsStatus("CompetiÃ§Ã£o nÃ£o encontrada.", "danger");
     }
 
     const nextState = await persistCompetitionSettingsState(items, "disable_competition", {
@@ -8772,11 +8772,11 @@ window.disableAdminCompetition = async (competitionName) => {
     adminCreationState.competitionItems = nextState.items;
     adminCreationState.competitions = nextState.items.filter((item) => item.active === true);
     renderAdminCompetitionsManager();
-    setAdminCompetitionsStatus("Competição arquivada. Ela não aparecerá em novos confrontos, mas continua salva para restauração.");
+    setAdminCompetitionsStatus("CompetiÃ§Ã£o arquivada. Ela nÃ£o aparecerÃ¡ em novos confrontos, mas continua salva para restauraÃ§Ã£o.");
     await loadAdminCreationState();
   } catch (error) {
-    console.error("Erro ao arquivar competição:", error);
-    setAdminCompetitionsStatus("Não foi possível arquivar a competição.", "danger");
+    console.error("Erro ao arquivar competiÃ§Ã£o:", error);
+    setAdminCompetitionsStatus("NÃ£o foi possÃ­vel arquivar a competiÃ§Ã£o.", "danger");
   }
 };
 
@@ -8798,7 +8798,7 @@ window.restoreAdminCompetition = async (competitionName, nextLogo = "") => {
       };
     });
 
-    if (!changed) return setAdminCompetitionsStatus("Competição não encontrada.", "danger");
+    if (!changed) return setAdminCompetitionsStatus("CompetiÃ§Ã£o nÃ£o encontrada.", "danger");
 
     const nextState = await persistCompetitionSettingsState(items, "restore_competition", {
       competitionName: targetName,
@@ -8812,11 +8812,11 @@ window.restoreAdminCompetition = async (competitionName, nextLogo = "") => {
     adminCreationState.competitions = nextState.items.filter((item) => item.active === true);
     adminCreationState.competitionsTab = "inactive";
     renderAdminCompetitionsManager();
-    setAdminCompetitionsStatus("Competição restaurada!");
+    setAdminCompetitionsStatus("CompetiÃ§Ã£o restaurada!");
     await loadAdminCreationState();
   } catch (error) {
-    console.error("Erro ao restaurar competição:", error);
-    setAdminCompetitionsStatus("Não foi possível restaurar a competição.", "danger");
+    console.error("Erro ao restaurar competiÃ§Ã£o:", error);
+    setAdminCompetitionsStatus("NÃ£o foi possÃ­vel restaurar a competiÃ§Ã£o.", "danger");
   }
 };
 
@@ -8842,16 +8842,16 @@ const setAdminCreationStatus = (message = "", tone = "success") => {
 const loadAdminCreationState = async () => {
   const [competitionsState, matchesSnap, teamsSnap, roundsState] = await Promise.all([
     loadAdminCompetitions({ force: true }).catch((error) => {
-      console.warn("Não foi possível carregar competições.", error);
+      console.warn("NÃ£o foi possÃ­vel carregar competiÃ§Ãµes.", error);
       return { items: [] };
     }),
     readWithRuntimeCache("col:matches", () => getDocs(collection(db, "matches")), { ttlMs: DATA_CACHE_TTL.hot, force: true }),
     readWithRuntimeCache("col:teams", () => getDocs(collection(db, "teams")), { ttlMs: DATA_CACHE_TTL.cold, force: true }).catch((error) => {
-      console.warn("Não foi possível carregar teams. Autocomplete seguirá vazio.", error);
+      console.warn("NÃ£o foi possÃ­vel carregar teams. Autocomplete seguirÃ¡ vazio.", error);
       return null;
     }),
     loadAdminRounds({ force: true, migrate: true }).catch((error) => {
-      console.warn("Não foi possível carregar rodadas.", error);
+      console.warn("NÃ£o foi possÃ­vel carregar rodadas.", error);
       return { items: [], inactiveItems: [] };
     })
   ]);
@@ -8888,7 +8888,7 @@ const getAdminMatchStatusInfo = (match = {}) => {
   const winnerLabel = String(match.winner || "").trim();
   if (winnerLabel) {
     return {
-      label: `Finalizado • ${winnerLabel}`,
+      label: `Finalizado â€¢ ${winnerLabel}`,
       tone: "success"
     };
   }
@@ -8959,10 +8959,10 @@ const buildAdminMatchEditWarnings = (match = {}, guessCount = 0) => {
   const warnings = [];
   const finished = Boolean(String(match.winner || "").trim() || match.finishedAt || match.final === true || String(match.status || "").toLowerCase().includes("final"));
   if (finished) {
-    warnings.push("Atenção: esta partida já possui resultado/finalização. Edite apenas informações cadastrais se tiver certeza.");
+    warnings.push("AtenÃ§Ã£o: esta partida jÃ¡ possui resultado/finalizaÃ§Ã£o. Edite apenas informaÃ§Ãµes cadastrais se tiver certeza.");
   }
   if (Number(guessCount || 0) > 0) {
-    warnings.push("Esta partida pode já possuir palpites. Alterar times ou prazo pode impactar a compreensão dos usuários.");
+    warnings.push("Esta partida pode jÃ¡ possuir palpites. Alterar times ou prazo pode impactar a compreensÃ£o dos usuÃ¡rios.");
   }
   return warnings;
 };
@@ -8997,7 +8997,7 @@ const persistAdminTeamIfNeeded = async (teamName = "", logoUrl = "") => {
     invalidateRuntimeCache("col:teams");
     return savedTeam;
   } catch (error) {
-    console.warn("Não foi possível salvar o time para autocomplete:", error);
+    console.warn("NÃ£o foi possÃ­vel salvar o time para autocomplete:", error);
     return null;
   }
 };
@@ -9069,7 +9069,7 @@ const logAdminMatchUpdate = async ({ matchId, oldMatch = {}, newMatch = {} }) =>
       createdAt: Timestamp.fromDate(new Date())
     });
   } catch (error) {
-    console.warn("Falha ao registrar auditoria da edição do confronto:", error);
+    console.warn("Falha ao registrar auditoria da ediÃ§Ã£o do confronto:", error);
   }
 };
 
@@ -9138,7 +9138,7 @@ const renderAdminQuickResultsModal = () => {
     ? pendingMatches.map((m, index) => {
         const selected = adminQuickResultsState.selections?.[m.id] || "";
         const deadlineLabel = formatAdminDateTimeLabel(m.deadlineDate);
-        const competitionLabel = escapeHtml(String(m.competition || "Sem competição").trim());
+        const competitionLabel = escapeHtml(String(m.competition || "Sem competiÃ§Ã£o").trim());
         const roundLabel = String(m.round || "").trim();
         const teamASelected = selected === "A";
         const teamBSelected = selected === "B";
@@ -9149,7 +9149,7 @@ const renderAdminQuickResultsModal = () => {
               <div class="min-w-0">
                 <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Confronto #${index + 1}</div>
                 <div class="text-sm font-black text-gray-900 leading-tight break-words">${escapeHtml(m.teamA || "Time A")} x ${escapeHtml(m.teamB || "Time B")}</div>
-                <div class="mt-1 text-[10px] font-bold text-gray-500 break-words">${competitionLabel}${roundLabel ? ` • ${escapeHtml(roundLabel)}` : ""}</div>
+                <div class="mt-1 text-[10px] font-bold text-gray-500 break-words">${competitionLabel}${roundLabel ? ` â€¢ ${escapeHtml(roundLabel)}` : ""}</div>
                 <div class="mt-1 text-[10px] font-bold text-gray-400">Prazo encerrado em ${escapeHtml(deadlineLabel)}</div>
               </div>
               <span class="status-chip status-chip--warning">Pendente</span>
@@ -9180,7 +9180,7 @@ const renderAdminQuickResultsModal = () => {
     : `
       <div class="admin-quick-result-empty">
         <div class="text-base font-black text-gray-800">Nenhum confronto pendente.</div>
-        <p class="mt-1 text-xs text-gray-500">Quando houver jogos aguardando resultado, eles aparecerão aqui para baixa rápida.</p>
+        <p class="mt-1 text-xs text-gray-500">Quando houver jogos aguardando resultado, eles aparecerÃ£o aqui para baixa rÃ¡pida.</p>
       </div>
     `;
 
@@ -9191,7 +9191,7 @@ const renderAdminQuickResultsModal = () => {
       <div class="relative z-10 flex flex-col h-full bg-white/92">
         <div class="bg-[#006400] p-4 text-white flex items-start justify-between shadow-md shrink-0">
           <div class="pr-3">
-            <h3 class="font-black uppercase text-lg leading-none">⚡ BAIXA RÁPIDA</h3>
+            <h3 class="font-black uppercase text-lg leading-none">âš¡ BAIXA RÃPIDA</h3>
             <p class="text-[10px] text-[#FFD700] font-bold mt-1">Confrontos aguardando resultado</p>
           </div>
           <button type="button" onclick="closeModal()" class="ml-2"><i class="fas fa-times text-xl"></i></button>
@@ -9266,7 +9266,7 @@ window.toggleAdminQuickResultWinner = (matchId, side) => {
 window.openQuickResultsModal = async () => {
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert("Você não tem permissão para usar a Baixa Rápida.");
+    alert("VocÃª nÃ£o tem permissÃ£o para usar a Baixa RÃ¡pida.");
     closeModal();
     return;
   }
@@ -9279,7 +9279,7 @@ window.openQuickResultsModal = async () => {
   cont.innerHTML = `
     <div class="bg-white p-6 text-center rounded shadow-xl">
       <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
-      <p class="text-xs font-black text-gray-500 uppercase">Carregando baixa rápida...</p>
+      <p class="text-xs font-black text-gray-500 uppercase">Carregando baixa rÃ¡pida...</p>
     </div>
   `;
 
@@ -9302,10 +9302,10 @@ window.openQuickResultsModal = async () => {
 
     renderAdminQuickResultsModal();
   } catch (error) {
-    console.error("Erro ao abrir baixa rápida:", error);
+    console.error("Erro ao abrir baixa rÃ¡pida:", error);
     cont.innerHTML = `
       <div class="bg-white p-6 text-center rounded shadow-xl">
-        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar a baixa rápida.</p>
+        <p class="text-sm font-black text-red-600 mb-3">NÃ£o foi possÃ­vel carregar a baixa rÃ¡pida.</p>
         <button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
       </div>
     `;
@@ -9327,7 +9327,7 @@ const logAdminQuickResultsAction = async (payload = {}) => {
       createdAt: Timestamp.fromDate(new Date())
     });
   } catch (error) {
-    console.warn("Falha ao registrar auditoria da baixa rápida:", error);
+    console.warn("Falha ao registrar auditoria da baixa rÃ¡pida:", error);
   }
 };
 
@@ -9345,7 +9345,7 @@ window.saveAdminQuickResults = async () => {
 
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert("Você não tem permissão para salvar resultados.");
+    alert("VocÃª nÃ£o tem permissÃ£o para salvar resultados.");
     return;
   }
 
@@ -9397,16 +9397,16 @@ window.saveAdminQuickResults = async () => {
     }
 
     if (typeof window.showToast === "function") {
-      window.showToast("Resultados salvos!", "Baixa rápida concluída.", "");
+      window.showToast("Resultados salvos!", "Baixa rÃ¡pida concluÃ­da.", "");
     } else {
       alert("Resultados salvos!");
     }
 
     closeModal();
   } catch (error) {
-    console.error("Erro ao salvar baixa rápida:", error);
+    console.error("Erro ao salvar baixa rÃ¡pida:", error);
     adminQuickResultsState.saving = false;
-    setAdminQuickResultsStatus("Não foi possível salvar os resultados.", "danger");
+    setAdminQuickResultsStatus("NÃ£o foi possÃ­vel salvar os resultados.", "danger");
     renderAdminQuickResultsModal();
   }
 };
@@ -9423,17 +9423,17 @@ const saveAdminMatchInternal = async (keepOpen = false) => {
   const deadlineValue = String(document.getElementById("adminMatchDeadline")?.value || "").trim();
   const shareWhatsapp = document.getElementById("adminMatchShareWhatsapp")?.checked === true;
 
-  if (!competition) return alert("Informe a competição.");
+  if (!competition) return alert("Informe a competiÃ§Ã£o.");
   if (!round) return alert("Informe a rodada/fase.");
   if (!teamA) return alert("Informe o Time A.");
   if (!teamB) return alert("Informe o Time B.");
-  if (normalizeAdminText(teamA) === normalizeAdminText(teamB)) return alert("O Time A e o Time B não podem ser iguais.");
-  if (!deadlineValue) return alert("Informe a data e hora limite para votação.");
-  if (teamALogo && !isHttpUrl(teamALogo)) return alert("O link da logo do Time A precisa começar com http:// ou https://.");
-  if (teamBLogo && !isHttpUrl(teamBLogo)) return alert("O link da logo do Time B precisa começar com http:// ou https://.");
+  if (normalizeAdminText(teamA) === normalizeAdminText(teamB)) return alert("O Time A e o Time B nÃ£o podem ser iguais.");
+  if (!deadlineValue) return alert("Informe a data e hora limite para votaÃ§Ã£o.");
+  if (teamALogo && !isHttpUrl(teamALogo)) return alert("O link da logo do Time A precisa comeÃ§ar com http:// ou https://.");
+  if (teamBLogo && !isHttpUrl(teamBLogo)) return alert("O link da logo do Time B precisa comeÃ§ar com http:// ou https://.");
 
   const deadlineDate = new Date(deadlineValue);
-  if (Number.isNaN(deadlineDate.getTime())) return alert("A data e hora informadas são inválidas.");
+  if (Number.isNaN(deadlineDate.getTime())) return alert("A data e hora informadas sÃ£o invÃ¡lidas.");
 
   const isEditingMatch = Boolean(adminMatchEditState.matchId);
   const editingMatchId = String(adminMatchEditState.matchId || "").trim();
@@ -9441,7 +9441,7 @@ const saveAdminMatchInternal = async (keepOpen = false) => {
 
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert(isEditingMatch ? "Você não tem permissão para editar confrontos." : "Você não tem permissão para criar confrontos.");
+    alert(isEditingMatch ? "VocÃª nÃ£o tem permissÃ£o para editar confrontos." : "VocÃª nÃ£o tem permissÃ£o para criar confrontos.");
     closeModal();
     return;
   }
@@ -9548,7 +9548,7 @@ const saveAdminMatchInternal = async (keepOpen = false) => {
 
       window.updateAdminTeamPreview("A");
       window.updateAdminTeamPreview("B");
-      setAdminCreationStatus("Confronto salvo. Preencha o próximo jogo.");
+      setAdminCreationStatus("Confronto salvo. Preencha o prÃ³ximo jogo.");
       return;
     }
 
@@ -9568,8 +9568,8 @@ const saveAdminMatchInternal = async (keepOpen = false) => {
       adminMatchEditState.saving = false;
       renderAdminMatchEditModal();
     }
-    setAdminCreationStatus(isEditingMatch ? "Não foi possível atualizar o confronto." : "Não foi possível salvar o confronto.", "danger");
-    alert(`${isEditingMatch ? "Não foi possível atualizar o confronto." : "Não foi possível salvar o confronto."} ${error?.message || ""}`.trim());
+    setAdminCreationStatus(isEditingMatch ? "NÃ£o foi possÃ­vel atualizar o confronto." : "NÃ£o foi possÃ­vel salvar o confronto.", "danger");
+    alert(`${isEditingMatch ? "NÃ£o foi possÃ­vel atualizar o confronto." : "NÃ£o foi possÃ­vel salvar o confronto."} ${error?.message || ""}`.trim());
   }
 };
 
@@ -9613,7 +9613,7 @@ const renderAdminMatchEditModal = () => {
     `).join("")
     : `
       <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-500 leading-relaxed">
-        A edi��o atualiza apenas os dados cadastrais do confronto.
+        A ediï¿½ï¿½o atualiza apenas os dados cadastrais do confronto.
       </div>
     `;
 
@@ -9647,7 +9647,7 @@ const renderAdminMatchEditModal = () => {
               </div>
               <div class="admin-mini-chip">
                 <i class="fas fa-futbol"></i>
-                <span>${escapeHtml(match.competition || "Sem competi��o")}</span>
+                <span>${escapeHtml(match.competition || "Sem competiï¿½ï¿½o")}</span>
               </div>
             </div>
 
@@ -9659,7 +9659,7 @@ const renderAdminMatchEditModal = () => {
           <div class="admin-creation-panel space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label class="admin-compact-label">Competi��o</label>
+                <label class="admin-compact-label">Competiï¿½ï¿½o</label>
                 <select id="adminMatchCompetition" class="admin-creation-input" onchange="window.handleAdminCompetitionChange()">
                   <option value="">Selecione</option>
                   ${competitionOptions}
@@ -9667,8 +9667,8 @@ const renderAdminMatchEditModal = () => {
                 <div class="mt-2 flex items-center gap-3">
                   ${getCompetitionThumbHtml(competitionLogo)}
                   <div class="flex-1">
-                    <div class="text-[10px] font-bold uppercase text-gray-400 mb-1">Logo da competi��o</div>
-                    <div class="text-xs text-gray-500">A competi��o selecionada define o destaque visual do confronto.</div>
+                    <div class="text-[10px] font-bold uppercase text-gray-400 mb-1">Logo da competiï¿½ï¿½o</div>
+                    <div class="text-xs text-gray-500">A competiï¿½ï¿½o selecionada define o destaque visual do confronto.</div>
                   </div>
                 </div>
               </div>
@@ -9738,14 +9738,14 @@ const renderAdminMatchEditModal = () => {
             </div>
 
             <div>
-              <label class="admin-compact-label">Data e Hora limite para vota��o</label>
+              <label class="admin-compact-label">Data e Hora limite para votaï¿½ï¿½o</label>
               <input id="adminMatchDeadline" type="datetime-local" class="admin-creation-input" value="${escapeHtml(deadlineValue)}">
             </div>
 
             <div class="grid grid-cols-2 gap-2">
               <button type="button" onclick="window.saveAdminMatchEdit()" ${adminMatchEditState.saving ? "disabled" : ""} class="${adminMatchEditState.saving ? "bg-gray-300 text-gray-600 cursor-not-allowed" : "bg-[#006400] text-white"} py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press flex items-center justify-center gap-2">
                 <i class="fas ${adminMatchEditState.saving ? "fa-circle-notch fa-spin" : "fa-save"} text-base"></i>
-                ${adminMatchEditState.saving ? "Salvando..." : "Salvar altera��es"}
+                ${adminMatchEditState.saving ? "Salvando..." : "Salvar alteraï¿½ï¿½es"}
               </button>
               <button type="button" onclick="window.cancelAdminMatchEdit()" class="bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press">
                 Cancelar
@@ -9789,7 +9789,7 @@ const renderAdminMatchEditModal = () => {
 window.openMatchEditModal = async (matchId) => {
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert("Voc� n�o tem permiss�o para editar confrontos.");
+    alert("Vocï¿½ nï¿½o tem permissï¿½o para editar confrontos.");
     closeModal();
     return;
   }
@@ -9802,7 +9802,7 @@ window.openMatchEditModal = async (matchId) => {
   cont.innerHTML = `
     <div class="bg-white p-6 text-center rounded shadow-xl">
       <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
-      <p class="text-xs font-black text-gray-500 uppercase">Carregando edi��o...</p>
+      <p class="text-xs font-black text-gray-500 uppercase">Carregando ediï¿½ï¿½o...</p>
     </div>
   `;
 
@@ -9817,7 +9817,7 @@ window.openMatchEditModal = async (matchId) => {
 
     if (!Array.isArray(adminCreationState.competitionItems) || !adminCreationState.competitionItems.length || !Array.isArray(adminCreationState.rounds) || !adminCreationState.rounds.length) {
       await loadAdminCreationState().catch((error) => {
-        console.warn("N�o foi poss�vel carregar dados auxiliares da edi��o:", error);
+        console.warn("Nï¿½o foi possï¿½vel carregar dados auxiliares da ediï¿½ï¿½o:", error);
       });
     }
 
@@ -9827,7 +9827,7 @@ window.openMatchEditModal = async (matchId) => {
     ]);
 
     if (!matchSnap.exists()) {
-      throw new Error("Confronto n�o encontrado.");
+      throw new Error("Confronto nï¿½o encontrado.");
     }
 
     const data = matchSnap.data() || {};
@@ -9852,10 +9852,10 @@ window.openMatchEditModal = async (matchId) => {
 
     renderAdminMatchEditModal();
   } catch (error) {
-    console.error("Erro ao abrir edi��o do confronto:", error);
+    console.error("Erro ao abrir ediï¿½ï¿½o do confronto:", error);
     cont.innerHTML = `
       <div class="bg-white p-6 text-center rounded shadow-xl">
-        <p class="text-sm font-black text-red-600 mb-3">N�o foi poss�vel carregar a edi��o.</p>
+        <p class="text-sm font-black text-red-600 mb-3">Nï¿½o foi possï¿½vel carregar a ediï¿½ï¿½o.</p>
         <button onclick="closeModal()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
       </div>
     `;
@@ -9878,7 +9878,7 @@ window.openMatchEditModal = async (matchId) => {
 
             const admin = await getCurrentAdminProfile(true);
             if (!admin) {
-              alert("Você não tem permissão para acessar o painel admin.");
+              alert("VocÃª nÃ£o tem permissÃ£o para acessar o painel admin.");
               closeModal();
               return;
             }
@@ -9892,30 +9892,30 @@ window.openMatchEditModal = async (matchId) => {
                         <button onclick="closeModal()" class="mr-4"><i class="fas fa-arrow-left text-xl"></i></button>
                         <div>
                             <h3 class="font-black uppercase text-lg leading-none">Painel Admin</h3>
-                            <p class="text-[10px] text-[#FFD700] font-bold">Gestão 2026</p>
+                            <p class="text-[10px] text-[#FFD700] font-bold">GestÃ£o 2026</p>
                         </div>
                     </div>
 
                     <div class="flex-1 overflow-y-auto p-4 space-y-6">
                         
                         <div>
-                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">⚽ GESTÃO DE JOGOS</h4>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">âš½ GESTÃƒO DE JOGOS</h4>
                             <div class="grid grid-cols-2 gap-2">
-                                <button onclick="openCreationModal()" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Criação</button>
-                                <button onclick="openQuickResultsModal()" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
+                                <button onclick="openCreationModal()" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> CriaÃ§Ã£o</button>
+                                <button onclick="openQuickResultsModal()" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa RÃ¡pida</button>
                                 <button onclick="openCleanupModal()" class="bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-broom text-lg"></i> Limpeza</button>
                             </div>
                         </div>
 
                         <div>
-                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">👥 PESSOAS & FINANCEIRO</h4>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">ðŸ‘¥ PESSOAS & FINANCEIRO</h4>
                             <button onclick="window.openFinancialScreen()" class="w-full bg-[#C62828] text-white py-4 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2">
-                                <i class="fas fa-wallet text-lg"></i> GERENCIAR PAGAMENTOS & USUÁRIOS
+                                <i class="fas fa-wallet text-lg"></i> GERENCIAR PAGAMENTOS & USUÃRIOS
                             </button>
                         </div>
 
                         <div>
-                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📢 COMUNICAÇÃO & FERRAMENTAS</h4>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">ðŸ“¢ COMUNICAÃ‡ÃƒO & FERRAMENTAS</h4>
                             <div class="grid grid-cols-1 gap-2">
                                 <button onclick="window.openAdminCommunicationsModal()" class="bg-[#6A1B9A] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-bullhorn text-lg"></i> Comunicados</button>
                                 <button onclick="window.openAdminRoundSummaryModal()" class="bg-[#1D4ED8] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-image text-lg"></i> Resumo da Rodada</button>
@@ -9924,7 +9924,7 @@ window.openMatchEditModal = async (matchId) => {
 
                         <div>
                             <div class="border-t border-gray-300 my-2"></div>
-                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📋 LISTA DE CONFRONTOS</h4>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">ðŸ“‹ LISTA DE CONFRONTOS</h4>
                             <div id="adminMatchList" class="bg-white border rounded p-2 text-xs text-gray-500 min-h-[100px]">Carregando...</div>
                         </div>
                     </div>
@@ -9951,14 +9951,14 @@ async function loadAdminMatches() {
             // Ordena para numerar
             all.sort(matchComparator);
 
-            // Gera HTML (Exibindo na ordem inversa para facilitar edição dos recentes, mas com o número certo)
+            // Gera HTML (Exibindo na ordem inversa para facilitar ediÃ§Ã£o dos recentes, mas com o nÃºmero certo)
             let html = ""; 
             [...all].reverse().forEach((m) => { 
-                // Encontra o índice na lista original ordenada
+                // Encontra o Ã­ndice na lista original ordenada
                 const number = all.findIndex(x => x.id === m.id) + 1;
                 const winnerLabel = escapeHtml(String(m.winner || ""));
                 const statusLabel = m.winner
-                  ? `Finalizado • ${winnerLabel}`
+                  ? `Finalizado â€¢ ${winnerLabel}`
                   : (m.expired ? "Aguardando resultado" : "Em aberto");
                 const statusClass = m.winner
                   ? "text-green-700 bg-green-50"
@@ -10074,7 +10074,7 @@ async function loadAdminMatches() {
                   <div class="text-[10px] font-black text-red-600 uppercase tracking-[0.18em]">Finalizados</div>
                   <h4 class="text-lg font-black text-gray-900 leading-tight">Limpeza em massa</h4>
                 </div>
-                <p class="text-xs font-bold text-gray-600 leading-relaxed">Move todos os confrontos finalizados para a lixeira em uma ação de limpeza em massa.</p>
+                <p class="text-xs font-bold text-gray-600 leading-relaxed">Move todos os confrontos finalizados para a lixeira em uma aÃ§Ã£o de limpeza em massa.</p>
                 <div class="grid grid-cols-1 gap-2">
                   <div class="admin-cleanup-summary">
                     <i class="fas fa-flag-checkered"></i>
@@ -10137,7 +10137,7 @@ async function loadAdminMatches() {
         window.openCleanupModal = async () => {
           const admin = await getCurrentAdminProfile(true);
           if (!admin) {
-            alert("Você não tem permissão para acessar a limpeza.");
+            alert("VocÃª nÃ£o tem permissÃ£o para acessar a limpeza.");
             closeModal();
             return;
           }
@@ -10155,7 +10155,7 @@ async function loadAdminMatches() {
             renderAdminCleanupModal();
           } catch (error) {
             console.error("Erro ao abrir limpeza:", error);
-            cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar a limpeza.</p><button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button></div>`;
+            cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><p class="text-sm font-black text-red-600 mb-3">NÃ£o foi possÃ­vel carregar a limpeza.</p><button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button></div>`;
           }
         };
 
@@ -10167,11 +10167,11 @@ async function loadAdminMatches() {
         window.moveToTrash = async (matchId) => {
           if(!confirm("Mover para Lixeira?")) return;
           const admin = await getCurrentAdminProfile(true);
-          if (!admin) return alert("Você não tem permissão para mover confrontos.");
+          if (!admin) return alert("VocÃª nÃ£o tem permissÃ£o para mover confrontos.");
 
           try {
             const snap = await getDoc(doc(db, "matches", matchId));
-            if(!snap.exists()) return alert("Confronto não encontrado.");
+            if(!snap.exists()) return alert("Confronto nÃ£o encontrado.");
 
             const nowTs = Timestamp.fromDate(new Date());
             await setDoc(doc(db, "bin_matches", matchId), {
@@ -10216,12 +10216,12 @@ async function loadAdminMatches() {
                   <div class="admin-trash-card">
                     <div class="admin-trash-card__main">
                       <div class="admin-trash-title">${escapeHtml(m.teamA || "Time A")} x ${escapeHtml(m.teamB || "Time B")}</div>
-                      <div class="admin-trash-meta">${escapeHtml(m.competition || "Sem competição")}${m.round ? ` • ${escapeHtml(m.round)}` : ""}</div>
-                      <div class="admin-trash-meta">${deadlineLabel ? `Prazo: ${escapeHtml(deadlineLabel)}` : "Sem prazo"}${deletedLabel ? ` • Apagado: ${escapeHtml(deletedLabel)}` : ""}</div>
+                      <div class="admin-trash-meta">${escapeHtml(m.competition || "Sem competiÃ§Ã£o")}${m.round ? ` â€¢ ${escapeHtml(m.round)}` : ""}</div>
+                      <div class="admin-trash-meta">${deadlineLabel ? `Prazo: ${escapeHtml(deadlineLabel)}` : "Sem prazo"}${deletedLabel ? ` â€¢ Apagado: ${escapeHtml(deletedLabel)}` : ""}</div>
                     </div>
                     <div class="admin-trash-actions">
                       <button type="button" onclick="window.permanentlyDeleteMatch('${escapeJsString(m.id)}')" class="admin-trash-btn admin-trash-btn--danger">APAGAR</button>
-                      <button type="button" onclick="window.restoreMatch('${escapeJsString(m.id)}')" class="admin-trash-btn admin-trash-btn--ok">↻ RESTAURAR</button>
+                      <button type="button" onclick="window.restoreMatch('${escapeJsString(m.id)}')" class="admin-trash-btn admin-trash-btn--ok">â†» RESTAURAR</button>
                     </div>
                   </div>
                 `;
@@ -10235,7 +10235,7 @@ async function loadAdminMatches() {
                   <button onclick="openCleanupModal()" class="mt-0.5"><i class="fas fa-arrow-left text-xl"></i></button>
                   <div>
                     <h3 class="font-black uppercase text-lg leading-none">LIXEIRA (RESTAURAR)</h3>
-                    <p class="text-[10px] text-[#FFD700] font-bold mt-1">Restaurar trará os palpites de volta.</p>
+                    <p class="text-[10px] text-[#FFD700] font-bold mt-1">Restaurar trarÃ¡ os palpites de volta.</p>
                   </div>
                 </div>
                 <button type="button" onclick="closeModal()" class="ml-2"><i class="fas fa-times text-xl"></i></button>
@@ -10263,7 +10263,7 @@ async function loadAdminMatches() {
         window.openTrashBin = async () => {
           const admin = await getCurrentAdminProfile(true);
           if (!admin) {
-            alert("Você não tem permissão para abrir a lixeira.");
+            alert("VocÃª nÃ£o tem permissÃ£o para abrir a lixeira.");
             closeModal();
             return;
           }
@@ -10287,11 +10287,11 @@ async function loadAdminMatches() {
         window.restoreMatch = async (matchId) => {
           if (!confirm("Restaurar este confronto?")) return;
           const admin = await getCurrentAdminProfile(true);
-          if (!admin) return alert("Você não tem permissão para restaurar confrontos.");
+          if (!admin) return alert("VocÃª nÃ£o tem permissÃ£o para restaurar confrontos.");
 
           try {
             const snap = await getDoc(doc(db, "bin_matches", matchId));
-            if(!snap.exists()) return alert("Confronto não encontrado na lixeira.");
+            if(!snap.exists()) return alert("Confronto nÃ£o encontrado na lixeira.");
 
             const data = { ...snap.data() };
             const teams = `${data.teamA || ""} x ${data.teamB || ""}`;
@@ -10325,9 +10325,9 @@ async function loadAdminMatches() {
         };
 
         window.permanentlyDeleteMatch = async (matchId) => {
-          if (!confirm("Apagar definitivamente este confronto? Essa ação não poderá ser desfeita.")) return;
+          if (!confirm("Apagar definitivamente este confronto? Essa aÃ§Ã£o nÃ£o poderÃ¡ ser desfeita.")) return;
           const admin = await getCurrentAdminProfile(true);
-          if (!admin) return alert("Você não tem permissão para apagar confrontos.");
+          if (!admin) return alert("VocÃª nÃ£o tem permissÃ£o para apagar confrontos.");
 
           try {
             const snap = await getDoc(doc(db, "bin_matches", matchId));
@@ -10359,12 +10359,12 @@ async function loadAdminMatches() {
           cont.innerHTML = `
             <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden">
               <div class="bg-red-700 p-4 text-white">
-                <h3 class="font-black uppercase text-lg leading-tight">⚠️ PERIGO: Limpeza em Massa</h3>
+                <h3 class="font-black uppercase text-lg leading-tight">âš ï¸ PERIGO: Limpeza em Massa</h3>
               </div>
               <div class="p-4 space-y-4">
-                <p class="text-sm font-bold text-gray-800 leading-relaxed">Você tem certeza? Isso vai mover TODOS os jogos que já têm um vencedor definido para a Lixeira.</p>
-                <p class="text-xs font-bold text-gray-500 leading-relaxed">Essa ação só poderá ser revertida restaurando os jogos um por um na lixeira.</p>
-                <div class="rounded-2xl bg-red-50 border border-red-100 p-3 text-center text-red-700 font-black text-xs">${total} confrontos finalizados serão movidos</div>
+                <p class="text-sm font-bold text-gray-800 leading-relaxed">VocÃª tem certeza? Isso vai mover TODOS os jogos que jÃ¡ tÃªm um vencedor definido para a Lixeira.</p>
+                <p class="text-xs font-bold text-gray-500 leading-relaxed">Essa aÃ§Ã£o sÃ³ poderÃ¡ ser revertida restaurando os jogos um por um na lixeira.</p>
+                <div class="rounded-2xl bg-red-50 border border-red-100 p-3 text-center text-red-700 font-black text-xs">${total} confrontos finalizados serÃ£o movidos</div>
                 <button type="button" onclick="window.bulkCleanupFinishedMatches()" class="w-full bg-red-700 text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press">SIM, LIMPAR TUDO</button>
                 <button type="button" onclick="window.openCleanupModal()" class="w-full bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
               </div>
@@ -10374,7 +10374,7 @@ async function loadAdminMatches() {
 
         window.bulkCleanupFinishedMatches = async () => {
           const admin = await getCurrentAdminProfile(true);
-          if (!admin) return alert("Você não tem permissão para limpar confrontos.");
+          if (!admin) return alert("VocÃª nÃ£o tem permissÃ£o para limpar confrontos.");
 
           await refreshAdminCleanupState();
           const matches = adminCleanupState.finishedMatches.filter((m) => String(m.winner || "").trim());
@@ -10425,9 +10425,9 @@ async function loadAdminMatches() {
           }
         };
 
-       // --- PAINEL FINANCEIRO / USUÁRIOS ---
+       // --- PAINEL FINANCEIRO / USUÃRIOS ---
         const FINANCIAL_MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-        const FINANCIAL_MONTH_LABELS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        const FINANCIAL_MONTH_LABELS = ["Janeiro", "Fevereiro", "MarÃ§o", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
         const getFinancialCurrentMonthIndex = () => new Date().getMonth();
         const getFinancialCurrentMonthKey = () => FINANCIAL_MONTHS[getFinancialCurrentMonthIndex()];
@@ -10530,7 +10530,7 @@ async function loadAdminMatches() {
 
         const getFinancialActiveSortArrow = (key) => {
           if (adminFinancialState.sortKey !== key) return "";
-          return adminFinancialState.sortDir === "desc" ? "↓" : "↑";
+          return adminFinancialState.sortDir === "desc" ? "â†“" : "â†‘";
         };
 
         const showFinancialToast = (message, tone = "success") => {
@@ -10613,7 +10613,7 @@ async function loadAdminMatches() {
             adminFinancialState.pushStatuses = result.users || {};
             return adminFinancialState.pushStatuses;
           } catch (error) {
-            console.warn("Não foi possível carregar status de push dos usuários:", error);
+            console.warn("NÃ£o foi possÃ­vel carregar status de push dos usuÃ¡rios:", error);
             adminFinancialState.pushStatuses = {};
             return {};
           }
@@ -10644,7 +10644,7 @@ async function loadAdminMatches() {
           const monthKey = getFinancialCurrentMonthKey();
           const monthName = getFinancialCurrentMonthName();
           const paid = isFinancialUserPaid(user, monthKey);
-          return paid ? "PAGO" : `MÊS ${monthName} PENDENTE`;
+          return paid ? "PAGO" : `MÃŠS ${monthName} PENDENTE`;
         };
 
         const renderFinancialUserChip = (label, tone = "default") => `
@@ -10663,33 +10663,33 @@ async function loadAdminMatches() {
 
           if (status?.active) {
             return {
-              label: apiTokenCount > 1 ? `Push ativo · ${apiTokenCount} aparelhos` : "Push ativo",
+              label: apiTokenCount > 1 ? `Push ativo Â· ${apiTokenCount} aparelhos` : "Push ativo",
               tone: "success"
             };
           }
 
           if (userHasPush) {
             return {
-              label: userTokenCount > 1 ? `Push ativo · ${userTokenCount} aparelhos` : "Push ativo",
+              label: userTokenCount > 1 ? `Push ativo Â· ${userTokenCount} aparelhos` : "Push ativo",
               tone: "success"
             };
           }
 
-          if (user.webPushLastStatus === "denied") return { label: "Permissão negada", tone: "warning" };
+          if (user.webPushLastStatus === "denied") return { label: "PermissÃ£o negada", tone: "warning" };
           if (user.webPushLastStatus === "ios_not_installed") return { label: "iPhone: precisa instalar", tone: "warning" };
-          if (user.webPushLastStatus === "unsupported") return { label: "Navegador incompatível", tone: "warning" };
-          if (user.webPushLastStatus === "not_configured") return { label: "Push não configurado", tone: "default" };
+          if (user.webPushLastStatus === "unsupported") return { label: "Navegador incompatÃ­vel", tone: "warning" };
+          if (user.webPushLastStatus === "not_configured") return { label: "Push nÃ£o configurado", tone: "default" };
           return { label: "Sem push", tone: "default" };
         };
 
         const renderFinancialUserCard = (user) => {
           const paid = isFinancialUserPaid(user);
-          const versionLabel = String(user.appVersion || "Sem versão").trim();
+          const versionLabel = String(user.appVersion || "Sem versÃ£o").trim();
           const loginLabel = formatFinancialDateTime(user.lastAccessDate);
           const rulesLabel = user.rulesAccepted === true
             ? `ACEITO ${user.rulesAcceptedVersion || ""}`.trim()
             : "REGULAMENTO PENDENTE";
-          const debtLabel = user.debts > 0 ? `INADIMPLÊNCIA ${user.debts}` : "SEM MULTAS";
+          const debtLabel = user.debts > 0 ? `INADIMPLÃŠNCIA ${user.debts}` : "SEM MULTAS";
           const inactiveClass = user.isActive === false ? "admin-financial-card--inactive" : "";
           const pushChip = getFinancialPushStatusChip(user);
 
@@ -10711,7 +10711,7 @@ async function loadAdminMatches() {
                   </div>
                   <div class="admin-financial-badges">
                     ${renderFinancialUserChip(versionLabel, "default")}
-                    ${renderFinancialUserChip(`Último login ${loginLabel}`, paid ? "success" : "warning")}
+                    ${renderFinancialUserChip(`Ãšltimo login ${loginLabel}`, paid ? "success" : "warning")}
                     ${renderFinancialUserChip(rulesLabel, user.rulesAccepted === true ? "success" : "warning")}
                     ${renderFinancialUserChip(getFinancialPaymentsSummary(user), paid ? "success" : "danger")}
                     ${renderFinancialUserChip(pushChip.label, pushChip.tone)}
@@ -10749,8 +10749,8 @@ async function loadAdminMatches() {
               <div class="relative z-10 flex flex-col h-full bg-white/92">
                 <div class="bg-[#006400] p-4 text-white flex items-start justify-between shadow-md shrink-0">
                   <div class="pr-3">
-                    <h3 class="font-black uppercase text-lg leading-none">GESTÃO FINANCEIRA</h3>
-                    <p class="text-[10px] text-[#FFD700] font-bold mt-1">${getFinancialCurrentMonthName()} • ${sorted.length} usuários</p>
+                    <h3 class="font-black uppercase text-lg leading-none">GESTÃƒO FINANCEIRA</h3>
+                    <p class="text-[10px] text-[#FFD700] font-bold mt-1">${getFinancialCurrentMonthName()} â€¢ ${sorted.length} usuÃ¡rios</p>
                   </div>
                   <button type="button" onclick="closeModal()" class="ml-2"><i class="fas fa-times text-xl"></i></button>
                 </div>
@@ -10782,8 +10782,8 @@ async function loadAdminMatches() {
                     <div class="admin-financial-sortbar">
                       ${sortBtn("name", "Nome")}
                       ${sortBtn("status", "Status")}
-                      ${sortBtn("version", "Versão")}
-                      ${sortBtn("lastLogin", "Último login")}
+                      ${sortBtn("version", "VersÃ£o")}
+                      ${sortBtn("lastLogin", "Ãšltimo login")}
                     </div>
                   </div>
 
@@ -10797,7 +10797,7 @@ async function loadAdminMatches() {
                     ${sorted.length ? sorted.map((user) => renderFinancialUserCard(user)).join("") : `
                       <div class="admin-quick-result-empty">
                         <div class="text-base font-black text-gray-800">Nenhum participante encontrado.</div>
-                        <p class="mt-1 text-xs text-gray-500">Tente outro nome, usuário ou email.</p>
+                        <p class="mt-1 text-xs text-gray-500">Tente outro nome, usuÃ¡rio ou email.</p>
                       </div>
                     `}
                   </div>
@@ -10858,13 +10858,13 @@ async function loadAdminMatches() {
           const raw = String(input?.value || "").trim();
           const username = normalizeFinancialUsername(raw);
           if (!username) {
-            showFinancialToast("Informe um usuário.", "danger");
+            showFinancialToast("Informe um usuÃ¡rio.", "danger");
             return;
           }
 
           const duplicate = (adminFinancialState.whitelist || []).some((item) => normalizeFinancialUsername(item.username || item.id || "") === username);
           if (duplicate) {
-            showFinancialToast("Convite já existe.", "danger");
+            showFinancialToast("Convite jÃ¡ existe.", "danger");
             return;
           }
 
@@ -10886,7 +10886,7 @@ async function loadAdminMatches() {
             showFinancialToast("Convite criado!");
           } catch (error) {
             console.error("Erro ao criar convite:", error);
-            showFinancialToast("Não foi possível criar o convite.", "danger");
+            showFinancialToast("NÃ£o foi possÃ­vel criar o convite.", "danger");
           }
         };
 
@@ -10894,7 +10894,7 @@ async function loadAdminMatches() {
           const clean = normalizeFinancialUsername(username);
           if (!clean) return;
 
-          const confirmText = `⚠️ REVOGAR ACESSO?\n\nVocê vai remover o convite de: ${clean}\nO usuário perderá o acesso ao app imediatamente.\nFique tranquilo: os pontos e histórico dele NÃO serão apagados.`;
+          const confirmText = `âš ï¸ REVOGAR ACESSO?\n\nVocÃª vai remover o convite de: ${clean}\nO usuÃ¡rio perderÃ¡ o acesso ao app imediatamente.\nFique tranquilo: os pontos e histÃ³rico dele NÃƒO serÃ£o apagados.`;
           if (!confirm(confirmText)) return;
 
           try {
@@ -10905,14 +10905,14 @@ async function loadAdminMatches() {
             showFinancialToast("Acesso revogado.");
           } catch (error) {
             console.error("Erro ao revogar convite:", error);
-            showFinancialToast("Não foi possível revogar o acesso.", "danger");
+            showFinancialToast("NÃ£o foi possÃ­vel revogar o acesso.", "danger");
           }
         };
 
         window.openInviteManager = async () => {
           const admin = await getCurrentAdminProfile(true);
           if (!admin) {
-            alert("Você não tem permissão para acessar os convites.");
+            alert("VocÃª nÃ£o tem permissÃ£o para acessar os convites.");
             return;
           }
 
@@ -10923,7 +10923,7 @@ async function loadAdminMatches() {
         window.openFinancialAuditModal = async () => {
           const admin = await getCurrentAdminProfile(true);
           if (!admin) {
-            alert("Você não tem permissão para auditar pagamentos.");
+            alert("VocÃª nÃ£o tem permissÃ£o para auditar pagamentos.");
             return;
           }
 
@@ -10947,9 +10947,9 @@ async function loadAdminMatches() {
                 <h3 class="font-black uppercase text-lg leading-tight">Auditoria: ${escapeHtml(getFinancialCurrentMonthName())}</h3>
               </div>
               <div class="p-4 space-y-3">
-                <div class="text-sm font-black text-gray-800">Usuários com pagamento pendente neste mês: ${summary.pendingUsers.length}</div>
-                <p class="text-xs text-gray-600 font-bold">Deseja aplicar +1 multa automática para todos?</p>
-                ${blocked ? `<div class="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-black text-red-700">A auditoria automática só pode ser aplicada após o dia 10.</div>` : ""}
+                <div class="text-sm font-black text-gray-800">UsuÃ¡rios com pagamento pendente neste mÃªs: ${summary.pendingUsers.length}</div>
+                <p class="text-xs text-gray-600 font-bold">Deseja aplicar +1 multa automÃ¡tica para todos?</p>
+                ${blocked ? `<div class="rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-black text-red-700">A auditoria automÃ¡tica sÃ³ pode ser aplicada apÃ³s o dia 10.</div>` : ""}
                 ${pendingList ? `<div class="max-h-40 overflow-y-auto rounded-2xl border bg-gray-50 p-3 space-y-1">${pendingList || ""}</div>` : ""}
                 <div class="grid grid-cols-2 gap-2 pt-2">
                   <button type="button" onclick="window.openFinancialScreen()" class="bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
@@ -10963,29 +10963,29 @@ async function loadAdminMatches() {
         window.applyFinancialAudit = async () => {
           const admin = await getCurrentAdminProfile(true);
           if (!admin) {
-            alert("Você não tem permissão para aplicar multas.");
+            alert("VocÃª nÃ£o tem permissÃ£o para aplicar multas.");
             return;
           }
 
           const day = new Date().getDate();
           if (day <= 10) {
-            showFinancialToast("A auditoria automática só pode ser aplicada após o dia 10.", "danger");
+            showFinancialToast("A auditoria automÃ¡tica sÃ³ pode ser aplicada apÃ³s o dia 10.", "danger");
             return;
           }
 
           await loadAdminFinancialUsers();
           const summary = await loadFinancialAuditSummary();
           if (!summary.pendingUsers.length) {
-            showFinancialToast("Nenhum usuário pendente neste mês.", "danger");
+            showFinancialToast("Nenhum usuÃ¡rio pendente neste mÃªs.", "danger");
             return;
           }
 
           if (summary.alreadyApplied) {
-            showFinancialToast("A auditoria deste mês já foi aplicada.", "danger");
+            showFinancialToast("A auditoria deste mÃªs jÃ¡ foi aplicada.", "danger");
             return;
           }
 
-          if (!confirm("Aplicar +1 multa automática para todos os usuários pendentes?")) return;
+          if (!confirm("Aplicar +1 multa automÃ¡tica para todos os usuÃ¡rios pendentes?")) return;
 
           try {
             const chunks = [];
@@ -11022,7 +11022,7 @@ async function loadAdminMatches() {
             await window.openFinancialScreen();
           } catch (error) {
             console.error("Erro ao aplicar auditoria financeira:", error);
-            showFinancialToast("Não foi possível aplicar as multas.", "danger");
+            showFinancialToast("NÃ£o foi possÃ­vel aplicar as multas.", "danger");
           }
         };
 
@@ -11042,7 +11042,7 @@ async function loadAdminMatches() {
                 <i class="fas fa-trash"></i>
               </button>
             </div>
-          `).join("") : `<div class="admin-quick-result-empty"><div class="text-base font-black text-gray-800">Nenhum convite vigente.</div><p class="mt-1 text-xs text-gray-500">Adicione um usuário para liberar acesso ao app.</p></div>`;
+          `).join("") : `<div class="admin-quick-result-empty"><div class="text-base font-black text-gray-800">Nenhum convite vigente.</div><p class="mt-1 text-xs text-gray-500">Adicione um usuÃ¡rio para liberar acesso ao app.</p></div>`;
 
           modal.classList.remove("hidden");
           cont.innerHTML = `
@@ -11060,7 +11060,7 @@ async function loadAdminMatches() {
                   <div>
                     <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Novo Convite</div>
                     <div class="mt-2 flex gap-2">
-                      <input id="adminInviteInput" type="text" class="admin-creation-input flex-1" placeholder="Usuário (sem @bolao...)" autocomplete="off">
+                      <input id="adminInviteInput" type="text" class="admin-creation-input flex-1" placeholder="UsuÃ¡rio (sem @bolao...)" autocomplete="off">
                       <button type="button" onclick="window.addFinancialInvite()" class="admin-search-btn"><i class="fas fa-plus"></i></button>
                     </div>
                   </div>
@@ -11113,12 +11113,12 @@ async function loadAdminMatches() {
                       <i class="fas fa-key"></i> RESETAR SENHA
                     </button>
                     <button type="button" onclick="window.toggleFinancialUserActive()" class="bg-gray-800 text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
-                      <i class="fas fa-user-slash"></i> EXCLUIR USUÁRIO
+                      <i class="fas fa-user-slash"></i> EXCLUIR USUÃRIO
                     </button>
                   </div>
 
                   <div>
-                    <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Inadimplências</div>
+                    <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">InadimplÃªncias</div>
                     <div class="mt-2 flex items-center justify-center gap-3">
                       <button type="button" onclick="window.adjustFinancialUserDebt(-1)" class="admin-financial-debt-btn"><i class="fas fa-minus"></i></button>
                       <span class="admin-financial-debt-value">${Number(draft.debts || 0)}</span>
@@ -11132,7 +11132,7 @@ async function loadAdminMatches() {
                   </div>
 
                   <div class="text-[11px] font-bold text-gray-500">
-                    Último login: ${escapeHtml(formatFinancialDateTime(draft.lastAccessDate))}
+                    Ãšltimo login: ${escapeHtml(formatFinancialDateTime(draft.lastAccessDate))}
                   </div>
                 </div>
               </div>
@@ -11149,7 +11149,7 @@ async function loadAdminMatches() {
         window.openFinancialUserModal = async (uid) => {
           const user = (adminFinancialState.users || []).find((item) => item.id === uid);
           if (!user) {
-            showFinancialToast("Usuário não encontrado.", "danger");
+            showFinancialToast("UsuÃ¡rio nÃ£o encontrado.", "danger");
             return;
           }
 
@@ -11182,7 +11182,7 @@ async function loadAdminMatches() {
           const draft = adminFinancialState.editUserDraft;
           if (!draft) return;
 
-          const confirmText = `⚠️ EXCLUIR USUÁRIO?\n\nVocê vai revogar o acesso de @${draft.username}.\n\nOs pontos, palpites, pagamentos e histórico serão preservados.`;
+          const confirmText = `âš ï¸ EXCLUIR USUÃRIO?\n\nVocÃª vai revogar o acesso de @${draft.username}.\n\nOs pontos, palpites, pagamentos e histÃ³rico serÃ£o preservados.`;
           if (!confirm(confirmText)) return;
 
           try {
@@ -11203,14 +11203,14 @@ async function loadAdminMatches() {
               name: draft.name || ""
             });
 
-            showFinancialToast("Usuário desativado.");
+            showFinancialToast("UsuÃ¡rio desativado.");
             adminFinancialState.editUserDraft.isActive = false;
             await loadAdminFinancialUsers();
             renderAdminFinancialUserEditModal();
             await window.openFinancialScreen();
           } catch (error) {
-            console.error("Erro ao desativar usuário:", error);
-            showFinancialToast("Não foi possível desativar o usuário.", "danger");
+            console.error("Erro ao desativar usuÃ¡rio:", error);
+            showFinancialToast("NÃ£o foi possÃ­vel desativar o usuÃ¡rio.", "danger");
           }
         };
 
@@ -11226,13 +11226,13 @@ async function loadAdminMatches() {
           cont.innerHTML = `
             <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden">
               <div class="bg-[#006400] p-4 text-white">
-                <h3 class="font-black uppercase text-lg leading-tight">🔁 Resetar senha</h3>
+                <h3 class="font-black uppercase text-lg leading-tight">ðŸ” Resetar senha</h3>
               </div>
               <div class="p-4 space-y-3">
-                <p class="text-sm font-bold text-gray-700">Defina uma nova senha para este usuário. Ele vai usar essa senha no próximo login.</p>
-                <div class="text-xs font-black text-gray-500 uppercase">Usuário alvo</div>
-                <div class="text-sm font-black text-gray-900">@${escapeHtml(draft.username || "")} • ${escapeHtml(draft.name || "")}</div>
-                <input id="financialResetPass" type="password" class="admin-creation-input" placeholder="Nova senha (mín. 6)">
+                <p class="text-sm font-bold text-gray-700">Defina uma nova senha para este usuÃ¡rio. Ele vai usar essa senha no prÃ³ximo login.</p>
+                <div class="text-xs font-black text-gray-500 uppercase">UsuÃ¡rio alvo</div>
+                <div class="text-sm font-black text-gray-900">@${escapeHtml(draft.username || "")} â€¢ ${escapeHtml(draft.name || "")}</div>
+                <input id="financialResetPass" type="password" class="admin-creation-input" placeholder="Nova senha (mÃ­n. 6)">
                 <div class="grid grid-cols-2 gap-2 pt-2">
                   <button type="button" onclick="window.openFinancialUserModal('${escapeJsString(draft.id)}')" class="bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
                   <button type="button" onclick="window.confirmResetUserPassword()" class="bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Resetar</button>
@@ -11249,7 +11249,7 @@ async function loadAdminMatches() {
           const newPassword = String(input?.value || "").trim();
           if (!draft) return;
           if (newPassword.length < 6) {
-            showFinancialToast("A nova senha deve ter no mínimo 6 caracteres.", "danger");
+            showFinancialToast("A nova senha deve ter no mÃ­nimo 6 caracteres.", "danger");
             return;
           }
 
@@ -11265,7 +11265,7 @@ async function loadAdminMatches() {
               })
             });
             const result = await response.json().catch(() => ({}));
-            if (!response.ok) throw new Error(result?.error || "Não foi possível resetar a senha.");
+            if (!response.ok) throw new Error(result?.error || "NÃ£o foi possÃ­vel resetar a senha.");
 
             await logAdminFinancialAction("reset_user_password", {
               targetUserId: draft.id,
@@ -11276,7 +11276,7 @@ async function loadAdminMatches() {
             await window.openFinancialUserModal(draft.id);
           } catch (error) {
             console.error("Erro ao resetar senha:", error);
-            showFinancialToast(error.message || "Não foi possível resetar a senha.", "danger");
+            showFinancialToast(error.message || "NÃ£o foi possÃ­vel resetar a senha.", "danger");
           }
         };
 
@@ -11303,19 +11303,19 @@ async function loadAdminMatches() {
               username: draft.username || "",
               debts: payload.debts
             });
-            showFinancialToast("Usuário atualizado!");
+            showFinancialToast("UsuÃ¡rio atualizado!");
             await window.openFinancialScreen();
           } catch (error) {
-            console.error("Erro ao salvar usuário:", error);
-            showFinancialToast("Não foi possível atualizar o usuário.", "danger");
+            console.error("Erro ao salvar usuÃ¡rio:", error);
+            showFinancialToast("NÃ£o foi possÃ­vel atualizar o usuÃ¡rio.", "danger");
           }
         };
-                // --- CORREÇÃO DO PAINEL FINANCEIRO E PAGAMENTO ---
+                // --- CORREÃ‡ÃƒO DO PAINEL FINANCEIRO E PAGAMENTO ---
 
                 window.openFinancialScreen = async () => {
             const admin = await getCurrentAdminProfile(true);
             if (!admin) {
-              alert("Você não tem permissão para acessar o financeiro.");
+              alert("VocÃª nÃ£o tem permissÃ£o para acessar o financeiro.");
               closeModal();
               return;
             }
@@ -11351,10 +11351,10 @@ async function loadAdminMatches() {
                     const currentData = snap.data();
                     const payments = currentData.payments || {};
 
-                    // Inverte o valor atual (se era true vira false, se não existia vira true)
+                    // Inverte o valor atual (se era true vira false, se nÃ£o existia vira true)
                     payments[month] = !payments[month];
 
-                    // Salva no banco (Merge garante que não apague outros campos)
+                    // Salva no banco (Merge garante que nÃ£o apague outros campos)
                     await setDoc(ref, { payments: payments }, { merge: true });
                     
                     // Atualiza o pote e a tela
@@ -11382,7 +11382,7 @@ const renderProfileSectionHeader = (title, subtitle, chipLabel = "") => `
   </div>
 `;
 
-const renderProfileActionTile = ({ tag = "button", onclick = "", extraAttrs = "", iconClass, iconToneClass, title, desc }) => `
+const renderProfileActionTile = ({ tag = "button", onclick = "", extraAttrs = "", iconClass, iconToneClass, title, desc, chip = "" }) => `
   <${tag}
     ${onclick ? `onclick="${onclick}"` : ""}
     ${extraAttrs}
@@ -11395,8 +11395,15 @@ const renderProfileActionTile = ({ tag = "button", onclick = "", extraAttrs = ""
       <div class="profile-action-tile__title">${escapeHtml(title)}</div>
       <div class="profile-action-tile__desc">${escapeHtml(desc)}</div>
     </div>
+    ${chip ? `<span class="status-chip status-chip--default">${escapeHtml(chip)}</span>` : ""}
   </${tag}>
 `;
+
+window.scrollToProfileSection = (sectionId) => {
+  const target = document.getElementById(sectionId);
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+};
 
 const renderProfileActionRow = ({ onclick = "", iconClass, iconToneClass, title, desc, chip = "", dark = false }) => `
   <button
@@ -11446,7 +11453,7 @@ async function loadProfile() {
             if (!userSnap.exists()) return; 
             
             const u = getMergedCurrentUserData(userSnap.data() || {}); 
-// AQUI: Usa a função corrigida para decidir entre Foto Real ou Avatar
+// AQUI: Usa a funÃ§Ã£o corrigida para decidir entre Foto Real ou Avatar
             const avatar = getAvatarUrl(u.photoBase64, u.name || u.username);
             // 2. Configura dados do PIX
             let pixKey = "5585998523009"; 
@@ -11462,7 +11469,7 @@ async function loadProfile() {
                 if (fin.beneficiary) beneficiary = fin.beneficiary;
             }
 
-            // --- LÓGICA FINANCEIRA ---
+            // --- LÃ“GICA FINANCEIRA ---
             const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
             const currMonth = months[new Date().getMonth()];
             const payments = u.payments || {};
@@ -11495,11 +11502,11 @@ async function loadProfile() {
                         <div class="bg-white/80 backdrop-blur-sm p-4 rounded-xl border border-gray-100 shadow-sm mb-4">
                             <p class="text-xs font-bold text-gray-800 uppercase mb-1">Valor da Mensalidade</p>
                             <p class="text-4xl font-black text-black tracking-tight">R$ 15,00</p>
-                            <p class="text-[10px] text-gray-600 mt-2 font-bold">Beneficiário: <span class="text-[#006400] uppercase">${beneficiary}</span></p>
+                            <p class="text-[10px] text-gray-600 mt-2 font-bold">BeneficiÃ¡rio: <span class="text-[#006400] uppercase">${beneficiary}</span></p>
                         </div>
 
                         <div class="space-y-2">
-                            <button onclick="navigator.clipboard.writeText('${pixCode}'); alert('Código PIX Copia e Cola copiado!')" class="w-full bg-[#32BCAD] hover:bg-[#2aa89a] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex items-center justify-center gap-2 transition-colors">
+                            <button onclick="navigator.clipboard.writeText('${pixCode}'); alert('CÃ³digo PIX Copia e Cola copiado!')" class="w-full bg-[#32BCAD] hover:bg-[#2aa89a] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex items-center justify-center gap-2 transition-colors">
                                 <i class="fas fa-copy text-lg"></i> PIX COPIA E COLA
                             </button>
                             
@@ -11511,7 +11518,7 @@ async function loadProfile() {
                         </div>
 
                         <div class="border-t border-gray-300/50 pt-4 mt-4">
-                            <p class="text-[10px] font-bold text-gray-700 mb-2">Já fez o pagamento?</p>
+                            <p class="text-[10px] font-bold text-gray-700 mb-2">JÃ¡ fez o pagamento?</p>
                             <button onclick="window.open('https://wa.me/${adminPhone}?text=Ei%20Branco!%20J%C3%A1%20fiz%20o%20pagamento%20da%20minha%20mensalidade%20do%20Bol%C3%A3o%20112%20F.C.', '_blank')" class="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white py-3 rounded-lg font-bold text-xs shadow-md btn-press flex items-center justify-center gap-2 transition-colors">
                                 <i class="fab fa-whatsapp text-lg"></i> AVISAR AO BRANCO
                             </button>
@@ -11523,9 +11530,9 @@ async function loadProfile() {
             const soundEnabled = isSoundEnabled();
             const webPushSectionHtml = await buildProfileWebPushSection(u);
             const accountActionsHtml = `
-              <section class="profile-section mb-4">
+              <section class="profile-section profile-section--compact mb-3">
                 ${renderProfileSectionHeader("Conta", "Ações principais do seu acesso", "Essencial")}
-                <div class="profile-action-grid">
+                <div class="profile-actions-grid">
                   ${renderProfileActionTile({
                     tag: "label",
                     extraAttrs: `for="uploadPhoto"`,
@@ -11541,31 +11548,46 @@ async function loadProfile() {
                     title: "Trocar senha",
                     desc: "Mantenha sua conta protegida."
                   })}
+                  ${renderProfileActionTile({
+                    onclick: "window.scrollToProfileSection('profileWebPushSection')",
+                    iconClass: "fas fa-bell",
+                    iconToneClass: "bg-purple-50 text-purple-600",
+                    title: "Notificações",
+                    desc: "Ative ou revalide neste aparelho."
+                  })}
+                  ${renderProfileActionTile({
+                    onclick: "window.toggleSoundPreference()",
+                    iconClass: soundEnabled ? "fas fa-volume-high" : "fas fa-volume-xmark",
+                    iconToneClass: soundEnabled ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500",
+                    title: "Som do app",
+                    desc: "Toque nos efeitos do Bolão.",
+                    chip: soundEnabled ? "Ligado" : "Desligado"
+                  })}
                 </div>
               </section>
             `;
 
             const shortcutsSectionHtml = `
-              <section class="profile-section mb-4">
+              <section class="profile-section profile-section--compact mb-3">
                 ${renderProfileSectionHeader("Atalhos", "Tudo o que você usa com mais frequência", "Rápido")}
-                <div class="profile-action-list">
-                  ${renderProfileActionRow({
+                <div class="profile-shortcuts-grid">
+                  ${renderProfileActionTile({
                     onclick: "openRulesModal()",
                     iconClass: "fas fa-scroll",
                     iconToneClass: "bg-emerald-50 text-emerald-700",
                     title: "Regras do bolão",
                     desc: "Consulte o regulamento sempre que precisar."
                   })}
-                  ${renderProfileActionRow({
+                  ${renderProfileActionTile({
                     onclick: "window.openCalendar2026()",
                     iconClass: "fas fa-calendar-alt",
                     iconToneClass: "bg-blue-50 text-blue-700",
                     title: "Calendário 2026",
                     desc: "Veja as datas importantes da temporada."
                   })}
-                  ${renderProfileActionRow({
+                  ${renderProfileActionTile({
                     onclick: "showAppGuide()",
-                    iconClass: "fas fa-info-circle",
+                    iconClass: "fas fa-circle-info",
                     iconToneClass: "bg-purple-50 text-purple-600",
                     title: "Guia do app",
                     desc: "Relembre funções e atalhos do sistema."
@@ -11574,24 +11596,8 @@ async function loadProfile() {
               </section>
             `;
 
-            const preferencesSectionHtml = `
-              <section class="profile-section mb-6">
-                ${renderProfileSectionHeader("Preferências", "Ajustes locais deste aparelho", "Pessoal")}
-                <div class="profile-action-list">
-                  ${renderProfileActionRow({
-                    onclick: "window.toggleSoundPreference()",
-                    iconClass: soundEnabled ? "fas fa-volume-up" : "fas fa-volume-mute",
-                    iconToneClass: soundEnabled ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500",
-                    title: "Som do app",
-                    desc: "Controle se os efeitos sonoros tocam neste dispositivo.",
-                    chip: soundEnabled ? "Ligado" : "Desligado"
-                  })}
-                </div>
-              </section>
-            `;
-
             const adminSectionHtml = u.isAdmin ? `
-              <section class="profile-section mb-6">
+              <section class="profile-section profile-section--compact mb-4">
                 ${renderProfileSectionHeader("Admin", "Ferramentas administrativas do bolão", "Restrito")}
                 <div class="profile-action-list">
                   ${renderProfileActionRow({
@@ -11605,11 +11611,10 @@ async function loadProfile() {
                 </div>
               </section>
             ` : "";
-
             // HTML DA TELA DE PERFIL (GRADE LIMPA)
             const profileHTML = `
             <div id="profileScreen" class="animate-fade-in p-4">
-                <div class="card-cut relative overflow-hidden bg-white shadow-lg mb-6 border-l-4 border-[#006400]">
+                <div class="card-cut relative overflow-hidden bg-white shadow-lg mb-4 border-l-4 border-[#006400]">
                     <div class="absolute right-0 top-0 p-2 opacity-10">
                         <i class="fas fa-id-card text-6xl text-[#006400]"></i>
                     </div>
@@ -11622,7 +11627,7 @@ async function loadProfile() {
                             <p class="text-sm text-gray-500 font-bold">@${u.username}</p>
                             <div class="mt-2 flex flex-wrap items-center gap-2">
                               <div class="inline-flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-[10px] font-bold text-gray-600">
-                                <i class="fas fa-crown text-[#FFD700]"></i> SÓCIO TORCEDOR
+                                <i class="fas fa-crown text-[#FFD700]"></i> SÃ“CIO TORCEDOR
                               </div>
                               <span class="status-chip ${isPaid ? "status-chip--success" : "status-chip--danger"}">${isPaid ? "Mensalidade ok" : "Pagamento pendente"}</span>
                             </div>
@@ -11635,10 +11640,9 @@ async function loadProfile() {
                 ${accountActionsHtml}
                 ${webPushSectionHtml}
                 ${shortcutsSectionHtml}
-                ${preferencesSectionHtml}
 
-                <div id="financialSection" class="profile-section mb-6">
-                    ${renderProfileSectionHeader("Financeiro", "Sua situação da mensalidade em um toque", isPaid ? "Em dia" : "Atenção")}
+                <div id="financialSection" class="profile-section profile-section--compact mb-4">
+                    ${renderProfileSectionHeader("Financeiro", "Sua situaÃ§Ã£o da mensalidade em um toque", isPaid ? "Em dia" : "AtenÃ§Ã£o")}
                     <div class="p-3">
                      <div id="financialCard" class="p-4 rounded-lg border shadow-sm cursor-pointer btn-press flex justify-between items-center transition-colors ${finCardClass}" onclick="window.openPixPaymentModal()">
                         <div class="text-left">
@@ -11654,7 +11658,7 @@ async function loadProfile() {
 
                 <div class="text-center pb-safe">
                     <div class="version-chip">${getAppVersionLabel()}</div>
-                    <p class="text-[9px] text-gray-400 mt-2 font-bold uppercase">Bolão 112 F.C • 2026</p>
+                    <p class="text-[9px] text-gray-400 mt-2 font-bold uppercase">BolÃ£o 112 F.C â€¢ 2026</p>
                 </div>
             </div>`;
 
@@ -11682,7 +11686,7 @@ async function loadProfile() {
              }).catch(err => { alert("Erro na imagem."); }); 
          } 
     };
-        // Função Global para Editar Dica (ADICIONE ISSO LOGO APÓS A loadProfile)
+        // FunÃ§Ã£o Global para Editar Dica (ADICIONE ISSO LOGO APÃ“S A loadProfile)
         window.editHint = (currentVal) => {
             const val = currentVal === "Sem dica cadastrada" ? "" : currentVal;
             const newHint = prompt("Digite uma dica para lembrar sua senha:", val);
@@ -11700,7 +11704,7 @@ async function loadProfile() {
         document.getElementById('financialCard').onclick = () => window.openPixPaymentModal();
         window.copyKeyOnly = () => { document.getElementById('pixKey').select(); document.execCommand('copy'); alert("Chave Pix Copiada!"); };
         document.getElementById('btnCopyPix').onclick = () => { alert("Copie a chave manual abaixo por enquanto."); };
-        window.changePassword = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_login2.png" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 p-6"><h3 class="font-black text-[#006400] text-center mb-6 text-lg uppercase">Nova Senha</h3><input type="password" id="newPassInput" placeholder="Mínimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnConfirmPass" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CONFIRMAR</button><button onclick="closeModal()" class="w-full text-black font-black text-xs mt-4">CANCELAR</button></div></div>`; document.getElementById('btnConfirmPass').onclick = () => { const newPass = document.getElementById('newPassInput').value; if(newPass && newPass.length >= 6) { updatePassword(currentUser, newPass).then(() => { alert("Senha alterada com sucesso!"); closeModal(); }).catch(e => alert("Erro: Faça logout e login novamente para trocar a senha.")); } else { alert("A senha deve ter no mínimo 6 caracteres."); } }; };
+        window.changePassword = () => { document.getElementById('modalOverlay').classList.remove('hidden'); document.getElementById('modalContainer').innerHTML = `<div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative"><img src="bg_login2.png" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-15"><div class="relative z-10 p-6"><h3 class="font-black text-[#006400] text-center mb-6 text-lg uppercase">Nova Senha</h3><input type="password" id="newPassInput" placeholder="MÃ­nimo 6 caracteres" class="w-full p-3 bg-gray-50 border rounded-lg mb-6 text-sm outline-none focus:border-[#006400]"><button id="btnConfirmPass" class="w-full bg-[#006400] text-white py-3 font-bold rounded-lg shadow-lg btn-press">CONFIRMAR</button><button onclick="closeModal()" class="w-full text-black font-black text-xs mt-4">CANCELAR</button></div></div>`; document.getElementById('btnConfirmPass').onclick = () => { const newPass = document.getElementById('newPassInput').value; if(newPass && newPass.length >= 6) { updatePassword(currentUser, newPass).then(() => { alert("Senha alterada com sucesso!"); closeModal(); }).catch(e => alert("Erro: FaÃ§a logout e login novamente para trocar a senha.")); } else { alert("A senha deve ter no mÃ­nimo 6 caracteres."); } }; };
 
 window.openCalendar2026 = () => {
   const html = `
@@ -11709,7 +11713,7 @@ window.openCalendar2026 = () => {
 
       <div class="relative z-10 flex items-center justify-between p-3">
         <div class="text-white font-black text-sm uppercase tracking-wider">
-          Calendário 2026
+          CalendÃ¡rio 2026
         </div>
 
         <button onclick="closeModal()" class="text-white/80 hover:text-white p-2">
@@ -11723,7 +11727,7 @@ window.openCalendar2026 = () => {
           loading="lazy"
           decoding="async"
           class="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-          alt="Calendário 2026"
+          alt="CalendÃ¡rio 2026"
         />
       </div>
     </div>
@@ -11745,40 +11749,40 @@ window.openCalendar2026 = () => {
                     <p class="text-center text-[10px] text-gray-500 font-bold mb-4">${getAppVersionFullLabel()}</p>
                     
                     <div class="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 shadow-sm">
-                        <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">⚽ JOGOS & PALPITES</h4>
+                        <h4 class="font-black text-[#006400] text-xs mb-3 uppercase tracking-wide">âš½ JOGOS & PALPITES</h4>
                         <div class="text-xs text-gray-700 space-y-2 font-medium">
-                            <p>👉 <b>Como votar:</b> Toque no escudo do time. O voto fica verde quando salvo.</p>
-                            <p class="text-green-800 font-bold">👉 Termômetro: <span class="font-normal text-gray-700">Após o jogo, veja a % da galera.</span></p>
-                            <p class="text-green-800 font-bold">👉 Resenha: <span class="font-normal text-gray-700">Toque no ícone 💬 para zoar. O balão fica vermelho se tiver msg não lida!</span></p>
+                            <p>ðŸ‘‰ <b>Como votar:</b> Toque no escudo do time. O voto fica verde quando salvo.</p>
+                            <p class="text-green-800 font-bold">ðŸ‘‰ TermÃ´metro: <span class="font-normal text-gray-700">ApÃ³s o jogo, veja a % da galera.</span></p>
+                            <p class="text-green-800 font-bold">ðŸ‘‰ Resenha: <span class="font-normal text-gray-700">Toque no Ã­cone ðŸ’¬ para zoar. O balÃ£o fica vermelho se tiver msg nÃ£o lida!</span></p>
                         </div>
                     </div>
 
                     <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100 shadow-sm">
-                        <h4 class="font-black text-blue-800 text-xs mb-3 uppercase tracking-wide">🔔 CENTRAL DE NOTIFICAÇÕES (NOVO)</h4>
+                        <h4 class="font-black text-blue-800 text-xs mb-3 uppercase tracking-wide">ðŸ”” CENTRAL DE NOTIFICAÃ‡Ã•ES (NOVO)</h4>
                         <div class="text-xs text-gray-700 space-y-2 font-medium">
-                            <p>🔴 <b>Badge na Aba Confrontos:</b> O número vermelho no ícone da bola indica quantos jogos abertos você <b>ESQUECEU</b> de votar.</p>
-                            <p>🔔 <b>Sininho (Topo):</b> Avisa se existe alguma mensagem nova (Resenha) em qualquer jogo do bolão.</p>
-                            <p>🔆 <b>Pulse (Cabeçalhos):</b> Uma bolinha vermelha piscando ao lado de "ABERTOS" ou "FINALIZADOS" mostra onde está a novidade.</p>
+                            <p>ðŸ”´ <b>Badge na Aba Confrontos:</b> O nÃºmero vermelho no Ã­cone da bola indica quantos jogos abertos vocÃª <b>ESQUECEU</b> de votar.</p>
+                            <p>ðŸ”” <b>Sininho (Topo):</b> Avisa se existe alguma mensagem nova (Resenha) em qualquer jogo do bolÃ£o.</p>
+                            <p>ðŸ”† <b>Pulse (CabeÃ§alhos):</b> Uma bolinha vermelha piscando ao lado de "ABERTOS" ou "FINALIZADOS" mostra onde estÃ¡ a novidade.</p>
                         </div>
                     </div>
 
                     <div class="mb-6">
-                       <h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">🏅 GALERIA DE CONQUISTAS</h4>
+                       <h4 class="font-black text-black text-xs mb-3 uppercase tracking-wide">ðŸ… GALERIA DE CONQUISTAS</h4>
                             <div class="text-xs text-gray-700 space-y-3 font-medium bg-white p-3 rounded border border-gray-200">
-                                <div class="flex items-start gap-2"><span class="text-lg">👽</span> <div><b>Alien:</b> Sequência de 10 acertos seguidos.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg">💎</span> <div><b>Diamante:</b> Gabaritou as Oitavas de Final (8/8).</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg">👑</span> <div><b>Rei do Mês:</b> Líder da pontuação no mês vigente.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg">🎯</span> <div><b>Mito:</b> Sequência de 5 acertos seguidos.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg">🦓</span> <div><b>Caçador de Zebras:</b> Acertou um jogo onde +80% da galera não acertou (errou ou não votou).</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg">🔥</span> <div><b>On Fire:</b> Sequência de 3 acertos seguidos.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg">🔮</span> <div><b>Mãe Dinah:</b> Acertou na mosca o campeão do torneio.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg">🎓</span> <div><b>Veterano:</b> Ganha 1 estrela a cada 50 ACERTOS.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">ðŸ‘½</span> <div><b>Alien:</b> SequÃªncia de 10 acertos seguidos.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">ðŸ’Ž</span> <div><b>Diamante:</b> Gabaritou as Oitavas de Final (8/8).</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">ðŸ‘‘</span> <div><b>Rei do MÃªs:</b> LÃ­der da pontuaÃ§Ã£o no mÃªs vigente.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">ðŸŽ¯</span> <div><b>Mito:</b> SequÃªncia de 5 acertos seguidos.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">ðŸ¦“</span> <div><b>CaÃ§ador de Zebras:</b> Acertou um jogo onde +80% da galera nÃ£o acertou (errou ou nÃ£o votou).</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">ðŸ”¥</span> <div><b>On Fire:</b> SequÃªncia de 3 acertos seguidos.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">ðŸ”®</span> <div><b>MÃ£e Dinah:</b> Acertou na mosca o campeÃ£o do torneio.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">ðŸŽ“</span> <div><b>Veterano:</b> Ganha 1 estrela a cada 50 ACERTOS.</div></div>
                                 
                                 <div class="border-t my-2"></div>
-                                <div class="flex items-start gap-2"><span class="text-lg">💰</span> <div><b>Patrão:</b> Mensalidade rigorosamente em dia.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg">👻</span> <div><b>Fantasma:</b> Deixou de votar em 3 jogos seguidos.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg">🥬</span> <div><b>Mão de Alface:</b> Errou 3 palpites seguidos.</div></div>
-                                <div class="flex items-start gap-2"><span class="text-lg text-[#8B0000]">⚓</span> <div class="text-[#8B0000]"><b>Zona de Rebaixamento:</b> Os 4 últimos colocados.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">ðŸ’°</span> <div><b>PatrÃ£o:</b> Mensalidade rigorosamente em dia.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">ðŸ‘»</span> <div><b>Fantasma:</b> Deixou de votar em 3 jogos seguidos.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg">ðŸ¥¬</span> <div><b>MÃ£o de Alface:</b> Errou 3 palpites seguidos.</div></div>
+                                <div class="flex items-start gap-2"><span class="text-lg text-[#8B0000]">âš“</span> <div class="text-[#8B0000]"><b>Zona de Rebaixamento:</b> Os 4 Ãºltimos colocados.</div></div>
                             </div>
                     </div>
 
@@ -11786,7 +11790,7 @@ window.openCalendar2026 = () => {
                 </div>
             </div>`; 
         };
-// --- CÁLCULO DO POTE COM PREVISÃO ANUAL ---
+// --- CÃLCULO DO POTE COM PREVISÃƒO ANUAL ---
         window.calculatePot = async () => {
   try {
     const [usersSnap, configSnap] = await Promise.all([
@@ -11811,12 +11815,12 @@ window.openCalendar2026 = () => {
       ? Number(rawConfiguredParticipants)
       : totalUsuarios;
 
-    // 1. Valores Reais (O que já tem no caixa)
+    // 1. Valores Reais (O que jÃ¡ tem no caixa)
     const currentPrize = totalCotasPagas * 10;
     const currentParty = totalCotasPagas * 5;
     const currentTotal = currentPrize + currentParty;
 
-    // 2. Valores de Previsão (Participantes adimplentes definidos pelo admin)
+    // 2. Valores de PrevisÃ£o (Participantes adimplentes definidos pelo admin)
     const forecastPrize = totalParticipantesAtivos * 12 * 10;
     const forecastParty = totalParticipantesAtivos * 12 * 5;
 
@@ -11831,13 +11835,13 @@ window.openCalendar2026 = () => {
     if (elParty) elParty.innerText = fmt(currentParty);
     if (elTotal) elTotal.innerText = `Total Arrecadado (Real): ${fmt(currentTotal)}`;
 
-    // Atualiza HTML - Previsões
+    // Atualiza HTML - PrevisÃµes
     const elPotRef = document.getElementById('potRef');
     const elPartyRef = document.getElementById('partyRef');
-    if (elPotRef) elPotRef.innerText = `Previsão Final: ${fmt(forecastPrize)}`;
-    if (elPartyRef) elPartyRef.innerText = `Previsão Final: ${fmt(forecastParty)}`;
+    if (elPotRef) elPotRef.innerText = `PrevisÃ£o Final: ${fmt(forecastPrize)}`;
+    if (elPartyRef) elPartyRef.innerText = `PrevisÃ£o Final: ${fmt(forecastParty)}`;
 
-    // ATUALIZAÇÃO DO CONTADOR NO HTML
+    // ATUALIZAÃ‡ÃƒO DO CONTADOR NO HTML
     const elCount = document.getElementById('potCount');
     if (elCount) {
       elCount.innerText = ` ${totalParticipantesAtivos} PARTICIPANTES ADIMPLENTES`;
@@ -11846,7 +11850,7 @@ window.openCalendar2026 = () => {
     console.error("Erro Pote:", e);
   }
 };
-// --- CORREÇÃO: CARD INSTAGRAM TURBINADO (Tabela Inteligente + Marketing) ---
+// --- CORREÃ‡ÃƒO: CARD INSTAGRAM TURBINADO (Tabela Inteligente + Marketing) ---
         window.generateWebCard = async () => {
             const modalEl = document.getElementById('profileModal');
             if(!modalEl) return;
@@ -11858,12 +11862,12 @@ window.openCalendar2026 = () => {
                  return;
             }
 
-            // 2. ORDENAÇÃO ROBUSTA
+            // 2. ORDENAÃ‡ÃƒO ROBUSTA
             currentRankingData.sort((a,b) => {
                 if (b.p !== a.p) return b.p - a.p;
                 if ((a.debts||0) !== (b.debts||0)) return (a.debts||0) - (b.debts||0);
 
-                const hierarchy = ["👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓"];
+                const hierarchy = ["ðŸ‘½", "ðŸ’Ž", "ðŸ‘‘", "ðŸŽ¯", "ðŸ¦“", "ðŸ”¥", "ðŸ”®", "ðŸŽ“"];
                 for (let icon of hierarchy) {
                     const countA = (a.medals || []).filter((medalIcon) => medalIcon === icon).length;
 const countB = (b.medals || []).filter((medalIcon) => medalIcon === icon).length;
@@ -11872,15 +11876,15 @@ const countB = (b.medals || []).filter((medalIcon) => medalIcon === icon).length
                 return a.name.localeCompare(b.name);
             });
 
-            // 3. Localiza o usuário e define posição real
+            // 3. Localiza o usuÃ¡rio e define posiÃ§Ã£o real
             const index = currentRankingData.findIndex(u => u.uid === uid);
             if (index === -1) return;
             const user = currentRankingData[index];
             user.lastRank = index + 1;
 // =========================
-// ✅ MEDALHAS NO CARD DO INSTAGRAM (compacto + contador)
+// âœ… MEDALHAS NO CARD DO INSTAGRAM (compacto + contador)
 // =========================
-const priorityOrder = ["🏆", "👽", "💎", "👑", "🎯", "🦓", "🔥", "🔮", "🎓", "💰", "👻", "🥬"];
+const priorityOrder = ["ðŸ†", "ðŸ‘½", "ðŸ’Ž", "ðŸ‘‘", "ðŸŽ¯", "ðŸ¦“", "ðŸ”¥", "ðŸ”®", "ðŸŽ“", "ðŸ’°", "ðŸ‘»", "ðŸ¥¬"];
 
 const medalCounts = {};
 (user.medals || []).forEach((icon) => {
@@ -11893,7 +11897,7 @@ const iconsOrdered = Object.keys(medalCounts).sort((a,b) => {
   return ia - ib;
 });
 
-// Limita para não “entupir” o card (ajuste se quiser)
+// Limita para nÃ£o â€œentupirâ€ o card (ajuste se quiser)
 const maxIcons = 8;
 const iconsToShow = iconsOrdered.slice(0, maxIcons);
 
@@ -11933,7 +11937,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
   </div>
 `;
 
-            // --- LÓGICA DA TABELA INTELIGENTE ---
+            // --- LÃ“GICA DA TABELA INTELIGENTE ---
             const totalParticipants = currentRankingData.length;
             const maxRows = 8;
             let displayList = [];
@@ -11953,13 +11957,13 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
             
             const remainingCount = totalParticipants - displayList.filter(u => u.uid !== "sep").length;
 
-            // 4. Configuração visual do botão
+            // 4. ConfiguraÃ§Ã£o visual do botÃ£o
             const btn = document.getElementById('btnInstaAction');
             const originalText = btn.innerHTML;
             btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> GERANDO...`;
             btn.disabled = true;
 
-            // 5. Criação do elemento invisível
+            // 5. CriaÃ§Ã£o do elemento invisÃ­vel
             const cardContainer = document.createElement('div');
             cardContainer.id = "instaCardCapture";
             cardContainer.style.position = "fixed"; cardContainer.style.top = "0"; cardContainer.style.left = "0"; 
@@ -11968,7 +11972,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
 
             const avatarUrl = getAvatarUrl(user.photoBase64, user.name);
             
-            // GERAÇÃO DO HTML DA TABELA (AJUSTADO PARA NÃO CORTAR NOMES)
+            // GERAÃ‡ÃƒO DO HTML DA TABELA (AJUSTADO PARA NÃƒO CORTAR NOMES)
             let tableHtml = "";
             displayList.forEach((uItem, idx) => {
                 if (uItem.uid === "sep") {
@@ -11983,12 +11987,12 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
                     const weight = isMe ? "900" : "normal"; // 900 = Black, normal = Regular
                     const colorPts = isMe ? "#006400" : "black";
                     
-                    // CORREÇÃO AQUI: 
+                    // CORREÃ‡ÃƒO AQUI: 
                     // 1. Padding vertical aumentado para '6px' na linha (div pai).
                     // 2. Adicionado 'line-height: 1.5' e 'padding-top: 2px' no nome para evitar corte e centralizar.
                     tableHtml += `
                     <div style="display: flex; align-items: center; background: ${bg}; padding: 6px 4px; border-radius: 4px; margin-bottom: 2px;">
-                        <div style="width: 28px; font-size: 11px; font-weight: bold; color: ${colorPos};">${realRank}º</div>
+                        <div style="width: 28px; font-size: 11px; font-weight: bold; color: ${colorPos};">${realRank}Âº</div>
                         
                         <div style="flex: 1; font-size: 11px; font-weight: ${weight}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; padding-top: 2px; padding-bottom: 2px; padding-left: 2px;">
                             ${uItem.name}
@@ -12000,7 +12004,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
             });
 
             if (remainingCount > 0) {
-                tableHtml += `<div style="text-align: center; font-size: 9px; color: #006400; font-weight: bold; margin-top: 4px;">👇 ... e mais ${remainingCount} guerreiros na disputa!</div>`;
+                tableHtml += `<div style="text-align: center; font-size: 9px; color: #006400; font-weight: bold; margin-top: 4px;">ðŸ‘‡ ... e mais ${remainingCount} guerreiros na disputa!</div>`;
             }
 
             // HTML DO CARD FINAL
@@ -12009,7 +12013,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
                     <img src="bg_ranking.png" loading="lazy" decoding="async" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.15; mix-blend-mode: overlay;">
                     
                     <div style="position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column;">
-                        <h1 style="color: #FFD700; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; margin: 0;">BOLÃO 112 F.C</h1>
+                        <h1 style="color: #FFD700; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; margin: 0;">BOLÃƒO 112 F.C</h1>
                         
                         <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
                             <div style="width: 65px; height: 65px; border-radius: 50%; border: 3px solid #FFD700; overflow: hidden; background: black; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
@@ -12031,12 +12035,12 @@ ${medalsStripHtml}
                         </div>
 
                         <div style="margin-top: 16px; background: #FFD700; border-radius: 12px; padding: 10px;">
-                            <div style="color: black; font-weight: 900; font-size: 12px;">VEM PRO JOGO TAMBÉM!</div>
+                            <div style="color: black; font-weight: 900; font-size: 12px;">VEM PRO JOGO TAMBÃ‰M!</div>
                             <div style="display: flex; align-items: center; justify-content: center; margin-top: 2px;">
                                 <i class="fas fa-globe" style="font-size: 12px; margin-right: 4px;"></i>
                                 <span style="color: black; font-weight: 900; font-size: 14px;">bolao112-site.vercel.app</span>
                             </div>
-                            <div style="color: rgba(0,0,0,0.7); font-weight: bold; font-size: 8px; margin-top: 2px;">👆 COLE O LINK AQUI 👆</div>
+                            <div style="color: rgba(0,0,0,0.7); font-weight: bold; font-size: 8px; margin-top: 2px;">ðŸ‘† COLE O LINK AQUI ðŸ‘†</div>
                         </div>
                     </div>
                 </div>`;
@@ -12059,9 +12063,9 @@ const link = document.createElement('a');
             }
         };
         
-        // Isso deve ficar LOGO APÓS a função calculatePot
+        // Isso deve ficar LOGO APÃ“S a funÃ§Ã£o calculatePot
         document.getElementById('btnPot').onclick = () => {
-            calculatePot(); // Chama o cálculo
+            calculatePot(); // Chama o cÃ¡lculo
             document.getElementById('potModal').classList.remove('hidden'); // Abre o modal novo
         };
        
@@ -12078,10 +12082,10 @@ document.getElementById('btnLogout').onclick = () => {
      ================================ */
 window.currentChatUnsub = null;
 window.__currentChatMessagesById = {};
-       // --- CHAT COM MÚLTIPLAS REAÇÕES ---
+       // --- CHAT COM MÃšLTIPLAS REAÃ‡Ã•ES ---
         window.openMatchComments = async (mid, ta, tb, winner) => {
             if (!appConfig.chat) {
-                alert("⛔ O Chat está desativado no momento.");
+                alert("â›” O Chat estÃ¡ desativado no momento.");
                 return;
             }
                 if (window.currentChatUnsub) {
@@ -12102,14 +12106,14 @@ window.__currentChatMessagesById = {};
             
             const isFinished = winner && winner !== "";
 
-            // Função para salvar reação no Firestore (Map: userId -> emoji)
+            // FunÃ§Ã£o para salvar reaÃ§Ã£o no Firestore (Map: userId -> emoji)
             window.selectReaction = async (msgId, emoji) => {
                 const normalizedEmoji = normalizeChatReaction(emoji);
                 if (!normalizedEmoji) return;
                 const ref = doc(db, "match_comments", msgId);
                 const key = `reactions.${currentUser.uid}`;
                 // Se clicar no mesmo, remove (toggle). Se for diferente, atualiza.
-                // Como ler o estado atual é complexo no onclick, vamos apenas setar por enquanto.
+                // Como ler o estado atual Ã© complexo no onclick, vamos apenas setar por enquanto.
                 // Para toggle perfeito, precisariamos ler o doc antes, mas para performance vamos apenas escrever.
                 const currentMessage = window.__currentChatMessagesById?.[msgId] || {};
                 const currentReaction = normalizeChatReaction(currentMessage.reactions?.[currentUser.uid] || "");
@@ -12118,7 +12122,7 @@ window.__currentChatMessagesById = {};
                   : { [key]: normalizedEmoji };
                 await updateDoc(ref, payload);
                 
-                // Fecha o menu de reação dessa mensagem
+                // Fecha o menu de reaÃ§Ã£o dessa mensagem
                 const menu = document.getElementById(`react-menu-${msgId}`);
                 if(menu) menu.classList.add('hidden');
             };
@@ -12148,7 +12152,7 @@ window.__currentChatMessagesById = {};
                             const isMe = m.userId === currentUser.uid;
                             const time = m.timestamp ? new Date(m.timestamp.seconds*1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
                             
-                            // Processa Reações (Map: uid -> emoji)
+                            // Processa ReaÃ§Ãµes (Map: uid -> emoji)
                             const reactions = m.reactions || {};
                             const counts = {};
                             Object.values(reactions).forEach(r => { counts[r] = (counts[r]||0)+1; });
@@ -12163,8 +12167,8 @@ window.__currentChatMessagesById = {};
                                 reactionsHtml += `</div>`;
                             }
 
-                            // Emojis disponíveis
-                            const emojis = ["👍", "😂", "🔥", "😡", "😭"];
+                            // Emojis disponÃ­veis
+                            const emojis = ["ðŸ‘", "ðŸ˜‚", "ðŸ”¥", "ðŸ˜¡", "ðŸ˜­"];
 
                             return `
                             <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'} relative group">
@@ -12194,7 +12198,7 @@ window.__currentChatMessagesById = {};
 
                     ${isFinished 
                         ? `<div class="p-4 bg-gray-200 text-center border-t shrink-0">
-                             <p class="text-xs font-bold text-gray-500">⛔ Chat encerrado (Jogo Finalizado)</p>
+                             <p class="text-xs font-bold text-gray-500">â›” Chat encerrado (Jogo Finalizado)</p>
                             </div>`
                         : `<div class="p-2 bg-white border-t flex items-center gap-2 shrink-0">
                              <input type="text" id="commentInput" maxlength="${CHAT_MAX_MESSAGE_LENGTH}" aria-label="Mensagem da resenha" placeholder="Digite sua resenha..." class="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm outline-none border focus:border-[#006400]">
@@ -12253,8 +12257,8 @@ window.__toggleScoutInfo = (id) => {
   el.classList.toggle('hidden');
 };
 
-        // --- SCOUT PREMIUM (KPIs + ÚLTIMOS 5 + GRÁFICO + COMPETIÇÕES + RECORDES) ---
-// --- SCOUT PREMIUM (ESTATÍSTICAS + GRÁFICO + ÚLTIMOS 5 + TABELA + RECORDES) ---
+        // --- SCOUT PREMIUM (KPIs + ÃšLTIMOS 5 + GRÃFICO + COMPETIÃ‡Ã•ES + RECORDES) ---
+// --- SCOUT PREMIUM (ESTATÃSTICAS + GRÃFICO + ÃšLTIMOS 5 + TABELA + RECORDES) ---
 window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
   const cont = document.getElementById('modalContainer');
   const overlay = document.getElementById('modalOverlay');
@@ -12276,16 +12280,16 @@ window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
       getDocs(collection(db, "users"))
     ]);
 
-    // 2) Mapeamento de criação de usuários
+    // 2) Mapeamento de criaÃ§Ã£o de usuÃ¡rios
     const usersCreatedAt = {};
-const userDebts = {}; // ✅ NOVO
+const userDebts = {}; // âœ… NOVO
 const allUsersIds = [];
 
 uSnap.forEach(d => {
   const data = d.data();
   const dt = data.createdAt ? data.createdAt.toDate() : new Date(0);
   usersCreatedAt[d.id] = dt;
-  userDebts[d.id] = Number(data.debts || 0); // ✅ NOVO
+  userDebts[d.id] = Number(data.debts || 0); // âœ… NOVO
   allUsersIds.push(d.id);
 });
 
@@ -12310,7 +12314,7 @@ uSnap.forEach(d => {
     // usa a mesma ordem "oficial" do ranking (deadline > createdAt > id)
 matches.sort(matchComparator);
 
-    // 4) Simulação + Coleta do “extrato” do usuário
+    // 4) SimulaÃ§Ã£o + Coleta do â€œextratoâ€ do usuÃ¡rio
     let rankHistory = [];
     let currentScores = {};
     allUsersIds.forEach(uid => currentScores[uid] = 0);
@@ -12321,20 +12325,20 @@ matches.sort(matchComparator);
 
    const compStats = {}; // { comp: {h,t} }
 const myExtract = [];       // extrato completo (inclui NOVOTE) para streaks/recordes
-const myVotedExtract = [];  // extrato somente de votos (HIT/MISS) para "Últimos 5" igual ao Extrato de Pontos
-          // --- NOVO: métricas de RISCO (perfil de "ir contra a maioria") ---
+const myVotedExtract = [];  // extrato somente de votos (HIT/MISS) para "Ãšltimos 5" igual ao Extrato de Pontos
+          // --- NOVO: mÃ©tricas de RISCO (perfil de "ir contra a maioria") ---
 const riskShares = [];        // % de votos que bateram com a escolha dele (por jogo votado)
 let riskAgainstMajority = 0;  // quantas vezes ele votou diferente do mais votado
 
 
 
     matches.forEach(m => {
-      // Só considera jogos após o usuário existir
+      // SÃ³ considera jogos apÃ³s o usuÃ¡rio existir
       if (targetCreated > m.deadlineDate) return;
 
       totalEligible++;
 
-      // Atualiza ranking global até esse jogo
+      // Atualiza ranking global atÃ© esse jogo
       allUsersIds.forEach(uid => {
         if (usersCreatedAt[uid] > m.deadlineDate) return;
 
@@ -12344,16 +12348,16 @@ let riskAgainstMajority = 0;  // quantas vezes ele votou diferente do mais votad
         }
       });
 
-      // Posição do target nesse momento
+      // PosiÃ§Ã£o do target nesse momento
       const activeUsers = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
       activeUsers.sort((a, b) => {
   const netA = (currentScores[a] || 0) - (userDebts[a] || 0) * 3;
   const netB = (currentScores[b] || 0) - (userDebts[b] || 0) * 3;
 
-  // 1) Pontos líquidos desc
+  // 1) Pontos lÃ­quidos desc
   if (netB !== netA) return netB - netA;
 
-  // 2) Menos débitos ganha
+  // 2) Menos dÃ©bitos ganha
   const da = userDebts[a] || 0;
   const dbb = userDebts[b] || 0;
   if (da !== dbb) return da - dbb;
@@ -12367,10 +12371,10 @@ let riskAgainstMajority = 0;  // quantas vezes ele votou diferente do mais votad
 
       // Status do target nesse jogo
       const myVote = allGuesses.find(g => g.matchId === m.id && g.userId === targetUid);
-            // --- NOVO: calcula maioria e % de concordância (Risco) ---
+            // --- NOVO: calcula maioria e % de concordÃ¢ncia (Risco) ---
 const activeUsersAtTime = allUsersIds.filter(uid => usersCreatedAt[uid] <= m.deadlineDate);
 
-// votos válidos desse jogo (só de quem já existia)
+// votos vÃ¡lidos desse jogo (sÃ³ de quem jÃ¡ existia)
 const votesThisMatch = allGuesses.filter(g =>
   g.matchId === m.id && activeUsersAtTime.includes(g.userId)
 );
@@ -12389,7 +12393,7 @@ Object.entries(counts).forEach(([team, c]) => {
 
 
       if (myVote) {
-              // --- NOVO: registra risco só quando ele vota ---
+              // --- NOVO: registra risco sÃ³ quando ele vota ---
 const totalVotesThisMatch = votesThisMatch.length || 0;
 const sameCount = counts[myVote.teamSelected] || 0;
 const sameShare = totalVotesThisMatch > 0 ? (sameCount / totalVotesThisMatch) : 1;
@@ -12411,17 +12415,17 @@ if (majorityTeam && myVote.teamSelected !== majorityTeam) riskAgainstMajority++;
   // extrato completo (para streaks/recordes)
   myExtract.push({ matchId: m.id, status });
 
-  // extrato somente votados (para "Últimos 5" igual ao Extrato de Pontos)
+  // extrato somente votados (para "Ãšltimos 5" igual ao Extrato de Pontos)
   myVotedExtract.push({ matchId: m.id, status, deadlineDate: m.deadlineDate });
 
 } else {
-  // Sem voto entra apenas no extrato completo (quebra sequência)
+  // Sem voto entra apenas no extrato completo (quebra sequÃªncia)
   myExtract.push({ matchId: m.id, status: 'NOVOTE' });
 }
 
     });
 
-// --- CONSISTÊNCIA (PARIDADE ANDROID): média do |Δ| entre rodadas ---
+// --- CONSISTÃŠNCIA (PARIDADE ANDROID): mÃ©dia do |Î”| entre rodadas ---
 const mean = (arr) => arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : 0;
 
 const avgDeltaAbs = (arrAsc) => {
@@ -12431,19 +12435,19 @@ const avgDeltaAbs = (arrAsc) => {
   return s / (arrAsc.length - 1);
 };
 
-// rankHistory já está em ordem cronológica (ASC) porque você faz push no forEach
+// rankHistory jÃ¡ estÃ¡ em ordem cronolÃ³gica (ASC) porque vocÃª faz push no forEach
 const avgDelta = avgDeltaAbs(rankHistory);
 
 let consistencyLabel = "-";
-let consistencyEmoji = "📊";
+let consistencyEmoji = "ðŸ“Š";
 let consistencyDetail = "Dados insuficientes";
 
 if (avgDelta !== null) {
   if (avgDelta <= 2.2) consistencyLabel = "ALTA";
-  else if (avgDelta <= 2.5) consistencyLabel = "MÉDIA";
+  else if (avgDelta <= 2.5) consistencyLabel = "MÃ‰DIA";
   else consistencyLabel = "BAIXA";
 
-  consistencyDetail = `Oscilação média: ${avgDelta.toFixed(1)}`;
+  consistencyDetail = `OscilaÃ§Ã£o mÃ©dia: ${avgDelta.toFixed(1)}`;
 }
 
 // --- RISCO (PARIDADE ANDROID): risk = 1 - avgShare ---
@@ -12451,18 +12455,18 @@ const avgShare = mean(riskShares); // 0..1 (se ele sempre vota com a maioria, te
 const risk = 1.0 - avgShare;       // 0 = segue maioria, 1 = sempre contra
 
 let riskLabel = "BAIXO";
-let riskEmoji = "🎲";
+let riskEmoji = "ðŸŽ²";
 
 if (risk >= 0.50) riskLabel = "ALTO";
-else if (risk >= 0.25) riskLabel = "MÉDIO";
+else if (risk >= 0.25) riskLabel = "MÃ‰DIO";
 
-const riskDetail = `Risco: ${(risk*100).toFixed(0)}% • Concordância média: ${(avgShare*100).toFixed(0)}%`;
+const riskDetail = `Risco: ${(risk*100).toFixed(0)}% â€¢ ConcordÃ¢ncia mÃ©dia: ${(avgShare*100).toFixed(0)}%`;
           
-    // 5) Sequência atual + recordes (W/L) — NOVOTE quebra
+    // 5) SequÃªncia atual + recordes (W/L) â€” NOVOTE quebra
 let maxWinStreak = 0;
 let maxLossStreak = 0; // valor negativo (ex: -4)
 
-// recordes: varre do começo pro fim (cronológico)
+// recordes: varre do comeÃ§o pro fim (cronolÃ³gico)
 let running = 0;
 myExtract.forEach(it => {
   if (it.status === 'NOVOTE') {
@@ -12478,7 +12482,7 @@ myExtract.forEach(it => {
   }
 });
 
-// sequência atual: varre do fim pro começo (mais recente) até quebrar
+// sequÃªncia atual: varre do fim pro comeÃ§o (mais recente) atÃ© quebrar
 let currentStreak = 0;
 for (let i = myExtract.length - 1; i >= 0; i--) {
   const it = myExtract[i];
@@ -12486,10 +12490,10 @@ for (let i = myExtract.length - 1; i >= 0; i--) {
 
   if (it.status === 'HIT') {
     if (currentStreak >= 0) currentStreak++;
-    else break; // mudou de derrota pra vitória, então sequência "atual" já acabou
+    else break; // mudou de derrota pra vitÃ³ria, entÃ£o sequÃªncia "atual" jÃ¡ acabou
   } else if (it.status === 'MISS') {
     if (currentStreak <= 0) currentStreak--;
-    else break; // mudou de vitória pra derrota
+    else break; // mudou de vitÃ³ria pra derrota
   }
 }
 
@@ -12503,7 +12507,7 @@ const streakDisplay = currentStreak > 0
 let winRecordCount = 0;
 let lossRecordCount = 0;
 
-let run = 0;         // sequência corrente (+ hits / - misses)
+let run = 0;         // sequÃªncia corrente (+ hits / - misses)
 let lastType = null; // 'HIT' | 'MISS' | null
 
 const flushRun = () => {
@@ -12519,7 +12523,7 @@ myExtract.forEach(it => {
     return;
   }
 
-  // Se mudou de HIT para MISS ou MISS para HIT, fecha a run anterior antes de começar a nova
+  // Se mudou de HIT para MISS ou MISS para HIT, fecha a run anterior antes de comeÃ§ar a nova
   if (lastType && it.status !== lastType) {
     flushRun();
   }
@@ -12533,25 +12537,25 @@ myExtract.forEach(it => {
   }
 });
 
-// fecha a última sequência ao final
+// fecha a Ãºltima sequÃªncia ao final
 flushRun();
 
 
 
- // 6) Últimos 5 resultados (IGUAL ao Extrato: últimos 5 jogos elegíveis, mesmo sem voto)
-// myExtract está em ordem cronológica (foi preenchido no matches.forEach já ordenado por deadlineDate asc)
-// então os "últimos 5" são simplesmente os 5 últimos itens do extrato completo.
+ // 6) Ãšltimos 5 resultados (IGUAL ao Extrato: Ãºltimos 5 jogos elegÃ­veis, mesmo sem voto)
+// myExtract estÃ¡ em ordem cronolÃ³gica (foi preenchido no matches.forEach jÃ¡ ordenado por deadlineDate asc)
+// entÃ£o os "Ãºltimos 5" sÃ£o simplesmente os 5 Ãºltimos itens do extrato completo.
 const last5 = myExtract
   .slice(-5)                 // pega os 5 mais recentes
   .reverse()                 // mostra do mais recente -> mais antigo (opcional, fica mais intuitivo)
   .map(it => {
-    if (it.status === 'HIT') return '✅';
-    if (it.status === 'MISS') return '❌';
-    return '🚫';
+    if (it.status === 'HIT') return 'âœ…';
+    if (it.status === 'MISS') return 'âŒ';
+    return 'ðŸš«';
   });
 
 
-    // 7) Precisão, posição atual, melhor posição, % votos
+    // 7) PrecisÃ£o, posiÃ§Ã£o atual, melhor posiÃ§Ã£o, % votos
     const acc = totalVoted > 0 ? Math.round((totalHits / totalVoted) * 100) : 0;
     const currentPos = rankHistory.length ? rankHistory[rankHistory.length - 1] : '-';
 const bestPos = rankHistory.length ? Math.min(...rankHistory) : '-';
@@ -12566,7 +12570,7 @@ const worstPosCount = (rankHistory.length && worstPos !== '-')
   : 0;
 
 
-    // 8) Tabela por competição (ordenada por precisão desc)
+    // 8) Tabela por competiÃ§Ã£o (ordenada por precisÃ£o desc)
     const compRows = Object.entries(compStats).map(([comp, st]) => {
       const pct = st.t > 0 ? Math.round((st.h / st.t) * 100) : 0;
       return { comp, h: st.h, t: st.t, pct };
@@ -12575,7 +12579,7 @@ const worstPosCount = (rankHistory.length && worstPos !== '-')
     const tableHtml = compRows.length ? `
       <div class="rounded-xl border border-white/10 overflow-hidden">
         <div class="grid grid-cols-[minmax(0,1fr)_52px_62px_44px] bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white/70">
-          <div>Competição</div>
+          <div>CompetiÃ§Ã£o</div>
           <div class="text-right pr-1">Jogos</div>
           <div class="text-right pr-1">Acertos</div>
           <div class="text-right">%</div>
@@ -12589,14 +12593,14 @@ const worstPosCount = (rankHistory.length && worstPos !== '-')
           </div>
         `).join('')}
       </div>
-    ` : `<div class="text-xs text-white/60 font-bold">Sem dados por competição ainda.</div>`;
+    ` : `<div class="text-xs text-white/60 font-bold">Sem dados por competiÃ§Ã£o ainda.</div>`;
 
           const badgeIfMany = (n) => (n && n > 1)
   ? `<span class="ml-2 inline-flex items-center justify-center min-w-[34px] h-7 px-2 rounded-full bg-red-600 text-white text-xs font-black shadow border border-white/20">${n}x</span>`
   : '';
 
 
-    // 9) Render Premium (FIX: fundo sempre escuro + remove “chuva de números” + close padronizado)
+    // 9) Render Premium (FIX: fundo sempre escuro + remove â€œchuva de nÃºmerosâ€ + close padronizado)
 const html = `
   <div class="w-full max-w-sm rounded-none shadow-2xl overflow-hidden"
        style="max-height: 90vh; overflow-y: auto; background: linear-gradient(to bottom, #071018, #0b1622, #071018);">
@@ -12605,7 +12609,7 @@ const html = `
       <div class="flex items-start justify-between">
         <div>
           <div class="font-black italic text-[#FFD700] text-lg tracking-widest">SCOUT DO PALPITEIRO</div>
-          <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Resumo Premium • 2026</div>
+          <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Resumo Premium â€¢ 2026</div>
         </div>
 
         <!-- FIX: usar window.closeModal -->
@@ -12620,12 +12624,12 @@ const html = `
           <div class="font-black text-xl uppercase truncate">${targetName}</div>
           <div class="mt-2 space-y-2">
 
-  <!-- Consistência -->
+  <!-- ConsistÃªncia -->
   <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-white/10 border border-white/10">
     <div class="flex items-center gap-2 min-w-0">
       <span class="text-base">${consistencyEmoji}</span>
       <div class="min-w-0">
-        <div class="text-[11px] font-black text-white/90 truncate">Consistência: <span class="text-[#FFD700]">${consistencyLabel}</span></div>
+        <div class="text-[11px] font-black text-white/90 truncate">ConsistÃªncia: <span class="text-[#FFD700]">${consistencyLabel}</span></div>
         <div class="text-[10px] text-white/50 font-bold truncate">${consistencyDetail}</div>
       </div>
     </div>
@@ -12636,7 +12640,7 @@ const html = `
   </div>
 
   <div id="scoutInfoConsistency" class="hidden text-[10px] text-white/70 font-bold bg-black/20 border border-white/10 rounded-xl p-3">
-    Mede o quanto a posição dele “balança” ao longo do tempo. Quanto menor a oscilação, maior a consistência.
+    Mede o quanto a posiÃ§Ã£o dele â€œbalanÃ§aâ€ ao longo do tempo. Quanto menor a oscilaÃ§Ã£o, maior a consistÃªncia.
   </div>
 
   <!-- Risco -->
@@ -12655,7 +12659,7 @@ const html = `
   </div>
 
   <div id="scoutInfoRisk" class="hidden text-[10px] text-white/70 font-bold bg-black/20 border border-white/10 rounded-xl p-3">
-    Mede se ele costuma votar com a maioria ou “ir contra”. Menor concordância e mais votos contra a maioria = risco mais alto.
+    Mede se ele costuma votar com a maioria ou â€œir contraâ€. Menor concordÃ¢ncia e mais votos contra a maioria = risco mais alto.
   </div>
 
 </div>
@@ -12674,7 +12678,7 @@ const html = `
           <div class="text-lg font-black text-[#FFD700]">${totalHits}</div>
         </div>
         <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
-          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Precisão</div>
+          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">PrecisÃ£o</div>
           <div class="text-lg font-black text-blue-300">${acc}%</div>
         </div>
         <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
@@ -12683,12 +12687,12 @@ const html = `
         </div>
       </div>
 
-      <!-- Últimos 5 -->
+      <!-- Ãšltimos 5 -->
       <div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
-        <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Últimos 5</div>
+        <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Ãšltimos 5</div>
         <div class="flex items-center justify-between text-[10px] font-black text-white/60 mb-2 px-1">
   <span>Mais recente</span>
-  <span class="text-white/40">→</span>
+  <span class="text-white/40">â†’</span>
   <span>Mais antigo</span>
 </div>
         <div class="flex justify-between gap-2">
@@ -12698,18 +12702,18 @@ const html = `
             </div>
           `).join('')}
         </div>
-        <div class="text-[10px] text-white/50 font-bold mt-2">✅ acerto • ❌ erro • 🚫 sem voto (quebra sequência)</div>
+        <div class="text-[10px] text-white/50 font-bold mt-2">âœ… acerto â€¢ âŒ erro â€¢ ðŸš« sem voto (quebra sequÃªncia)</div>
       </div>
 
-      <!-- Gráfico -->
+      <!-- GrÃ¡fico -->
       <div class="mt-4 bg-white rounded-lg p-3">
-        <div class="text-[10px] text-gray-600 font-black mb-2 text-center uppercase tracking-wider">Evolução no Ranking</div>
+        <div class="text-[10px] text-gray-600 font-black mb-2 text-center uppercase tracking-wider">EvoluÃ§Ã£o no Ranking</div>
         <div class="h-40 w-full"><canvas id="scoutChart"></canvas></div>
       </div>
 
-      <!-- Desempenho por competição -->
+      <!-- Desempenho por competiÃ§Ã£o -->
       <div class="mt-4">
-        <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Desempenho por competição</div>
+        <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Desempenho por competiÃ§Ã£o</div>
         ${tableHtml}
       </div>
 
@@ -12720,7 +12724,7 @@ const html = `
   <div class="grid grid-cols-2 gap-3">
     <div class="bg-black/20 rounded-lg p-3 border border-white/10">
       <div class="flex items-center justify-between">
-        <div class="text-[9px] uppercase text-white/60 font-black">🔥 Melhor seq.</div>
+        <div class="text-[9px] uppercase text-white/60 font-black">ðŸ”¥ Melhor seq.</div>
         ${badgeIfMany(winRecordCount)}
       </div>
       <div class="text-lg font-black text-green-300">+${maxWinStreak}</div>
@@ -12728,7 +12732,7 @@ const html = `
 
     <div class="bg-black/20 rounded-lg p-3 border border-white/10">
       <div class="flex items-center justify-between">
-        <div class="text-[9px] uppercase text-white/60 font-black">❄️ Pior seq.</div>
+        <div class="text-[9px] uppercase text-white/60 font-black">â„ï¸ Pior seq.</div>
         ${badgeIfMany(lossRecordCount)}
       </div>
       <div class="text-lg font-black text-red-300">${maxLossStreak}</div>
@@ -12736,7 +12740,7 @@ const html = `
 
     <div class="bg-black/20 rounded-lg p-3 border border-white/10">
       <div class="flex items-center justify-between">
-        <div class="text-[9px] uppercase text-white/60 font-black">🏅 Melhor posição</div>
+        <div class="text-[9px] uppercase text-white/60 font-black">ðŸ… Melhor posiÃ§Ã£o</div>
         ${badgeIfMany(bestPosCount)}
       </div>
       <div class="text-lg font-black text-[#FFD700]">#${bestPos}</div>
@@ -12744,7 +12748,7 @@ const html = `
 
     <div class="bg-black/20 rounded-lg p-3 border border-white/10">
       <div class="flex items-center justify-between">
-        <div class="text-[9px] uppercase text-white/60 font-black">⚠️ Pior posição</div>
+        <div class="text-[9px] uppercase text-white/60 font-black">âš ï¸ Pior posiÃ§Ã£o</div>
         ${badgeIfMany(worstPosCount)}
       </div>
       <div class="text-lg font-black text-white">#${worstPos}</div>
@@ -12765,7 +12769,7 @@ const html = `
 
 cont.innerHTML = html;
 
-    // 10) Gráfico
+    // 10) GrÃ¡fico
     if (window.myScoutChart) window.myScoutChart.destroy();
 if (rankHistory.length > 0) {
   const canvas = document.getElementById('scoutChart');
@@ -12777,7 +12781,7 @@ if (rankHistory.length > 0) {
         data: {
           labels: rankHistory.map((_, i) => i + 1),
           datasets: [{
-            label: 'Posição',
+            label: 'PosiÃ§Ã£o',
             data: rankHistory,
             borderColor: '#006400',
             backgroundColor: 'rgba(0,100,0,0.12)',
@@ -12804,7 +12808,7 @@ if (rankHistory.length > 0) {
   }
 };
 
-        // --- FUNÇÕES PARA ABRIR/FECHAR AS LISTAS (TOGGLE) ---
+        // --- FUNÃ‡Ã•ES PARA ABRIR/FECHAR AS LISTAS (TOGGLE) ---
         window.toggleOpen = () => {
             const container = document.getElementById('openContainer');
             const icon = document.getElementById('iconOpen');
@@ -12866,7 +12870,7 @@ window.closeModal = () => {
   const overlay = document.getElementById("modalOverlay");
   const container = document.getElementById("modalContainer");
 
-  // ✅ evita travadas/bags do chart quando fecha modal
+  // âœ… evita travadas/bags do chart quando fecha modal
   if (window.myScoutChart) {
     try { window.myScoutChart.destroy(); } catch(e) {}
     window.myScoutChart = null;
@@ -12926,10 +12930,10 @@ if (!window.closeModal) {
     overlay.__rulesGateBound = true;
 
     overlay.addEventListener("click", (e) => {
-      // só fecha se o clique foi no overlay (fora do container)
+      // sÃ³ fecha se o clique foi no overlay (fora do container)
       if (e.target !== overlay) return;
 
-      // se gate estiver ativo, não fecha
+      // se gate estiver ativo, nÃ£o fecha
      if (window.__rulesGateLock || window.__forcePwLock) return;
 window.closeModal();
 
@@ -12943,10 +12947,10 @@ window.closeModal();
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
 
-      // se gate estiver ativo, não fecha
+      // se gate estiver ativo, nÃ£o fecha
 if (window.__rulesGateLock || window.__forcePwLock) return;
 
-      // se não tiver modal aberto, ignora
+      // se nÃ£o tiver modal aberto, ignora
       const ov = document.getElementById("modalOverlay");
       if (ov && !ov.classList.contains("hidden")) {
         window.closeModal();
@@ -12954,12 +12958,12 @@ if (window.__rulesGateLock || window.__forcePwLock) return;
     });
   }
 })();
-// --- RULES GATE MODAL (obrigatório / travado) ---
+// --- RULES GATE MODAL (obrigatÃ³rio / travado) ---
 const openRulesGateModal = async () => {
   const overlay = document.getElementById('modalOverlay');
   const cont = document.getElementById('modalContainer');
   if (!overlay || !cont) {
-    alert("Erro: modalOverlay/modalContainer não encontrado no HTML.");
+    alert("Erro: modalOverlay/modalContainer nÃ£o encontrado no HTML.");
     return;
   }
 
@@ -12970,15 +12974,15 @@ document.body.style.overflow = 'hidden';
   // monta lista de regras
   const items = Array.isArray(window.__rulesGate.items) ? window.__rulesGate.items : [];
   const listHtml = items.length
-    ? items.map((t) => `<li class="mb-2 leading-relaxed text-sm text-gray-700">• ${String(t)}</li>`).join('')
+    ? items.map((t) => `<li class="mb-2 leading-relaxed text-sm text-gray-700">â€¢ ${String(t)}</li>`).join('')
     : `<li class="text-sm text-gray-500">Nenhuma regra cadastrada.</li>`;
 
   cont.innerHTML = `
     <div class="bg-white p-6 relative w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100">
       <div class="text-center mb-4">
-        <div class="text-[#006400] font-black uppercase text-lg">Regulamento Obrigatório</div>
+        <div class="text-[#006400] font-black uppercase text-lg">Regulamento ObrigatÃ³rio</div>
         <div class="text-[11px] text-gray-500 font-bold mt-1">
-          Versão: <span class="text-black">${window.__rulesGate.requiredVersion || 0}</span>
+          VersÃ£o: <span class="text-black">${window.__rulesGate.requiredVersion || 0}</span>
         </div>
       </div>
 
@@ -13003,13 +13007,13 @@ document.body.style.overflow = 'hidden';
     </div>
   `;
 
-  // trava: não fecha clicando fora nem ESC (se você tiver handler disso, ignore)
-  // botão sair
+  // trava: nÃ£o fecha clicando fora nem ESC (se vocÃª tiver handler disso, ignore)
+  // botÃ£o sair
   document.getElementById('btnLogoutRulesGate').onclick = async () => {
     try { await signOut(auth); } catch(e) {}
   };
 
-  // botão aceitar
+  // botÃ£o aceitar
   document.getElementById('btnAcceptRulesGate').onclick = async () => {
     const msg = document.getElementById('rulesGateMsg');
     const btn = document.getElementById('btnAcceptRulesGate');
@@ -13037,13 +13041,13 @@ document.body.style.overflow = 'hidden';
 document.body.style.overflow = 'auto';
 
 
-      // garantir que a UI “entre” corretamente (caso tenhamos segurado a navegação)
+      // garantir que a UI â€œentreâ€ corretamente (caso tenhamos segurado a navegaÃ§Ã£o)
       // segue pelo funil central
 window.continueAfterLoginGates();
 
     } catch (e) {
       console.error(e);
-      if (msg) msg.innerText = "Erro ao salvar aceitação. Verifique sua conexão e tente novamente.";
+      if (msg) msg.innerText = "Erro ao salvar aceitaÃ§Ã£o. Verifique sua conexÃ£o e tente novamente.";
       btn.disabled = false;
       btn.innerText = "ACEITAR E CONTINUAR";
     }
@@ -13078,7 +13082,7 @@ const evaluateRulesGate = async (uid, userData) => {
     window.__rulesGate.updatedAt = rules.updatedAt;
     window.__rulesGate.officialStartAt = rules.officialStartAt;
 
-    // 2) users/{uid} (você já tem userData do getDoc anterior)
+    // 2) users/{uid} (vocÃª jÃ¡ tem userData do getDoc anterior)
     const accepted = userData?.rulesAccepted === true;
     const acceptedVersion = Number(userData?.rulesAcceptedVersion || 0);
 
@@ -13093,17 +13097,17 @@ const evaluateRulesGate = async (uid, userData) => {
 
     return mustAccept;
   } finally {
-    // NÃO libera lock aqui se gateRules==true,
-    // porque o lock só deve cair quando aceitar.
+    // NÃƒO libera lock aqui se gateRules==true,
+    // porque o lock sÃ³ deve cair quando aceitar.
     if (!window.__rulesGate.gateRules) window.__rulesGateLock = false;
   }
 };
 
 
-// Regras agora viram MODAL (conteúdo vem do rulesList já carregado)
+// Regras agora viram MODAL (conteÃºdo vem do rulesList jÃ¡ carregado)
 window.openRulesModal = async ({ mandatory = false } = {}) => {
   try {
-    // trava fechamento se for obrigatório
+    // trava fechamento se for obrigatÃ³rio
     window.__rulesGateLock = !!mandatory;
 
     // Garante que renderRules rode antes de abrir o modal.
@@ -13116,7 +13120,7 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
     // marca "abriu tela"
     if (uid) await window.markRulesOpened(uid);
 
-    // pega estado do usuário pra decidir se mostra botão
+    // pega estado do usuÃ¡rio pra decidir se mostra botÃ£o
     let gate = true;
     if (uid) {
       const userState = await window.getUserRulesState(uid);
@@ -13129,35 +13133,35 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
       : `<div class="text-xs font-bold text-gray-600">Carregando regras...</div>`;
 
     const closeBtnHtml = mandatory
-      ? `` // sem X no modo obrigatório
+      ? `` // sem X no modo obrigatÃ³rio
       : `<button class="btn-press" onclick="closeModal()"><i class="fas fa-times"></i></button>`;
 
     const footerHtml = (() => {
-      // Se é obrigatório e ainda está pendente: só deixa aceitar
+      // Se Ã© obrigatÃ³rio e ainda estÃ¡ pendente: sÃ³ deixa aceitar
       if (mandatory && gate) {
         return `
           <div class="p-4 pt-0 space-y-2">
             <button id="btnAcceptRules"
                     class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
-              LI E CONCORDO ✅
+              LI E CONCORDO âœ…
             </button>
             <div class="text-[10px] text-gray-500 font-bold text-center">
-              Você precisa aceitar para continuar usando o app.
+              VocÃª precisa aceitar para continuar usando o app.
             </div>
           </div>
         `;
       }
 
-      // Se não é obrigatório:
+      // Se nÃ£o Ã© obrigatÃ³rio:
       // - se pendente: mostra aceitar + fechar
-      // - se já aceitou: mostra selo + fechar
+      // - se jÃ¡ aceitou: mostra selo + fechar
       if (!mandatory) {
         if (gate) {
           return `
             <div class="p-4 pt-0 space-y-2">
               <button id="btnAcceptRules"
                       class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
-                LI E CONCORDO ✅
+                LI E CONCORDO âœ…
               </button>
               <button onclick="closeModal()"
                       class="w-full bg-white text-[#006400] py-3 rounded font-black text-xs shadow btn-press border border-[#006400]/30">
@@ -13170,7 +13174,7 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
         return `
           <div class="p-4 pt-0 space-y-2">
             <div class="w-full bg-green-50 border border-green-200 text-green-800 py-3 rounded font-black text-xs text-center">
-              ✅ você já aceitou este regulamento
+              âœ… vocÃª jÃ¡ aceitou este regulamento
             </div>
             <button onclick="closeModal()"
                     class="w-full bg-[#006400] text-white py-3 rounded font-black text-xs shadow btn-press">
@@ -13180,11 +13184,11 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
         `;
       }
 
-      // obrigatório mas já aceito (caso raro): pode fechar
+      // obrigatÃ³rio mas jÃ¡ aceito (caso raro): pode fechar
       return `
         <div class="p-4 pt-0">
           <div class="w-full bg-green-50 border border-green-200 text-green-800 py-3 rounded font-black text-xs text-center">
-            ✅ você já aceitou este regulamento
+            âœ… vocÃª jÃ¡ aceitou este regulamento
           </div>
         </div>
       `;
@@ -13211,7 +13215,7 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
         
     window.openModal(html);
 
-    // Wire do botão de aceitar (se existir)
+    // Wire do botÃ£o de aceitar (se existir)
     const btn = document.getElementById("btnAcceptRules");
     if (btn) {
       btn.onclick = async () => {
@@ -13220,19 +13224,19 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
           btn.classList.add("opacity-60");
 
           const uid2 = window.getCurrentUid();
-          if (!uid2) throw new Error("Sem usuário logado");
+          if (!uid2) throw new Error("Sem usuÃ¡rio logado");
 
           await window.acceptRules(uid2, rulesVersion);
 
-          // atualiza status do botão de regras na profile (se você tiver)
+          // atualiza status do botÃ£o de regras na profile (se vocÃª tiver)
           if (typeof window.updateRulesButtonStatus === "function") {
             window.updateRulesButtonStatus(true);
           }
 
-          // se era obrigatório, destrava e fecha
+          // se era obrigatÃ³rio, destrava e fecha
           window.__rulesGateLock = false;
 
-          // Reabre o modal já em modo "aceito" (fica bonito e garante paridade)
+          // Reabre o modal jÃ¡ em modo "aceito" (fica bonito e garante paridade)
           closeModal();
           window.openRulesModal({ mandatory: false });
 
@@ -13240,7 +13244,7 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
           console.error("Erro ao aceitar regras:", e);
           btn.disabled = false;
           btn.classList.remove("opacity-60");
-          alert("Não foi possível salvar seu aceite. Verifique sua conexão e tente novamente.");
+          alert("NÃ£o foi possÃ­vel salvar seu aceite. Verifique sua conexÃ£o e tente novamente.");
         }
       };
     }
@@ -13263,20 +13267,20 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
 
 // ========= REGRAS: GATE + ACEITE (paridade Android) =========
 
-// Estado do modal obrigatório (impede fechar)
+// Estado do modal obrigatÃ³rio (impede fechar)
 window.__rulesGateLock = false;
 
-// (você provavelmente já tem o uid atual em algum lugar; ajuste aqui)
+// (vocÃª provavelmente jÃ¡ tem o uid atual em algum lugar; ajuste aqui)
 window.getCurrentUid = () => {
-  // opção A: Firebase Auth
+  // opÃ§Ã£o A: Firebase Auth
   // return auth?.currentUser?.uid || null;
 
-  // opção B: se você guarda em window/global
+  // opÃ§Ã£o B: se vocÃª guarda em window/global
   return window.currentUid || null;
 };
 
 window.getRulesDoc = async () => {
-  await renderRules(true); // força pegar versão/updatedAt novos
+  await renderRules(true); // forÃ§a pegar versÃ£o/updatedAt novos
   return cachedRulesData || { items: [], version: "", updatedAt: null, officialStartAt: null };
 };
 
@@ -13322,7 +13326,7 @@ window.computeGateRules = (userState, rulesDoc) => {
   return (!accepted) || (uVer !== rVer);
 };
 
-// Chame isso após login (quando já tiver uid)
+// Chame isso apÃ³s login (quando jÃ¡ tiver uid)
 window.enforceRulesGate = async () => {
   const uid = window.getCurrentUid();
   if (!uid) return;
@@ -13334,10 +13338,10 @@ window.enforceRulesGate = async () => {
 
   const gate = window.computeGateRules(userState, rulesDoc);
   if (gate) {
-    // abre obrigatório e trava fechar
+    // abre obrigatÃ³rio e trava fechar
     await window.openRulesModal({ mandatory: true });
   } else {
-    // opcional: atualizar status do botão na profile
+    // opcional: atualizar status do botÃ£o na profile
     if (typeof window.updateRulesButtonStatus === "function") {
       window.updateRulesButtonStatus(false);
     }
