@@ -1061,9 +1061,57 @@ window.continueAfterLoginGates();
   });
 };
 
+window.startCurrentUserDataWatcher = (firebaseUser) => {
+  if (window.__currentUserLiveDataUnsub) {
+    try { window.__currentUserLiveDataUnsub(); } catch (error) {}
+    window.__currentUserLiveDataUnsub = null;
+  }
+  window.__currentUserLiveData = null;
+  if (!firebaseUser) return;
+
+  const userRef = doc(db, "users", firebaseUser.uid);
+
+  window.__currentUserLiveDataUnsub = onSnapshot(userRef, (snap) => {
+    if (!snap.exists()) return;
+    const data = snap.data() || {};
+    const previous = window.__currentUserLiveData || {};
+    applyLiveCurrentUserData(data);
+
+    const currentMonthKey = typeof getFinancialCurrentMonthKey === "function" ? getFinancialCurrentMonthKey() : "";
+    const previousPayment = previous?.payments?.[currentMonthKey] === true;
+    const nextPayment = data?.payments?.[currentMonthKey] === true;
+    const paymentChanged = previousPayment !== nextPayment;
+    const profileChanged =
+      String(previous?.photoBase64 || "") !== String(data.photoBase64 || "") ||
+      String(previous?.name || "") !== String(data.name || "") ||
+      String(previous?.username || "") !== String(data.username || "") ||
+      Number(previous?.debts || 0) !== Number(data.debts || 0) ||
+      String(previous?.webPushLastStatus || "") !== String(data.webPushLastStatus || "") ||
+      Number(previous?.webPushTokenCount || 0) !== Number(data.webPushTokenCount || 0);
+
+    const visibleTab = getCurrentVisibleTab();
+    const shouldRefreshAny = paymentChanged || profileChanged;
+
+    if (shouldRefreshAny) {
+      refreshCurrentVisibleViews({
+        forceMatches: true,
+        forceRanking: visibleTab === "ranking",
+        forceProfile: visibleTab === "profile"
+      }).catch((error) => {
+        console.error("Falha ao atualizar dados do usuário em tempo real:", error);
+      });
+    }
+  }, (err) => {
+    console.error("currentUserData snapshot error:", err);
+  });
+};
+
 
 window.currentUid = null;
 window.currentUser = null;
+window.__currentUserLiveData = null;
+window.__currentUserLiveDataUnsub = null;
+window.__appRefreshBusy = false;
 
 // Normaliza TS/Date
 const toMillis = (v) => {
@@ -1698,6 +1746,10 @@ window.continueAfterLoginGates = async () => {
 
                 if (userSnap.exists()) {
                     const data = userSnap.data();
+                    applyLiveCurrentUserData(data);
+                    currentUser = user;
+                    window.currentUser = user;
+                    window.currentUid = user.uid;
 
                     if (data.isActive === false) {
                         alert("Seu acesso foi desativado. Fale com o administrador.");
@@ -1737,6 +1789,7 @@ try { await updateDoc(userDocRef, { appVersion: getAppVersionLabel(), lastAccess
 // ✅ NOVO: inicia o gate de troca de senha obrigatória (Android parity)
 window.startForcePasswordWatcher(user);
 setupForegroundPushListener();
+startCurrentUserDataWatcher(user);
                 }
                 // ------------------------------------------
 
@@ -1756,6 +1809,11 @@ window.continueAfterLoginGates();
                 window.currentUser = null;
 window.currentUid = null;
 currentUser = null;
+if (window.__currentUserLiveDataUnsub) {
+  try { window.__currentUserLiveDataUnsub(); } catch (e) {}
+  window.__currentUserLiveDataUnsub = null;
+}
+window.__currentUserLiveData = null;
 setHomeMode(true);
 
 if (__appStateUnsub) {
@@ -2563,6 +2621,102 @@ const renderDeferredHomeSkeleton = () => `
   </div>
 `;
 
+const getCurrentVisibleTab = () => {
+  const tabs = ["matches", "ranking", "rules", "profile"];
+  return tabs.find((tab) => {
+    const screen = document.getElementById(`${tab}Screen`);
+    return screen && !screen.classList.contains("hidden");
+  }) || "matches";
+};
+
+const applyLiveCurrentUserData = (data = null) => {
+  if (!currentUser) return null;
+  if (!data) return null;
+
+  const merged = {
+    uid: currentUser.uid,
+    id: currentUser.uid,
+    ...data
+  };
+
+  window.__currentUserLiveData = merged;
+  return merged;
+};
+
+const getLiveCurrentUserData = () => window.__currentUserLiveData || null;
+
+const getMergedCurrentUserData = (fallback = {}) => ({
+  ...(fallback || {}),
+  ...(getLiveCurrentUserData() || {})
+});
+
+const refreshCurrentVisibleViews = async ({ forceMatches = true, forceRanking = true, forceProfile = true } = {}) => {
+  const visibleTab = getCurrentVisibleTab();
+
+  if (forceMatches && typeof loadMatches === "function") {
+    await loadMatches({ force: true }).catch((error) => {
+      console.error("Falha ao recarregar confrontos:", error);
+    });
+  }
+
+  if (forceRanking && visibleTab === "ranking" && typeof loadRanking === "function") {
+    await loadRanking({ force: true }).catch((error) => {
+      console.error("Falha ao recarregar ranking:", error);
+    });
+  }
+
+  if (forceProfile && typeof loadProfile === "function") {
+    await loadProfile().catch((error) => {
+      console.error("Falha ao recarregar perfil:", error);
+    });
+  }
+};
+
+window.refreshAppData = async ({ hardReload = false, source = "manual" } = {}) => {
+  if (window.__appRefreshBusy) return;
+  window.__appRefreshBusy = true;
+
+  const btn = document.getElementById("btnRefresh");
+  const progressBar = document.getElementById("progressBar");
+  const originalHtml = btn?.innerHTML || "";
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add("is-loading");
+      btn.innerHTML = '<i class="fas fa-circle-notch fa-spin text-xl"></i>';
+    }
+    progressBar?.classList.remove("hidden");
+
+    invalidateHomeRankingCaches();
+    await refreshCurrentVisibleViews({ forceMatches: true, forceRanking: true, forceProfile: true });
+
+    const registration = await window.getMainServiceWorkerRegistration?.();
+    if (registration?.update) {
+      await registration.update().catch((error) => {
+        console.warn("Falha ao atualizar service worker:", error);
+      });
+    }
+
+    if (hardReload) {
+      window.location.reload();
+    }
+  } catch (error) {
+    console.error("Erro ao atualizar o app:", error);
+    if (!hardReload) {
+      window.location.reload();
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove("is-loading");
+      btn.innerHTML = originalHtml;
+    }
+    progressBar?.classList.add("hidden");
+    window.__appRefreshBusy = false;
+  }
+};
+
 const getHomePendingPaymentNotice = (user = {}) => {
   const monthKey = typeof getFinancialCurrentMonthKey === "function" ? getFinancialCurrentMonthKey() : "";
   const monthName = typeof getFinancialCurrentMonthName === "function" ? getFinancialCurrentMonthName() : "mês vigente";
@@ -2587,12 +2741,14 @@ const getHomePendingPaymentNotice = (user = {}) => {
 window.openHomeFinancialSection = () => {
   showTab("profile");
   setTimeout(() => {
+    if (typeof loadProfile === "function") loadProfile();
     document.getElementById("financialSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 240);
 };
 
 const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) => {
-  const currentName = runtime.currentUser?.name || runtime.currentUser?.username || "Jogador";
+  const currentUserData = getMergedCurrentUserData(runtime.currentUser || {});
+  const currentName = currentUserData?.name || currentUserData?.username || "Jogador";
   const nextMatch = open[0] || waiting[0] || finished[0] || null;
   const nextLabel = open.length
     ? "Próximo jogo"
@@ -2609,7 +2765,7 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
     : "Use os atalhos abaixo para navegar.";
 
   const pendingCount = open.filter((m) => !myVotesMap[m.id]).length;
-  const paymentNotice = getHomePendingPaymentNotice(runtime.currentUser || {});
+  const paymentNotice = getHomePendingPaymentNotice(currentUserData || {});
 
   return `
     <section class="home-quick-panel surface-card mb-4 overflow-hidden">
@@ -2802,7 +2958,9 @@ const parseHomeLayoutDoc = (layoutSnap) => {
 };
 
 const buildHomeVisibilityRuntime = ({ matches, open, waiting, finished, myVotesMap, allUsersData }) => {
-  const currentUserData = allUsersData.find(u => u.uid === currentUser?.uid) || null;
+  const currentUserData = getMergedCurrentUserData(
+    allUsersData.find(u => u.uid === currentUser?.uid) || null
+  );
 
   let hasUnreadOpenChat = false;
   let hasUnreadWaitingChat = false;
@@ -10819,7 +10977,7 @@ async function loadProfile() {
 
             if (!userSnap.exists()) return; 
             
-            const u = userSnap.data(); 
+            const u = getMergedCurrentUserData(userSnap.data() || {}); 
 // AQUI: Usa a função corrigida para decidir entre Foto Real ou Avatar
             const avatar = getAvatarUrl(u.photoBase64, u.name || u.username);
             // 2. Configura dados do PIX
@@ -11439,14 +11597,8 @@ const link = document.createElement('a');
             document.getElementById('potModal').classList.remove('hidden'); // Abre o modal novo
         };
        
-        document.getElementById('btnRefresh').onclick = () => {
-  const activeBtn =
-    document.querySelector('#bottomNav .nav-btn.text-\\[\\#006400\\]') ||
-    document.querySelector('#bottomNav .nav-btn.text-\\[\\#006400\\]'.replace(/\\/g,'')) ||
-    document.querySelector('#bottomNav .nav-btn');
-
-  const active = activeBtn?.id?.replace('nav-', '') || 'matches';
-  showTab(active);
+document.getElementById('btnRefresh').onclick = () => {
+  window.refreshAppData({ hardReload: false, source: "header-button" });
 };
 
 document.getElementById('btnLogout').onclick = () => {

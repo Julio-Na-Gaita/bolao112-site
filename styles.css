@@ -1894,6 +1894,11 @@ select:focus-visible {
     white-space: nowrap;
 }
 
+#btnRefresh.is-loading {
+    opacity: 0.75;
+    pointer-events: none;
+}
+
 .home-quick-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
