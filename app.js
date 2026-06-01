@@ -168,6 +168,13 @@ let adminCleanupState = {
   finishedMatches: [],
   search: ""
 };
+let adminMatchEditState = {
+  loading: false,
+  saving: false,
+  matchId: "",
+  match: null,
+  guessCount: 0
+};
 let adminFinancialState = {
   users: [],
   whitelist: [],
@@ -8877,6 +8884,89 @@ const loadAdminCreationState = async () => {
   };
 };
 
+const getAdminMatchStatusInfo = (match = {}) => {
+  const winnerLabel = String(match.winner || "").trim();
+  if (winnerLabel) {
+    return {
+      label: `Finalizado • ${winnerLabel}`,
+      tone: "success"
+    };
+  }
+
+  const expired = match.expired === true || (match.deadlineDate instanceof Date && new Date() > match.deadlineDate);
+  return {
+    label: expired ? "Aguardando resultado" : "Em aberto",
+    tone: expired ? "warning" : "default"
+  };
+};
+
+const buildAdminMatchCompetitionOptions = (currentValue = "") => {
+  const items = Array.isArray(adminCreationState.competitionItems) ? adminCreationState.competitionItems : [];
+  const activeItems = items.filter((item) => item?.active === true);
+  const normalizedCurrent = normalizeAdminText(currentValue);
+  const hasCurrent = !normalizedCurrent
+    ? true
+    : activeItems.some((item) => normalizeAdminText(item.name || "") === normalizedCurrent);
+  const currentItem = items.find((item) => normalizeAdminText(item.name || "") === normalizedCurrent) || null;
+  const options = activeItems.slice();
+
+  if (currentValue && !hasCurrent) {
+    options.unshift({
+      name: currentValue,
+      logo: currentItem?.logo || "",
+      active: false,
+      _current: true
+    });
+  }
+
+  return options
+    .map((competition) => {
+      const label = competition._current && competition.active !== true
+        ? `${competition.name || ""} (atual)`
+        : competition.name || "";
+      return `<option value="${escapeHtml(competition.name || "")}" data-logo="${escapeHtml(competition.logo || "")}" ${normalizeAdminText(competition.name || "") === normalizedCurrent ? "selected" : ""}>${escapeHtml(label)}</option>`;
+    })
+    .join("");
+};
+
+const buildAdminMatchRoundOptions = (currentValue = "") => {
+  const activeRounds = Array.isArray(adminCreationState.rounds) ? adminCreationState.rounds : [];
+  const inactiveRounds = Array.isArray(adminCreationState.inactiveRounds) ? adminCreationState.inactiveRounds : [];
+  const normalizedCurrent = normalizeAdminText(currentValue);
+  const hasCurrent = !normalizedCurrent
+    ? true
+    : activeRounds.some((round) => normalizeAdminText(round) === normalizedCurrent);
+  const currentRound = [...activeRounds, ...inactiveRounds].find((round) => normalizeAdminText(round) === normalizedCurrent) || "";
+  const rounds = activeRounds.slice();
+
+  if (currentValue && !hasCurrent) {
+    rounds.unshift(currentRound || currentValue);
+  }
+
+  return rounds
+    .map((round) => {
+      const roundText = String(round || "").trim();
+      const isCurrent = normalizeAdminText(roundText) === normalizedCurrent;
+      const label = isCurrent && !activeRounds.some((item) => normalizeAdminText(item) === normalizedCurrent)
+        ? `${roundText} (atual)`
+        : roundText;
+      return `<option value="${escapeHtml(roundText)}" ${isCurrent ? "selected" : ""}>${escapeHtml(label)}</option>`;
+    })
+    .join("");
+};
+
+const buildAdminMatchEditWarnings = (match = {}, guessCount = 0) => {
+  const warnings = [];
+  const finished = Boolean(String(match.winner || "").trim() || match.finishedAt || match.final === true || String(match.status || "").toLowerCase().includes("final"));
+  if (finished) {
+    warnings.push("Atenção: esta partida já possui resultado/finalização. Edite apenas informações cadastrais se tiver certeza.");
+  }
+  if (Number(guessCount || 0) > 0) {
+    warnings.push("Esta partida pode já possuir palpites. Alterar times ou prazo pode impactar a compreensão dos usuários.");
+  }
+  return warnings;
+};
+
 const persistAdminTeamIfNeeded = async (teamName = "", logoUrl = "") => {
   const cleanName = String(teamName || "").trim();
   const cleanLogo = String(logoUrl || "").trim();
@@ -8935,6 +9025,62 @@ const logAdminMatchCreation = async ({ matchId, teamA, teamB, competition, round
   } catch (error) {
     console.warn("Falha ao registrar auditoria do confronto:", error);
   }
+};
+
+const logAdminMatchUpdate = async ({ matchId, oldMatch = {}, newMatch = {} }) => {
+  try {
+    const admin = await getCurrentAdminProfile();
+    if (!admin) return;
+
+    await addDoc(collection(db, "admin_audit_logs"), {
+      type: "update_match",
+      adminUid: admin.uid || "",
+      adminName: admin.name || "",
+      adminEmail: admin.email || "",
+      source: "matches",
+      matchId: matchId || "",
+      teams: {
+        teamA: newMatch.teamA || oldMatch.teamA || "",
+        teamB: newMatch.teamB || oldMatch.teamB || ""
+      },
+      competition: newMatch.competition || oldMatch.competition || "",
+      round: newMatch.round || oldMatch.round || "",
+      deadline: newMatch.deadline ? Timestamp.fromDate(newMatch.deadline) : (oldMatch.deadline ? oldMatch.deadline : null),
+      oldValue: {
+        teamA: oldMatch.teamA || "",
+        teamB: oldMatch.teamB || "",
+        teamAUrl: oldMatch.teamAUrl || "",
+        teamBUrl: oldMatch.teamBUrl || "",
+        competition: oldMatch.competition || "",
+        competitionLogo: oldMatch.competitionLogo || "",
+        round: oldMatch.round || "",
+        deadline: oldMatch.deadline || null
+      },
+      newValue: {
+        teamA: newMatch.teamA || "",
+        teamB: newMatch.teamB || "",
+        teamAUrl: newMatch.teamAUrl || "",
+        teamBUrl: newMatch.teamBUrl || "",
+        competition: newMatch.competition || "",
+        competitionLogo: newMatch.competitionLogo || "",
+        round: newMatch.round || "",
+        deadline: newMatch.deadline || null
+      },
+      createdAt: Timestamp.fromDate(new Date())
+    });
+  } catch (error) {
+    console.warn("Falha ao registrar auditoria da edição do confronto:", error);
+  }
+};
+
+const resetAdminMatchEditState = () => {
+  adminMatchEditState = {
+    loading: false,
+    saving: false,
+    matchId: "",
+    match: null,
+    guessCount: 0
+  };
 };
 
 const setAdminQuickResultsStatus = (message = "", tone = "success") => {
@@ -9289,14 +9435,23 @@ const saveAdminMatchInternal = async (keepOpen = false) => {
   const deadlineDate = new Date(deadlineValue);
   if (Number.isNaN(deadlineDate.getTime())) return alert("A data e hora informadas são inválidas.");
 
+  const isEditingMatch = Boolean(adminMatchEditState.matchId);
+  const editingMatchId = String(adminMatchEditState.matchId || "").trim();
+  const editingMatch = adminMatchEditState.match || {};
+
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
-    alert("Você não tem permissão para criar confrontos.");
+    alert(isEditingMatch ? "Você não tem permissão para editar confrontos." : "Você não tem permissão para criar confrontos.");
     closeModal();
     return;
   }
 
   try {
+    if (isEditingMatch) {
+      adminMatchEditState.saving = true;
+      renderAdminMatchEditModal();
+    }
+
     const competitionItem = (adminCreationState.competitionItems || []).find((item) => normalizeAdminText(item.name || "") === normalizeAdminText(competition) && item.active === true) || null;
     const savedTeamA = await persistAdminTeamIfNeeded(teamA, teamALogo);
     const savedTeamB = await persistAdminTeamIfNeeded(teamB, teamBLogo);
@@ -9306,34 +9461,54 @@ const saveAdminMatchInternal = async (keepOpen = false) => {
 
     const matchPayload = {
       competition,
-      competitionLogo: competitionItem?.logo || "",
+      competitionLogo: competitionItem?.logo || editingMatch.competitionLogo || "",
       round,
       teamA,
       teamB,
       teamAUrl: teamALogo || savedTeamA?.logoUrl || "",
       teamBUrl: teamBLogo || savedTeamB?.logoUrl || "",
       deadline: deadlineTs,
-      createdAt: nowTs,
       updatedAt: nowTs,
-      winner: "",
-      final: false,
-      stats: {},
-      createdByUid: admin.uid || "",
-      createdByName: admin.name || "",
-      createdByEmail: admin.email || ""
+      updatedByUid: admin.uid || "",
+      updatedByName: admin.name || "",
+      updatedByEmail: admin.email || ""
     };
 
-    const matchRef = await addDoc(collection(db, "matches"), matchPayload);
-    await logAdminMatchCreation({
-      matchId: matchRef.id,
-      teamA,
-      teamB,
-      competition,
-      round,
-      deadline: deadlineDate
-    });
+    let matchRef = null;
+    if (isEditingMatch) {
+      matchRef = doc(db, "matches", editingMatchId);
+      await updateDoc(matchRef, matchPayload);
+      await logAdminMatchUpdate({
+        matchId: editingMatchId,
+        oldMatch: editingMatch,
+        newMatch: {
+          ...editingMatch,
+          ...matchPayload,
+          deadline: deadlineDate
+        }
+      });
+    } else {
+      matchPayload.createdAt = nowTs;
+      matchPayload.winner = "";
+      matchPayload.final = false;
+      matchPayload.stats = {};
+      matchPayload.createdByUid = admin.uid || "";
+      matchPayload.createdByName = admin.name || "";
+      matchPayload.createdByEmail = admin.email || "";
+
+      matchRef = await addDoc(collection(db, "matches"), matchPayload);
+      await logAdminMatchCreation({
+        matchId: matchRef.id,
+        teamA,
+        teamB,
+        competition,
+        round,
+        deadline: deadlineDate
+      });
+    }
 
     invalidateHomeRankingCaches();
+    invalidateRuntimeCache("col:matches");
     await loadAdminMatches();
     if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) {
       await loadMatches({ force: true });
@@ -9353,7 +9528,7 @@ const saveAdminMatchInternal = async (keepOpen = false) => {
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
     }
 
-    if (keepOpen) {
+    if (keepOpen && !isEditingMatch) {
       const preservedDeadline = formatAdminDateTimeInput(deadlineDate);
       const preservedWhatsapp = shareWhatsapp;
 
@@ -9377,12 +9552,24 @@ const saveAdminMatchInternal = async (keepOpen = false) => {
       return;
     }
 
-    alert("Confronto salvo com sucesso.");
+    if (typeof window.showToast === "function") {
+      window.showToast(
+        isEditingMatch ? "Confronto atualizado!" : "Confronto salvo!",
+        isEditingMatch ? "Os dados da partida foram atualizados." : "O confronto foi publicado com sucesso.",
+        ""
+      );
+    } else {
+      alert(isEditingMatch ? "Confronto atualizado com sucesso." : "Confronto salvo com sucesso.");
+    }
     closeModal();
   } catch (error) {
-    console.error("Erro ao salvar confronto:", error);
-    setAdminCreationStatus("Não foi possível salvar o confronto.", "danger");
-    alert(`Não foi possível salvar o confronto. ${error?.message || ""}`.trim());
+    console.error(isEditingMatch ? "Erro ao editar confronto:" : "Erro ao salvar confronto:", error);
+    if (isEditingMatch) {
+      adminMatchEditState.saving = false;
+      renderAdminMatchEditModal();
+    }
+    setAdminCreationStatus(isEditingMatch ? "Não foi possível atualizar o confronto." : "Não foi possível salvar o confronto.", "danger");
+    alert(`${isEditingMatch ? "Não foi possível atualizar o confronto." : "Não foi possível salvar o confronto."} ${error?.message || ""}`.trim());
   }
 };
 
@@ -9392,6 +9579,287 @@ window.saveAdminMatch = async (keepOpen = false) => {
 
 window.saveAdminMatchAndReset = async () => {
   await saveAdminMatchInternal(true);
+};
+
+window.saveAdminMatchEdit = async () => {
+  await saveAdminMatchInternal(false);
+};
+
+window.cancelAdminMatchEdit = () => {
+  resetAdminMatchEditState();
+  closeModal();
+};
+
+const renderAdminMatchEditModal = () => {
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  const match = adminMatchEditState.match || {};
+  const statusInfo = getAdminMatchStatusInfo(match);
+  const warnings = buildAdminMatchEditWarnings(match, adminMatchEditState.guessCount);
+  const competitionValue = String(match.competition || "").trim();
+  const roundValue = String(match.round || "").trim();
+  const competitionLogo = String(match.competitionLogo || "").trim();
+  const teamALogo = String(match.teamAUrl || "").trim();
+  const teamBLogo = String(match.teamBUrl || "").trim();
+  const deadlineDate = match.deadlineDate || toJsDate(match.deadline) || new Date();
+  const deadlineValue = formatAdminDateTimeInput(deadlineDate);
+  const competitionOptions = buildAdminMatchCompetitionOptions(competitionValue);
+  const roundOptions = buildAdminMatchRoundOptions(roundValue);
+  const warningHtml = warnings.length
+    ? warnings.map((text) => `
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800 leading-relaxed">${escapeHtml(text)}</div>
+    `).join("")
+    : `
+      <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-500 leading-relaxed">
+        A edi��o atualiza apenas os dados cadastrais do confronto.
+      </div>
+    `;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[90vh] flex flex-col">
+      <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+      <div class="relative z-10 flex flex-col h-full bg-white/92">
+        <div class="bg-[#006400] p-4 text-white flex items-start justify-between shadow-md shrink-0">
+          <div class="pr-3">
+            <h3 class="font-black uppercase text-lg leading-none">Editar Confronto</h3>
+            <p class="text-[10px] text-[#FFD700] font-bold mt-1">matches/${escapeHtml(adminMatchEditState.matchId || "")}</p>
+          </div>
+          <button type="button" onclick="window.cancelAdminMatchEdit()" class="ml-2"><i class="fas fa-times text-xl"></i></button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-3 space-y-3">
+          <div class="admin-creation-panel space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Dados do confronto</div>
+                <h4 class="text-lg font-black text-gray-900 leading-tight truncate">${escapeHtml(match.teamA || "Sem time")} x ${escapeHtml(match.teamB || "Sem time")}</h4>
+              </div>
+              <span class="status-chip status-chip--${statusInfo.tone === "success" ? "success" : statusInfo.tone === "warning" ? "warning" : "default"}">${escapeHtml(statusInfo.label)}</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div class="admin-mini-chip">
+                <i class="fas fa-comments"></i>
+                <span>${Number(adminMatchEditState.guessCount || 0)} palpites</span>
+              </div>
+              <div class="admin-mini-chip">
+                <i class="fas fa-futbol"></i>
+                <span>${escapeHtml(match.competition || "Sem competi��o")}</span>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              ${warningHtml}
+            </div>
+          </div>
+
+          <div class="admin-creation-panel space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="admin-compact-label">Competi��o</label>
+                <select id="adminMatchCompetition" class="admin-creation-input" onchange="window.handleAdminCompetitionChange()">
+                  <option value="">Selecione</option>
+                  ${competitionOptions}
+                </select>
+                <div class="mt-2 flex items-center gap-3">
+                  ${getCompetitionThumbHtml(competitionLogo)}
+                  <div class="flex-1">
+                    <div class="text-[10px] font-bold uppercase text-gray-400 mb-1">Logo da competi��o</div>
+                    <div class="text-xs text-gray-500">A competi��o selecionada define o destaque visual do confronto.</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label class="admin-compact-label">Rodada/Fase</label>
+                <select id="adminMatchRound" class="admin-creation-input" onchange="window.handleAdminRoundChange()">
+                  <option value="">Selecione</option>
+                  ${roundOptions}
+                </select>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="admin-team-card">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                  <label class="admin-compact-label mb-0">Time A</label>
+                  <button type="button" onclick="window.searchAdminTeamLogo('A')" class="admin-search-btn"><i class="fas fa-magnifying-glass"></i></button>
+                </div>
+                <div class="relative">
+                  <input id="adminTeamNameA" type="text" class="admin-creation-input pr-10" placeholder="Digite ou pesquise o time" oninput="window.refreshAdminTeamSuggestions('A')" onfocus="window.refreshAdminTeamSuggestions('A')" onblur="window.hideAdminTeamSuggestionsDelayed('A')" value="${escapeHtml(match.teamA || "")}">
+                  <div id="adminTeamSuggestionsA" class="admin-team-suggestions hidden"></div>
+                </div>
+                <div class="mt-3 flex items-center gap-3">
+                  ${getTeamThumbHtml("A", teamALogo)}
+                  <div class="flex-1">
+                    <div class="text-[10px] font-bold uppercase text-gray-400 mb-1">Miniatura da logo</div>
+                    <div class="text-xs text-gray-500">A imagem aparece quando o link da logo estiver preenchido.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-center text-[#006400] font-black text-sm">X</div>
+
+              <div class="admin-team-card">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                  <label class="admin-compact-label mb-0">Time B</label>
+                  <button type="button" onclick="window.searchAdminTeamLogo('B')" class="admin-search-btn"><i class="fas fa-magnifying-glass"></i></button>
+                </div>
+                <div class="relative">
+                  <input id="adminTeamNameB" type="text" class="admin-creation-input pr-10" placeholder="Digite ou pesquise o time" oninput="window.refreshAdminTeamSuggestions('B')" onfocus="window.refreshAdminTeamSuggestions('B')" onblur="window.hideAdminTeamSuggestionsDelayed('B')" value="${escapeHtml(match.teamB || "")}">
+                  <div id="adminTeamSuggestionsB" class="admin-team-suggestions hidden"></div>
+                </div>
+                <div class="mt-3 flex items-center gap-3">
+                  ${getTeamThumbHtml("B", teamBLogo)}
+                  <div class="flex-1">
+                    <div class="text-[10px] font-bold uppercase text-gray-400 mb-1">Miniatura da logo</div>
+                    <div class="text-xs text-gray-500">A imagem aparece quando o link da logo estiver preenchido.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <button type="button" id="btnToggleAdminLogoFields" class="text-[11px] font-black uppercase text-[#006400]">
+                <i class="fas fa-link mr-1"></i> Mostrar links das logos
+              </button>
+              <div id="adminLogoFields" class="hidden mt-3 space-y-3">
+                <div>
+                  <label class="admin-compact-label">Link Logo A</label>
+                  <input id="adminTeamLogoA" type="url" class="admin-creation-input" placeholder="https://..." value="${escapeHtml(teamALogo)}">
+                </div>
+                <div>
+                  <label class="admin-compact-label">Link Logo B</label>
+                  <input id="adminTeamLogoB" type="url" class="admin-creation-input" placeholder="https://..." value="${escapeHtml(teamBLogo)}">
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="admin-compact-label">Data e Hora limite para vota��o</label>
+              <input id="adminMatchDeadline" type="datetime-local" class="admin-creation-input" value="${escapeHtml(deadlineValue)}">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="window.saveAdminMatchEdit()" ${adminMatchEditState.saving ? "disabled" : ""} class="${adminMatchEditState.saving ? "bg-gray-300 text-gray-600 cursor-not-allowed" : "bg-[#006400] text-white"} py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press flex items-center justify-center gap-2">
+                <i class="fas ${adminMatchEditState.saving ? "fa-circle-notch fa-spin" : "fa-save"} text-base"></i>
+                ${adminMatchEditState.saving ? "Salvando..." : "Salvar altera��es"}
+              </button>
+              <button type="button" onclick="window.cancelAdminMatchEdit()" class="bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press">
+                Cancelar
+              </button>
+            </div>
+
+            <div id="adminCreationStatus" class="hidden rounded-2xl border px-3 py-2 text-xs font-black"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const teamAName = document.getElementById("adminTeamNameA");
+  const teamBName = document.getElementById("adminTeamNameB");
+  const teamALogoInput = document.getElementById("adminTeamLogoA");
+  const teamBLogoInput = document.getElementById("adminTeamLogoB");
+  const toggleLinksBtn = document.getElementById("btnToggleAdminLogoFields");
+  const linksWrap = document.getElementById("adminLogoFields");
+
+  if (teamAName) teamAName.addEventListener("input", () => window.refreshAdminTeamSuggestions("A"));
+  if (teamBName) teamBName.addEventListener("input", () => window.refreshAdminTeamSuggestions("B"));
+  if (teamALogoInput) teamALogoInput.addEventListener("input", () => window.updateAdminTeamPreview("A"));
+  if (teamBLogoInput) teamBLogoInput.addEventListener("input", () => window.updateAdminTeamPreview("B"));
+  if (toggleLinksBtn && linksWrap) {
+    toggleLinksBtn.onclick = () => {
+      const hidden = linksWrap.classList.toggle("hidden");
+      toggleLinksBtn.innerHTML = hidden
+        ? '<i class="fas fa-link mr-1"></i> Mostrar links das logos'
+        : '<i class="fas fa-eye-slash mr-1"></i> Ocultar links das logos';
+    };
+  }
+
+  adminCreationState.selectedCompetition = competitionValue;
+  adminCreationState.selectedRound = roundValue;
+  window.updateAdminCompetitionPreview();
+  window.updateAdminTeamPreview("A");
+  window.updateAdminTeamPreview("B");
+};
+
+window.openMatchEditModal = async (matchId) => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Voc� n�o tem permiss�o para editar confrontos.");
+    closeModal();
+    return;
+  }
+
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="bg-white p-6 text-center rounded shadow-xl">
+      <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
+      <p class="text-xs font-black text-gray-500 uppercase">Carregando edi��o...</p>
+    </div>
+  `;
+
+  try {
+    adminMatchEditState = {
+      loading: true,
+      saving: false,
+      matchId: String(matchId || "").trim(),
+      match: null,
+      guessCount: 0
+    };
+
+    if (!Array.isArray(adminCreationState.competitionItems) || !adminCreationState.competitionItems.length || !Array.isArray(adminCreationState.rounds) || !adminCreationState.rounds.length) {
+      await loadAdminCreationState().catch((error) => {
+        console.warn("N�o foi poss�vel carregar dados auxiliares da edi��o:", error);
+      });
+    }
+
+    const [matchSnap, guessesSnap] = await Promise.all([
+      getDoc(doc(db, "matches", String(matchId || "").trim())),
+      getDocs(query(collection(db, "guesses"), where("matchId", "==", String(matchId || "").trim()))).catch(() => null)
+    ]);
+
+    if (!matchSnap.exists()) {
+      throw new Error("Confronto n�o encontrado.");
+    }
+
+    const data = matchSnap.data() || {};
+    const deadlineDate = toJsDate(data.deadline) || null;
+    const guessCount = guessesSnap ? guessesSnap.size : 0;
+
+    adminMatchEditState = {
+      loading: false,
+      saving: false,
+      matchId: String(matchId || "").trim(),
+      match: {
+        id: matchSnap.id,
+        ...data,
+        deadlineDate,
+        expired: deadlineDate ? new Date() > deadlineDate : false
+      },
+      guessCount
+    };
+
+    adminCreationState.selectedCompetition = data.competition || "";
+    adminCreationState.selectedRound = data.round || "";
+
+    renderAdminMatchEditModal();
+  } catch (error) {
+    console.error("Erro ao abrir edi��o do confronto:", error);
+    cont.innerHTML = `
+      <div class="bg-white p-6 text-center rounded shadow-xl">
+        <p class="text-sm font-black text-red-600 mb-3">N�o foi poss�vel carregar a edi��o.</p>
+        <button onclick="closeModal()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
+      </div>
+    `;
+  }
 };
 
         // --- LEGENDA MEDALHAS ATUALIZADA (MITO, DIAMANTE...) ---
@@ -9503,7 +9971,7 @@ async function loadAdminMatches() {
                         <span class="mt-1 inline-flex w-fit rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${statusClass}">${statusLabel}</span>
                     </div>
                     <div class="flex gap-2">
-                        <button class="text-blue-500" onclick="alert('Edição apenas no App')"><i class="fas fa-edit"></i></button>
+                        <button class="text-blue-500" title="Editar confronto" onclick="window.openMatchEditModal('${escapeJsString(m.id)}')"><i class="fas fa-edit"></i></button>
                         <button class="text-red-500" onclick="moveToTrash('${m.id}')"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>`; 
@@ -12414,6 +12882,9 @@ window.closeModal = () => {
   window.closeModal = function () {
     // se Rules Gate OU Force Password estiver ativo, impede fechar
     if (window.__rulesGateLock || window.__forcePwLock) return;
+    if (adminMatchEditState.matchId) {
+      resetAdminMatchEditState();
+    }
     if (adminRoundSummaryState.previewUrl) {
       try { URL.revokeObjectURL(adminRoundSummaryState.previewUrl); } catch (error) {}
       adminRoundSummaryState.previewUrl = "";
