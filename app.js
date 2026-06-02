@@ -2981,6 +2981,7 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
   const pendingCount = open.filter((m) => !myVotesMap[m.id]).length;
   const paymentNotice = getHomePendingPaymentNotice(currentUserData || {});
   const pendingActionLabel = pendingCount > 0 ? "Votar nos pendentes" : "Tudo certo! Sem pendências";
+  const pendingCounterClass = pendingCount > 0 ? "home-quick-stat--pending-alert" : "";
 
   return `
     <section class="home-quick-panel surface-card mb-4 overflow-hidden">
@@ -3014,7 +3015,7 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
       </div>
 
       <div class="home-quick-stats">
-        <button type="button" class="home-quick-stat home-quick-stat--clickable btn-press" onclick="window.goToPendingVote()">
+        <button type="button" class="home-quick-stat home-quick-stat--clickable ${pendingCounterClass} btn-press" onclick="window.goToPendingVote()">
           <span class="home-quick-stat__value">${pendingCount}</span>
           <span class="home-quick-stat__label">palpites pendentes</span>
         </button>
@@ -4022,14 +4023,6 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 const cardStyle = `--match-accent:${theme.accent};--match-soft:${theme.soft};--match-soft-strong:${theme.softStrong};--match-chip-bg:${theme.chipBg};--match-chip-text:${theme.chipText};border-left-color:${statusAccent};`;
                 const isPendingVote = !m.expired && !userVote;
                 const isVoteRegistered = !m.expired && !!userVote;
-                const statusBadge = m.winner
-                  ? `<span class="match-status-pill match-status-pill--done">Resultado finalizado</span>`
-                  : (m.expired
-                    ? `<span class="match-status-pill match-status-pill--waiting">Aguardando resultado</span>`
-                    : (isPendingVote
-                      ? `<span class="match-status-pill match-status-pill--pending">Falta seu palpite</span>`
-                      : `<span class="match-status-pill match-status-pill--voted">Palpite registrado</span>`));
-                
                 const sCount = serverCounts[m.id] || 0; 
                 const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0"); 
                 let chatBadge = "";
@@ -4085,11 +4078,6 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                                     </div>
                                     
                                     <div class="w-10"></div> </div>
-
-                                <div class="flex items-center justify-between mb-3">
-                                    ${statusBadge}
-                                    ${isPendingVote ? `<span class="match-status-pill match-status-pill--cta">Toque em votar</span>` : ""}
-                                </div>
 
                                 <div class="flex justify-between items-start mb-4">
                                     <div class="flex flex-col w-full pr-2">
@@ -12091,6 +12079,17 @@ async function loadProfile() {
             // HTML DA TELA DE PERFIL (GRADE LIMPA)
             const profileHTML = `
             <div id="profileScreen" class="animate-fade-in p-4">
+                <div class="profile-greeting card-cut relative overflow-hidden bg-white shadow-sm mb-3 border border-gray-100">
+                    <div class="p-4 flex items-center justify-between gap-3">
+                        <div>
+                            <p class="profile-greeting__eyebrow">${escapeHtml(u.name ? `Olá, ${u.name.split(" ")[0]}` : "Olá!")}</p>
+                            <h2 class="profile-greeting__title">Sua conta está ativa</h2>
+                        </div>
+                        <div class="profile-greeting__icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                    </div>
+                </div>
                 <div class="card-cut relative overflow-hidden bg-white shadow-lg mb-4 border-l-4 border-[#006400]">
                     <div class="absolute right-0 top-0 p-2 opacity-10">
                         <i class="fas fa-id-card text-6xl text-[#006400]"></i>
