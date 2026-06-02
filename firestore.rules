@@ -1,0 +1,188 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    function onlyChanged(keys) {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly(keys);
+    }
+
+    function matchDoc(matchId) {
+      return get(/databases/$(database)/documents/matches/$(matchId));
+    }
+
+    function matchAllowsVoting(matchId) {
+      // TODO: se houver documento legado de confronto sem deadline em timestamp,
+      // revisar esta regra antes de endurecer ainda mais.
+      return exists(/databases/$(database)/documents/matches/$(matchId))
+        && matchDoc(matchId).data.deadline is timestamp
+        && request.time < matchDoc(matchId).data.deadline;
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn();
+
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly([
+          'name',
+          'username',
+          'createdAt',
+          'isAdmin',
+          'debts',
+          'payments',
+          'appVersion',
+          'passwordHint',
+          'isTrial',
+          'trialValidUntil'
+        ])
+        && request.resource.data.isAdmin == false
+        && request.resource.data.debts == 0
+        && request.resource.data.payments is map;
+
+      allow update: if isAdmin() || (
+        isOwner(uid) && (
+          onlyChanged([
+            'name',
+            'photoBase64',
+            'passwordHint',
+            'appVersion',
+            'lastAccess',
+            'forcePasswordChange',
+            'lastPasswordChangedAt',
+            'isTrial'
+          ])
+        )
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    match /matches/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /guesses/{id} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'matchId',
+          'userId',
+          'teamSelected',
+          'timestamp'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.matchId is string
+        && request.resource.data.teamSelected is string
+        && request.resource.data.teamSelected.size() > 0
+        && matchAllowsVoting(request.resource.data.matchId);
+
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'matchId',
+          'userId',
+          'teamSelected',
+          'timestamp'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.matchId == resource.data.matchId
+        && request.resource.data.teamSelected is string
+        && request.resource.data.teamSelected.size() > 0
+        && matchAllowsVoting(resource.data.matchId);
+
+      allow delete: if isAdmin();
+    }
+
+    match /match_comments/{id} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasOnly([
+          'matchId',
+          'userId',
+          'userName',
+          'userPhoto',
+          'text',
+          'timestamp',
+          'reactions'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.matchId is string
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 280;
+
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        onlyChanged(['reactions']) &&
+        request.resource.data.matchId == resource.data.matchId
+      ) || (
+        isSignedIn() &&
+        resource.data.userId == request.auth.uid &&
+        onlyChanged(['text']) &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.matchId == resource.data.matchId &&
+        request.resource.data.text is string &&
+        request.resource.data.text.size() > 0 &&
+        request.resource.data.text.size() <= 280
+      );
+
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    match /admin_audit_logs/{id} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    match /settings/{id} {
+      allow read: if id == 'config' || id == 'rankingMovement' || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /banners/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /teams/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /whitelist/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /bin_matches/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /admin_communications/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /notification_tokens/{id} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
