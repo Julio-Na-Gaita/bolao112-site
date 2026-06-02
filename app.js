@@ -2980,6 +2980,7 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
 
   const pendingCount = open.filter((m) => !myVotesMap[m.id]).length;
   const paymentNotice = getHomePendingPaymentNotice(currentUserData || {});
+  const pendingActionLabel = pendingCount > 0 ? "Votar nos pendentes" : "Tudo certo! Sem pendências";
 
   return `
     <section class="home-quick-panel surface-card mb-4 overflow-hidden">
@@ -3013,10 +3014,10 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
       </div>
 
       <div class="home-quick-stats">
-        <div class="home-quick-stat">
+        <button type="button" class="home-quick-stat home-quick-stat--clickable btn-press" onclick="window.goToPendingVote()">
           <span class="home-quick-stat__value">${pendingCount}</span>
           <span class="home-quick-stat__label">palpites pendentes</span>
-        </div>
+        </button>
         <div class="home-quick-stat">
           <span class="home-quick-stat__value">${open.length}</span>
           <span class="home-quick-stat__label">jogos abertos</span>
@@ -3026,6 +3027,16 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
           <span class="home-quick-stat__label">finalizados</span>
         </div>
       </div>
+
+      <button
+        type="button"
+        class="home-pending-cta btn-press ${pendingCount > 0 ? "is-active" : "is-empty"}"
+        onclick="window.goToPendingVote()"
+        ${pendingCount <= 0 ? "disabled" : ""}
+      >
+        <i class="fas fa-bullseye"></i>
+        <span>${escapeHtml(pendingActionLabel)}</span>
+      </button>
 
       <div class="home-quick-actions">
         <button type="button" class="home-quick-action btn-press" onclick="showTab('matches')">
@@ -3047,6 +3058,63 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
       </div>
     </section>
   `;
+};
+
+const escapeCssAttrValue = (value = "") =>
+  String(value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"');
+
+window.flashPendingMatchCard = (matchId) => {
+  if (!matchId) return;
+  const selector = `[data-match-id="${escapeCssAttrValue(matchId)}"]`;
+  const card = document.querySelector(selector);
+  if (!card) return;
+
+  card.classList.add("match-card-shell--flash");
+  card.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  if (window.__pendingMatchFlashTimer) clearTimeout(window.__pendingMatchFlashTimer);
+  window.__pendingMatchFlashTimer = setTimeout(() => {
+    card.classList.remove("match-card-shell--flash");
+  }, 1400);
+};
+
+window.goToPendingVote = async () => {
+  const state = window.__matchesScreenStateCache;
+  const pendingCount = state?.runtime?.pendingFastVoteCount || 0;
+
+  if (pendingCount <= 0) {
+    if (typeof window.showToast === "function") {
+      window.showToast("Tudo certo!", "Você não tem palpites pendentes.", "");
+    } else {
+      alert("Você não tem palpites pendentes.");
+    }
+    return;
+  }
+
+  showTab("matches");
+
+  const tryScroll = (attempt = 0) => {
+    const card = document.querySelector('[data-match-id][data-pending-vote="1"]');
+    if (card) {
+      window.flashPendingMatchCard(card.dataset.matchId || "");
+      return;
+    }
+
+    if (attempt < 12) {
+      setTimeout(() => tryScroll(attempt + 1), 150);
+      return;
+    }
+
+    if (typeof window.showToast === "function") {
+      window.showToast("Tudo certo!", "Você não tem palpites pendentes.", "");
+    } else {
+      alert("Você não tem palpites pendentes.");
+    }
+  };
+
+  setTimeout(() => tryScroll(0), 250);
 };
 
 const renderMatchesScreenSkeleton = () => `
@@ -3952,6 +4020,15 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 const theme = getCompetitionTheme(m.competition || "");
                 const logo = m.competitionLogo || m.competitionLogoUrl || compMap[m.competition] || "";
                 const cardStyle = `--match-accent:${theme.accent};--match-soft:${theme.soft};--match-soft-strong:${theme.softStrong};--match-chip-bg:${theme.chipBg};--match-chip-text:${theme.chipText};border-left-color:${statusAccent};`;
+                const isPendingVote = !m.expired && !userVote;
+                const isVoteRegistered = !m.expired && !!userVote;
+                const statusBadge = m.winner
+                  ? `<span class="match-status-pill match-status-pill--done">Resultado finalizado</span>`
+                  : (m.expired
+                    ? `<span class="match-status-pill match-status-pill--waiting">Aguardando resultado</span>`
+                    : (isPendingVote
+                      ? `<span class="match-status-pill match-status-pill--pending">Falta seu palpite</span>`
+                      : `<span class="match-status-pill match-status-pill--voted">Palpite registrado</span>`));
                 
                 const sCount = serverCounts[m.id] || 0; 
                 const lCount = parseInt(localStorage.getItem(`read_count_${m.id}`) || "0"); 
@@ -3989,7 +4066,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                     }
                 }
 
-                html += `<div class="match-card-shell card-cut relative border-l-[6px] mb-6 overflow-hidden" style="${cardStyle}">
+                html += `<div id="match-card-${escapeJsString(m.id)}" data-match-id="${escapeHtml(m.id)}" data-pending-vote="${isPendingVote ? "1" : "0"}" data-user-voted="${isVoteRegistered ? "1" : "0"}" class="match-card-shell card-cut relative border-l-[6px] mb-6 overflow-hidden ${isPendingVote ? "match-card-shell--pending" : ""} ${isVoteRegistered ? "match-card-shell--voted" : ""}" style="${cardStyle}">
                             <div class="match-card-topbar"></div>
                             ${logo ? `<img src="${logo}" class="match-card-logo-ghost absolute inset-0 w-full h-full object-contain z-0 pointer-events-none p-8">` : ''}
                             <div class="relative z-10 p-3">
@@ -4008,6 +4085,11 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                                     </div>
                                     
                                     <div class="w-10"></div> </div>
+
+                                <div class="flex items-center justify-between mb-3">
+                                    ${statusBadge}
+                                    ${isPendingVote ? `<span class="match-status-pill match-status-pill--cta">Toque em votar</span>` : ""}
+                                </div>
 
                                 <div class="flex justify-between items-start mb-4">
                                     <div class="flex flex-col w-full pr-2">
@@ -4078,31 +4160,75 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
             }
             // ----------------------------------
             
-            // 1. ATUALIZAÇÃO VISUAL IMEDIATA (Otimista)
-            const buttons = document.getElementsByClassName(`match-btn-${mid}`);
-            for (let btn of buttons) {
-                btn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#EEEEEE] text-gray-800`;
-            }
-
             const clickedBtn = document.getElementById(btnId);
             const team = clickedBtn?.dataset?.team || "";
             if (!team) {
                 console.warn("Botão de voto sem time associado:", { mid, side, btnId });
                 return;
             }
+            
+            // 1. ATUALIZAÇÃO VISUAL IMEDIATA (Otimista)
+            const buttons = document.getElementsByClassName(`match-btn-${mid}`);
+            for (let btn of buttons) {
+                btn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#EEEEEE] text-gray-800`;
+            }
+
+            for (let btn of buttons) {
+                btn.disabled = true;
+                btn.classList.add("is-saving-vote");
+            }
             if(clickedBtn) {
                 clickedBtn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#006400] text-white border-2 border-[#FFD700]`;
             }
-playVoteSound();
-            // 2. SALVA NO BANCO
-            await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), {
-  matchId: mid,
-  userId: currentUser.uid,
-  teamSelected: team,
-  timestamp: new Date()
-});
 
-invalidateHomeRankingCaches();
+            try {
+                playVoteSound();
+                // 2. SALVA NO BANCO
+                await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), {
+                    matchId: mid,
+                    userId: currentUser.uid,
+                    teamSelected: team,
+                    timestamp: new Date()
+                });
+
+                invalidateHomeRankingCaches();
+                if (window.__matchesScreenStateCache) {
+                    const wasPending = !window.__matchesScreenStateCache.myVotesMap?.[mid];
+                    window.__matchesScreenStateCache.myVotesMap = window.__matchesScreenStateCache.myVotesMap || {};
+                    window.__matchesScreenStateCache.myVotesMap[mid] = team;
+                    if (window.__matchesScreenStateCache.runtime) {
+                        window.__matchesScreenStateCache.runtime.pendingFastVoteCount = Math.max(
+                          0,
+                          (window.__matchesScreenStateCache.runtime.pendingFastVoteCount || 0) - (wasPending ? 1 : 0)
+                        );
+                    }
+                    if (Array.isArray(window.__matchesScreenStateCache.open)) {
+                        const cachedMatch = window.__matchesScreenStateCache.open.find((match) => match.id === mid);
+                        if (cachedMatch) cachedMatch.userVote = team;
+                    }
+                    if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) {
+                        await renderMatchesScreenFromState(window.__matchesScreenStateCache);
+                        window.flashPendingMatchCard(mid);
+                    }
+                }
+
+                if (typeof window.showToast === "function") {
+                    window.showToast("Palpite registrado!", "Seu voto foi salvo com sucesso.", "");
+                } else {
+                    alert("Palpite registrado com sucesso!");
+                }
+            } catch (error) {
+                console.error("Erro ao salvar voto:", error);
+                if (window.__matchesScreenStateCache) {
+                    await renderMatchesScreenFromState(window.__matchesScreenStateCache);
+                }
+                alert("Erro ao salvar voto.");
+            } finally {
+                for (let btn of buttons) {
+                    btn.disabled = false;
+                    btn.classList.remove("is-saving-vote");
+                }
+            }
         };
         
        // --- FUNÇÃO QUEM VOTOU / QUEM FALTA (CORRIGIDA COM FILTRO DE DATA) ---
