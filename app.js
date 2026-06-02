@@ -4125,13 +4125,10 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 ? `<img src="${escapeHtml(url)}" class="w-10 h-10 object-contain mb-1" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
                    <i class="fas fa-shield-alt text-2xl mb-1 text-gray-400 hidden"></i>` 
                 : `<i class="fas fa-shield-alt text-2xl mb-1 text-gray-400"></i>`;
-            const selectedBadge = selected ? `<span class="match-team-selected-badge">Seu palpite</span>` : "";
-
             // CORREÇÃO DO CLICK: Adicionado window.vote
             return `<button id="${btnId}" data-team="${escapeHtml(name)}" onclick="window.vote('${escapeJsString(mid)}', '${side}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press relative flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}">
                 ${iconHtml}
                 <span class="match-team-name text-center leading-tight px-1 line-clamp-2">${name}</span>
-                ${selectedBadge}
             </button>`; 
         }
         window.vote = async (mid, side, btnId) => { 
@@ -4157,14 +4154,6 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 return;
             }
 
-            const existingVote = window.__matchesScreenStateCache?.myVotesMap?.[mid] || "";
-            const currentMatch = window.__matchesScreenStateCache?.open?.find((match) => match.id === mid);
-            const isChangingVote = !!existingVote && existingVote !== team && !currentMatch?.expired;
-            if (isChangingVote) {
-                const confirmed = confirm("Alterar palpite?\n\nSeu voto anterior será substituído enquanto o prazo ainda está aberto.");
-                if (!confirmed) return;
-            }
-            
             // 1. ATUALIZAÇÃO VISUAL IMEDIATA (Otimista)
             const buttons = document.getElementsByClassName(`match-btn-${mid}`);
             for (let btn of buttons) {
@@ -10377,6 +10366,138 @@ window.openMatchEditModal = async (matchId) => {
 };
 
         // --- LEGENDA MEDALHAS ATUALIZADA (MITO, DIAMANTE...) ---
+        window.__adminMatchesSearch = "";
+        window.__adminMatchesFilter = "all";
+        window.__adminMatchesCache = [];
+
+        const formatAdminPanelDateTime = (value) => {
+          const date = toJsDate(value);
+          if (!date) return "Ainda não registrado";
+          return date.toLocaleString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+        };
+
+        const normalizeAdminMatchSearch = (value = "") =>
+          String(value || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        window.scrollAdminSection = (sectionId) => {
+          const root = document.getElementById(sectionId);
+          root?.scrollIntoView({ behavior: "smooth", block: "start" });
+        };
+
+        window.setAdminMatchesFilter = (filter = "all") => {
+          window.__adminMatchesFilter = filter;
+          renderAdminMatchesList();
+        };
+
+        window.filterAdminMatches = (value = "") => {
+          window.__adminMatchesSearch = value;
+          renderAdminMatchesList();
+        };
+
+        const renderAdminOverviewCards = async (summary = {}) => {
+          const overviewEl = document.getElementById("adminOverviewCards");
+          if (!overviewEl) return;
+
+          const safeLabel = (value) => value == null || value === "" ? "N/D" : value;
+          const lastRankingLabel = summary.lastRankingUpdatedAt
+            ? formatAdminPanelDateTime(summary.lastRankingUpdatedAt)
+            : "Ainda não registrado";
+
+          overviewEl.innerHTML = `
+            <div class="admin-overview-grid">
+              <button type="button" onclick="window.setAdminMatchesFilter('open'); window.scrollAdminSection('adminMatchesSection')" class="admin-overview-card btn-press">
+                <span class="admin-overview-card__value">${summary.openCount || 0}</span>
+                <span class="admin-overview-card__label">Jogos abertos</span>
+              </button>
+              <button type="button" onclick="window.setAdminMatchesFilter('waiting'); window.scrollAdminSection('adminMatchesSection')" class="admin-overview-card btn-press">
+                <span class="admin-overview-card__value">${summary.waitingCount || 0}</span>
+                <span class="admin-overview-card__label">Aguardando resultado</span>
+              </button>
+              <button type="button" onclick="window.setAdminMatchesFilter('finished'); window.scrollAdminSection('adminMatchesSection')" class="admin-overview-card btn-press">
+                <span class="admin-overview-card__value">${summary.finishedCount || 0}</span>
+                <span class="admin-overview-card__label">Finalizados</span>
+              </button>
+              <button type="button" onclick="window.openFinancialScreen()" class="admin-overview-card btn-press">
+                <span class="admin-overview-card__value">${summary.pendingUsersCount || 0}</span>
+                <span class="admin-overview-card__label">Usuários pendentes</span>
+              </button>
+              <div class="admin-overview-card admin-overview-card--info">
+                <span class="admin-overview-card__value">${safeLabel(summary.pushActiveCount != null ? summary.pushActiveCount : "N/D")}</span>
+                <span class="admin-overview-card__label">Notificações ativas</span>
+              </div>
+              <div class="admin-overview-card admin-overview-card--info">
+                <span class="admin-overview-card__value">${escapeHtml(lastRankingLabel)}</span>
+                <span class="admin-overview-card__label">Último ranking</span>
+              </div>
+            </div>
+          `;
+        };
+
+        const loadAdminOverviewCards = async () => {
+          try {
+            const [matchesSnap, usersSnap, rankingSnap] = await Promise.all([
+              getDocs(collection(db, "matches")),
+              getDocs(collection(db, "users")),
+              getDoc(doc(db, "settings", "rankingMovement"))
+            ]);
+
+            let openCount = 0;
+            let waitingCount = 0;
+            let finishedCount = 0;
+            matchesSnap.forEach((d) => {
+              const data = d.data() || {};
+              const deadline = toJsDate(data.deadline);
+              const expired = deadline ? new Date() > deadline : false;
+              const hasWinner = !!String(data.winner || "").trim();
+              if (hasWinner) finishedCount += 1;
+              else if (expired) waitingCount += 1;
+              else openCount += 1;
+            });
+
+            const monthKey = typeof getFinancialCurrentMonthKey === "function" ? getFinancialCurrentMonthKey() : "";
+            let pendingUsersCount = 0;
+            let pushActiveCount = 0;
+            usersSnap.forEach((d) => {
+              const user = d.data() || {};
+              if (user.isActive === false) return;
+              if (monthKey && user.payments?.[monthKey] !== true) pendingUsersCount += 1;
+              if (user.hasWebPushToken === true || Number(user.webPushTokenCount || 0) > 0) pushActiveCount += 1;
+            });
+
+            const lastRankingUpdatedAt = rankingSnap.exists() ? rankingSnap.data()?.updatedAt || null : null;
+
+            await renderAdminOverviewCards({
+              openCount,
+              waitingCount,
+              finishedCount,
+              pendingUsersCount,
+              pushActiveCount,
+              lastRankingUpdatedAt
+            });
+          } catch (error) {
+            console.warn("Falha ao carregar resumo do painel admin:", error);
+            await renderAdminOverviewCards({
+              openCount: 0,
+              waitingCount: 0,
+              finishedCount: 0,
+              pendingUsersCount: 0,
+              pushActiveCount: null,
+              lastRankingUpdatedAt: null
+            });
+          }
+        };
+        window.loadAdminOverviewCards = loadAdminOverviewCards;
 
         window.openAdminMenu = async () => {
             const modal = document.getElementById('modalOverlay'); 
@@ -10411,6 +10532,20 @@ window.openMatchEditModal = async (matchId) => {
                     </div>
 
                     <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                        <div>
+                            <div class="admin-overview-shell">
+                                <div class="flex items-start justify-between gap-3 mb-3">
+                                    <div>
+                                        <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Resumo operacional</div>
+                                        <h4 class="text-lg font-black text-gray-900 leading-tight">Visão rápida do Bolão</h4>
+                                    </div>
+                                    <button type="button" onclick="window.loadAdminOverviewCards()" class="admin-overview-refresh btn-press" title="Atualizar resumo">
+                                        <i class="fas fa-rotate"></i>
+                                    </button>
+                                </div>
+                                <div id="adminOverviewCards" class="text-xs text-gray-400 font-bold">Carregando resumo...</div>
+                            </div>
+                        </div>
                         
                         <div>
                             <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">⚽ GESTÃO DE JOGOS</h4>
@@ -10439,18 +10574,96 @@ window.openMatchEditModal = async (matchId) => {
                         <div>
                             <div class="border-t border-gray-300 my-2"></div>
                             <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📋 LISTA DE CONFRONTOS</h4>
-                            <div id="adminMatchList" class="bg-white border rounded p-2 text-xs text-gray-500 min-h-[100px]">Carregando...</div>
+                            <div class="admin-match-tools">
+                                <input
+                                  id="adminMatchSearch"
+                                  class="admin-creation-input"
+                                  value="${escapeHtml(window.__adminMatchesSearch || "")}"
+                                  placeholder="Buscar jogo, time, competição ou rodada"
+                                  oninput="window.filterAdminMatches(this.value)"
+                                >
+                                <div class="admin-match-filters">
+                                  <button type="button" onclick="window.setAdminMatchesFilter('all')" class="admin-match-filter is-active" data-admin-match-filter="all">Todos</button>
+                                  <button type="button" onclick="window.setAdminMatchesFilter('open')" class="admin-match-filter" data-admin-match-filter="open">Abertos</button>
+                                  <button type="button" onclick="window.setAdminMatchesFilter('waiting')" class="admin-match-filter" data-admin-match-filter="waiting">Aguardando</button>
+                                  <button type="button" onclick="window.setAdminMatchesFilter('finished')" class="admin-match-filter" data-admin-match-filter="finished">Finalizados</button>
+                                </div>
+                                <p class="admin-match-tools__note">Filtre por time, competição, rodada ou número do jogo.</p>
+                            </div>
+                            <div id="adminMatchListSection" class="scroll-mt-24">
+                              <div id="adminMatchList" class="bg-white border rounded p-2 text-xs text-gray-500 min-h-[100px]">Carregando...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>`;
+            loadAdminOverviewCards();
             loadAdminMatches();
         };
-async function loadAdminMatches() { 
-            const snap = await getDocs(collection(db, "matches")); 
+const renderAdminMatchesList = () => {
             const listDiv = document.getElementById('adminMatchList'); 
             if(!listDiv) return; 
-            
+
+            const all = Array.isArray(window.__adminMatchesCache) ? [...window.__adminMatchesCache] : [];
+            const search = normalizeAdminMatchSearch(window.__adminMatchesSearch || "");
+            const filter = window.__adminMatchesFilter || "all";
+            const filtered = all.filter((m) => {
+                const deadline = m.deadlineDate || toJsDate(m.deadline);
+                const expired = !!m.expired || (deadline ? new Date() > deadline : false);
+                const hasWinner = !!String(m.winner || "").trim();
+                const matchesFilter =
+                  filter === "open" ? (!expired && !hasWinner)
+                  : filter === "waiting" ? (expired && !hasWinner)
+                  : filter === "finished" ? hasWinner
+                  : true;
+                if (!matchesFilter) return false;
+
+                if (!search) return true;
+                const blob = normalizeAdminMatchSearch([
+                  m.teamA,
+                  m.teamB,
+                  m.competition,
+                  m.round,
+                  m.id,
+                  `#${m.matchNumber || ""}`
+                ].join(" "));
+                return blob.includes(search);
+            });
+
+            document.querySelectorAll("[data-admin-match-filter]").forEach((btn) => {
+              btn.classList.toggle("is-active", btn.dataset.adminMatchFilter === filter);
+            });
+
+            let html = "";
+            [...filtered].reverse().forEach((m) => {
+                const number = m.matchNumber || (all.findIndex((x) => x.id === m.id) + 1);
+                const deadline = m.deadlineDate || toJsDate(m.deadline);
+                const expired = !!m.expired || (deadline ? new Date() > deadline : false);
+                const winnerLabel = escapeHtml(String(m.winner || ""));
+                const statusLabel = m.winner
+                  ? `Finalizado • ${winnerLabel}`
+                  : (expired ? "Aguardando resultado" : "Em aberto");
+                const statusClass = m.winner
+                  ? "text-green-700 bg-green-50"
+                  : (expired ? "text-amber-700 bg-amber-50" : "text-gray-500 bg-gray-100");
+
+                html += `<div class="flex justify-between items-center p-2 border-b border-gray-100 gap-2">
+                    <div class="flex flex-col truncate min-w-0 flex-1">
+                        <span class="font-bold text-black text-xs truncate">#${number} ${escapeHtml(m.teamA || "")} x ${escapeHtml(m.teamB || "")}</span>
+                        <span class="text-[10px] text-gray-400 truncate">${escapeHtml(m.competition || "")}${m.round ? ` • ${escapeHtml(m.round)}` : ""}</span>
+                        <span class="mt-1 inline-flex w-fit rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${statusClass}">${statusLabel}</span>
+                    </div>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <button class="text-blue-500" title="Editar confronto" onclick="window.openMatchEditModal('${escapeJsString(m.id)}')"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500" onclick="moveToTrash('${m.id}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            });
+            listDiv.innerHTML = html || `<div class="p-4 text-center text-gray-400 text-xs font-bold">Nenhum jogo encontrado.</div>`;
+};
+
+async function loadAdminMatches() { 
+            const snap = await getDocs(collection(db, "matches")); 
             let all = [];
             snap.forEach(d => {
                 const m = d.data();
@@ -10464,33 +10677,11 @@ async function loadAdminMatches() {
 
             // Ordena para numerar
             all.sort(matchComparator);
-
-            // Gera HTML (Exibindo na ordem inversa para facilitar edição dos recentes, mas com o número certo)
-            let html = ""; 
-            [...all].reverse().forEach((m) => { 
-                // Encontra o índice na lista original ordenada
-                const number = all.findIndex(x => x.id === m.id) + 1;
-                const winnerLabel = escapeHtml(String(m.winner || ""));
-                const statusLabel = m.winner
-                  ? `Finalizado • ${winnerLabel}`
-                  : (m.expired ? "Aguardando resultado" : "Em aberto");
-                const statusClass = m.winner
-                  ? "text-green-700 bg-green-50"
-                  : (m.expired ? "text-amber-700 bg-amber-50" : "text-gray-500 bg-gray-100");
-
-                html += `<div class="flex justify-between items-center p-2 border-b border-gray-100">
-                    <div class="flex flex-col truncate w-2/3">
-                        <span class="font-bold text-black text-xs">#${number} ${m.teamA} x ${m.teamB}</span>
-                        <span class="text-[10px] text-gray-400">${m.competition}</span>
-                        <span class="mt-1 inline-flex w-fit rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${statusClass}">${statusLabel}</span>
-                    </div>
-                    <div class="flex gap-2">
-                        <button class="text-blue-500" title="Editar confronto" onclick="window.openMatchEditModal('${escapeJsString(m.id)}')"><i class="fas fa-edit"></i></button>
-                        <button class="text-red-500" onclick="moveToTrash('${m.id}')"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>`; 
-            }); 
-            listDiv.innerHTML = html || "Sem jogos."; 
+            all.forEach((m, idx) => {
+                m.matchNumber = idx + 1;
+            });
+            window.__adminMatchesCache = all;
+            renderAdminMatchesList();
         }
         // --- LIMPEZA / LIXEIRA WEB ---
         const getAdminMatchSortDate = (match = {}) =>
