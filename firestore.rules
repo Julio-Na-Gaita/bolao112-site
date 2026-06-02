@@ -33,6 +33,8 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
+      // Leitura ampla segue porque o app usa users para ranking/financeiro;
+      // ideal futuro: separar dados públicos dos financeiros.
       allow read: if isSignedIn();
 
       allow create: if isOwner(uid)
@@ -59,10 +61,14 @@ service cloud.firestore {
             'photoBase64',
             'passwordHint',
             'appVersion',
-            'lastAccess',
-            'forcePasswordChange',
-            'lastPasswordChangedAt',
-            'isTrial'
+          'lastAccess',
+          'forcePasswordChange',
+          'lastPasswordChangedAt',
+          'isTrial',
+          'rulesAccepted',
+          'rulesAcceptedVersion',
+          'rulesAcceptedAt',
+          'rulesLastOpenedAt'
           ])
         )
       );
