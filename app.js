@@ -3536,7 +3536,7 @@ const renderHomeSectionsWeb = async ({
   return html;
 };
 
-const buildMatchesCriticalData = ({ setSnap, matchesSnap, guessesSnap, uSnap, commentsSnap }) => {
+const buildMatchesCriticalData = ({ setSnap, matchesSnap, guessesSnap, uSnap = null, commentsSnap = null }) => {
   compMap = {};
   if (setSnap.exists()) {
     const items = Array.isArray(setSnap.data().items) ? setSnap.data().items : [];
@@ -3546,18 +3546,20 @@ const buildMatchesCriticalData = ({ setSnap, matchesSnap, guessesSnap, uSnap, co
   }
 
   const allUsersData = [];
-  uSnap.forEach((d) => {
-    const data = d.data() || {};
-    allUsersData.push({
-      id: d.id,
-      uid: d.id,
-      ...data,
-      name: data.name || data.username || "Sem nome",
-      createdDate: toJsDate(data.createdAt) || new Date(0),
-      debts: Number(data.debts || 0),
-      isAdmin: data.isAdmin === true
+  if (uSnap) {
+    uSnap.forEach((d) => {
+      const data = d.data() || {};
+      allUsersData.push({
+        id: d.id,
+        uid: d.id,
+        ...data,
+        name: data.name || data.username || "Sem nome",
+        createdDate: toJsDate(data.createdAt) || new Date(0),
+        debts: Number(data.debts || 0),
+        isAdmin: data.isAdmin === true
+      });
     });
-  });
+  }
 
   const guessesData = [];
   const myVotesMap = {};
@@ -3584,20 +3586,22 @@ const buildMatchesCriticalData = ({ setSnap, matchesSnap, guessesSnap, uSnap, co
   });
 
   globalServerCounts = {};
-  commentsSnap.forEach((d) => {
-    const data = d.data() || {};
-    const matchId = data.matchId || d.id;
+  if (commentsSnap) {
+    commentsSnap.forEach((d) => {
+      const data = d.data() || {};
+      const matchId = data.matchId || d.id;
 
-    if (!matchId) return;
+      if (!matchId) return;
 
-    if (typeof data.count === "number") {
-      globalServerCounts[matchId] = data.count;
-    } else if (Array.isArray(data.comments)) {
-      globalServerCounts[matchId] = data.comments.length;
-    } else {
-      globalServerCounts[matchId] = 0;
-    }
-  });
+      if (typeof data.count === "number") {
+        globalServerCounts[matchId] = data.count;
+      } else if (Array.isArray(data.comments)) {
+        globalServerCounts[matchId] = data.comments.length;
+      } else {
+        globalServerCounts[matchId] = 0;
+      }
+    });
+  }
 
   const now = new Date();
   const matches = [];
@@ -3779,15 +3783,11 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
     const [
       setSnap,
       matchesSnap,
-      guessesSnap,
-      uSnap,
-      commentsSnap
+      guessesSnap
     ] = await Promise.all([
       readWithRuntimeCache("doc:settings:competitions", () => getDoc(doc(db, "settings", "competitions")), { ttlMs: DATA_CACHE_TTL.cold, force }),
       readWithRuntimeCache("col:matches", () => getDocs(collection(db, "matches")), { ttlMs: DATA_CACHE_TTL.hot, force }),
-      readWithRuntimeCache("col:guesses", () => getDocs(collection(db, "guesses")), { ttlMs: DATA_CACHE_TTL.hot, force }),
-      readWithRuntimeCache("col:users", () => getDocs(collection(db, "users")), { ttlMs: DATA_CACHE_TTL.warm, force }),
-      readWithRuntimeCache("col:match_comments", () => getDocs(collection(db, "match_comments")), { ttlMs: DATA_CACHE_TTL.hot, force })
+      readWithRuntimeCache("col:guesses", () => getDocs(collection(db, "guesses")), { ttlMs: DATA_CACHE_TTL.hot, force })
     ]);
 
     if (requestId !== matchesLoadRequestSeq) return;
@@ -3795,9 +3795,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
     const criticalData = buildMatchesCriticalData({
       setSnap,
       matchesSnap,
-      guessesSnap,
-      uSnap,
-      commentsSnap
+      guessesSnap
     });
 
     const initialState = buildInitialMatchesScreenState(criticalData);
@@ -3805,28 +3803,40 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
     await renderMatchesScreenFromState(initialState);
     progressBar?.classList.add("hidden");
 
-    try {
-      const [newsSnap, layoutSnap, bannersSnap, pollsSnap] = await Promise.all([
+    void (async () => {
+      try {
+        const [uSnap, commentsSnap, newsSnap, layoutSnap, bannersSnap, pollsSnap] = await Promise.all([
+          readWithRuntimeCache("col:users", () => getDocs(collection(db, "users")), { ttlMs: DATA_CACHE_TTL.warm, force }),
+          readWithRuntimeCache("col:match_comments", () => getDocs(collection(db, "match_comments")), { ttlMs: DATA_CACHE_TTL.hot, force }),
         readWithRuntimeCache("doc:settings:news", () => getDoc(doc(db, "settings", "news")), { ttlMs: DATA_CACHE_TTL.warm, force }),
         readWithRuntimeCache("doc:settings:home_layout", () => getDoc(doc(db, "settings", "home_layout")), { ttlMs: DATA_CACHE_TTL.warm, force }),
         readWithRuntimeCache("col:banners", () => getDocs(collection(db, "banners")), { ttlMs: DATA_CACHE_TTL.warm, force }),
         readWithRuntimeCache("col:polls", () => getDocs(collection(db, "polls")), { ttlMs: DATA_CACHE_TTL.hot, force })
       ]);
 
-      if (requestId !== matchesLoadRequestSeq) return;
+        if (requestId !== matchesLoadRequestSeq) return;
 
-      const finalState = buildFinalMatchesScreenState(criticalData, {
-        newsSnap,
-        layoutSnap,
-        bannersSnap,
-        pollsSnap
-      });
+        const hydratedCriticalData = buildMatchesCriticalData({
+          setSnap,
+          matchesSnap,
+          guessesSnap,
+          uSnap,
+          commentsSnap
+        });
 
-      window.__matchesScreenStateCache = finalState;
-      await renderMatchesScreenFromState(finalState);
-    } catch (secondaryError) {
-      console.error("Erro ao carregar blocos secundarios da home:", secondaryError);
-    }
+        const finalState = buildFinalMatchesScreenState(hydratedCriticalData, {
+          newsSnap,
+          layoutSnap,
+          bannersSnap,
+          pollsSnap
+        });
+
+        window.__matchesScreenStateCache = finalState;
+        await renderMatchesScreenFromState(finalState);
+      } catch (secondaryError) {
+        console.error("Erro ao carregar blocos secundarios da home:", secondaryError);
+      }
+    })();
   } catch (e) {
     console.error("Erro fatal loadMatches:", e);
     if (!cachedState) {
@@ -3959,22 +3969,24 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 const votesB = m.stats[m.teamB] || 0; 
                 const totalVotes = votesA + votesB; 
                 
-                // --- CÁLCULO CIRÚRGICO DO TERMÔMETRO ---
-                // Conta apenas usuários que existiam ANTES do prazo do jogo
-                const validCount = usersList.filter(u => (u.createdDate || u.createdAt || new Date(0)) < m.deadlineDate).length;
-                // Garante que o total seja pelo menos 1 ou o número de votos (segurança contra inconsistência)
-                const safeTotalUsers = Math.max(validCount || 1, totalVotes);
-                // ---------------------------------------
+                if (Array.isArray(usersList) && usersList.length > 0) {
+                    // --- CÁLCULO CIRÚRGICO DO TERMÔMETRO ---
+                    // Conta apenas usuários que existiam ANTES do prazo do jogo
+                    const validCount = usersList.filter(u => (u.createdDate || u.createdAt || new Date(0)) < m.deadlineDate).length;
+                    // Garante que o total seja pelo menos 1 ou o número de votos (segurança contra inconsistência)
+                    const safeTotalUsers = Math.max(validCount || 1, totalVotes);
+                    // ---------------------------------------
 
-                if (!m.expired) {
-                    const partPct = Math.round((totalVotes / safeTotalUsers) * 100); 
-                    thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1 text-gray-500"><span>Engajamento</span><span class="text-[#006400]">${partPct}% votaram</span></div><div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden"><div style="width: ${partPct}%" class="bg-[#006400] h-full"></div></div><p class="text-[8px] text-gray-400 text-right mt-1">${totalVotes} de ${safeTotalUsers} participantes</p></div>`; 
-                } else { 
-                    const abstencoes = safeTotalUsers - totalVotes; 
-                    const absReal = abstencoes < 0 ? 0 : abstencoes; 
-                    const pctA = Math.round((votesA / safeTotalUsers) * 100); 
-                    const pctB = Math.round((votesB / safeTotalUsers) * 100); 
-                    thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1"><span class="text-green-700">${pctA}%</span><span class="text-gray-400 text-[8px]">TERMÔMETRO (CINZA = NÃO VOTOU)</span><span class="text-red-700">${pctB}%</span></div><div class="w-full h-2.5 bg-gray-200 rounded-full flex overflow-hidden"><div style="flex: ${votesA}" class="bg-green-700 h-full border-r border-white/50"></div><div style="flex: ${absReal}" class="bg-gray-300 h-full border-r border-white/50"></div><div style="flex: ${votesB}" class="bg-red-700 h-full"></div></div><div class="flex justify-between text-[8px] text-gray-400 mt-1"><span>${m.teamA}: ${votesA}</span>${absReal > 0 ? `<span>Faltosos: ${absReal}</span>` : ''}<span>${m.teamB}: ${votesB}</span></div></div>`; 
+                    if (!m.expired) {
+                        const partPct = Math.round((totalVotes / safeTotalUsers) * 100); 
+                        thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1 text-gray-500"><span>Engajamento</span><span class="text-[#006400]">${partPct}% votaram</span></div><div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden"><div style="width: ${partPct}%" class="bg-[#006400] h-full"></div></div><p class="text-[8px] text-gray-400 text-right mt-1">${totalVotes} de ${safeTotalUsers} participantes</p></div>`; 
+                    } else { 
+                        const abstencoes = safeTotalUsers - totalVotes; 
+                        const absReal = abstencoes < 0 ? 0 : abstencoes; 
+                        const pctA = Math.round((votesA / safeTotalUsers) * 100); 
+                        const pctB = Math.round((votesB / safeTotalUsers) * 100); 
+                        thermoHtml = `<div class="mt-3 pt-2 border-t border-gray-100"><div class="flex justify-between text-[9px] font-bold mb-1"><span class="text-green-700">${pctA}%</span><span class="text-gray-400 text-[8px]">TERMÔMETRO (CINZA = NÃO VOTOU)</span><span class="text-red-700">${pctB}%</span></div><div class="w-full h-2.5 bg-gray-200 rounded-full flex overflow-hidden"><div style="flex: ${votesA}" class="bg-green-700 h-full border-r border-white/50"></div><div style="flex: ${absReal}" class="bg-gray-300 h-full border-r border-white/50"></div><div style="flex: ${votesB}" class="bg-red-700 h-full"></div></div><div class="flex justify-between text-[8px] text-gray-400 mt-1"><span>${m.teamA}: ${votesA}</span>${absReal > 0 ? `<span>Faltosos: ${absReal}</span>` : ''}<span>${m.teamB}: ${votesB}</span></div></div>`; 
+                    }
                 }
 
                 html += `<div class="match-card-shell card-cut relative border-l-[6px] mb-6 overflow-hidden" style="${cardStyle}">
@@ -13119,6 +13131,12 @@ window.closeModal = () => {
   const container = document.getElementById("modalContainer");
 
   // ✅ evita travadas/bags do chart quando fecha modal
+  if (window.currentChatUnsub) {
+    try { window.currentChatUnsub(); } catch (error) {}
+    window.currentChatUnsub = null;
+  }
+  window.__currentChatMessagesById = {};
+
   if (window.myScoutChart) {
     try { window.myScoutChart.destroy(); } catch(e) {}
     window.myScoutChart = null;
