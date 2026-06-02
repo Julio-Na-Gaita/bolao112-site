@@ -4125,11 +4125,13 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 ? `<img src="${escapeHtml(url)}" class="w-10 h-10 object-contain mb-1" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
                    <i class="fas fa-shield-alt text-2xl mb-1 text-gray-400 hidden"></i>` 
                 : `<i class="fas fa-shield-alt text-2xl mb-1 text-gray-400"></i>`;
+            const selectedBadge = selected ? `<span class="match-team-selected-badge">Seu palpite</span>` : "";
 
             // CORREÇÃO DO CLICK: Adicionado window.vote
-            return `<button id="${btnId}" data-team="${escapeHtml(name)}" onclick="window.vote('${escapeJsString(mid)}', '${side}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}">
+            return `<button id="${btnId}" data-team="${escapeHtml(name)}" onclick="window.vote('${escapeJsString(mid)}', '${side}', '${btnId}')" ${expired?'disabled':''} class="match-btn-${mid} btn-press relative flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all ${bg} ${border} ${expired?'opacity-80':''}">
                 ${iconHtml}
                 <span class="match-team-name text-center leading-tight px-1 line-clamp-2">${name}</span>
+                ${selectedBadge}
             </button>`; 
         }
         window.vote = async (mid, side, btnId) => { 
@@ -4153,6 +4155,14 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
             if (!team) {
                 console.warn("Botão de voto sem time associado:", { mid, side, btnId });
                 return;
+            }
+
+            const existingVote = window.__matchesScreenStateCache?.myVotesMap?.[mid] || "";
+            const currentMatch = window.__matchesScreenStateCache?.open?.find((match) => match.id === mid);
+            const isChangingVote = !!existingVote && existingVote !== team && !currentMatch?.expired;
+            if (isChangingVote) {
+                const confirmed = confirm("Alterar palpite?\n\nSeu voto anterior será substituído enquanto o prazo ainda está aberto.");
+                if (!confirmed) return;
             }
             
             // 1. ATUALIZAÇÃO VISUAL IMEDIATA (Otimista)
@@ -4181,7 +4191,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
 
                 invalidateHomeRankingCaches();
                 if (window.__matchesScreenStateCache) {
-                    const wasPending = !window.__matchesScreenStateCache.myVotesMap?.[mid];
+                    const wasPending = !existingVote;
                     window.__matchesScreenStateCache.myVotesMap = window.__matchesScreenStateCache.myVotesMap || {};
                     window.__matchesScreenStateCache.myVotesMap[mid] = team;
                     if (window.__matchesScreenStateCache.runtime) {
@@ -4201,9 +4211,13 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 }
 
                 if (typeof window.showToast === "function") {
-                    window.showToast("Palpite registrado!", "Seu voto foi salvo com sucesso.", "");
+                    window.showToast(
+                      isChangingVote ? "Palpite alterado!" : "Palpite registrado!",
+                      isChangingVote ? "Seu voto anterior foi substituído com sucesso." : "Seu voto foi salvo com sucesso.",
+                      ""
+                    );
                 } else {
-                    alert("Palpite registrado com sucesso!");
+                    alert(isChangingVote ? "Palpite alterado com sucesso!" : "Palpite registrado com sucesso!");
                 }
             } catch (error) {
                 console.error("Erro ao salvar voto:", error);
