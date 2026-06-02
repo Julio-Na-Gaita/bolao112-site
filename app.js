@@ -4153,6 +4153,9 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 console.warn("Botão de voto sem time associado:", { mid, side, btnId });
                 return;
             }
+            const existingVote = window.__matchesScreenStateCache?.myVotesMap?.[mid] || "";
+            const currentMatch = window.__matchesScreenStateCache?.open?.find((match) => match.id === mid);
+            const isChangingVote = !!existingVote && existingVote !== team && !currentMatch?.expired;
 
             // 1. ATUALIZAÇÃO VISUAL IMEDIATA (Otimista)
             const buttons = document.getElementsByClassName(`match-btn-${mid}`);
@@ -4169,15 +4172,37 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
             }
 
             try {
-                playVoteSound();
-                // 2. SALVA NO BANCO
                 await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), {
                     matchId: mid,
                     userId: currentUser.uid,
                     teamSelected: team,
                     timestamp: new Date()
                 });
+            } catch (error) {
+                console.error("Erro ao salvar voto:", error);
+                if (window.__matchesScreenStateCache) {
+                    await renderMatchesScreenFromState(window.__matchesScreenStateCache);
+                }
+                if (typeof window.showToast === "function") {
+                    window.showToast("Não foi possível salvar seu palpite.", "Tente novamente.", "");
+                } else {
+                    alert("Não foi possível salvar seu palpite. Tente novamente.");
+                }
+                return;
+            }
 
+            if (typeof window.showToast === "function") {
+                window.showToast(
+                  isChangingVote ? "Palpite alterado!" : "Palpite registrado!",
+                  isChangingVote ? "Seu voto anterior foi substituído com sucesso." : "Seu voto foi salvo com sucesso.",
+                  ""
+                );
+            } else {
+                alert(isChangingVote ? "Palpite alterado com sucesso!" : "Palpite registrado com sucesso!");
+            }
+
+            try {
+                playVoteSound();
                 invalidateHomeRankingCaches();
                 if (window.__matchesScreenStateCache) {
                     const wasPending = !existingVote;
@@ -4199,21 +4224,8 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                     }
                 }
 
-                if (typeof window.showToast === "function") {
-                    window.showToast(
-                      isChangingVote ? "Palpite alterado!" : "Palpite registrado!",
-                      isChangingVote ? "Seu voto anterior foi substituído com sucesso." : "Seu voto foi salvo com sucesso.",
-                      ""
-                    );
-                } else {
-                    alert(isChangingVote ? "Palpite alterado com sucesso!" : "Palpite registrado com sucesso!");
-                }
-            } catch (error) {
-                console.error("Erro ao salvar voto:", error);
-                if (window.__matchesScreenStateCache) {
-                    await renderMatchesScreenFromState(window.__matchesScreenStateCache);
-                }
-                alert("Erro ao salvar voto.");
+            } catch (uiError) {
+                console.warn("Voto salvo, mas houve erro ao atualizar a interface:", uiError);
             } finally {
                 for (let btn of buttons) {
                     btn.disabled = false;
