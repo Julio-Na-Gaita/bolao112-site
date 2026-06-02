@@ -2981,7 +2981,7 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
   const pendingCount = open.filter((m) => !myVotesMap[m.id]).length;
   const paymentNotice = getHomePendingPaymentNotice(currentUserData || {});
   const pendingActionLabel = pendingCount > 0 ? "Votar nos pendentes" : "Tudo certo! Sem pendências";
-  const pendingCounterClass = pendingCount > 0 ? "home-quick-stat--pending-alert" : "";
+  const pendingCounterClass = pendingCount > 0 ? "home-quick-stat--pending-alert" : "home-quick-stat--success";
 
   return `
     <section class="home-quick-panel surface-card mb-4 overflow-hidden">
@@ -5308,6 +5308,27 @@ window.currentMonthlyRanking = [...(currentMonthEntry?.ranking || currentMonthRa
 window.currentMonthlyRankingHistory = [...monthlyHistory];
 window.currentMonthlyRankingSelectedMonth = safeSelectedKingMonth;
 
+const currentUserRankingEntry = currentUser ? users.find((u) => u.uid === currentUser.uid) : null;
+const currentUserRankIndex = currentUserRankingEntry ? users.findIndex((u) => u.uid === currentUserRankingEntry.uid) : -1;
+const currentUserMovementInfo = currentUserRankingEntry
+  ? (rankingMovementSnapshot?.movements?.[currentUserRankingEntry.uid] || getRankingMovementInfo(currentUserRankingEntry.uid))
+  : null;
+const currentUserMovementDelta = Number(currentUserMovementInfo?.delta || 0);
+const currentUserMovementText = currentUserRankingEntry
+  ? (currentUserMovementInfo
+    ? (currentUserMovementDelta > 0
+      ? `↑ ${currentUserMovementDelta} desde a última atualização`
+      : currentUserMovementDelta < 0
+        ? `↓ ${Math.abs(currentUserMovementDelta)} desde a última atualização`
+        : Number(currentUserMovementInfo?.previousPosition || 0) > 0
+          ? `= Sem mudança desde a última atualização`
+          : "Sem histórico de movimentação")
+    : "Movimento ainda não disponível")
+  : "";
+const currentUserPositionText = currentUserRankingEntry && currentUserRankIndex >= 0
+  ? `Você está em ${currentUserRankIndex + 1}º`
+  : "Sua posição ainda não está disponível.";
+
 // Renderiza HTML
 let html = `
   <div class="ranking-hero mb-4">
@@ -5340,6 +5361,30 @@ let html = `
     </div>
   </div>
 
+  <div class="ranking-my-position mb-3">
+    <div class="ranking-my-position__eyebrow">Você no ranking</div>
+    ${
+      currentUserRankingEntry && currentUserRankIndex >= 0
+        ? `
+          <div class="ranking-my-position__main">
+            <div class="ranking-my-position__title">${escapeHtml(currentUserPositionText)}</div>
+            <div class="ranking-my-position__line">${escapeHtml(currentUserRankingEntry.name || currentUserRankingEntry.username || "Sem nome")}</div>
+            <div class="ranking-my-position__stats">
+              <span>${currentUserRankingEntry.p || 0} pontos</span>
+              <span>${currentUserRankingEntry.debts || 0} dívidas</span>
+              <span>${escapeHtml(currentUserMovementText)}</span>
+            </div>
+          </div>
+        `
+        : `<div class="ranking-my-position__empty">Sua posição ainda não está disponível.</div>`
+    }
+  </div>
+
+  <div class="ranking-legend mb-3">
+    <i class="fas fa-arrows-alt-v"></i>
+    <span>Movimento desde a última atualização.</span>
+  </div>
+
   <div class="ranking-table-shell">
     <div class="ranking-table-head">
       <span>Posicao</span>
@@ -5356,12 +5401,14 @@ let html = `
                     let posIcon = `<span class="ranking-pos-plain">${pos}º</span>`;
                     let nameClass = "ranking-name";
                     let avatarClass = "ranking-avatar";
+                    const isMe = currentUser && u.uid === currentUser.uid;
 
                     if (i === 0) { rowClass = "ranking-row--gold"; posIcon = "🥇"; avatarClass += " ranking-avatar--gold"; }
                     else if (i === 1) { rowClass = "ranking-row--silver"; posIcon = "🥈"; avatarClass += " ranking-avatar--silver"; }
                     else if (i === 2) { rowClass = "ranking-row--bronze"; posIcon = "🥉"; avatarClass += " ranking-avatar--bronze"; }
                     else if (i === 3 || i === 4) { rowClass = "ranking-row--top5"; }
                     if (u.isZ4) { rowClass += " ranking-row--z4"; nameClass += " ranking-name--danger"; }
+                    if (isMe) { rowClass += " ranking-row--me"; nameClass += " ranking-name--me"; }
 
                     let medalsHtml = "";
                     const counts = {};
@@ -5400,7 +5447,10 @@ let html = `
                         <div class="ranking-row__user" onclick="showModalPhoto(${i})">
                             <div class="${avatarClass}"><img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-full h-full object-cover"></div>
                             <div class="ranking-user-meta">
-                                <div class="flex items-start"><span class="${nameClass}">${escapeHtml(u.name || u.username || "Sem nome")}</span></div>
+                                <div class="flex items-center gap-2 flex-wrap">
+                                  <span class="${nameClass}">${escapeHtml(u.name || u.username || "Sem nome")}</span>
+                                  ${isMe ? '<span class="ranking-you-badge">Você</span>' : ""}
+                                </div>
                             </div>
                         </div>
 
@@ -5440,28 +5490,6 @@ window.openRankingInfo = () => {
 };
 
 window.openRankingInfoModal = (lastUpdateInfoText = "") => {
-  const medals = [
-    { icon: "👽", name: "Alien", how: "Sequência de 10 acertos seguidos." },
-    { icon: "💎", name: "Diamante", how: "Gabaritar as Oitavas (8/8) de um torneio." },
-    { icon: "👑", name: "Rei do Mês", how: "Maior pontuador do mês (isolado)." },
-    { icon: "🎯", name: "Mito", how: "Sequência de 5 acertos seguidos." },
-    { icon: "🦓", name: "Zebra", how: "Acertar um confronto em que 80% ou mais erraram/não votaram." },
-    { icon: "🔥", name: "On Fire", how: "Sequência de 3 acertos seguidos." },
-    { icon: "🔮", name: "Mãe Dinah", how: "Acertar o campeão numa FINAL." },
-    { icon: "🎓", name: "Veterano", how: "A cada 50 vitórias acumuladas." },
-
-  ];
-
-  const rows = medals.map(m => `
-    <div class="grid grid-cols-[140px_1fr] gap-3 py-3 border-b border-white/10 last:border-b-0">
-      <div class="flex items-center gap-2">
-        <span class="text-xl">${m.icon}</span>
-        <span class="font-black text-sm text-white">${m.name}</span>
-      </div>
-      <div class="text-xs font-bold text-white/80 leading-snug">${m.how}</div>
-    </div>
-  `).join("");
-
   const html = `
     <div class="w-full max-w-sm rounded-none shadow-2xl overflow-hidden text-white" style="max-height: 90vh; overflow-y: auto; background: linear-gradient(180deg, #071018 0%, #0b1622 50%, #071018 100%);">
       <div class="p-5">
@@ -5485,18 +5513,14 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
           </div>
         </div>
 
-        <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-          <div class="text-xs font-black text-[#A78BFA] uppercase tracking-wider">Valor das medalhas</div>
-          <div class="text-xs font-bold text-[#60A5FA] mt-1">*Por Ordem de Importância*</div>
-        </div>
-
-        <div class="mt-4 rounded-xl border border-white/10 bg-white/5 overflow-hidden">
-          <div class="grid grid-cols-[140px_1fr] gap-3 bg-white/5 px-4 py-2 border-b border-white/10">
-            <div class="text-[10px] font-black text-white/70 uppercase">Medalha</div>
-            <div class="text-[10px] font-black text-white/70 uppercase">Como conquistar</div>
-          </div>
-          <div class="px-4">
-            ${rows}
+        <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+          <div class="text-xs font-black text-[#A78BFA] uppercase tracking-wider">Como o ranking funciona</div>
+          <div class="mt-3 space-y-2 text-xs font-bold text-white/80 leading-snug">
+            <div>• Pontos: total acumulado no Bolão.</div>
+            <div>• Dívidas: mensalidades pendentes.</div>
+            <div>• Setas: variação desde a última atualização oficial.</div>
+            <div>• Atualização: ocorre após baixa de resultados e sincronização do sistema.</div>
+            <div>• Rei do Mês: líder da pontuação no mês vigente.</div>
           </div>
         </div>
 
