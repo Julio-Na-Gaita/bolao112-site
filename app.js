@@ -6266,6 +6266,7 @@ const renderAdminCommunicationsModal = () => {
 };
 
 window.openAdminCommunicationsModal = async () => {
+  window.__setAdminReturnTarget(() => window.openAdminMenu());
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
     alert("Você não tem permissão para acessar comunicados.");
@@ -6346,6 +6347,7 @@ const renderAdminManualPushModal = async () => {
 };
 
 window.openAdminManualPushModal = async () => {
+  window.__setAdminReturnTarget(() => window.openAdminCommunicationsModal());
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
     alert("Você não tem permissão para enviar comunicados.");
@@ -6460,6 +6462,7 @@ const buildNewMatchesNoticeText = (count) => {
 };
 
 window.openAdminWhatsAppNoticeModal = async () => {
+  window.__setAdminReturnTarget(() => window.openAdminCommunicationsModal());
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
     alert("Você não tem permissão para enviar comunicados.");
@@ -7176,6 +7179,8 @@ const renderAdminRoundSummaryPreviewModal = () => {
   const cont = document.getElementById("modalContainer");
   if (!modal || !cont) return;
 
+  window.__setAdminReturnTarget(() => window.backToAdminRoundSummarySelection());
+
   const previewUrl = adminRoundSummaryState.previewUrl || "";
   modal.classList.remove("hidden");
   cont.innerHTML = `
@@ -7257,6 +7262,7 @@ window.invertAdminRoundSummarySelection = () => {
 };
 
 window.backToAdminRoundSummarySelection = () => {
+  window.__setAdminReturnTarget(() => window.openAdminMenu());
   renderAdminRoundSummarySelectionModal();
 };
 
@@ -7676,6 +7682,7 @@ window.generateAdminRoundSummaryImage = async () => {
 };
 
 window.openAdminRoundSummaryModal = async () => {
+  window.__setAdminReturnTarget(() => window.openAdminMenu());
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
     alert("Você não tem permissão para acessar o resumo da rodada.");
@@ -8455,6 +8462,7 @@ window.searchAdminTeamLogo = (fieldSide) => {
 };
 
 window.openCreationModal = async () => {
+  window.__setAdminReturnTarget(() => window.openAdminMenu());
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
     alert("Você não tem permissão para acessar a criação.");
@@ -8504,6 +8512,7 @@ window.switchAdminCreationTab = (tabKey) => {
 };
 
 window.openNewMatchForm = () => {
+  window.__setAdminReturnTarget(() => window.openCreationModal());
   adminCreationState.stage = "form";
   renderAdminCreationModal();
 };
@@ -8655,6 +8664,7 @@ const findAdminRoundDuplicate = (roundName, ignoreId = "") => {
 };
 
 window.openAdminRoundsManager = async () => {
+  window.__setAdminReturnTarget(() => window.openCreationModal());
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
     alert("Você não tem permissão para gerenciar rodadas.");
@@ -9020,6 +9030,7 @@ const renderAdminCompetitionsManager = () => {
 };
 
 window.openCompetitionsManager = async () => {
+  window.__setAdminReturnTarget(() => window.openCreationModal());
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
     alert("Você não tem permissão para gerenciar competições.");
@@ -9744,6 +9755,7 @@ window.toggleAdminQuickResultWinner = (matchId, side) => {
 };
 
 window.openQuickResultsModal = async () => {
+  window.__setAdminReturnTarget(() => window.openAdminMenu());
   const admin = await getCurrentAdminProfile(true);
   if (!admin) {
     alert("Você não tem permissão para usar a Baixa Rápida.");
@@ -10500,6 +10512,7 @@ window.openMatchEditModal = async (matchId) => {
         window.loadAdminOverviewCards = loadAdminOverviewCards;
 
         window.openAdminMenu = async () => {
+            window.__clearAdminReturnTarget();
             const modal = document.getElementById('modalOverlay'); 
             const cont = document.getElementById('modalContainer'); 
             modal.classList.remove('hidden');
@@ -10568,6 +10581,7 @@ window.openMatchEditModal = async (matchId) => {
                             <div class="grid grid-cols-1 gap-2">
                                 <button onclick="window.openAdminCommunicationsModal()" class="bg-[#6A1B9A] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-bullhorn text-lg"></i> Comunicados</button>
                                 <button onclick="window.openAdminRoundSummaryModal()" class="bg-[#1D4ED8] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-image text-lg"></i> Resumo da Rodada</button>
+                                <button onclick="window.openAdminAuditHistoryModal()" class="bg-slate-800 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-clock-rotate-left text-lg"></i> Histórico Admin</button>
                             </div>
                         </div>
 
@@ -10683,6 +10697,149 @@ async function loadAdminMatches() {
             window.__adminMatchesCache = all;
             renderAdminMatchesList();
         }
+
+        window.__adminAuditHistoryFilter = "all";
+        window.__adminAuditHistoryCache = [];
+
+        const getAdminAuditGroup = (type = "") => {
+          const value = String(type || "").toLowerCase();
+          if (!value) return "outros";
+          if (
+            value.includes("match") ||
+            value.includes("confront") ||
+            value.includes("round") ||
+            value.includes("competition") ||
+            value.includes("cleanup") ||
+            value.includes("quick_results") ||
+            value.includes("summary")
+          ) return "partidas";
+          if (
+            value.includes("financial") ||
+            value.includes("payment") ||
+            value.includes("debt") ||
+            value.includes("money")
+          ) return "financeiro";
+          if (value.includes("rank")) return "ranking";
+          if (
+            value.includes("user") ||
+            value.includes("invite") ||
+            value.includes("password") ||
+            value.includes("disable")
+          ) return "usuarios";
+          return "outros";
+        };
+
+        const renderAdminAuditHistoryModal = () => {
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          const filter = window.__adminAuditHistoryFilter || "all";
+          const logs = Array.isArray(window.__adminAuditHistoryCache) ? [...window.__adminAuditHistoryCache] : [];
+          const filtered = logs.filter((log) => filter === "all" ? true : getAdminAuditGroup(log.type) === filter);
+
+          const rows = filtered.length ? filtered.map((log) => {
+            const action = escapeHtml(String(log.type || "Ação").replace(/_/g, " "));
+            const adminLabel = escapeHtml([log.adminName || "", log.adminEmail || ""].filter(Boolean).join(" • ") || "Admin");
+            const targetLabel = escapeHtml(log.targetUserId || log.targetMatchId || log.matchId || log.username || log.roundName || log.competitionName || log.source || "—");
+            const summaryBits = [
+              log.matchId ? `Jogo #${escapeHtml(String(log.matchId))}` : "",
+              log.targetUserId ? `Usuário ${escapeHtml(String(log.targetUserId))}` : "",
+              log.totalMatches != null ? `${escapeHtml(String(log.totalMatches))} jogo(s)` : "",
+              log.totalApplied != null ? `${escapeHtml(String(log.totalApplied))} aplicado(s)` : ""
+            ].filter(Boolean).join(" • ");
+            const dateLabel = formatAdminPanelDateTime(log.createdAt || log.timestamp || log.updatedAt);
+            return `
+              <div class="border border-gray-200 rounded-2xl p-3 bg-white shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <div class="text-[10px] font-black uppercase tracking-[0.16em] text-[#006400]">${action}</div>
+                    <div class="text-xs font-bold text-gray-900 truncate">${escapeHtml(targetLabel)}</div>
+                    <div class="text-[10px] text-gray-500 font-bold mt-1">${escapeHtml(summaryBits || "Sem detalhes adicionais")}</div>
+                  </div>
+                  <div class="text-[10px] font-black text-right text-gray-500 shrink-0">${escapeHtml(dateLabel || "—")}</div>
+                </div>
+                <div class="mt-2 flex items-center justify-between gap-2 text-[10px] text-gray-500 font-bold">
+                  <span>${adminLabel}</span>
+                  <span>${escapeHtml(log.source || "admin_audit_logs")}</span>
+                </div>
+              </div>
+            `;
+          }).join("") : `<div class="p-4 text-center text-gray-400 text-xs font-bold">Nenhum registro encontrado.</div>`;
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `
+            <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[86vh] flex flex-col">
+              <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+              <div class="relative z-10 flex flex-col h-full bg-white/92">
+                <div class="bg-[#006400] p-4 text-white flex items-center justify-between shadow-md shrink-0">
+                  <button onclick="openAdminMenu()" class="mr-3"><i class="fas fa-arrow-left text-xl"></i></button>
+                  <div class="flex-1">
+                    <h3 class="font-black uppercase text-lg leading-none">Histórico Admin</h3>
+                    <p class="text-[10px] text-[#FFD700] font-bold">Últimos ${logs.length} registros</p>
+                  </div>
+                  <button onclick="closeModal()" class="ml-3"><i class="fas fa-times text-xl"></i></button>
+                </div>
+
+                <div class="px-3 pt-3 shrink-0">
+                  <div class="admin-cleanup-tabs">
+                    <button type="button" onclick="window.setAdminAuditHistoryFilter('all')" class="admin-cleanup-tab ${filter === "all" ? "is-active" : ""}">Todos</button>
+                    <button type="button" onclick="window.setAdminAuditHistoryFilter('partidas')" class="admin-cleanup-tab ${filter === "partidas" ? "is-active" : ""}">Partidas</button>
+                    <button type="button" onclick="window.setAdminAuditHistoryFilter('financeiro')" class="admin-cleanup-tab ${filter === "financeiro" ? "is-active" : ""}">Financeiro</button>
+                    <button type="button" onclick="window.setAdminAuditHistoryFilter('ranking')" class="admin-cleanup-tab ${filter === "ranking" ? "is-active" : ""}">Ranking</button>
+                    <button type="button" onclick="window.setAdminAuditHistoryFilter('usuarios')" class="admin-cleanup-tab ${filter === "usuarios" ? "is-active" : ""}">Usuários</button>
+                  </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-3 bg-gray-50 space-y-2">
+                  ${rows}
+                </div>
+
+                <div class="admin-quick-results-footer shrink-0">
+                  <button type="button" onclick="openAdminMenu()" class="w-full bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Voltar</button>
+                </div>
+              </div>
+            </div>
+          `;
+        };
+
+        window.setAdminAuditHistoryFilter = (filter = "all") => {
+          window.__adminAuditHistoryFilter = ["all", "partidas", "financeiro", "ranking", "usuarios"].includes(filter) ? filter : "all";
+          renderAdminAuditHistoryModal();
+        };
+
+        window.openAdminAuditHistoryModal = async () => {
+          window.__setAdminReturnTarget(() => window.openAdminMenu());
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) {
+            alert("Você não tem permissão para ver o histórico admin.");
+            return;
+          }
+
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando histórico...</p></div>`;
+
+          try {
+            const snap = await getDocs(query(collection(db, "admin_audit_logs"), orderBy("createdAt", "desc"), limit(50)));
+            const items = [];
+            snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+            window.__adminAuditHistoryCache = items;
+            window.__adminAuditHistoryFilter = "all";
+            renderAdminAuditHistoryModal();
+          } catch (error) {
+            console.error("Erro ao abrir histórico admin:", error);
+            cont.innerHTML = `
+              <div class="bg-white p-6 text-center rounded shadow-xl">
+                <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar o histórico admin.</p>
+                <button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
+              </div>
+            `;
+          }
+        };
         // --- LIMPEZA / LIXEIRA WEB ---
         const getAdminMatchSortDate = (match = {}) =>
           toJsDate(match.deletedAt) ||
@@ -10840,6 +10997,7 @@ async function loadAdminMatches() {
         };
 
         window.openCleanupModal = async () => {
+          window.__setAdminReturnTarget(() => window.openAdminMenu());
           const admin = await getCurrentAdminProfile(true);
           if (!admin) {
             alert("Você não tem permissão para acessar a limpeza.");
@@ -10966,6 +11124,7 @@ async function loadAdminMatches() {
         };
 
         window.openTrashBin = async () => {
+          window.__setAdminReturnTarget(() => window.openCleanupModal());
           const admin = await getCurrentAdminProfile(true);
           if (!admin) {
             alert("Você não tem permissão para abrir a lixeira.");
@@ -11626,6 +11785,7 @@ async function loadAdminMatches() {
         };
 
         window.openFinancialAuditModal = async () => {
+          window.__setAdminReturnTarget(() => window.openFinancialScreen());
           const admin = await getCurrentAdminProfile(true);
           if (!admin) {
             alert("Você não tem permissão para auditar pagamentos.");
@@ -11858,6 +12018,7 @@ async function loadAdminMatches() {
           `;
         };
         window.openFinancialUserModal = async (uid) => {
+          window.__setAdminReturnTarget(() => window.openFinancialScreen());
           const user = (adminFinancialState.users || []).find((item) => item.id === uid);
           if (!user) {
             showFinancialToast("Usuário não encontrado.", "danger");
@@ -11936,6 +12097,7 @@ async function loadAdminMatches() {
         window.openResetUserPasswordModal = () => {
           const draft = adminFinancialState.editUserDraft;
           if (!draft) return;
+          window.__setAdminReturnTarget(() => window.openFinancialUserModal(draft.id));
 
           const modal = document.getElementById("modalOverlay");
           const cont = document.getElementById("modalContainer");
@@ -12038,7 +12200,8 @@ async function loadAdminMatches() {
         };
                 // --- CORREÇÃO DO PAINEL FINANCEIRO E PAGAMENTO ---
 
-                window.openFinancialScreen = async () => {
+        window.openFinancialScreen = async () => {
+            window.__setAdminReturnTarget(() => window.openAdminMenu());
             const admin = await getCurrentAdminProfile(true);
             if (!admin) {
               alert("Você não tem permissão para acessar o financeiro.");
@@ -13612,6 +13775,23 @@ window.closeModal = () => {
   if (container) container.innerHTML = "";
   if (overlay) overlay.classList.add("hidden");
 };
+window.__adminReturnTarget = null;
+window.__setAdminReturnTarget = (handler = null) => {
+  window.__adminReturnTarget = typeof handler === "function" ? handler : null;
+};
+window.__clearAdminReturnTarget = () => {
+  window.__adminReturnTarget = null;
+};
+window.returnToAdminHome = () => {
+  window.__clearAdminReturnTarget();
+  return typeof window.openAdminMenu === "function" ? window.openAdminMenu() : window.closeModal();
+};
+window.closeAdminSubscreen = () => {
+  const next = window.__adminReturnTarget;
+  window.__adminReturnTarget = null;
+  if (typeof next === "function") return next();
+  return typeof window.openAdminMenu === "function" ? window.openAdminMenu() : window.closeModal();
+};
 // ====== Bloqueio de fechamento quando Rules Gate estiver ativo ======
 (() => {
   const __origCloseModal = window.closeModal;
@@ -13626,6 +13806,11 @@ window.closeModal = () => {
       try { URL.revokeObjectURL(adminRoundSummaryState.previewUrl); } catch (error) {}
       adminRoundSummaryState.previewUrl = "";
       adminRoundSummaryState.previewBlob = null;
+    }
+    if (window.__adminReturnTarget) {
+      const next = window.__adminReturnTarget;
+      window.__adminReturnTarget = null;
+      return typeof next === "function" ? next() : __origCloseModal.apply(this, arguments);
     }
     return __origCloseModal.apply(this, arguments);
   };
