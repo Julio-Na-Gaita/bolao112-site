@@ -5317,14 +5317,15 @@ const currentUserMovementDelta = Number(currentUserMovementInfo?.delta || 0);
 const currentUserMovementText = currentUserRankingEntry
   ? (currentUserMovementInfo
     ? (currentUserMovementDelta > 0
-      ? `↑ ${currentUserMovementDelta} desde a última atualização`
+      ? `↑ Subiu ${currentUserMovementDelta} ${currentUserMovementDelta > 1 ? "posições" : "posição"}`
       : currentUserMovementDelta < 0
-        ? `↓ ${Math.abs(currentUserMovementDelta)} desde a última atualização`
+        ? `↓ Caiu ${Math.abs(currentUserMovementDelta)} ${Math.abs(currentUserMovementDelta) > 1 ? "posições" : "posição"}`
         : Number(currentUserMovementInfo?.previousPosition || 0) > 0
-          ? `= Sem mudança desde a última atualização`
+          ? "↔ Sem mudança"
           : "Sem histórico de movimentação")
     : "Movimento ainda não disponível")
   : "";
+const currentUserDisplayName = currentUserRankingEntry?.name || currentUserRankingEntry?.username || "Sem nome";
 const currentUserPositionText = currentUserRankingEntry && currentUserRankIndex >= 0
   ? `Você está em ${currentUserRankIndex + 1}º`
   : "Sua posição ainda não está disponível.";
@@ -5368,21 +5369,12 @@ let html = `
         ? `
           <div class="ranking-my-position__main">
             <div class="ranking-my-position__title">${escapeHtml(currentUserPositionText)}</div>
-            <div class="ranking-my-position__line">${escapeHtml(currentUserRankingEntry.name || currentUserRankingEntry.username || "Sem nome")}</div>
-            <div class="ranking-my-position__stats">
-              <span>${currentUserRankingEntry.p || 0} pontos</span>
-              <span>${currentUserRankingEntry.debts || 0} dívidas</span>
-              <span>${escapeHtml(currentUserMovementText)}</span>
-            </div>
+            <div class="ranking-my-position__line">${escapeHtml(currentUserDisplayName)}</div>
+            <div class="ranking-my-position__movement">${escapeHtml(currentUserMovementText)}</div>
           </div>
         `
         : `<div class="ranking-my-position__empty">Sua posição ainda não está disponível.</div>`
     }
-  </div>
-
-  <div class="ranking-legend mb-3">
-    <i class="fas fa-arrows-alt-v"></i>
-    <span>Movimento desde a última atualização.</span>
   </div>
 
   <div class="ranking-table-shell">
@@ -5490,6 +5482,31 @@ window.openRankingInfo = () => {
 };
 
 window.openRankingInfoModal = (lastUpdateInfoText = "") => {
+  const medalInfos = [
+    { icon: "👽", name: "Alien", how: "10 acertos seguidos.", order: 1 },
+    { icon: "💎", name: "Diamante", how: "Gabaritar as Oitavas (8/8).", order: 2 },
+    { icon: "👑", name: "Rei do Mês", how: "Líder da pontuação no mês vigente.", order: 3 },
+    { icon: "🎯", name: "Mito", how: "5 acertos seguidos.", order: 4 },
+    { icon: "🦓", name: "Caçador de Zebras", how: "Acertar um jogo em que 80% ou mais erraram ou não votaram.", order: 5 },
+    { icon: "🔥", name: "On Fire", how: "3 acertos seguidos.", order: 6 },
+    { icon: "🔮", name: "Mãe Dinah", how: "Acertar o campeão na final.", order: 7 },
+    { icon: "🎓", name: "Veterano", how: "A cada 50 vitórias acumuladas.", order: 8 },
+    { icon: "💰", name: "Patrão", how: "Mensalidade rigorosamente em dia.", order: 9 },
+    { icon: "👻", name: "Fantasma", how: "Deixar de votar em 3 jogos seguidos.", order: 10 },
+    { icon: "🥬", name: "Mão de Alface", how: "Errar 3 palpites seguidos.", order: 11 },
+    { icon: "⚓", name: "Zona de Rebaixamento", how: "Os 4 últimos colocados.", order: 12 },
+  ];
+
+  const medalRows = medalInfos.map((medal) => `
+    <div class="ranking-info-medal">
+      <div class="ranking-info-medal__icon">${medal.icon}</div>
+      <div class="ranking-info-medal__body">
+        <div class="ranking-info-medal__name">${escapeHtml(medal.name)}</div>
+        <div class="ranking-info-medal__desc">${escapeHtml(medal.how)}</div>
+      </div>
+    </div>
+  `).join("");
+
   const html = `
     <div class="w-full max-w-sm rounded-none shadow-2xl overflow-hidden text-white" style="max-height: 90vh; overflow-y: auto; background: linear-gradient(180deg, #071018 0%, #0b1622 50%, #071018 100%);">
       <div class="p-5">
@@ -5497,7 +5514,7 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
           <div>
             <div class="flex items-center gap-2">
               <i class="fas fa-info-circle text-[#38BDF8]"></i>
-              <div class="font-black uppercase tracking-wider text-lg">SOBRE O RANKING</div>
+              <div class="font-black uppercase tracking-wider text-lg">INFORMAÇÕES DO RANKING</div>
             </div>
             <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Última Atualização</div>
           </div>
@@ -5518,9 +5535,17 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
           <div class="mt-3 space-y-2 text-xs font-bold text-white/80 leading-snug">
             <div>• Pontos: total acumulado no Bolão.</div>
             <div>• Dívidas: mensalidades pendentes.</div>
-            <div>• Setas: variação desde a última atualização oficial.</div>
+            <div>• Setas: indicam subida, queda ou permanência na posição.</div>
             <div>• Atualização: ocorre após baixa de resultados e sincronização do sistema.</div>
             <div>• Rei do Mês: líder da pontuação no mês vigente.</div>
+          </div>
+        </div>
+
+        <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+          <div class="text-xs font-black text-[#FDE68A] uppercase tracking-wider">Medalhas</div>
+          <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider mt-1">Ordem de importância: da mais valiosa para a menos valiosa.</div>
+          <div class="mt-3 space-y-3">
+            ${medalRows}
           </div>
         </div>
 
