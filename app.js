@@ -4245,19 +4245,107 @@ invalidateHomeRankingCaches();
                 }
 
                 // Montagem Final
-                const title = isExpired ? "PALPITES REGISTRADOS" : "QUEM JÁ VOTOU?";
-                container.innerHTML = `
-                <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative" style="max-height: 80vh; display:flex; flex-direction:column;">
-                    <img src="bg_dialog_votantes.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none z-0">
-                    <div class="p-4 border-b border-gray-200 bg-gray-50/95 text-center relative z-10 backdrop-blur-sm">
-                        <h3 class="font-black text-[#006400] text-lg uppercase tracking-wide">${title}</h3>
-                        ${!isExpired ? '<p class="text-[10px] text-gray-500 font-bold mt-1">Os palpites são revelados após o prazo.</p>' : ''}
+                const title = !isExpired ? "QUEM JA VOTOU?" : (winner ? "RESULTADO DOS PALPITES" : "PALPITES REGISTRADOS");
+                const votersSubtitle = !isExpired
+                    ? "Os palpites sao revelados apos o prazo."
+                    : (winner ? "Acertos, erros e ausencias em formato compacto." : "Aguardando resultado oficial.");
+                const shortVoterName = (name = "") => String(name || "Anonimo").trim().split(/\s+/).slice(0, 2).join(" ");
+                const normalizeTeamChoice = (value = "") => String(value || "").trim().toLowerCase();
+                const teamLogoForChoice = (team = "") => {
+                    const choice = normalizeTeamChoice(team);
+                    if (choice === normalizeTeamChoice(ta)) return taUrl;
+                    if (choice === normalizeTeamChoice(tb)) return tbUrl;
+                    return "";
+                };
+                const renderVoterChip = (person, modifier = "", metaHtml = "") => `
+                    <div class="voter-chip ${modifier}">
+                        <img src="${escapeHtml(getAvatarUrl(person.photo, person.name))}" class="voter-chip__avatar" alt="">
+                        <span class="voter-chip__name">${escapeHtml(shortVoterName(person.name))}</span>
+                        ${metaHtml}
                     </div>
-                    <div class="p-4 overflow-y-auto relative z-10 flex-1">
+                `;
+                const renderVoterGroup = (groupTitle, count, modifier, contentHtml) => `
+                    <section class="voter-group ${modifier}">
+                        <div class="voter-group-title"><span>${escapeHtml(groupTitle)} (${count})</span></div>
+                        <div class="voters-compact-grid">${contentHtml}</div>
+                    </section>
+                `;
+
+                if (votersList.length === 0) {
+                    listHtml = `<p class="voters-empty">Ninguem votou ainda.</p>`;
+                } else if (!isExpired) {
+                    listHtml = renderVoterGroup(
+                        "VOTARAM",
+                        votersList.length,
+                        "voter-group--secret",
+                        votersList.map((v) => renderVoterChip(v, "voter-chip--secret", `<span class="voter-chip__tag"><i class="fas fa-lock"></i> Sigilo</span>`)).join("")
+                    );
+                } else if (winner) {
+                    const correctList = votersList.filter((v) => v.isWinner);
+                    const wrongList = votersList.filter((v) => !v.isWinner);
+                    listHtml = "";
+                    if (correctList.length) {
+                        listHtml += renderVoterGroup(
+                            "ACERTARAM",
+                            correctList.length,
+                            "voter-group--correct",
+                            correctList.map((v) => renderVoterChip(v, "voter-chip--correct", `<span class="voter-chip__team">${teamLogoForChoice(v.team) ? `<img src="${escapeHtml(teamLogoForChoice(v.team))}" alt="">` : escapeHtml(v.team || "")}</span><span class="voter-chip__result"><i class="fas fa-check"></i></span>`)).join("")
+                        );
+                    }
+                    if (wrongList.length) {
+                        listHtml += renderVoterGroup(
+                            "ERRARAM",
+                            wrongList.length,
+                            "voter-group--wrong",
+                            wrongList.map((v) => renderVoterChip(v, "voter-chip--wrong", `<span class="voter-chip__team">${teamLogoForChoice(v.team) ? `<img src="${escapeHtml(teamLogoForChoice(v.team))}" alt="">` : escapeHtml(v.team || "")}</span><span class="voter-chip__result"><i class="fas fa-times"></i></span>`)).join("")
+                        );
+                    }
+                } else {
+                    const grouped = new Map();
+                    votersList.forEach((v) => {
+                        const label = String(v.team || "Sem time").trim() || "Sem time";
+                        const key = normalizeTeamChoice(label);
+                        if (!grouped.has(key)) grouped.set(key, { label, items: [] });
+                        grouped.get(key).items.push(v);
+                    });
+                    listHtml = "";
+                    grouped.forEach((group) => {
+                        const logo = teamLogoForChoice(group.label);
+                        listHtml += renderVoterGroup(
+                            group.label,
+                            group.items.length,
+                            "voter-group--waiting",
+                            group.items.map((v) => renderVoterChip(v, "voter-chip--waiting", `<span class="voter-chip__team">${logo ? `<img src="${escapeHtml(logo)}" alt="">` : escapeHtml(group.label)}</span>`)).join("")
+                        );
+                    });
+                }
+
+                if (missingList.length > 0) {
+                    const titleMissing = isExpired ? "NAO VOTARAM" : "FALTA VOTAR";
+                    missingHtml = renderVoterGroup(
+                        titleMissing,
+                        missingList.length,
+                        "voter-group--missing",
+                        missingList.map((u) => renderVoterChip(u, "voter-chip--missing", `<span class="voter-chip__tag">Pendente</span>`)).join("")
+                    );
+                }
+
+                container.innerHTML = `
+                <div class="voters-modal w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative">
+                    <img src="bg_dialog_votantes.jpeg" class="absolute inset-0 w-full h-full object-cover opacity-20 pointer-events-none z-0">
+                    <div class="voters-modal__header">
+                        <h3>${escapeHtml(title)}</h3>
+                        <p>${escapeHtml(votersSubtitle)}</p>
+                        <div class="voters-summary">
+                            <span><i class="fas fa-check-circle"></i> Votaram: ${votersList.length}</span>
+                            <span><i class="fas fa-hourglass-half"></i> Faltam: ${missingList.length}</span>
+                        </div>
+                    </div>
+                    <div class="voters-modal__body">
                         ${listHtml}
                         ${missingHtml}
                     </div>
-                    <div class="p-4 bg-gray-50/95 border-t border-gray-200 z-10 backdrop-blur-sm">
+                    <div class="voters-modal__footer">
   <div class="flex gap-2">
     ${
       (window.__returnToHistoryIdx !== null && window.__returnToHistoryIdx !== undefined)
