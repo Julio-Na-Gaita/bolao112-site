@@ -15,7 +15,7 @@
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ADICIONADO: enableIndexedDbPersistence
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, limit, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getMessaging, getToken, onMessage, deleteToken, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
 let mainServiceWorkerRegistrationPromise = null;
