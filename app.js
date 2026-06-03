@@ -211,12 +211,102 @@ let adminRoundSummaryState = {
   previewUrl: ""
 };
 
+// ================= UTILITÁRIOS GERAIS =================
 const normalizeAdminText = (value = "") =>
   String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+
+const normalizeHomeFeatureFlag = (raw = "") => {
+  const value = String(raw || "").trim().toLowerCase();
+  return ["", "chat", "fast_vote", "scout"].includes(value) ? value : "";
+};
+
+const normalizeHomeUserSegment = (raw = "") => {
+  const value = String(raw || "").trim().toLowerCase();
+  return ["", "debtors", "new_users", "veterans"].includes(value) ? value : "";
+};
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const escapeJsString = (value = "") =>
+  String(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, " ")
+    .replace(/\r/g, " ");
+
+const clampTextLength = (value = "", max = CHAT_MAX_MESSAGE_LENGTH) =>
+  Array.from(String(value || "")).slice(0, max).join("");
+
+const stripControlChars = (value = "") =>
+  String(value || "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+
+const normalizeChatMessageInput = (value = "") =>
+  clampTextLength(
+    stripControlChars(String(value || "").normalize("NFC")).replace(/\r\n?/g, "\n").trim(),
+    CHAT_MAX_MESSAGE_LENGTH
+  );
+
+const getTextLength = (value = "") => Array.from(String(value || "")).length;
+
+const normalizeChatUserName = (value = "") => {
+  const sanitized = clampTextLength(
+    stripControlChars(String(value || "").normalize("NFC")).trim(),
+    40
+  );
+  return sanitized || "Anonimo";
+};
+
+const normalizeChatReaction = (value = "") => {
+  const normalized = String(value || "").normalize("NFC").trim();
+  return CHAT_ALLOWED_REACTIONS.includes(normalized) ? normalized : "";
+};
+
+const formatUserText = (value = "") =>
+  escapeHtml(stripControlChars(String(value || "").normalize("NFC"))).replace(/\n/g, "<br>");
+
+const isHttpUrl = (value = "") => /^https?:\/\/\S+/i.test(String(value || "").trim());
+
+const formatAdminDateTimeInput = (value) => {
+  const date = toJsDate(value) || new Date();
+  const pad = (num) => String(num).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+const formatAdminDateTimeLabel = (value) => {
+  const date = toJsDate(value) || new Date();
+  return date.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+};
+
+const isPwaStandalone = () =>
+  window.matchMedia?.('(display-mode: standalone)').matches ||
+  window.navigator.standalone === true;
+
+const isIosDevice = () =>
+  /iPhone|iPad|iPod/i.test(window.navigator.userAgent || "") ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+const toJsDate = (value) => {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value.toDate === "function") return value.toDate();
+  if (value.seconds) return new Date(value.seconds * 1000);
+  return null;
+};
 
 const getAdminCommunicationVapidKey = async () => {
   const inlineKey = String(window.BOLAO_FCM_VAPID_KEY || "").trim();
@@ -605,24 +695,6 @@ const normalizeRoundName = (value = "") =>
     .replace(/\s+/g, " ")
     .trim();
 
-const isHttpUrl = (value = "") => /^https?:\/\/\S+/i.test(String(value || "").trim());
-
-const formatAdminDateTimeInput = (value) => {
-  const date = toJsDate(value) || new Date();
-  const pad = (num) => String(num).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
-const formatAdminDateTimeLabel = (value) => {
-  const date = toJsDate(value) || new Date();
-  return date.toLocaleString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-};
-
 const buildAdminWhatsAppMessage = ({ teamA, teamB, competition, round, deadline }) => {
   const dateLabel = deadline ? formatAdminDateTimeLabel(deadline) : "";
   return `📢 JOGO NOVO: 📢\n\n⚽ ${teamA} x ${teamB}\n🏆 ${competition} (${round})\n⏰ ${dateLabel}\n\n📲 VOTE AGORA: https://bolao112-site.vercel.app`;
@@ -653,14 +725,6 @@ const setHomeMode = (enabled) => {
 };
 
 let deferredPwaInstallPrompt = null;
-
-const isPwaStandalone = () =>
-  window.matchMedia?.('(display-mode: standalone)').matches ||
-  window.navigator.standalone === true;
-
-const isIosDevice = () =>
-  /iphone|ipad|ipod/i.test(window.navigator.userAgent) ||
-  (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
 
 const updatePwaInstallCard = () => {
   const card = document.getElementById('pwaInstallCard');
@@ -703,8 +767,6 @@ window.addEventListener('appinstalled', () => {
   deferredPwaInstallPrompt = null;
   updatePwaInstallCard();
 });
-
-const formatUserText = (value = '') => escapeHtml(stripControlChars(String(value || "").normalize("NFC"))).replace(/\n/g, '<br>');
 
 const ensureExternalScript = (src, globalKey) => {
   if (globalKey && window[globalKey]) return Promise.resolve(window[globalKey]);
@@ -2569,14 +2631,6 @@ window.votePoll = async (pid, idx) => {
 
 const DEFAULT_HOME_LAYOUT_ORDER = ["ticker", "fast_vote", "matches_open", "matches_wait", "matches_done"];
 
-const toJsDate = (value) => {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-  if (typeof value.toDate === "function") return value.toDate();
-  if (value.seconds) return new Date(value.seconds * 1000);
-  return null;
-};
-
 const normalizeRankingMovementPositions = (raw = {}) => {
   const result = {};
   if (!raw || typeof raw !== "object") return result;
@@ -2704,58 +2758,6 @@ const normalizeHomeActionType = (raw = "") => {
 const normalizeHomeSectionStyle = (raw = "") => {
   const value = String(raw || "").trim().toLowerCase();
   return ["default", "warning", "success", "danger", "dark"].includes(value) ? value : "default";
-};
-
-const normalizeHomeFeatureFlag = (raw = "") => {
-  const value = String(raw || "").trim().toLowerCase();
-  return ["", "chat", "fast_vote", "scout"].includes(value) ? value : "";
-};
-
-const normalizeHomeUserSegment = (raw = "") => {
-  const value = String(raw || "").trim().toLowerCase();
-  return ["", "debtors", "new_users", "veterans"].includes(value) ? value : "";
-};
-
-const escapeHtml = (value = "") =>
-  String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-
-const escapeJsString = (value = "") =>
-  String(value)
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'")
-    .replace(/\n/g, " ")
-    .replace(/\r/g, " ");
-
-const clampTextLength = (value = "", max = CHAT_MAX_MESSAGE_LENGTH) =>
-  Array.from(String(value || "")).slice(0, max).join("");
-
-const stripControlChars = (value = "") =>
-  String(value || "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
-
-const normalizeChatMessageInput = (value = "") =>
-  clampTextLength(
-    stripControlChars(String(value || "").normalize("NFC")).replace(/\r\n?/g, "\n").trim(),
-    CHAT_MAX_MESSAGE_LENGTH
-  );
-
-const getTextLength = (value = "") => Array.from(String(value || "")).length;
-
-const normalizeChatUserName = (value = "") => {
-  const sanitized = clampTextLength(
-    stripControlChars(String(value || "").normalize("NFC")).trim(),
-    40
-  );
-  return sanitized || "Anonimo";
-};
-
-const normalizeChatReaction = (value = "") => {
-  const normalized = String(value || "").normalize("NFC").trim();
-  return CHAT_ALLOWED_REACTIONS.includes(normalized) ? normalized : "";
 };
 
 const createBaseHomeSection = (id, type) => ({
