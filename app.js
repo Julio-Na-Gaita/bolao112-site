@@ -3142,7 +3142,7 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
 
   const pendingCount = open.filter((m) => !myVotesMap[m.id]).length;
   const paymentNotice = getHomePendingPaymentNotice(currentUserData || {});
-  const pendingActionLabel = pendingCount > 0 ? "Votar nos pendentes" : "Tudo certo! Sem pendências";
+  const pendingActionLabel = pendingCount > 0 ? "Votar nos pendentes" : "Sem pend?ncias no momento";
   const pendingCounterClass = pendingCount > 0 ? "home-quick-stat--pending-alert" : "home-quick-stat--success";
 
   return `
@@ -11204,7 +11204,7 @@ async function loadAdminMatches() {
           window.__setAdminReturnTarget(() => window.openAdminMenu());
           const admin = await getCurrentAdminProfile(true);
           if (!admin) {
-            alert("Você não tem permissão para ver o histórico admin.");
+            alert("Voc? n?o tem permiss?o para ver o hist?rico admin.");
             return;
           }
 
@@ -11213,41 +11213,19 @@ async function loadAdminMatches() {
           if (!modal || !cont) return;
 
           modal.classList.remove("hidden");
-          cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando histórico...</p></div>`;
+          cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando hist?rico...</p></div>`;
 
           try {
             const logs = await loadRecentAdminAuditLogs({ limitSize: 50 });
-            let userMap = new Map();
-            try {
-              userMap = await loadAdminUsersLookupMap(logs);
-            } catch (error) {
-              console.error("Não foi possível resolver usuários do histórico admin:", error);
-              userMap = new Map();
-            }
-            const enrichedLogs = logs.map((log) => {
-              const userDisplay = getAdminAuditUserDisplay(log, userMap);
-              return {
-                ...log,
-                displayTargetLabel: userDisplay.isUser
-                  ? (userDisplay.name || "Usuário não identificado")
-                  : (log.targetName || log.matchTitle || log.competitionName || log.roundName || log.username || log.source || "—"),
-                displayTargetSecondary: userDisplay.isUser
-                  ? [userDisplay.email || "", userDisplay.shortId || ""].filter(Boolean).join(" • ") || getAdminAuditSummaryText(log)
-                  : getAdminAuditSummaryText(log),
-                displayDateLabel: formatAdminPanelDateTime(getAdminAuditTimestamp(log)),
-                displayAdminLabel: getAdminAuditActorLabel(log),
-                displaySourceLabel: log.source || "admin_audit_logs"
-              };
-            });
-            window.__adminAuditHistoryCache = enrichedLogs;
+            window.__adminAuditHistoryCache = Array.isArray(logs) ? logs : [];
             window.__adminAuditHistoryFilter = "all";
             renderAdminAuditHistoryModal();
           } catch (error) {
-            console.error("Erro ao carregar histórico admin:", error);
+            console.error("Erro ao carregar hist?rico admin:", error);
             cont.innerHTML = `
               <div class="bg-white p-6 text-center rounded shadow-xl">
-                <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar o histórico admin.</p>
-                <p class="text-[11px] font-bold text-gray-500 mb-4">Verifique sua permissão de administrador ou tente novamente.</p>
+                <p class="text-sm font-black text-red-600 mb-3">N?o foi poss?vel carregar o hist?rico admin.</p>
+                <p class="text-[11px] font-bold text-gray-500 mb-4">Verifique sua permiss?o de administrador ou tente novamente.</p>
                 <button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
               </div>
             `;
