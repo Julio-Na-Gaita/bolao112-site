@@ -3000,6 +3000,48 @@ select:focus-visible {
     flex: 0 0 auto;
 }
 
+.ranking-medal-chip.super-medal,
+.medal-count-badge.super-medal,
+.super-medal {
+    background: linear-gradient(135deg, rgba(255, 247, 214, 0.98), rgba(255, 255, 255, 0.96));
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.18), 0 8px 20px rgba(245, 158, 11, 0.16);
+}
+
+.ranking-medal-chip.super-medal {
+    padding: 2px 6px;
+    border-radius: 999px;
+    color: #6b3f00;
+}
+
+.medal-count-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(45%, -45%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #D32F2F;
+    color: #fff;
+    border: 2px solid rgba(255,255,255,.95);
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.2px;
+}
+
+.medal-count-badge.super-medal {
+    color: #6b3f00;
+    font-size: 11px;
+}
+
 .ranking-medal-count {
     font-size: 8px;
     color: #64748b;

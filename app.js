@@ -5435,7 +5435,11 @@ let html = `
 
                     if (uniqueIcons.length > 0) {
                         medalsHtml = `<div class="ranking-medals">` +
-                            uniqueIcons.map(icon => `<span class="ranking-medal-chip">${icon}${counts[icon]>1 ? `<span class="ranking-medal-count">${counts[icon]}</span>` : ""}</span>`).join("") +
+                            uniqueIcons.map(icon => {
+                              const count = counts[icon] || 0;
+                              const isSuperMedal = count >= 10;
+                              return `<span class="ranking-medal-chip ${isSuperMedal ? "super-medal" : ""}">${icon}${count > 1 ? `<span class="ranking-medal-count">${count}</span>` : ""}</span>`;
+                            }).join("") +
                         `</div>`;
                     }
 
@@ -5723,41 +5727,14 @@ window.showKingModal = () => {
                     const count = medals.length;
                     const first = medals[0];
                     const isLegendary = count >= 10;
-                    
-                    // Estilos da Bolinha (Badge)
-                    const badgeBg = isLegendary ? "bg-[#FFD700] text-black shadow-lg" : "bg-[#D32F2F] text-white shadow-md";
-                    const badgeSize = isLegendary ? "w-6 h-6 text-[9px]" : "w-5 h-5 text-[8px]";
-                    
+
                     let badgeHtml = "";
 if (count > 1) {
+  const badgeText = count >= 10 ? `${count}` : `x${count}`;
   badgeHtml = `
-    <span style="
-      position:absolute;
-      top:0;
-      right:0;
-      transform: translate(45%, -45%);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-
-      min-width:22px;
-      height:22px;
-      padding:0 6px;
-
-      background:#D32F2F;
-      color:#fff;
-
-      font-weight:900;
-      font-size:12px;
-      line-height:1;
-
-      border-radius:999px;
-      border:2px solid rgba(255,255,255,.95);
-      box-shadow:0 2px 6px rgba(0,0,0,.25);
-
-      font-family: Arial, sans-serif;
-      letter-spacing:-0.2px;
-    ">${count}x</span>
+    <span class="medal-count-badge ${isLegendary ? "super-medal" : ""}">
+      ${badgeText}
+    </span>
   `;
 }
 
@@ -5768,7 +5745,7 @@ if (count > 1) {
                         : `showToast('${first.name}', '${first.desc}', '${first.date}')`;
 
                     medalsHtml += `
-                        <div class="relative inline-block mx-1 my-1 cursor-pointer hover:scale-110 transition-transform select-none group" onclick="${clickAction}">
+                        <div class="relative inline-flex items-center justify-center mx-1 my-1 cursor-pointer hover:scale-110 transition-transform select-none group ${isLegendary ? "super-medal" : ""}" onclick="${clickAction}">
                             ${badgeHtml}
                             <span class="text-4xl drop-shadow-sm">${first.icon}</span>
                         </div>
@@ -12819,21 +12796,9 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
       <div style="position:relative; display:inline-flex; align-items:center; justify-content:center;">
         <span style="font-size:32px; line-height:1;">${icon}</span>
         ${medalCounts[icon] > 1 ? `
-          <span style="
-  position:absolute;
-  top:0;
-  right:0;
-  transform: translate(45%, -45%);
-  background:#D32F2F;
-  color:#fff;
-  font-weight:900;
-  font-size:12px;
-  line-height:1;
-  padding:4px 6px;
-  border-radius:999px;
-  border:2px solid rgba(255,255,255,.95);
-  box-shadow:0 2px 6px rgba(0,0,0,.25);
-">x${medalCounts[icon]}</span>
+          <span class="medal-count-badge ${medalCounts[icon] >= 10 ? "super-medal" : ""}">
+            ${medalCounts[icon] >= 10 ? medalCounts[icon] : `x${medalCounts[icon]}`}
+          </span>
 
         ` : ``}
       </div>
