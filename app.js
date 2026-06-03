@@ -2978,6 +2978,38 @@ const formatHomeDeadlineLabel = (value, isWaiting = false) => {
   return `Expira em ${diffDays} dias às ${timeLabel}`;
 };
 
+const getHomeDeadlineGroupKey = (match = {}) => {
+  const deadlineDate = match.deadlineDate || toJsDate(match.deadline);
+  if (!(deadlineDate instanceof Date)) return "no-deadline";
+  if (match.expired === true && !match.winner) return "expired";
+  return [
+    deadlineDate.getFullYear(),
+    String(deadlineDate.getMonth() + 1).padStart(2, "0"),
+    String(deadlineDate.getDate()).padStart(2, "0"),
+    String(deadlineDate.getHours()).padStart(2, "0"),
+    String(deadlineDate.getMinutes()).padStart(2, "0")
+  ].join("-");
+};
+
+const getHomeDeadlineGroupSortValue = (match = {}) => {
+  const deadlineDate = match.deadlineDate || toJsDate(match.deadline);
+  if (!(deadlineDate instanceof Date)) return Number.MAX_SAFE_INTEGER;
+  if (match.expired === true && !match.winner) return Math.min(deadlineDate.getTime(), Date.now() - 1);
+  return deadlineDate.getTime();
+};
+
+const getHomeDeadlineGroupLabel = (match = {}) => {
+  const deadlineDate = match.deadlineDate || toJsDate(match.deadline);
+  if (!(deadlineDate instanceof Date)) return "Sem prazo definido";
+  return formatHomeDeadlineLabel(deadlineDate, match.expired === true && !match.winner);
+};
+
+const getHomeDeadlineGroupTitle = (group = {}) => {
+  if (group.type === "expired") return "Prazo encerrado";
+  if (!(group.date instanceof Date)) return "Sem prazo definido";
+  return formatHomeDeadlineLabel(group.date, false);
+};
+
 window.openDeadlineModal = () => {
   const modal = document.getElementById("modalOverlay");
   const cont = document.getElementById("modalContainer");
@@ -2991,30 +3023,77 @@ window.openDeadlineModal = () => {
       return deadlineDate instanceof Date;
     })
     .sort((a, b) => {
-      const dateA = (a.deadlineDate || toJsDate(a.deadline) || new Date(8640000000000000)).getTime();
-      const dateB = (b.deadlineDate || toJsDate(b.deadline) || new Date(8640000000000000)).getTime();
+      const dateA = getHomeDeadlineGroupSortValue(a);
+      const dateB = getHomeDeadlineGroupSortValue(b);
       if (dateA !== dateB) return dateA - dateB;
       return matchComparator(a, b);
     });
 
-  const itemsHtml = relevantMatches.length > 0
-    ? relevantMatches.map((match) => {
-        const isWaiting = match.expired === true && !match.winner;
-        const statusLabel = isWaiting ? "Aguardando resultado" : "Aberto";
-        const statusClass = isWaiting ? "is-waiting" : "is-open";
-        const deadlineDate = match.deadlineDate || toJsDate(match.deadline);
-        const deadlineLabel = formatHomeDeadlineLabel(deadlineDate, isWaiting);
-        const competition = escapeHtml(match.competition || "Competição");
-        const round = escapeHtml(match.round || "Fase");
-        return `
-          <div class="deadline-modal-item ${statusClass}">
-            <div class="deadline-modal-date">${escapeHtml(deadlineLabel)}</div>
-            <div class="deadline-modal-title">${escapeHtml(match.teamA || "Time A")} x ${escapeHtml(match.teamB || "Time B")}</div>
-            <div class="deadline-modal-meta">${round} — ${competition}</div>
-            <div class="deadline-modal-footer">
-              <span class="deadline-modal-status ${statusClass}">${statusLabel}</span>
+  const groupedMatches = new Map();
+  relevantMatches.forEach((match) => {
+    const key = getHomeDeadlineGroupKey(match);
+    const deadlineDate = match.deadlineDate || toJsDate(match.deadline);
+    const groupDate = deadlineDate instanceof Date ? deadlineDate : null;
+    const existing = groupedMatches.get(key);
+    if (existing) {
+      existing.matches.push(match);
+      return;
+    }
+    groupedMatches.set(key, {
+      key,
+      type: key === "expired" ? "expired" : key === "no-deadline" ? "no-deadline" : "deadline",
+      date: groupDate,
+      matches: [match]
+    });
+  });
+
+  const groupedList = Array.from(groupedMatches.values()).sort((a, b) => {
+    const orderA = a.type === "expired" ? -1 : a.date ? a.date.getTime() : Number.MAX_SAFE_INTEGER;
+    const orderB = b.type === "expired" ? -1 : b.date ? b.date.getTime() : Number.MAX_SAFE_INTEGER;
+    if (orderA !== orderB) return orderA - orderB;
+    return a.key.localeCompare(b.key);
+  });
+
+  const itemsHtml = groupedList.length > 0
+    ? groupedList.map((group) => {
+        const groupTitle = getHomeDeadlineGroupTitle(group);
+        const groupCount = group.matches.length;
+        const groupCountLabel = `${groupCount} confronto${groupCount === 1 ? "" : "s"}`;
+        const groupSubtitle = group.type === "expired"
+          ? "Jogos que já passaram do prazo e aguardam resultado."
+          : "Confrontos que expiram nesse mesmo horário.";
+
+        const matchesHtml = group.matches.map((match) => {
+          const isWaiting = match.expired === true && !match.winner;
+          const statusLabel = isWaiting ? "Aguardando resultado" : "Aberto";
+          const statusClass = isWaiting ? "is-waiting" : "is-open";
+          const competition = escapeHtml(match.competition || "Competição");
+          const round = escapeHtml(match.round || "Fase");
+          return `
+            <div class="deadline-match-item ${statusClass}">
+              <div class="deadline-match-title">${escapeHtml(match.teamA || "Time A")} x ${escapeHtml(match.teamB || "Time B")}</div>
+              <div class="deadline-match-meta">${round} — ${competition}</div>
+              <div class="deadline-match-footer">
+                <span class="deadline-status-chip ${statusClass}">${statusLabel}</span>
+              </div>
             </div>
-          </div>
+          `;
+        }).join("");
+
+        return `
+          <section class="deadline-group">
+            <div class="deadline-group-header">
+              <div class="deadline-group-marker"></div>
+              <div class="deadline-group-copy">
+                <div class="deadline-group-title">${escapeHtml(groupTitle)}</div>
+                <div class="deadline-group-subtitle">${escapeHtml(groupSubtitle)}</div>
+              </div>
+              <div class="deadline-group-count">${escapeHtml(groupCountLabel)}</div>
+            </div>
+            <div class="deadline-match-list">
+              ${matchesHtml}
+            </div>
+          </section>
         `;
       }).join("")
     : `
@@ -3036,7 +3115,7 @@ window.openDeadlineModal = () => {
           <i class="fas fa-times"></i>
         </button>
       </div>
-      <div class="deadline-modal-list">
+      <div class="deadline-groups">
         ${itemsHtml}
       </div>
     </div>
