@@ -638,6 +638,13 @@ select:focus-visible {
     line-height: 1.2;
 }
 
+.admin-overview-card__hint {
+    color: #64748b;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
 .admin-overview-card--info {
     background: linear-gradient(180deg, rgba(240,253,244,0.96), rgba(255,255,255,0.94));
 }

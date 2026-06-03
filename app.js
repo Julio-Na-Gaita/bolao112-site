@@ -10597,11 +10597,13 @@ window.openMatchEditModal = async (matchId) => {
               </button>
               <div class="admin-overview-card admin-overview-card--info">
                 <span class="admin-overview-card__value">${safeLabel(summary.pushActiveCount != null ? summary.pushActiveCount : "N/D")}</span>
-                <span class="admin-overview-card__label">Notificações ativas</span>
+                <span class="admin-overview-card__label">Push ativos</span>
+                <span class="admin-overview-card__hint">Usuários com token web ativo</span>
               </div>
               <div class="admin-overview-card admin-overview-card--info">
                 <span class="admin-overview-card__value">${escapeHtml(lastRankingLabel)}</span>
-                <span class="admin-overview-card__label">Último ranking</span>
+                <span class="admin-overview-card__label">Última atualização do ranking</span>
+                <span class="admin-overview-card__hint">Data da última consolidação</span>
               </div>
             </div>
           `;
@@ -10638,7 +10640,12 @@ window.openMatchEditModal = async (matchId) => {
               if (user.hasWebPushToken === true || Number(user.webPushTokenCount || 0) > 0) pushActiveCount += 1;
             });
 
-            const lastRankingUpdatedAt = rankingSnap.exists() ? rankingSnap.data()?.updatedAt || null : null;
+            const rankingData = rankingSnap.exists() ? (rankingSnap.data() || {}) : {};
+            const lastRankingUpdatedAt =
+              rankingData.updatedAt ||
+              rankingData.lastUpdatedAt ||
+              rankingData.createdAt ||
+              null;
 
             await renderAdminOverviewCards({
               openCount,
@@ -10852,6 +10859,73 @@ async function loadAdminMatches() {
         window.__adminAuditHistoryFilter = "all";
         window.__adminAuditHistoryCache = [];
 
+        const getAdminAuditTimestamp = (log = {}) =>
+          toJsDate(log.createdAt) ||
+          toJsDate(log.timestamp) ||
+          toJsDate(log.date) ||
+          toJsDate(log.at) ||
+          toJsDate(log.updatedAt) ||
+          new Date(0);
+
+        const getAdminAuditActionLabel = (log = {}) => {
+          const type = String(log.type || log.action || "Ação").trim();
+          const normalized = type.replace(/[_-]+/g, " ").trim();
+          const known = {
+            create_match: "Criação de confronto",
+            update_match: "Edição de confronto",
+            delete_match: "Exclusão de confronto",
+            create_round: "Criação de rodada",
+            update_round: "Atualização de rodada",
+            disable_round: "Desativação de rodada",
+            restore_round: "Restauração de rodada",
+            reorder_round: "Reordenação de rodada",
+            create_competition: "Criação de competição",
+            update_competition: "Atualização de competição",
+            disable_competition: "Arquivamento de competição",
+            restore_competition: "Restauração de competição",
+            manual_push: "Comunicado manual",
+            new_matches_notice: "Aviso de novos confrontos",
+            quick_results: "Baixa rápida",
+            baixa_rapida: "Baixa rápida",
+            bulk_cleanup_finished_matches: "Limpeza de finalizados",
+            restore_match: "Restauração de confronto",
+            permanent_delete_match: "Exclusão definitiva de confronto",
+            financial_audit: "Auditoria financeira"
+          };
+          return known[type] || known[normalized] || normalized || "Ação administrativa";
+        };
+
+        const getAdminAuditActorLabel = (log = {}) =>
+          [log.adminName || log.createdByName || "", log.adminEmail || log.createdByEmail || ""]
+            .filter(Boolean)
+            .join(" • ") || "Admin";
+
+        const getAdminAuditSummaryText = (log = {}) => {
+          const bits = [
+            log.description || "",
+            log.summary || "",
+            log.message || "",
+            log.title || "",
+            log.targetName || "",
+            log.targetUserId ? `Usuário ${String(log.targetUserId)}` : "",
+            log.targetMatchId ? `Confronto ${String(log.targetMatchId)}` : "",
+            log.matchId ? `Jogo #${String(log.matchId)}` : "",
+            log.competition ? `Competição ${String(log.competition)}` : "",
+            log.round ? `Rodada ${String(log.round)}` : "",
+            log.totalMatches != null ? `${String(log.totalMatches)} jogo(s)` : "",
+            log.totalApplied != null ? `${String(log.totalApplied)} aplicado(s)` : ""
+          ].filter(Boolean);
+
+          if (bits.length) return bits.join(" • ");
+
+          if (log.teams && (log.teams.teamA || log.teams.teamB)) {
+            return `${log.teams.teamA || "?"} x ${log.teams.teamB || "?"}`;
+          }
+
+          if (log.oldValue || log.newValue) return "Alteração registrada";
+          return "Sem detalhes adicionais";
+        };
+
         const getAdminAuditGroup = (type = "") => {
           const value = String(type || "").toLowerCase();
           if (!value) return "outros";
@@ -10890,23 +10964,29 @@ async function loadAdminMatches() {
           const filtered = logs.filter((log) => filter === "all" ? true : getAdminAuditGroup(log.type) === filter);
 
           const rows = filtered.length ? filtered.map((log) => {
-            const action = escapeHtml(String(log.type || "Ação").replace(/_/g, " "));
-            const adminLabel = escapeHtml([log.adminName || "", log.adminEmail || ""].filter(Boolean).join(" • ") || "Admin");
-            const targetLabel = escapeHtml(log.targetUserId || log.targetMatchId || log.matchId || log.username || log.roundName || log.competitionName || log.source || "—");
-            const summaryBits = [
-              log.matchId ? `Jogo #${escapeHtml(String(log.matchId))}` : "",
-              log.targetUserId ? `Usuário ${escapeHtml(String(log.targetUserId))}` : "",
-              log.totalMatches != null ? `${escapeHtml(String(log.totalMatches))} jogo(s)` : "",
-              log.totalApplied != null ? `${escapeHtml(String(log.totalApplied))} aplicado(s)` : ""
-            ].filter(Boolean).join(" • ");
-            const dateLabel = formatAdminPanelDateTime(log.createdAt || log.timestamp || log.updatedAt);
+            const action = escapeHtml(getAdminAuditActionLabel(log));
+            const adminLabel = escapeHtml(getAdminAuditActorLabel(log));
+            const targetLabel = escapeHtml(
+              log.targetName ||
+              log.matchTitle ||
+              log.competitionName ||
+              log.roundName ||
+              log.targetUserId ||
+              log.targetMatchId ||
+              log.matchId ||
+              log.username ||
+              log.source ||
+              "—"
+            );
+            const summaryText = escapeHtml(getAdminAuditSummaryText(log));
+            const dateLabel = formatAdminPanelDateTime(getAdminAuditTimestamp(log));
             return `
               <div class="border border-gray-200 rounded-2xl p-3 bg-white shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
                     <div class="text-[10px] font-black uppercase tracking-[0.16em] text-[#006400]">${action}</div>
                     <div class="text-xs font-bold text-gray-900 truncate">${escapeHtml(targetLabel)}</div>
-                    <div class="text-[10px] text-gray-500 font-bold mt-1">${escapeHtml(summaryBits || "Sem detalhes adicionais")}</div>
+                    <div class="text-[10px] text-gray-500 font-bold mt-1">${summaryText}</div>
                   </div>
                   <div class="text-[10px] font-black text-right text-gray-500 shrink-0">${escapeHtml(dateLabel || "—")}</div>
                 </div>
@@ -10916,7 +10996,7 @@ async function loadAdminMatches() {
                 </div>
               </div>
             `;
-          }).join("") : `<div class="p-4 text-center text-gray-400 text-xs font-bold">Nenhum registro encontrado.</div>`;
+          }).join("") : `<div class="p-4 text-center text-gray-400 text-xs font-bold">Nenhum histórico admin encontrado. As próximas ações administrativas aparecerão aqui.</div>`;
 
           modal.classList.remove("hidden");
           cont.innerHTML = `
@@ -10975,17 +11055,26 @@ async function loadAdminMatches() {
           cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando histórico...</p></div>`;
 
           try {
-            const snap = await getDocs(query(collection(db, "admin_audit_logs"), orderBy("createdAt", "desc"), limit(50)));
-            const items = [];
-            snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-            window.__adminAuditHistoryCache = items;
+            const ref = collection(db, "admin_audit_logs");
+            let items = [];
+            try {
+              const snap = await getDocs(query(ref, orderBy("createdAt", "desc"), limit(50)));
+              snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+            } catch (queryError) {
+              console.error("Erro ao carregar histórico admin:", queryError);
+              const fallbackSnap = await getDocs(ref);
+              fallbackSnap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+            }
+            items.sort((a, b) => getAdminAuditTimestamp(b).getTime() - getAdminAuditTimestamp(a).getTime());
+            window.__adminAuditHistoryCache = items.slice(0, 50);
             window.__adminAuditHistoryFilter = "all";
             renderAdminAuditHistoryModal();
           } catch (error) {
-            console.error("Erro ao abrir histórico admin:", error);
+            console.error("Erro ao carregar histórico admin:", error);
             cont.innerHTML = `
               <div class="bg-white p-6 text-center rounded shadow-xl">
                 <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar o histórico admin.</p>
+                <p class="text-[11px] font-bold text-gray-500 mb-4">Verifique sua permissão de administrador ou tente novamente.</p>
                 <button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
               </div>
             `;
