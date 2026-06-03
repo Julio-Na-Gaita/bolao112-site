@@ -10736,19 +10736,24 @@ window.openMatchEditModal = async (matchId) => {
 
           let users = cachedUsers;
           if (!users.length) {
-            const snap = await getDocs(collection(db, "users"));
-            users = [];
-            snap.forEach((d) => {
-              const data = d.data() || {};
-              users.push({
-                id: d.id,
-                uid: d.id,
-                ...data,
-                name: data.name || data.username || data.displayName || "Sem nome",
-                email: data.email || data.userEmail || ""
+            try {
+              const snap = await getDocs(collection(db, "users"));
+              users = [];
+              snap.forEach((d) => {
+                const data = d.data() || {};
+                users.push({
+                  id: d.id,
+                  uid: d.id,
+                  ...data,
+                  name: data.name || data.username || data.displayName || "Sem nome",
+                  email: data.email || data.userEmail || ""
+                });
               });
-            });
-            window.__adminUsersCache = users;
+              window.__adminUsersCache = users;
+            } catch (error) {
+              console.error("Não foi possível resolver usuários do histórico admin:", error);
+              return new Map();
+            }
           }
 
           const map = new Map();
@@ -11212,7 +11217,13 @@ async function loadAdminMatches() {
 
           try {
             const logs = await loadRecentAdminAuditLogs({ limitSize: 50 });
-            const userMap = await loadAdminUsersLookupMap(logs);
+            let userMap = new Map();
+            try {
+              userMap = await loadAdminUsersLookupMap(logs);
+            } catch (error) {
+              console.error("Não foi possível resolver usuários do histórico admin:", error);
+              userMap = new Map();
+            }
             const enrichedLogs = logs.map((log) => {
               const userDisplay = getAdminAuditUserDisplay(log, userMap);
               return {
