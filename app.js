@@ -10628,9 +10628,6 @@ window.openMatchEditModal = async (matchId) => {
           }
         };
 
-        window.__adminAuditHistoryFilter = "all";
-        window.__adminAuditHistoryCache = [];
-
         const getAdminAuditTimestamp = (log = {}) =>
           toJsDate(log.createdAt) ||
           toJsDate(log.timestamp) ||
@@ -10667,11 +10664,6 @@ window.openMatchEditModal = async (matchId) => {
           return known[type] || known[normalized] || normalized || "Ação administrativa";
         };
 
-        const getAdminAuditActorLabel = (log = {}) =>
-          [log.adminName || log.createdByName || "", log.adminEmail || log.createdByEmail || ""]
-            .filter(Boolean)
-            .join(" • ") || "Admin";
-
         const getAdminAuditSummaryText = (log = {}) => {
           const bits = [
             log.description || "",
@@ -10698,6 +10690,413 @@ window.openMatchEditModal = async (matchId) => {
           return "Sem detalhes adicionais";
         };
 
+        const loadRecentAdminAuditLogs = async ({ limitSize = 200 } = {}) => {
+          const ref = collection(db, "admin_audit_logs");
+          let items = [];
+          try {
+            const snap = await getDocs(query(ref, orderBy("createdAt", "desc"), limit(limitSize)));
+            snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+          } catch (error) {
+            console.error("Erro ao carregar histórico admin:", error);
+            const fallbackSnap = await getDocs(ref);
+            fallbackSnap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+          }
+
+          items.sort((a, b) => getAdminAuditTimestamp(b).getTime() - getAdminAuditTimestamp(a).getTime());
+          return items.slice(0, limitSize);
+        };
+
+        const getAdminAuditRelatedUserIds = (log = {}) => {
+          const rawIds = [
+            log.userId,
+            log.uid,
+            log.targetUserId,
+            log.affectedUserId,
+            log.createdByUid,
+            log.adminUid,
+            log.payload?.userId,
+            log.payload?.targetUserId,
+            log.payload?.affectedUserId,
+            log.details?.userId,
+            log.details?.targetUserId,
+            log.details?.affectedUserId,
+            log.target?.uid,
+            log.target?.userId
+          ];
+
+          return [...new Set(rawIds.map((value) => String(value || "").trim()).filter(Boolean))];
+        };
+
+        const loadAdminUsersLookupMap = async (logs = []) => {
+          const cachedUsers = Array.isArray(window.__adminUsersCache) && window.__adminUsersCache.length
+            ? window.__adminUsersCache
+            : (Array.isArray(adminFinancialState?.users) ? adminFinancialState.users : []);
+          const neededIds = [...new Set(logs.flatMap((log) => getAdminAuditRelatedUserIds(log)))];
+          if (!neededIds.length) return new Map();
+
+          let users = cachedUsers;
+          if (!users.length) {
+            try {
+              const snap = await getDocs(collection(db, "users"));
+              users = [];
+              snap.forEach((d) => {
+                const data = d.data() || {};
+                users.push({
+                  id: d.id,
+                  uid: d.id,
+                  ...data,
+                  name: data.name || data.username || data.displayName || "Sem nome",
+                  email: data.email || data.userEmail || ""
+                });
+              });
+              window.__adminUsersCache = users;
+            } catch (error) {
+              console.error("Não foi possível resolver usuários do histórico admin:", error);
+              return new Map();
+            }
+          }
+
+          const map = new Map();
+          users.forEach((user) => {
+            const uid = String(user.uid || user.id || "").trim();
+            if (!uid) return;
+            map.set(uid, user);
+          });
+
+          return map;
+        };
+
+        const getAdminAuditUserDisplay = (log = {}, userMap = new Map()) => {
+          const directName = [
+            log.userName,
+            log.targetUserName,
+            log.affectedUserName,
+            log.displayName,
+            log.name,
+            log.details?.userName,
+            log.payload?.userName
+          ].find((value) => String(value || "").trim());
+          const directEmail = [
+            log.userEmail,
+            log.targetUserEmail,
+            log.affectedUserEmail,
+            log.email,
+            log.details?.userEmail,
+            log.payload?.userEmail
+          ].find((value) => String(value || "").trim());
+
+          if (directName || directEmail) {
+            const idSource = getAdminAuditRelatedUserIds(log)[0] || "";
+            return {
+              isUser: true,
+              name: String(directName || "Usuário não identificado").trim(),
+              email: String(directEmail || "").trim(),
+              shortId: idSource ? `ID: ...${idSource.slice(-4)}` : ""
+            };
+          }
+
+          const ids = getAdminAuditRelatedUserIds(log);
+          for (const id of ids) {
+            const user = userMap.get(id);
+            if (!user) continue;
+            return {
+              isUser: true,
+              name: String(user.name || user.displayName || user.username || "Usuário não identificado").trim(),
+              email: String(user.email || "").trim(),
+              shortId: `ID: ...${id.slice(-4)}`
+            };
+          }
+
+          if (ids.length) {
+            const id = ids[0];
+            return {
+              isUser: true,
+              name: "Usuário não identificado",
+              email: "",
+              shortId: `ID: ...${id.slice(-4)}`
+            };
+          }
+
+          const genericTitle = [
+            log.targetName,
+            log.matchTitle,
+            log.competitionName,
+            log.roundName,
+            log.username,
+            log.source
+          ].find((value) => String(value || "").trim()) || "";
+
+          return {
+            isUser: false,
+            name: String(genericTitle || "Registro administrativo").trim(),
+            email: "",
+            shortId: ""
+          };
+        };
+
+        const getAdminAuditCardSummary = (log = {}, userDisplay = null) => {
+          if (userDisplay?.isUser) {
+            const parts = [
+              userDisplay.email || "",
+              userDisplay.shortId || "",
+              getAdminAuditSummaryText(log)
+            ].filter(Boolean);
+            return parts.length ? parts.join(" • ") : "Usuário afetado";
+          }
+          return getAdminAuditSummaryText(log);
+        };
+
+        const loadAdminOverviewCards = async () => {
+          try {
+            const [usersSnap, rankingSnap, trashSnap, recentAuditLogs] = await Promise.all([
+              getDocs(collection(db, "users")),
+              getDoc(doc(db, "settings", "rankingMovement")),
+              getDocs(collection(db, "bin_matches")),
+              loadRecentAdminAuditLogs({ limitSize: 200 })
+            ]);
+
+            const monthKey = typeof getFinancialCurrentMonthKey === "function" ? getFinancialCurrentMonthKey() : "";
+            let pendingUsersCount = 0;
+            let pushActiveCount = 0;
+            usersSnap.forEach((d) => {
+              const user = d.data() || {};
+              if (user.isActive === false) return;
+              if (monthKey && user.payments?.[monthKey] !== true) pendingUsersCount += 1;
+              if (user.hasWebPushToken === true || Number(user.webPushTokenCount || 0) > 0) pushActiveCount += 1;
+            });
+
+            const trashCount = trashSnap.size || 0;
+            const todayKey = getAdminDateKey(new Date());
+            const actionsTodayCount = recentAuditLogs.filter((log) => getAdminDateKey(getAdminAuditTimestamp(log)) === todayKey).length;
+            const latestAudit = recentAuditLogs[0] || null;
+            const userMap = await loadAdminUsersLookupMap(recentAuditLogs);
+            const latestUserDisplay = latestAudit ? getAdminAuditUserDisplay(latestAudit, userMap) : null;
+            const lastAdminActionSummary = latestAudit
+              ? [
+                  getAdminAuditActionLabel(latestAudit),
+                  latestUserDisplay?.isUser ? latestUserDisplay.name : "",
+                  latestUserDisplay?.email || ""
+                ].filter(Boolean).join(" • ")
+              : "";
+
+            const rankingData = rankingSnap.exists() ? (rankingSnap.data() || {}) : {};
+            const lastRankingUpdatedAt =
+              rankingData.updatedAt ||
+              rankingData.lastUpdatedAt ||
+              rankingData.createdAt ||
+              null;
+
+            await renderAdminOverviewCards({
+              pendingUsersCount,
+              pushActiveCount,
+              trashCount,
+              actionsTodayCount,
+              lastAdminActionAt: latestAudit ? getAdminAuditTimestamp(latestAudit) : null,
+              lastAdminActionSummary,
+              lastRankingUpdatedAt
+            });
+          } catch (error) {
+            console.warn("Falha ao carregar resumo do painel admin:", error);
+            await renderAdminOverviewCards({
+              pendingUsersCount: 0,
+              pushActiveCount: null,
+              trashCount: null,
+              actionsTodayCount: null,
+              lastAdminActionAt: null,
+              lastAdminActionSummary: "",
+              lastRankingUpdatedAt: null
+            });
+          }
+        };
+        window.loadAdminOverviewCards = loadAdminOverviewCards;
+        window.openAdminMenu = async () => {
+            window.__clearAdminReturnTarget();
+            const modal = document.getElementById('modalOverlay'); 
+            const cont = document.getElementById('modalContainer'); 
+            modal.classList.remove('hidden');
+
+            cont.innerHTML = `
+              <div class="bg-white p-6 text-center rounded shadow-xl">
+                <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
+                <p class="text-xs font-black text-gray-500 uppercase">Validando admin...</p>
+              </div>
+            `;
+
+            const admin = await getCurrentAdminProfile(true);
+            if (!admin) {
+              alert("Você não tem permissão para acessar o painel admin.");
+              closeModal();
+              return;
+            }
+            
+            cont.innerHTML = `
+            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh] flex flex-col">
+                <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+                
+                <div class="relative z-10 flex flex-col h-full bg-white/90">
+                    <div class="bg-[#006400] p-4 text-white flex items-center shadow-md">
+                        <button onclick="closeModal()" class="mr-4"><i class="fas fa-arrow-left text-xl"></i></button>
+                        <div>
+                            <h3 class="font-black uppercase text-lg leading-none">Painel Admin</h3>
+                            <p class="text-[10px] text-[#FFD700] font-bold">Gestão 2026</p>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                        <div>
+                            <div class="admin-overview-shell">
+                                <div class="flex items-start justify-between gap-3 mb-3">
+                                    <div>
+                                        <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Resumo operacional</div>
+                                        <h4 class="text-lg font-black text-gray-900 leading-tight">Visão rápida do Bolão</h4>
+                                    </div>
+                                    <button type="button" onclick="window.loadAdminOverviewCards()" class="admin-overview-refresh btn-press" title="Atualizar resumo">
+                                        <i class="fas fa-rotate"></i>
+                                    </button>
+                                </div>
+                                <div id="adminOverviewCards" class="text-xs text-gray-400 font-bold">Carregando resumo...</div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">⚽ GESTÃO DE JOGOS</h4>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="openCreationModal()" class="bg-[#1565C0] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-plus-circle text-lg"></i> Criação</button>
+                                <button onclick="openQuickResultsModal()" class="bg-[#2E7D32] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-check-circle text-lg"></i> Baixa Rápida</button>
+                                <button onclick="openCleanupModal()" class="bg-gray-700 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-broom text-lg"></i> Limpeza</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">👥 PESSOAS & FINANCEIRO</h4>
+                            <button onclick="window.openFinancialScreen()" class="w-full bg-[#C62828] text-white py-4 rounded font-bold text-xs shadow btn-press flex items-center justify-center gap-2">
+                                <i class="fas fa-wallet text-lg"></i> GERENCIAR PAGAMENTOS & USUÁRIOS
+                            </button>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📢 COMUNICAÇÃO & FERRAMENTAS</h4>
+                            <div class="grid grid-cols-1 gap-2">
+                                <button onclick="window.openAdminCommunicationsModal()" class="bg-[#6A1B9A] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-bullhorn text-lg"></i> Comunicados</button>
+                                <button onclick="window.openAdminRoundSummaryModal()" class="bg-[#1D4ED8] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-image text-lg"></i> Resumo da Rodada</button>
+                                <button onclick="window.openAdminAuditHistoryModal()" class="bg-slate-800 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-clock-rotate-left text-lg"></i> Histórico Admin</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="border-t border-gray-300 my-2"></div>
+                            <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📋 LISTA DE CONFRONTOS</h4>
+                            <div class="admin-match-tools">
+                                <input
+                                  id="adminMatchSearch"
+                                  class="admin-creation-input"
+                                  value="${escapeHtml(window.__adminMatchesSearch || "")}"
+                                  placeholder="Buscar jogo, time, competição ou rodada"
+                                  oninput="window.filterAdminMatches(this.value)"
+                                >
+                                <div class="admin-match-filters">
+                                  <button type="button" onclick="window.setAdminMatchesFilter('all')" class="admin-match-filter is-active" data-admin-match-filter="all">Todos</button>
+                                  <button type="button" onclick="window.setAdminMatchesFilter('open')" class="admin-match-filter" data-admin-match-filter="open">Abertos</button>
+                                  <button type="button" onclick="window.setAdminMatchesFilter('waiting')" class="admin-match-filter" data-admin-match-filter="waiting">Aguardando</button>
+                                  <button type="button" onclick="window.setAdminMatchesFilter('finished')" class="admin-match-filter" data-admin-match-filter="finished">Finalizados</button>
+                                </div>
+                                <p class="admin-match-tools__note">Filtre por time, competição, rodada ou número do jogo.</p>
+                            </div>
+                            <div id="adminMatchListSection" class="scroll-mt-24">
+                              <div id="adminMatchList" class="bg-white border rounded p-2 text-xs text-gray-500 min-h-[100px]">Carregando...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            loadAdminOverviewCards();
+            loadAdminMatches();
+        };
+const renderAdminMatchesList = () => {
+            const listDiv = document.getElementById('adminMatchList'); 
+            if(!listDiv) return; 
+
+            const all = Array.isArray(window.__adminMatchesCache) ? [...window.__adminMatchesCache] : [];
+            const search = normalizeAdminMatchSearch(window.__adminMatchesSearch || "");
+            const filter = window.__adminMatchesFilter || "all";
+            const filtered = all.filter((m) => {
+                const deadline = m.deadlineDate || toJsDate(m.deadline);
+                const expired = !!m.expired || (deadline ? new Date() > deadline : false);
+                const hasWinner = !!String(m.winner || "").trim();
+                const matchesFilter =
+                  filter === "open" ? (!expired && !hasWinner)
+                  : filter === "waiting" ? (expired && !hasWinner)
+                  : filter === "finished" ? hasWinner
+                  : true;
+                if (!matchesFilter) return false;
+
+                if (!search) return true;
+                const blob = normalizeAdminMatchSearch([
+                  m.teamA,
+                  m.teamB,
+                  m.competition,
+                  m.round,
+                  m.id,
+                  `#${m.matchNumber || ""}`
+                ].join(" "));
+                return blob.includes(search);
+            });
+
+            document.querySelectorAll("[data-admin-match-filter]").forEach((btn) => {
+              btn.classList.toggle("is-active", btn.dataset.adminMatchFilter === filter);
+            });
+
+            let html = "";
+            [...filtered].reverse().forEach((m) => {
+                const number = m.matchNumber || (all.findIndex((x) => x.id === m.id) + 1);
+                const deadline = m.deadlineDate || toJsDate(m.deadline);
+                const expired = !!m.expired || (deadline ? new Date() > deadline : false);
+                const winnerLabel = escapeHtml(String(m.winner || ""));
+                const statusLabel = m.winner
+                  ? `Finalizado • ${winnerLabel}`
+                  : (expired ? "Aguardando resultado" : "Em aberto");
+                const statusClass = m.winner
+                  ? "text-green-700 bg-green-50"
+                  : (expired ? "text-amber-700 bg-amber-50" : "text-gray-500 bg-gray-100");
+
+                html += `<div class="flex justify-between items-center p-2 border-b border-gray-100 gap-2">
+                    <div class="flex flex-col truncate min-w-0 flex-1">
+                        <span class="font-bold text-black text-xs truncate">#${number} ${escapeHtml(m.teamA || "")} x ${escapeHtml(m.teamB || "")}</span>
+                        <span class="text-[10px] text-gray-400 truncate">${escapeHtml(m.competition || "")}${m.round ? ` • ${escapeHtml(m.round)}` : ""}</span>
+                        <span class="mt-1 inline-flex w-fit rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${statusClass}">${statusLabel}</span>
+                    </div>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <button class="text-blue-500" title="Editar confronto" onclick="window.openMatchEditModal('${escapeJsString(m.id)}')"><i class="fas fa-edit"></i></button>
+                        <button class="text-red-500" onclick="moveToTrash('${m.id}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            });
+            listDiv.innerHTML = html || `<div class="p-4 text-center text-gray-400 text-xs font-bold">Nenhum jogo encontrado.</div>`;
+};
+
+async function loadAdminMatches() { 
+            const snap = await getDocs(collection(db, "matches")); 
+            let all = [];
+            snap.forEach(d => {
+                const m = d.data();
+                // Precisa da data para ordenar
+                if(m.deadline) {
+                    m.deadlineDate = m.deadline.toDate();
+                    m.expired = new Date() > m.deadlineDate;
+                }
+                all.push({id: d.id, ...m});
+            });
+
+            // Ordena para numerar
+            all.sort(matchComparator);
+            all.forEach((m, idx) => {
+                m.matchNumber = idx + 1;
+            });
+            window.__adminMatchesCache = all;
+            renderAdminMatchesList();
+        }
+
+        window.__adminAuditHistoryFilter = "all";
         const getAdminAuditGroup = (type = "") => {
           const value = String(type || "").toLowerCase();
           if (!value) return "outros";
@@ -10737,34 +11136,24 @@ window.openMatchEditModal = async (matchId) => {
 
           const rows = filtered.length ? filtered.map((log) => {
             const action = escapeHtml(getAdminAuditActionLabel(log));
-            const adminLabel = escapeHtml(getAdminAuditActorLabel(log));
-            const targetLabel = escapeHtml(
-              log.targetName ||
-              log.matchTitle ||
-              log.competitionName ||
-              log.roundName ||
-              log.targetUserId ||
-              log.targetMatchId ||
-              log.matchId ||
-              log.username ||
-              log.source ||
-              "—"
-            );
-            const summaryText = escapeHtml(getAdminAuditSummaryText(log));
-            const dateLabel = formatAdminPanelDateTime(getAdminAuditTimestamp(log));
+            const targetLabel = escapeHtml(log.displayTargetLabel || log.targetName || log.matchTitle || log.competitionName || log.roundName || log.username || log.source || "—");
+            const targetSecondary = escapeHtml(log.displayTargetSecondary || getAdminAuditSummaryText(log));
+            const dateLabel = escapeHtml(log.displayDateLabel || formatAdminPanelDateTime(getAdminAuditTimestamp(log)) || "—");
+            const adminLabel = escapeHtml(log.displayAdminLabel || getAdminAuditActorLabel(log));
+            const sourceLabel = escapeHtml(log.displaySourceLabel || log.source || "admin_audit_logs");
             return `
               <div class="border border-gray-200 rounded-2xl p-3 bg-white shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
                     <div class="text-[10px] font-black uppercase tracking-[0.16em] text-[#006400]">${action}</div>
-                    <div class="text-xs font-bold text-gray-900 truncate">${escapeHtml(targetLabel)}</div>
-                    <div class="text-[10px] text-gray-500 font-bold mt-1">${summaryText}</div>
+                    <div class="text-xs font-bold text-gray-900 truncate">${targetLabel}</div>
+                    <div class="text-[10px] text-gray-500 font-bold mt-1">${targetSecondary}</div>
                   </div>
-                  <div class="text-[10px] font-black text-right text-gray-500 shrink-0">${escapeHtml(dateLabel || "—")}</div>
+                  <div class="text-[10px] font-black text-right text-gray-500 shrink-0">${dateLabel}</div>
                 </div>
                 <div class="mt-2 flex items-center justify-between gap-2 text-[10px] text-gray-500 font-bold">
                   <span>${adminLabel}</span>
-                  <span>${escapeHtml(log.source || "admin_audit_logs")}</span>
+                  <span>${sourceLabel}</span>
                 </div>
               </div>
             `;
@@ -10827,18 +11216,30 @@ window.openMatchEditModal = async (matchId) => {
           cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando histórico...</p></div>`;
 
           try {
-            const ref = collection(db, "admin_audit_logs");
-            let items = [];
+            const logs = await loadRecentAdminAuditLogs({ limitSize: 50 });
+            let userMap = new Map();
             try {
-              const snap = await getDocs(query(ref, orderBy("createdAt", "desc"), limit(50)));
-              snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-            } catch (queryError) {
-              console.error("Erro ao carregar histórico admin:", queryError);
-              const fallbackSnap = await getDocs(ref);
-              fallbackSnap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+              userMap = await loadAdminUsersLookupMap(logs);
+            } catch (error) {
+              console.error("Não foi possível resolver usuários do histórico admin:", error);
+              userMap = new Map();
             }
-            items.sort((a, b) => getAdminAuditTimestamp(b).getTime() - getAdminAuditTimestamp(a).getTime());
-            window.__adminAuditHistoryCache = items.slice(0, 50);
+            const enrichedLogs = logs.map((log) => {
+              const userDisplay = getAdminAuditUserDisplay(log, userMap);
+              return {
+                ...log,
+                displayTargetLabel: userDisplay.isUser
+                  ? (userDisplay.name || "Usuário não identificado")
+                  : (log.targetName || log.matchTitle || log.competitionName || log.roundName || log.username || log.source || "—"),
+                displayTargetSecondary: userDisplay.isUser
+                  ? [userDisplay.email || "", userDisplay.shortId || ""].filter(Boolean).join(" • ") || getAdminAuditSummaryText(log)
+                  : getAdminAuditSummaryText(log),
+                displayDateLabel: formatAdminPanelDateTime(getAdminAuditTimestamp(log)),
+                displayAdminLabel: getAdminAuditActorLabel(log),
+                displaySourceLabel: log.source || "admin_audit_logs"
+              };
+            });
+            window.__adminAuditHistoryCache = enrichedLogs;
             window.__adminAuditHistoryFilter = "all";
             renderAdminAuditHistoryModal();
           } catch (error) {
