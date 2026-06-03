@@ -10576,59 +10576,279 @@ window.openMatchEditModal = async (matchId) => {
           const lastRankingLabel = summary.lastRankingUpdatedAt
             ? formatAdminPanelDateTime(summary.lastRankingUpdatedAt)
             : "Ainda não registrado";
+          const lastAdminActionLabel = summary.lastAdminActionAt
+            ? formatAdminPanelDateTime(summary.lastAdminActionAt)
+            : "Ainda não registrado";
 
           overviewEl.innerHTML = `
             <div class="admin-overview-grid">
-              <button type="button" onclick="window.setAdminMatchesFilter('open'); window.scrollAdminSection('adminMatchesSection')" class="admin-overview-card btn-press">
-                <span class="admin-overview-card__value">${summary.openCount || 0}</span>
-                <span class="admin-overview-card__label">Jogos abertos</span>
-              </button>
-              <button type="button" onclick="window.setAdminMatchesFilter('waiting'); window.scrollAdminSection('adminMatchesSection')" class="admin-overview-card btn-press">
-                <span class="admin-overview-card__value">${summary.waitingCount || 0}</span>
-                <span class="admin-overview-card__label">Aguardando resultado</span>
-              </button>
-              <button type="button" onclick="window.setAdminMatchesFilter('finished'); window.scrollAdminSection('adminMatchesSection')" class="admin-overview-card btn-press">
-                <span class="admin-overview-card__value">${summary.finishedCount || 0}</span>
-                <span class="admin-overview-card__label">Finalizados</span>
-              </button>
-              <button type="button" onclick="window.openFinancialScreen()" class="admin-overview-card btn-press">
+              <div class="admin-overview-card admin-overview-card--info">
+                <span class="admin-overview-card__value">${safeLabel(summary.actionsTodayCount != null ? summary.actionsTodayCount : "N/D")}</span>
+                <span class="admin-overview-card__label">Ações hoje</span>
+                <span class="admin-overview-card__hint">Registros administrativos feitos hoje.</span>
+              </div>
+              <div class="admin-overview-card admin-overview-card--info">
+                <span class="admin-overview-card__value">${safeLabel(summary.trashCount != null ? summary.trashCount : "N/D")}</span>
+                <span class="admin-overview-card__label">Na lixeira</span>
+                <span class="admin-overview-card__hint">Confrontos removidos que ainda podem ser restaurados.</span>
+              </div>
+              <div class="admin-overview-card admin-overview-card--info">
+                <span class="admin-overview-card__value">${escapeHtml(lastAdminActionLabel)}</span>
+                <span class="admin-overview-card__label">Última ação admin</span>
+                <span class="admin-overview-card__hint">${escapeHtml(summary.lastAdminActionSummary || "Registro administrativo mais recente.")}</span>
+              </div>
+              <div class="admin-overview-card admin-overview-card--info">
                 <span class="admin-overview-card__value">${summary.pendingUsersCount || 0}</span>
-                <span class="admin-overview-card__label">Usuários pendentes</span>
-              </button>
+                <span class="admin-overview-card__label">Financeiro pendente</span>
+                <span class="admin-overview-card__hint">Usuários com pagamento pendente.</span>
+              </div>
               <div class="admin-overview-card admin-overview-card--info">
                 <span class="admin-overview-card__value">${safeLabel(summary.pushActiveCount != null ? summary.pushActiveCount : "N/D")}</span>
                 <span class="admin-overview-card__label">Push ativos</span>
-                <span class="admin-overview-card__hint">Usuários com token web ativo</span>
+                <span class="admin-overview-card__hint">Usuários com token web ativo.</span>
               </div>
               <div class="admin-overview-card admin-overview-card--info">
                 <span class="admin-overview-card__value">${escapeHtml(lastRankingLabel)}</span>
                 <span class="admin-overview-card__label">Última atualização do ranking</span>
-                <span class="admin-overview-card__hint">Data da última consolidação</span>
+                <span class="admin-overview-card__hint">Data da última consolidação.</span>
               </div>
             </div>
           `;
         };
 
+        const getAdminDateKey = (value) => {
+          const date = toJsDate(value);
+          if (!date) return "";
+          try {
+            return new Intl.DateTimeFormat("en-CA", {
+              timeZone: "America/Sao_Paulo"
+            }).format(date);
+          } catch (error) {
+            return date.toISOString().slice(0, 10);
+          }
+        };
+
+        const getAdminAuditTimestamp = (log = {}) =>
+          toJsDate(log.createdAt) ||
+          toJsDate(log.timestamp) ||
+          toJsDate(log.date) ||
+          toJsDate(log.at) ||
+          toJsDate(log.updatedAt) ||
+          new Date(0);
+
+        const getAdminAuditActionLabel = (log = {}) => {
+          const type = String(log.type || log.action || "Ação").trim();
+          const normalized = type.replace(/[_-]+/g, " ").trim();
+          const known = {
+            create_match: "Criação de confronto",
+            update_match: "Edição de confronto",
+            delete_match: "Exclusão de confronto",
+            create_round: "Criação de rodada",
+            update_round: "Atualização de rodada",
+            disable_round: "Desativação de rodada",
+            restore_round: "Restauração de rodada",
+            reorder_round: "Reordenação de rodada",
+            create_competition: "Criação de competição",
+            update_competition: "Atualização de competição",
+            disable_competition: "Arquivamento de competição",
+            restore_competition: "Restauração de competição",
+            manual_push: "Comunicado manual",
+            new_matches_notice: "Aviso de novos confrontos",
+            quick_results: "Baixa rápida",
+            baixa_rapida: "Baixa rápida",
+            bulk_cleanup_finished_matches: "Limpeza de finalizados",
+            restore_match: "Restauração de confronto",
+            permanent_delete_match: "Exclusão definitiva de confronto",
+            financial_audit: "Auditoria financeira"
+          };
+          return known[type] || known[normalized] || normalized || "Ação administrativa";
+        };
+
+        const getAdminAuditSummaryText = (log = {}) => {
+          const bits = [
+            log.description || "",
+            log.summary || "",
+            log.message || "",
+            log.title || "",
+            log.targetName || "",
+            log.targetUserId ? `Usuário ${String(log.targetUserId)}` : "",
+            log.targetMatchId ? `Confronto ${String(log.targetMatchId)}` : "",
+            log.matchId ? `Jogo #${String(log.matchId)}` : "",
+            log.competition ? `Competição ${String(log.competition)}` : "",
+            log.round ? `Rodada ${String(log.round)}` : "",
+            log.totalMatches != null ? `${String(log.totalMatches)} jogo(s)` : "",
+            log.totalApplied != null ? `${String(log.totalApplied)} aplicado(s)` : ""
+          ].filter(Boolean);
+
+          if (bits.length) return bits.join(" • ");
+
+          if (log.teams && (log.teams.teamA || log.teams.teamB)) {
+            return `${log.teams.teamA || "?"} x ${log.teams.teamB || "?"}`;
+          }
+
+          if (log.oldValue || log.newValue) return "Alteração registrada";
+          return "Sem detalhes adicionais";
+        };
+
+        const loadRecentAdminAuditLogs = async ({ limitSize = 200 } = {}) => {
+          const ref = collection(db, "admin_audit_logs");
+          let items = [];
+          try {
+            const snap = await getDocs(query(ref, orderBy("createdAt", "desc"), limit(limitSize)));
+            snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+          } catch (error) {
+            console.error("Erro ao carregar histórico admin:", error);
+            const fallbackSnap = await getDocs(ref);
+            fallbackSnap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+          }
+
+          items.sort((a, b) => getAdminAuditTimestamp(b).getTime() - getAdminAuditTimestamp(a).getTime());
+          return items.slice(0, limitSize);
+        };
+
+        const getAdminAuditRelatedUserIds = (log = {}) => {
+          const rawIds = [
+            log.userId,
+            log.uid,
+            log.targetUserId,
+            log.affectedUserId,
+            log.createdByUid,
+            log.adminUid,
+            log.payload?.userId,
+            log.payload?.targetUserId,
+            log.payload?.affectedUserId,
+            log.details?.userId,
+            log.details?.targetUserId,
+            log.details?.affectedUserId,
+            log.target?.uid,
+            log.target?.userId
+          ];
+
+          return [...new Set(rawIds.map((value) => String(value || "").trim()).filter(Boolean))];
+        };
+
+        const loadAdminUsersLookupMap = async (logs = []) => {
+          const cachedUsers = Array.isArray(window.__adminUsersCache) && window.__adminUsersCache.length
+            ? window.__adminUsersCache
+            : (Array.isArray(adminFinancialState?.users) ? adminFinancialState.users : []);
+          const neededIds = [...new Set(logs.flatMap((log) => getAdminAuditRelatedUserIds(log)))];
+          if (!neededIds.length) return new Map();
+
+          let users = cachedUsers;
+          if (!users.length) {
+            const snap = await getDocs(collection(db, "users"));
+            users = [];
+            snap.forEach((d) => {
+              const data = d.data() || {};
+              users.push({
+                id: d.id,
+                uid: d.id,
+                ...data,
+                name: data.name || data.username || data.displayName || "Sem nome",
+                email: data.email || data.userEmail || ""
+              });
+            });
+            window.__adminUsersCache = users;
+          }
+
+          const map = new Map();
+          users.forEach((user) => {
+            const uid = String(user.uid || user.id || "").trim();
+            if (!uid) return;
+            map.set(uid, user);
+          });
+
+          return map;
+        };
+
+        const getAdminAuditUserDisplay = (log = {}, userMap = new Map()) => {
+          const directName = [
+            log.userName,
+            log.targetUserName,
+            log.affectedUserName,
+            log.displayName,
+            log.name,
+            log.details?.userName,
+            log.payload?.userName
+          ].find((value) => String(value || "").trim());
+          const directEmail = [
+            log.userEmail,
+            log.targetUserEmail,
+            log.affectedUserEmail,
+            log.email,
+            log.details?.userEmail,
+            log.payload?.userEmail
+          ].find((value) => String(value || "").trim());
+
+          if (directName || directEmail) {
+            const idSource = getAdminAuditRelatedUserIds(log)[0] || "";
+            return {
+              isUser: true,
+              name: String(directName || "Usuário não identificado").trim(),
+              email: String(directEmail || "").trim(),
+              shortId: idSource ? `ID: ...${idSource.slice(-4)}` : ""
+            };
+          }
+
+          const ids = getAdminAuditRelatedUserIds(log);
+          for (const id of ids) {
+            const user = userMap.get(id);
+            if (!user) continue;
+            return {
+              isUser: true,
+              name: String(user.name || user.displayName || user.username || "Usuário não identificado").trim(),
+              email: String(user.email || "").trim(),
+              shortId: `ID: ...${id.slice(-4)}`
+            };
+          }
+
+          if (ids.length) {
+            const id = ids[0];
+            return {
+              isUser: true,
+              name: "Usuário não identificado",
+              email: "",
+              shortId: `ID: ...${id.slice(-4)}`
+            };
+          }
+
+          const genericTitle = [
+            log.targetName,
+            log.matchTitle,
+            log.competitionName,
+            log.roundName,
+            log.username,
+            log.source
+          ].find((value) => String(value || "").trim()) || "";
+
+          return {
+            isUser: false,
+            name: String(genericTitle || "Registro administrativo").trim(),
+            email: "",
+            shortId: ""
+          };
+        };
+
+        const getAdminAuditCardSummary = (log = {}, userDisplay = null) => {
+          if (userDisplay?.isUser) {
+            const parts = [
+              userDisplay.email || "",
+              userDisplay.shortId || "",
+              getAdminAuditSummaryText(log)
+            ].filter(Boolean);
+            return parts.length ? parts.join(" • ") : "Usuário afetado";
+          }
+          return getAdminAuditSummaryText(log);
+        };
+
         const loadAdminOverviewCards = async () => {
           try {
-            const [matchesSnap, usersSnap, rankingSnap] = await Promise.all([
-              getDocs(collection(db, "matches")),
+            const [usersSnap, rankingSnap, trashSnap, recentAuditLogs] = await Promise.all([
               getDocs(collection(db, "users")),
-              getDoc(doc(db, "settings", "rankingMovement"))
+              getDoc(doc(db, "settings", "rankingMovement")),
+              getDocs(collection(db, "bin_matches")),
+              loadRecentAdminAuditLogs({ limitSize: 200 })
             ]);
-
-            let openCount = 0;
-            let waitingCount = 0;
-            let finishedCount = 0;
-            matchesSnap.forEach((d) => {
-              const data = d.data() || {};
-              const deadline = toJsDate(data.deadline);
-              const expired = deadline ? new Date() > deadline : false;
-              const hasWinner = !!String(data.winner || "").trim();
-              if (hasWinner) finishedCount += 1;
-              else if (expired) waitingCount += 1;
-              else openCount += 1;
-            });
 
             const monthKey = typeof getFinancialCurrentMonthKey === "function" ? getFinancialCurrentMonthKey() : "";
             let pendingUsersCount = 0;
@@ -10640,6 +10860,20 @@ window.openMatchEditModal = async (matchId) => {
               if (user.hasWebPushToken === true || Number(user.webPushTokenCount || 0) > 0) pushActiveCount += 1;
             });
 
+            const trashCount = trashSnap.size || 0;
+            const todayKey = getAdminDateKey(new Date());
+            const actionsTodayCount = recentAuditLogs.filter((log) => getAdminDateKey(getAdminAuditTimestamp(log)) === todayKey).length;
+            const latestAudit = recentAuditLogs[0] || null;
+            const userMap = await loadAdminUsersLookupMap(recentAuditLogs);
+            const latestUserDisplay = latestAudit ? getAdminAuditUserDisplay(latestAudit, userMap) : null;
+            const lastAdminActionSummary = latestAudit
+              ? [
+                  getAdminAuditActionLabel(latestAudit),
+                  latestUserDisplay?.isUser ? latestUserDisplay.name : "",
+                  latestUserDisplay?.email || ""
+                ].filter(Boolean).join(" • ")
+              : "";
+
             const rankingData = rankingSnap.exists() ? (rankingSnap.data() || {}) : {};
             const lastRankingUpdatedAt =
               rankingData.updatedAt ||
@@ -10648,27 +10882,28 @@ window.openMatchEditModal = async (matchId) => {
               null;
 
             await renderAdminOverviewCards({
-              openCount,
-              waitingCount,
-              finishedCount,
               pendingUsersCount,
               pushActiveCount,
+              trashCount,
+              actionsTodayCount,
+              lastAdminActionAt: latestAudit ? getAdminAuditTimestamp(latestAudit) : null,
+              lastAdminActionSummary,
               lastRankingUpdatedAt
             });
           } catch (error) {
             console.warn("Falha ao carregar resumo do painel admin:", error);
             await renderAdminOverviewCards({
-              openCount: 0,
-              waitingCount: 0,
-              finishedCount: 0,
               pendingUsersCount: 0,
               pushActiveCount: null,
+              trashCount: null,
+              actionsTodayCount: null,
+              lastAdminActionAt: null,
+              lastAdminActionSummary: "",
               lastRankingUpdatedAt: null
             });
           }
         };
         window.loadAdminOverviewCards = loadAdminOverviewCards;
-
         window.openAdminMenu = async () => {
             window.__clearAdminReturnTarget();
             const modal = document.getElementById('modalOverlay'); 
@@ -10857,75 +11092,6 @@ async function loadAdminMatches() {
         }
 
         window.__adminAuditHistoryFilter = "all";
-        window.__adminAuditHistoryCache = [];
-
-        const getAdminAuditTimestamp = (log = {}) =>
-          toJsDate(log.createdAt) ||
-          toJsDate(log.timestamp) ||
-          toJsDate(log.date) ||
-          toJsDate(log.at) ||
-          toJsDate(log.updatedAt) ||
-          new Date(0);
-
-        const getAdminAuditActionLabel = (log = {}) => {
-          const type = String(log.type || log.action || "Ação").trim();
-          const normalized = type.replace(/[_-]+/g, " ").trim();
-          const known = {
-            create_match: "Criação de confronto",
-            update_match: "Edição de confronto",
-            delete_match: "Exclusão de confronto",
-            create_round: "Criação de rodada",
-            update_round: "Atualização de rodada",
-            disable_round: "Desativação de rodada",
-            restore_round: "Restauração de rodada",
-            reorder_round: "Reordenação de rodada",
-            create_competition: "Criação de competição",
-            update_competition: "Atualização de competição",
-            disable_competition: "Arquivamento de competição",
-            restore_competition: "Restauração de competição",
-            manual_push: "Comunicado manual",
-            new_matches_notice: "Aviso de novos confrontos",
-            quick_results: "Baixa rápida",
-            baixa_rapida: "Baixa rápida",
-            bulk_cleanup_finished_matches: "Limpeza de finalizados",
-            restore_match: "Restauração de confronto",
-            permanent_delete_match: "Exclusão definitiva de confronto",
-            financial_audit: "Auditoria financeira"
-          };
-          return known[type] || known[normalized] || normalized || "Ação administrativa";
-        };
-
-        const getAdminAuditActorLabel = (log = {}) =>
-          [log.adminName || log.createdByName || "", log.adminEmail || log.createdByEmail || ""]
-            .filter(Boolean)
-            .join(" • ") || "Admin";
-
-        const getAdminAuditSummaryText = (log = {}) => {
-          const bits = [
-            log.description || "",
-            log.summary || "",
-            log.message || "",
-            log.title || "",
-            log.targetName || "",
-            log.targetUserId ? `Usuário ${String(log.targetUserId)}` : "",
-            log.targetMatchId ? `Confronto ${String(log.targetMatchId)}` : "",
-            log.matchId ? `Jogo #${String(log.matchId)}` : "",
-            log.competition ? `Competição ${String(log.competition)}` : "",
-            log.round ? `Rodada ${String(log.round)}` : "",
-            log.totalMatches != null ? `${String(log.totalMatches)} jogo(s)` : "",
-            log.totalApplied != null ? `${String(log.totalApplied)} aplicado(s)` : ""
-          ].filter(Boolean);
-
-          if (bits.length) return bits.join(" • ");
-
-          if (log.teams && (log.teams.teamA || log.teams.teamB)) {
-            return `${log.teams.teamA || "?"} x ${log.teams.teamB || "?"}`;
-          }
-
-          if (log.oldValue || log.newValue) return "Alteração registrada";
-          return "Sem detalhes adicionais";
-        };
-
         const getAdminAuditGroup = (type = "") => {
           const value = String(type || "").toLowerCase();
           if (!value) return "outros";
@@ -10965,34 +11131,24 @@ async function loadAdminMatches() {
 
           const rows = filtered.length ? filtered.map((log) => {
             const action = escapeHtml(getAdminAuditActionLabel(log));
-            const adminLabel = escapeHtml(getAdminAuditActorLabel(log));
-            const targetLabel = escapeHtml(
-              log.targetName ||
-              log.matchTitle ||
-              log.competitionName ||
-              log.roundName ||
-              log.targetUserId ||
-              log.targetMatchId ||
-              log.matchId ||
-              log.username ||
-              log.source ||
-              "—"
-            );
-            const summaryText = escapeHtml(getAdminAuditSummaryText(log));
-            const dateLabel = formatAdminPanelDateTime(getAdminAuditTimestamp(log));
+            const targetLabel = escapeHtml(log.displayTargetLabel || log.targetName || log.matchTitle || log.competitionName || log.roundName || log.username || log.source || "—");
+            const targetSecondary = escapeHtml(log.displayTargetSecondary || getAdminAuditSummaryText(log));
+            const dateLabel = escapeHtml(log.displayDateLabel || formatAdminPanelDateTime(getAdminAuditTimestamp(log)) || "—");
+            const adminLabel = escapeHtml(log.displayAdminLabel || getAdminAuditActorLabel(log));
+            const sourceLabel = escapeHtml(log.displaySourceLabel || log.source || "admin_audit_logs");
             return `
               <div class="border border-gray-200 rounded-2xl p-3 bg-white shadow-sm">
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0">
                     <div class="text-[10px] font-black uppercase tracking-[0.16em] text-[#006400]">${action}</div>
-                    <div class="text-xs font-bold text-gray-900 truncate">${escapeHtml(targetLabel)}</div>
-                    <div class="text-[10px] text-gray-500 font-bold mt-1">${summaryText}</div>
+                    <div class="text-xs font-bold text-gray-900 truncate">${targetLabel}</div>
+                    <div class="text-[10px] text-gray-500 font-bold mt-1">${targetSecondary}</div>
                   </div>
-                  <div class="text-[10px] font-black text-right text-gray-500 shrink-0">${escapeHtml(dateLabel || "—")}</div>
+                  <div class="text-[10px] font-black text-right text-gray-500 shrink-0">${dateLabel}</div>
                 </div>
                 <div class="mt-2 flex items-center justify-between gap-2 text-[10px] text-gray-500 font-bold">
                   <span>${adminLabel}</span>
-                  <span>${escapeHtml(log.source || "admin_audit_logs")}</span>
+                  <span>${sourceLabel}</span>
                 </div>
               </div>
             `;
@@ -11055,18 +11211,24 @@ async function loadAdminMatches() {
           cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando histórico...</p></div>`;
 
           try {
-            const ref = collection(db, "admin_audit_logs");
-            let items = [];
-            try {
-              const snap = await getDocs(query(ref, orderBy("createdAt", "desc"), limit(50)));
-              snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-            } catch (queryError) {
-              console.error("Erro ao carregar histórico admin:", queryError);
-              const fallbackSnap = await getDocs(ref);
-              fallbackSnap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-            }
-            items.sort((a, b) => getAdminAuditTimestamp(b).getTime() - getAdminAuditTimestamp(a).getTime());
-            window.__adminAuditHistoryCache = items.slice(0, 50);
+            const logs = await loadRecentAdminAuditLogs({ limitSize: 50 });
+            const userMap = await loadAdminUsersLookupMap(logs);
+            const enrichedLogs = logs.map((log) => {
+              const userDisplay = getAdminAuditUserDisplay(log, userMap);
+              return {
+                ...log,
+                displayTargetLabel: userDisplay.isUser
+                  ? (userDisplay.name || "Usuário não identificado")
+                  : (log.targetName || log.matchTitle || log.competitionName || log.roundName || log.username || log.source || "—"),
+                displayTargetSecondary: userDisplay.isUser
+                  ? [userDisplay.email || "", userDisplay.shortId || ""].filter(Boolean).join(" • ") || getAdminAuditSummaryText(log)
+                  : getAdminAuditSummaryText(log),
+                displayDateLabel: formatAdminPanelDateTime(getAdminAuditTimestamp(log)),
+                displayAdminLabel: getAdminAuditActorLabel(log),
+                displaySourceLabel: log.source || "admin_audit_logs"
+              };
+            });
+            window.__adminAuditHistoryCache = enrichedLogs;
             window.__adminAuditHistoryFilter = "all";
             renderAdminAuditHistoryModal();
           } catch (error) {
@@ -11698,6 +11860,7 @@ async function loadAdminMatches() {
             });
           });
           adminFinancialState.users = users;
+          window.__adminUsersCache = users;
           return users;
         };
 
