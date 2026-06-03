@@ -2962,6 +2962,87 @@ window.openHomeFinancialSection = () => {
   }, 240);
 };
 
+const formatHomeDeadlineLabel = (value, isWaiting = false) => {
+  const deadlineDate = toJsDate(value);
+  if (!deadlineDate) return "Sem prazo definido";
+  if (isWaiting) return "Prazo encerrado";
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfDeadline = new Date(deadlineDate.getFullYear(), deadlineDate.getMonth(), deadlineDate.getDate());
+  const diffDays = Math.round((startOfDeadline.getTime() - startOfToday.getTime()) / 86400000);
+  const timeLabel = deadlineDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", hour12: false });
+
+  if (diffDays <= 0) return `Expira hoje às ${timeLabel}`;
+  if (diffDays === 1) return `Expira amanhã às ${timeLabel}`;
+  return `Expira em ${diffDays} dias às ${timeLabel}`;
+};
+
+window.openDeadlineModal = () => {
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  const allMatches = Array.isArray(window.cachedMatches) ? window.cachedMatches : [];
+  const relevantMatches = allMatches
+    .filter((match) => {
+      if (!match || match.winner) return false;
+      const deadlineDate = match.deadlineDate || toJsDate(match.deadline);
+      return deadlineDate instanceof Date;
+    })
+    .sort((a, b) => {
+      const dateA = (a.deadlineDate || toJsDate(a.deadline) || new Date(8640000000000000)).getTime();
+      const dateB = (b.deadlineDate || toJsDate(b.deadline) || new Date(8640000000000000)).getTime();
+      if (dateA !== dateB) return dateA - dateB;
+      return matchComparator(a, b);
+    });
+
+  const itemsHtml = relevantMatches.length > 0
+    ? relevantMatches.map((match) => {
+        const isWaiting = match.expired === true && !match.winner;
+        const statusLabel = isWaiting ? "Aguardando resultado" : "Aberto";
+        const statusClass = isWaiting ? "is-waiting" : "is-open";
+        const deadlineDate = match.deadlineDate || toJsDate(match.deadline);
+        const deadlineLabel = formatHomeDeadlineLabel(deadlineDate, isWaiting);
+        const competition = escapeHtml(match.competition || "Competição");
+        const round = escapeHtml(match.round || "Fase");
+        return `
+          <div class="deadline-modal-item ${statusClass}">
+            <div class="deadline-modal-date">${escapeHtml(deadlineLabel)}</div>
+            <div class="deadline-modal-title">${escapeHtml(match.teamA || "Time A")} x ${escapeHtml(match.teamB || "Time B")}</div>
+            <div class="deadline-modal-meta">${round} — ${competition}</div>
+            <div class="deadline-modal-footer">
+              <span class="deadline-modal-status ${statusClass}">${statusLabel}</span>
+            </div>
+          </div>
+        `;
+      }).join("")
+    : `
+      <div class="deadline-modal-empty">
+        Nenhum prazo ativo no momento.<br>
+        Quando novos confrontos forem criados, eles aparecerão aqui.
+      </div>
+    `;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="deadline-modal-shell">
+      <div class="deadline-modal-header">
+        <div>
+          <h3 class="deadline-modal-title-main">Próximos prazos</h3>
+          <p class="deadline-modal-subtitle">Veja quando os confrontos abertos ou aguardando resultado expiram.</p>
+        </div>
+        <button type="button" class="deadline-modal-close btn-press" onclick="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="deadline-modal-list">
+        ${itemsHtml}
+      </div>
+    </div>
+  `;
+};
+
 const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) => {
   const currentUserData = getMergedCurrentUserData(runtime.currentUser || {});
   const currentName = currentUserData?.name || currentUserData?.username || "Jogador";
@@ -3042,15 +3123,15 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
       </button>
 
       <div class="home-quick-actions">
-        <button type="button" class="home-quick-action btn-press" onclick="showTab('matches')">
-          <i class="fas fa-futbol"></i>
-          <span>Palpites</span>
+        <button type="button" class="home-quick-action btn-press" onclick="window.openDeadlineModal()">
+          <i class="fas fa-calendar-alt"></i>
+          <span>Prazos</span>
         </button>
         <button type="button" class="home-quick-action btn-press" onclick="showTab('ranking')">
           <i class="fas fa-trophy"></i>
           <span>Ranking</span>
         </button>
-        <button type="button" class="home-quick-action btn-press" onclick="showTab('ranking'); setTimeout(() => { if (window.openRankingInfo) window.openRankingInfo(); }, 180)">
+        <button type="button" class="home-quick-action btn-press" onclick="showTab('ranking'); setTimeout(() => { if (window.showKingModal) window.showKingModal(); }, 180)">
           <i class="fas fa-crown"></i>
           <span>Rei do Mês</span>
         </button>
