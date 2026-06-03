@@ -2962,6 +2962,20 @@ window.openHomeFinancialSection = () => {
   }, 240);
 };
 
+window.scrollToHomeUpcomingTimeline = () => {
+  document.getElementById("homeUpcomingTimeline")?.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+window.openHomeTimelineMatch = (matchId) => {
+  if (!matchId) return;
+  showTab("matches");
+  setTimeout(() => {
+    if (typeof window.flashPendingMatchCard === "function") {
+      window.flashPendingMatchCard(matchId);
+    }
+  }, 220);
+};
+
 const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) => {
   const currentUserData = getMergedCurrentUserData(runtime.currentUser || {});
   const currentName = currentUserData?.name || currentUserData?.username || "Jogador";
@@ -3042,15 +3056,15 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
       </button>
 
       <div class="home-quick-actions">
-        <button type="button" class="home-quick-action btn-press" onclick="showTab('matches')">
-          <i class="fas fa-futbol"></i>
-          <span>Palpites</span>
+        <button type="button" class="home-quick-action btn-press" onclick="window.scrollToHomeUpcomingTimeline()">
+          <i class="fas fa-calendar-alt"></i>
+          <span>Próximos Jogos</span>
         </button>
         <button type="button" class="home-quick-action btn-press" onclick="showTab('ranking')">
           <i class="fas fa-trophy"></i>
           <span>Ranking</span>
         </button>
-        <button type="button" class="home-quick-action btn-press" onclick="showTab('ranking'); setTimeout(() => { if (window.openRankingInfo) window.openRankingInfo(); }, 180)">
+        <button type="button" class="home-quick-action btn-press" onclick="showTab('ranking'); setTimeout(() => { if (window.showKingModal) window.showKingModal(); }, 180)">
           <i class="fas fa-crown"></i>
           <span>Rei do Mês</span>
         </button>
@@ -3058,6 +3072,84 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
           <i class="fas fa-user"></i>
           <span>Perfil</span>
         </button>
+      </div>
+    </section>
+  `;
+};
+
+const renderHomeUpcomingTimelineBlock = ({ open = [], waiting = [] }) => {
+  const timelineMatches = [...open, ...waiting].sort(matchComparator);
+  const totalUpcoming = timelineMatches.length;
+  const openCount = open.length;
+  const waitingCount = waiting.length;
+
+  const emptyHtml = `
+    <div class="home-timeline-empty">
+      <div class="home-timeline-empty__icon"><i class="fas fa-calendar-alt"></i></div>
+      <div class="home-timeline-empty__title">Sem próximos jogos por enquanto</div>
+      <div class="home-timeline-empty__desc">Quando novos confrontos forem liberados, eles aparecem aqui na ordem do prazo.</div>
+    </div>
+  `;
+
+  const listHtml = totalUpcoming > 0
+    ? timelineMatches.map((match) => {
+        const isWaiting = Boolean(match.expired && !match.winner);
+        const statusLabel = isWaiting ? "Aguardando resultado" : "Aberto";
+        const statusClass = isWaiting ? "is-waiting" : "is-open";
+        const deadlineLabel = match.deadlineDate ? formatAdminDateTimeLabel(match.deadlineDate) : "Sem prazo";
+        const competitionLabel = escapeHtml(match.competition || "Competição");
+        const roundLabel = escapeHtml(match.round || "Fase");
+        const subtitleLabel = `${roundLabel} • ${competitionLabel}`;
+        const teamALogo = typeof getAdminRoundSummaryMatchLogo === "function" ? getAdminRoundSummaryMatchLogo(match, "A") : (match.teamAUrl || match.teamALogo || match.logoA || "");
+        const teamBLogo = typeof getAdminRoundSummaryMatchLogo === "function" ? getAdminRoundSummaryMatchLogo(match, "B") : (match.teamBUrl || match.teamBLogo || match.logoB || "");
+        return `
+          <button
+            type="button"
+            class="home-timeline-item btn-press ${statusClass}"
+            onclick="window.openHomeTimelineMatch('${escapeJsString(String(match.id || ""))}')"
+          >
+            <div class="home-timeline-item__date">${escapeHtml(deadlineLabel)}</div>
+            <div class="home-timeline-item__meta">${subtitleLabel}</div>
+            <div class="home-timeline-item__teams">
+              <span class="home-timeline-item__team">
+                <span class="home-timeline-item__logo">${teamALogo ? `<img src="${escapeHtml(teamALogo)}" alt="">` : `<i class="fas fa-shield-alt"></i>`}</span>
+                <span class="home-timeline-item__name">${escapeHtml(match.teamA || "Time A")}</span>
+              </span>
+              <span class="home-timeline-item__versus">x</span>
+              <span class="home-timeline-item__team">
+                <span class="home-timeline-item__logo">${teamBLogo ? `<img src="${escapeHtml(teamBLogo)}" alt="">` : `<i class="fas fa-shield-alt"></i>`}</span>
+                <span class="home-timeline-item__name">${escapeHtml(match.teamB || "Time B")}</span>
+              </span>
+            </div>
+            <div class="home-timeline-item__footer">
+              <span class="home-timeline-item__chip ${statusClass}">${statusLabel}</span>
+              <span class="home-timeline-item__chevron"><i class="fas fa-chevron-right"></i></span>
+            </div>
+          </button>
+        `;
+      }).join("")
+    : emptyHtml;
+
+  return `
+    <section id="homeUpcomingTimeline" class="home-timeline surface-card mb-4 overflow-hidden">
+      <div class="home-timeline__top">
+        <div>
+          <p class="home-timeline__eyebrow">Linha do tempo</p>
+          <h3 class="home-timeline__title">Próximos Jogos</h3>
+          <p class="home-timeline__subtitle">Os confrontos abertos e aguardando resultado aparecem em ordem do prazo.</p>
+        </div>
+        <button type="button" class="home-timeline__action btn-press" onclick="showTab('matches')">
+          <i class="fas fa-futbol"></i>
+          <span>Abrir palpites</span>
+        </button>
+      </div>
+      <div class="home-timeline__summary">
+        <span>${openCount} abertos</span>
+        <span>${waitingCount} aguardando resultado</span>
+        <span>${totalUpcoming} no total</span>
+      </div>
+      <div class="home-timeline__list">
+        ${listHtml}
       </div>
     </section>
   `;
@@ -3554,6 +3646,7 @@ const renderHomeSectionsWeb = async ({
   html += renderHomeQuickPanel({ runtime, open, waiting, finished, myVotesMap });
   const firstActiveBanner = Object.values(bannersMap).find(item => item.active) || null;
   const pendingOpenMatches = open.filter(m => !myVotesMap[m.id]);
+  let hasRenderedUpcomingTimeline = false;
 
   for (const section of sections) {
     if (!isHomeSectionVisibleWeb(section, runtime)) continue;
@@ -3591,11 +3684,17 @@ const renderHomeSectionsWeb = async ({
         break;
 
       case "matches_open":
-        html += await renderMatchesOpenBlock(open, allUsersData, myVotesMap);
+        if (!hasRenderedUpcomingTimeline) {
+          html += renderHomeUpcomingTimelineBlock({ open, waiting });
+          hasRenderedUpcomingTimeline = true;
+        }
         break;
 
       case "matches_wait":
-        html += await renderMatchesWaitingBlock(waiting, allUsersData, myVotesMap);
+        if (!hasRenderedUpcomingTimeline) {
+          html += renderHomeUpcomingTimelineBlock({ open, waiting });
+          hasRenderedUpcomingTimeline = true;
+        }
         break;
 
       case "matches_done":
@@ -5435,7 +5534,12 @@ let html = `
 
                     if (uniqueIcons.length > 0) {
                         medalsHtml = `<div class="ranking-medals">` +
-                            uniqueIcons.map(icon => `<span class="ranking-medal-chip">${icon}${counts[icon]>1 ? `<span class="ranking-medal-count">${counts[icon]}</span>` : ""}</span>`).join("") +
+                            uniqueIcons.map(icon => {
+                              const count = counts[icon] || 0;
+                              const isSuperMedal = count >= 10;
+                              const countLabel = count > 1 ? (isSuperMedal ? "10+" : count) : "";
+                              return `<span class="ranking-medal-chip ${isSuperMedal ? "ranking-medal-chip--super" : ""}">${icon}${countLabel ? `<span class="ranking-medal-count ${isSuperMedal ? "ranking-medal-count--super" : ""}">${countLabel}</span>` : ""}</span>`;
+                            }).join("") +
                         `</div>`;
                     }
 
@@ -5725,41 +5829,15 @@ window.showKingModal = () => {
                     const isLegendary = count >= 10;
                     
                     // Estilos da Bolinha (Badge)
-                    const badgeBg = isLegendary ? "bg-[#FFD700] text-black shadow-lg" : "bg-[#D32F2F] text-white shadow-md";
-                    const badgeSize = isLegendary ? "w-6 h-6 text-[9px]" : "w-5 h-5 text-[8px]";
-                    
                     let badgeHtml = "";
-if (count > 1) {
-  badgeHtml = `
-    <span style="
-      position:absolute;
-      top:0;
-      right:0;
-      transform: translate(45%, -45%);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-
-      min-width:22px;
-      height:22px;
-      padding:0 6px;
-
-      background:#D32F2F;
-      color:#fff;
-
-      font-weight:900;
-      font-size:12px;
-      line-height:1;
-
-      border-radius:999px;
-      border:2px solid rgba(255,255,255,.95);
-      box-shadow:0 2px 6px rgba(0,0,0,.25);
-
-      font-family: Arial, sans-serif;
-      letter-spacing:-0.2px;
-    ">${count}x</span>
-  `;
-}
+                    if (count > 1) {
+                      const badgeText = isLegendary ? "10+" : `x${count}`;
+                      badgeHtml = `
+                        <span class="medal-count-badge ${isLegendary ? "medal-count-badge--super" : ""}">
+                          ${badgeText}
+                        </span>
+                      `;
+                    }
 
                     
                     // Click: Se > 1 abre lista, senão Toast
@@ -5768,9 +5846,9 @@ if (count > 1) {
                         : `showToast('${first.name}', '${first.desc}', '${first.date}')`;
 
                     medalsHtml += `
-                        <div class="relative inline-block mx-1 my-1 cursor-pointer hover:scale-110 transition-transform select-none group" onclick="${clickAction}">
+                        <div class="relative inline-flex items-center justify-center mx-1 my-1 cursor-pointer hover:scale-110 transition-transform select-none group ${isLegendary ? "medal-token--super" : ""}" onclick="${clickAction}">
                             ${badgeHtml}
-                            <span class="text-4xl drop-shadow-sm">${first.icon}</span>
+                            <span class="medal-token-emoji ${isLegendary ? "medal-token-emoji--super" : ""}">${first.icon}</span>
                         </div>
                     `;
                 }
