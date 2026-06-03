@@ -5537,7 +5537,7 @@ let html = `
                             uniqueIcons.map(icon => {
                               const count = counts[icon] || 0;
                               const isSuperMedal = count >= 10;
-                              const countLabel = count > 1 ? (isSuperMedal ? "10+" : count) : "";
+                              const countLabel = count > 1 ? count : "";
                               return `<span class="ranking-medal-chip ${isSuperMedal ? "ranking-medal-chip--super" : ""}">${icon}${countLabel ? `<span class="ranking-medal-count ${isSuperMedal ? "ranking-medal-count--super" : ""}">${countLabel}</span>` : ""}</span>`;
                             }).join("") +
                         `</div>`;
@@ -5831,7 +5831,7 @@ window.showKingModal = () => {
                     // Estilos da Bolinha (Badge)
                     let badgeHtml = "";
                     if (count > 1) {
-                      const badgeText = isLegendary ? "10+" : `x${count}`;
+                      const badgeText = `${count}`;
                       badgeHtml = `
                         <span class="medal-count-badge ${isLegendary ? "medal-count-badge--super" : ""}">
                           ${badgeText}
@@ -12897,21 +12897,9 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
       <div style="position:relative; display:inline-flex; align-items:center; justify-content:center;">
         <span style="font-size:32px; line-height:1;">${icon}</span>
         ${medalCounts[icon] > 1 ? `
-          <span style="
-  position:absolute;
-  top:0;
-  right:0;
-  transform: translate(45%, -45%);
-  background:#D32F2F;
-  color:#fff;
-  font-weight:900;
-  font-size:12px;
-  line-height:1;
-  padding:4px 6px;
-  border-radius:999px;
-  border:2px solid rgba(255,255,255,.95);
-  box-shadow:0 2px 6px rgba(0,0,0,.25);
-">x${medalCounts[icon]}</span>
+          <span class="medal-count-badge ${medalCounts[icon] >= 10 ? "medal-count-badge--super" : ""}">
+            ${medalCounts[icon]}
+          </span>
 
         ` : ``}
       </div>
