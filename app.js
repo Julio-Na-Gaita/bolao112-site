@@ -3142,7 +3142,7 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
 
   const pendingCount = open.filter((m) => !myVotesMap[m.id]).length;
   const paymentNotice = getHomePendingPaymentNotice(currentUserData || {});
-  const pendingActionLabel = pendingCount > 0 ? "Votar nos pendentes" : "Sem pend?ncias no momento";
+  const pendingActionLabel = pendingCount > 0 ? "Votar nos pendentes" : "";
   const pendingCounterClass = pendingCount > 0 ? "home-quick-stat--pending-alert" : "home-quick-stat--success";
 
   return `
@@ -3191,15 +3191,16 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
         </div>
       </div>
 
+      ${pendingCount > 0 ? `
       <button
         type="button"
-        class="home-pending-cta btn-press ${pendingCount > 0 ? "is-active" : "is-empty"}"
+        class="home-pending-cta btn-press is-active"
         onclick="window.goToPendingVote()"
-        ${pendingCount <= 0 ? "disabled" : ""}
       >
         <i class="fas fa-bullseye"></i>
         <span>${escapeHtml(pendingActionLabel)}</span>
       </button>
+      ` : ""}
 
       <div class="home-quick-actions">
         <button type="button" class="home-quick-action btn-press" onclick="window.openDeadlineModal()">
@@ -11132,32 +11133,70 @@ async function loadAdminMatches() {
 
           const filter = window.__adminAuditHistoryFilter || "all";
           const logs = Array.isArray(window.__adminAuditHistoryCache) ? [...window.__adminAuditHistoryCache] : [];
-          const filtered = logs.filter((log) => filter === "all" ? true : getAdminAuditGroup(log.type) === filter);
+          let filtered = [];
+          try {
+            filtered = logs.filter((log) => {
+              try {
+                return filter === "all" ? true : getAdminAuditGroup(String(log.type || log.action || log.event || "")) === filter;
+              } catch (error) {
+                console.error("[AdminHistory] Erro ao aplicar filtro:", error, log);
+                return filter === "all";
+              }
+            });
+          } catch (error) {
+            console.error("[AdminHistory] Erro ao aplicar filtro:", error);
+            filtered = logs;
+          }
 
-          const rows = filtered.length ? filtered.map((log) => {
-            const action = escapeHtml(getAdminAuditActionLabel(log));
-            const targetLabel = escapeHtml(log.displayTargetLabel || log.targetName || log.matchTitle || log.competitionName || log.roundName || log.username || log.source || "—");
-            const targetSecondary = escapeHtml(log.displayTargetSecondary || getAdminAuditSummaryText(log));
-            const dateLabel = escapeHtml(log.displayDateLabel || formatAdminPanelDateTime(getAdminAuditTimestamp(log)) || "—");
-            const adminLabel = escapeHtml(log.displayAdminLabel || getAdminAuditActorLabel(log));
-            const sourceLabel = escapeHtml(log.displaySourceLabel || log.source || "admin_audit_logs");
-            return `
-              <div class="border border-gray-200 rounded-2xl p-3 bg-white shadow-sm">
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <div class="text-[10px] font-black uppercase tracking-[0.16em] text-[#006400]">${action}</div>
-                    <div class="text-xs font-bold text-gray-900 truncate">${targetLabel}</div>
-                    <div class="text-[10px] text-gray-500 font-bold mt-1">${targetSecondary}</div>
+          const renderAdminAuditItem = (log = {}) => {
+            try {
+              const action = escapeHtml(getAdminAuditActionLabel(log));
+              const targetLabel = escapeHtml(log.targetName || log.matchTitle || log.competitionName || log.roundName || log.username || log.source || "?");
+              const targetSecondary = escapeHtml(getAdminAuditSummaryText(log));
+              const timestamp = getAdminAuditTimestamp(log);
+              const dateLabel = timestamp && timestamp.getTime && !Number.isNaN(timestamp.getTime())
+                ? escapeHtml(formatAdminPanelDateTime(timestamp) || "?")
+                : "Data n?o informada";
+              const adminLabel = escapeHtml(getAdminAuditActorLabel(log));
+              const sourceLabel = escapeHtml(log.source || "admin_audit_logs");
+              return `
+                <div class="border border-gray-200 rounded-2xl p-3 bg-white shadow-sm">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="text-[10px] font-black uppercase tracking-[0.16em] text-[#006400]">${action}</div>
+                      <div class="text-xs font-bold text-gray-900 truncate">${targetLabel}</div>
+                      <div class="text-[10px] text-gray-500 font-bold mt-1">${targetSecondary}</div>
+                    </div>
+                    <div class="text-[10px] font-black text-right text-gray-500 shrink-0">${dateLabel}</div>
                   </div>
-                  <div class="text-[10px] font-black text-right text-gray-500 shrink-0">${dateLabel}</div>
+                  <div class="mt-2 flex items-center justify-between gap-2 text-[10px] text-gray-500 font-bold">
+                    <span>${adminLabel}</span>
+                    <span>${sourceLabel}</span>
+                  </div>
                 </div>
-                <div class="mt-2 flex items-center justify-between gap-2 text-[10px] text-gray-500 font-bold">
-                  <span>${adminLabel}</span>
-                  <span>${sourceLabel}</span>
+              `;
+            } catch (error) {
+              console.error("[AdminHistory] Erro ao renderizar item:", log, error);
+              return `
+                <div class="border border-amber-200 rounded-2xl p-3 bg-amber-50 shadow-sm">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">A??o administrativa</div>
+                      <div class="text-xs font-bold text-gray-900 truncate">Registro administrativo</div>
+                      <div class="text-[10px] text-gray-500 font-bold mt-1">Detalhes n?o dispon?veis</div>
+                    </div>
+                    <div class="text-[10px] font-black text-right text-gray-500 shrink-0">Data n?o informada</div>
+                  </div>
+                  <div class="mt-2 flex items-center justify-between gap-2 text-[10px] text-gray-500 font-bold">
+                    <span>Admin</span>
+                    <span>admin_audit_logs</span>
+                  </div>
                 </div>
-              </div>
-            `;
-          }).join("") : `<div class="p-4 text-center text-gray-400 text-xs font-bold">Nenhum histórico admin encontrado. As próximas ações administrativas aparecerão aqui.</div>`;
+              `;
+            }
+          };
+
+          const rows = filtered.length ? filtered.map((log) => renderAdminAuditItem(log)).join("") : `<div class="p-4 text-center text-gray-400 text-xs font-bold">Nenhum hist?rico admin encontrado. As pr?ximas a??es administrativas aparecer?o aqui.</div>`;
 
           modal.classList.remove("hidden");
           cont.innerHTML = `
@@ -11167,8 +11206,8 @@ async function loadAdminMatches() {
                 <div class="bg-[#006400] p-4 text-white flex items-center justify-between shadow-md shrink-0">
                   <button onclick="openAdminMenu()" class="mr-3"><i class="fas fa-arrow-left text-xl"></i></button>
                   <div class="flex-1">
-                    <h3 class="font-black uppercase text-lg leading-none">Histórico Admin</h3>
-                    <p class="text-[10px] text-[#FFD700] font-bold">Últimos ${logs.length} registros</p>
+                    <h3 class="font-black uppercase text-lg leading-none">Hist?rico Admin</h3>
+                    <p class="text-[10px] text-[#FFD700] font-bold">?ltimos ${logs.length} registros</p>
                   </div>
                   <button onclick="closeModal()" class="ml-3"><i class="fas fa-times text-xl"></i></button>
                 </div>
@@ -11179,7 +11218,7 @@ async function loadAdminMatches() {
                     <button type="button" onclick="window.setAdminAuditHistoryFilter('partidas')" class="admin-cleanup-tab ${filter === "partidas" ? "is-active" : ""}">Partidas</button>
                     <button type="button" onclick="window.setAdminAuditHistoryFilter('financeiro')" class="admin-cleanup-tab ${filter === "financeiro" ? "is-active" : ""}">Financeiro</button>
                     <button type="button" onclick="window.setAdminAuditHistoryFilter('ranking')" class="admin-cleanup-tab ${filter === "ranking" ? "is-active" : ""}">Ranking</button>
-                    <button type="button" onclick="window.setAdminAuditHistoryFilter('usuarios')" class="admin-cleanup-tab ${filter === "usuarios" ? "is-active" : ""}">Usuários</button>
+                    <button type="button" onclick="window.setAdminAuditHistoryFilter('usuarios')" class="admin-cleanup-tab ${filter === "usuarios" ? "is-active" : ""}">Usu?rios</button>
                   </div>
                 </div>
 
@@ -11226,6 +11265,7 @@ async function loadAdminMatches() {
               <div class="bg-white p-6 text-center rounded shadow-xl">
                 <p class="text-sm font-black text-red-600 mb-3">N?o foi poss?vel carregar o hist?rico admin.</p>
                 <p class="text-[11px] font-bold text-gray-500 mb-4">Verifique sua permiss?o de administrador ou tente novamente.</p>
+                <p class="text-[11px] font-bold text-gray-400 mb-4">Detalhe t?cnico: ${escapeHtml(String(error?.code || error?.message || "unknown").slice(0, 80))}</p>
                 <button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
               </div>
             `;
