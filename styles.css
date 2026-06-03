@@ -1,19 +1,36 @@
 ﻿@import url('https://fonts.googleapis.com/css2?family=PT+Serif:wght@400;700;900&display=swap');
-/* --- VARIÁVEIS DINÂMICAS (THEME ENGINE) --- */
+/* ================= GUIA VISUAL / DESIGN SYSTEM ================= */
+/* Variáveis dinâmicas do tema + tokens base para polimento progressivo. */
 :root {
     --primary: #006400;       /* Cor Padrão */
     --secondary: #FFD700;     /* Cor Padrão */
     --bg-color: #f3f4f6;
     --text-main: #111827;
+    --text-muted: #475569;
+    --text-soft: #64748b;
     --app-font: 'PT Serif', serif;
     --watermark: none;        /* Para as Skins */
     --watermark-opacity: 0.15;
+    --color-bg: #f3f4f6;
+    --color-surface: #ffffff;
+    --color-surface-muted: #f8fafc;
+    --color-text: #111827;
+    --color-muted: #475569;
+    --color-border: rgba(15, 23, 42, 0.12);
+    --color-success: #166534;
+    --color-warning: #9a6700;
+    --color-danger: #b42318;
     --surface: rgba(255,255,255,0.92);
     --surface-strong: #ffffff;
     --surface-muted: #f8fafc;
     --border-soft: rgba(15,23,42,0.08);
+    --border-medium: rgba(15,23,42,0.12);
     --shadow-soft: 0 12px 30px rgba(15,23,42,0.08);
+    --shadow-card: 0 10px 24px rgba(15,23,42,0.07);
     --shadow-strong: 0 18px 40px rgba(15,23,42,0.12);
+    --radius-card: 18px;
+    --radius-button: 12px;
+    --radius-chip: 999px;
     --radius-lg: 18px;
     --radius-xl: 24px;
     --focus-ring: 0 0 0 3px rgba(0, 100, 0, 0.18);
@@ -3821,6 +3838,189 @@ select:focus-visible {
     font-size: 12px;
     font-weight: 900;
     text-align: center;
+}
+
+/* ================= POLIMENTO VISUAL GLOBAL ================= */
+.btn-press {
+    touch-action: manipulation;
+}
+
+.admin-communication-primary,
+.admin-communication-secondary,
+.admin-trash-btn,
+.admin-cleanup-tab,
+.admin-quick-result-team,
+.admin-whatsapp-number-button,
+.home-quick-action,
+.home-payment-notice__action,
+.home-pending-cta,
+.profile-action-tile,
+.profile-action-row,
+.profile-push-card__button,
+.pwa-install-card__button {
+    min-height: 44px;
+    border-radius: var(--radius-button);
+}
+
+.admin-communication-primary,
+.admin-communication-secondary,
+.admin-trash-btn,
+.home-quick-action,
+.home-payment-notice__action,
+.profile-push-card__button,
+.pwa-install-card__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 900;
+    letter-spacing: 0;
+}
+
+button:disabled,
+.btn-press:disabled,
+button[disabled] {
+    cursor: not-allowed;
+    opacity: 0.62;
+    filter: grayscale(0.18);
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.surface-card,
+.card-cut,
+.match-card-shell,
+.admin-creation-panel,
+.admin-financial-card,
+.admin-trash-card,
+.profile-section,
+.profile-action-tile,
+.profile-action-row,
+.admin-communication-panel,
+.admin-user-picker-row,
+.skeleton-card {
+    border-color: var(--border-soft);
+    box-shadow: var(--shadow-card);
+}
+
+.surface-card,
+.admin-creation-panel,
+.admin-financial-card,
+.profile-section,
+.admin-communications-modal {
+    background-color: var(--surface-strong);
+}
+
+.surface-card p,
+.admin-creation-panel p,
+.admin-financial-card p,
+.profile-section p,
+.match-card-shell p,
+.admin-communications-modal p {
+    overflow-wrap: anywhere;
+}
+
+#modalOverlay {
+    background: rgba(2, 6, 23, 0.72);
+}
+
+#modalContainer {
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 22px;
+    background: var(--surface-strong);
+    border: 1px solid rgba(255,255,255,0.24);
+}
+
+#modalContainer > * {
+    max-width: 100%;
+}
+
+.admin-communications-modal,
+.voters-modal {
+    max-height: 90vh;
+}
+
+.empty-state,
+.admin-quick-result-empty,
+.admin-communication-empty,
+.voters-empty,
+.ranking-my-position__empty,
+.ranking-medals-empty {
+    border-radius: var(--radius-card);
+    border: 1px dashed rgba(15,23,42,0.16);
+    background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(248,250,252,0.9));
+    color: var(--text-muted);
+    box-shadow: 0 8px 20px rgba(15,23,42,0.05);
+}
+
+.empty-state__title,
+.admin-quick-result-empty .text-base,
+.ranking-my-position__empty {
+    color: var(--text-main);
+}
+
+.empty-state__description,
+.admin-quick-result-empty p,
+.admin-communication-empty,
+.profile-action-row__desc,
+.profile-action-tile__desc,
+.admin-trash-meta,
+.admin-financial-username,
+.admin-communications-header p,
+.admin-user-picker-row small {
+    color: var(--text-muted);
+}
+
+.surface-card .text-gray-400,
+.admin-creation-panel .text-gray-400,
+.admin-financial-card .text-gray-400,
+.profile-section .text-gray-400,
+#modalContainer .text-gray-400 {
+    color: #64748b !important;
+}
+
+.surface-card .text-gray-300,
+.admin-creation-panel .text-gray-300,
+.admin-financial-card .text-gray-300,
+.profile-section .text-gray-300,
+#modalContainer .text-gray-300 {
+    color: #94a3b8 !important;
+}
+
+.admin-communication-textarea,
+.admin-creation-input,
+#modalContainer input,
+#modalContainer textarea,
+#modalContainer select {
+    border-color: var(--border-medium);
+    border-radius: var(--radius-button);
+}
+
+@media (max-width: 420px) {
+    #modalOverlay {
+        align-items: center;
+        padding: 10px;
+    }
+
+    #modalContainer {
+        width: 100%;
+        max-height: 92vh;
+        border-radius: 18px;
+    }
+
+    .admin-communications-body,
+    .admin-communications-footer,
+    .admin-quick-results-footer {
+        padding: 12px;
+    }
+
+    .admin-cleanup-tab,
+    .admin-whatsapp-number-button,
+    .profile-action-tile,
+    .profile-action-row {
+        min-height: 46px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
