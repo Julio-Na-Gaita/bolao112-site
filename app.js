@@ -195,6 +195,21 @@ let adminCommunicationState = {
   selectedUids: new Set(),
   whatsappCount: 0
 };
+let adminVisualState = {
+  loading: false,
+  tab: "sections",
+  mode: "list",
+  layout: {
+    hasExplicitSections: false,
+    order: [],
+    sections: []
+  },
+  banners: [],
+  polls: [],
+  draft: null,
+  draftType: "",
+  draftId: ""
+};
 let adminRoundSummaryState = {
   loading: false,
   loadingImage: false,
@@ -6421,6 +6436,1105 @@ const saveAdminCommunicationRecord = async (payload = {}) => {
   });
 };
 
+const ADMIN_VISUAL_SECTION_TYPES = [
+  { value: "announcement", label: "Novo aviso informativo" },
+  { value: "cta_card", label: "Novo card com botão" },
+  { value: "ticker", label: "Letreiro Notícias" },
+  { value: "banner_ref", label: "Banner vinculado" }
+];
+
+const ADMIN_VISUAL_STYLE_OPTIONS = [
+  { value: "default", label: "Padrão" },
+  { value: "warning", label: "Atenção" },
+  { value: "success", label: "Sucesso" },
+  { value: "danger", label: "Perigo" },
+  { value: "dark", label: "Escuro" }
+];
+
+const ADMIN_VISUAL_FEATURE_OPTIONS = [
+  { value: "", label: "Nenhum" },
+  { value: "chat", label: "Chat" },
+  { value: "fast_vote", label: "Voto rápido" },
+  { value: "scout", label: "Scout" }
+];
+
+const ADMIN_VISUAL_USER_SEGMENT_OPTIONS = [
+  { value: "", label: "Todos" },
+  { value: "debtors", label: "Devedores" },
+  { value: "new_users", label: "Novos usuários" },
+  { value: "veterans", label: "Veteranos" }
+];
+
+const getAdminVisualLayoutRef = () => doc(db, "settings", "home_layout");
+
+const normalizeAdminVisualSectionType = (value = "") => {
+  const normalized = normalizeHomeSectionType(value);
+  return normalized || "announcement";
+};
+
+const normalizeAdminVisualSectionDraft = (section = {}, index = 0) => {
+  const action = section.action && typeof section.action === "object" ? section.action : {};
+  const visibility = section.visibility && typeof section.visibility === "object" ? section.visibility : {};
+  return {
+    id: String(section.id || `section_${Date.now()}_${index}`),
+    type: normalizeAdminVisualSectionType(section.type),
+    enabled: section.enabled !== false,
+    title: String(section.title || ""),
+    subtitle: String(section.subtitle || ""),
+    body: String(section.body || ""),
+    bannerId: String(section.bannerId || ""),
+    mediaUrl: String(section.mediaUrl || ""),
+    mediaBase64: String(section.mediaBase64 || ""),
+    style: normalizeHomeSectionStyle(section.style),
+    actionType: normalizeHomeActionType(action.type),
+    actionValue: String(action.value || ""),
+    actionLabel: String(action.label || ""),
+    adminsOnly: visibility.adminsOnly === true,
+    featureFlag: normalizeHomeFeatureFlag(visibility.featureFlag),
+    competition: String(visibility.competition || ""),
+    userSegment: normalizeHomeUserSegment(visibility.userSegment),
+    startAt: formatAdminDateTimeInput(visibility.startAt || ""),
+    endAt: formatAdminDateTimeInput(visibility.endAt || "")
+  };
+};
+
+const buildAdminVisualSectionPayload = (draft = {}) => {
+  const startAt = String(draft.startAt || "").trim();
+  const endAt = String(draft.endAt || "").trim();
+  const startDate = startAt ? new Date(startAt) : null;
+  const endDate = endAt ? new Date(endAt) : null;
+
+  return {
+    id: String(draft.id || `section_${Date.now()}`),
+    type: normalizeAdminVisualSectionType(draft.type),
+    enabled: draft.enabled !== false,
+    title: String(draft.title || "").trim(),
+    subtitle: String(draft.subtitle || "").trim(),
+    body: String(draft.body || "").trim(),
+    bannerId: String(draft.bannerId || "").trim(),
+    mediaUrl: String(draft.mediaUrl || "").trim(),
+    mediaBase64: String(draft.mediaBase64 || "").trim(),
+    style: normalizeHomeSectionStyle(draft.style),
+    action: {
+      type: normalizeHomeActionType(draft.actionType),
+      value: String(draft.actionValue || "").trim(),
+      label: String(draft.actionLabel || "").trim()
+    },
+    visibility: {
+      adminsOnly: draft.adminsOnly === true,
+      requiresPendingVotes: draft.requiresPendingVotes === true,
+      requiresUnreadOpenChat: draft.requiresUnreadOpenChat === true,
+      requiresUnreadWaitingChat: draft.requiresUnreadWaitingChat === true,
+      requiresUnreadFinishedChat: draft.requiresUnreadFinishedChat === true,
+      featureFlag: normalizeHomeFeatureFlag(draft.featureFlag),
+      competition: String(draft.competition || "").trim(),
+      userSegment: normalizeHomeUserSegment(draft.userSegment),
+      startAt: startDate && !Number.isNaN(startDate.getTime()) ? Timestamp.fromDate(startDate) : null,
+      endAt: endDate && !Number.isNaN(endDate.getTime()) ? Timestamp.fromDate(endDate) : null
+    }
+  };
+};
+
+const normalizeAdminVisualBannerDraft = (banner = {}) => ({
+  id: String(banner.id || ""),
+  name: String(banner.name || ""),
+  type: ["full", "double", "small"].includes(String(banner.type || "")) ? String(banner.type || "") : "full",
+  imageUrl: String(banner.imageUrl || banner.image_url || ""),
+  targetUrl: String(banner.targetUrl || banner.target_url || ""),
+  imageUrl2: String(banner.imageUrl2 || banner.image_url2 || ""),
+  targetUrl2: String(banner.targetUrl2 || banner.target_url2 || ""),
+  active: banner.active !== false
+});
+
+const normalizeAdminVisualPollDraft = (poll = {}) => ({
+  id: String(poll.id || ""),
+  question: String(poll.question || ""),
+  options: Array.isArray(poll.options) ? poll.options.map((opt) => String(opt || "").trim()).filter(Boolean) : [],
+  deadlineHours: "24",
+  deadline: poll.deadline || null,
+  active: poll.active !== false,
+  votes: (poll.votes && typeof poll.votes === "object") ? poll.votes : {},
+  userVotes: (poll.userVotes && typeof poll.userVotes === "object") ? poll.userVotes : {}
+});
+
+const getAdminVisualSectionLabel = (type = "") => ({
+  announcement: "Aviso",
+  cta_card: "Card",
+  ticker: "Letreiro",
+  banner_ref: "Banner vinculado",
+  poll: "Enquete"
+}[normalizeAdminVisualSectionType(type)] || "Bloco");
+
+const getAdminVisualBannerTypeLabel = (type = "") => ({
+  full: "Full",
+  double: "Double",
+  small: "Small"
+}[String(type || "").toLowerCase()] || "Full");
+
+const getAdminVisualPollVotesTotal = (poll = {}) => Object.values(poll.votes || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+
+const loadAdminVisualManagementData = async ({ force = false } = {}) => {
+  const [layoutSnap, bannersSnap, pollsSnap] = await Promise.all([
+    readWithRuntimeCache("doc:settings:home_layout", () => getDoc(getAdminVisualLayoutRef()), { ttlMs: DATA_CACHE_TTL.warm, force }),
+    readWithRuntimeCache("col:banners", () => getDocs(collection(db, "banners")), { ttlMs: DATA_CACHE_TTL.warm, force }),
+    readWithRuntimeCache("col:polls", () => getDocs(collection(db, "polls")), { ttlMs: DATA_CACHE_TTL.hot, force })
+  ]);
+
+  const parsedLayout = parseHomeLayoutDoc(layoutSnap);
+  const homeLayoutSections = Array.isArray(parsedLayout.sections) ? parsedLayout.sections : [];
+  const sections = homeLayoutSections.map((section, index) => normalizeAdminVisualSectionDraft(section, index));
+  const order = Array.isArray(parsedLayout.order) && parsedLayout.order.length ? parsedLayout.order : sections.map((section) => section.id);
+  const banners = [];
+  bannersSnap.forEach((snap) => banners.push(normalizeAdminVisualBannerDraft({ id: snap.id, ...(snap.data() || {}) })));
+  const polls = [];
+  pollsSnap.forEach((snap) => polls.push(normalizeAdminVisualPollDraft({ id: snap.id, ...(snap.data() || {}) })));
+
+  adminVisualState.layout = {
+    hasExplicitSections: parsedLayout.hasExplicitSections === true,
+    order,
+    sections
+  };
+  adminVisualState.banners = banners;
+  adminVisualState.polls = polls;
+  homeSections = homeLayoutSections;
+  layoutOrder = order;
+  activeBannersMap = banners.reduce((map, item) => {
+    map[item.id] = item;
+    return map;
+  }, {});
+  activePolls = polls.reduce((map, item) => {
+    map[item.id] = item;
+    return map;
+  }, {});
+
+  return adminVisualState;
+};
+
+const logAdminVisualAction = async (type, payload = {}) => {
+  try {
+    const admin = await getCurrentAdminProfile();
+    if (!admin) return;
+    await addDoc(collection(db, "admin_audit_logs"), {
+      type,
+      source: "admin_visual",
+      adminUid: admin.uid || "",
+      adminName: admin.name || "",
+      adminEmail: admin.email || "",
+      ...payload,
+      createdAt: Timestamp.fromDate(new Date())
+    });
+  } catch (error) {
+    console.warn("Falha ao registrar auditoria visual:", error);
+  }
+};
+
+const persistAdminVisualSections = async (sections = [], action = "update_home_layout", payload = {}) => {
+  const nextSections = sections.map((section) => buildAdminVisualSectionPayload(section));
+  const nextOrder = nextSections.map((section) => section.id);
+
+  await setDoc(getAdminVisualLayoutRef(), {
+    sections: nextSections,
+    order: nextOrder,
+    updatedAt: Timestamp.fromDate(new Date())
+  }, { merge: true });
+
+  invalidateRuntimeCache("doc:settings:home_layout");
+  homeSections = nextSections;
+  layoutOrder = nextOrder;
+  await logAdminVisualAction(action, {
+    ...payload,
+    sectionId: payload.sectionId || "",
+    sectionType: payload.sectionType || "",
+    sectionsCount: nextSections.length
+  });
+  return { sections: nextSections, order: nextOrder };
+};
+
+const persistAdminVisualBanner = async (draft = {}, action = "update_banner", payload = {}) => {
+  const data = normalizeAdminVisualBannerDraft(draft);
+  const ref = data.id ? doc(db, "banners", data.id) : doc(collection(db, "banners"));
+  const bannerId = data.id || ref.id;
+  await setDoc(ref, {
+    name: data.name,
+    type: data.type,
+    imageUrl: data.imageUrl,
+    targetUrl: data.targetUrl,
+    imageUrl2: data.imageUrl2,
+    targetUrl2: data.targetUrl2,
+    active: data.active,
+    updatedAt: Timestamp.fromDate(new Date())
+  }, { merge: true });
+  invalidateRuntimeCache("col:banners");
+  await logAdminVisualAction(action, { ...payload, bannerId, bannerName: data.name, bannerType: data.type });
+  return bannerId;
+};
+
+const persistAdminVisualPoll = async (draft = {}, action = "update_poll", payload = {}) => {
+  const data = normalizeAdminVisualPollDraft(draft);
+  const ref = data.id ? doc(db, "polls", data.id) : doc(collection(db, "polls"));
+  const pollId = data.id || ref.id;
+  const deadlineHours = Number(draft.deadlineHours || 24);
+  const deadlineDate = Number.isFinite(deadlineHours) && deadlineHours > 0
+    ? new Date(Date.now() + (deadlineHours * 60 * 60 * 1000))
+    : (data.deadline ? toJsDate(data.deadline) : new Date(Date.now() + 24 * 60 * 60 * 1000));
+  await setDoc(ref, {
+    question: data.question,
+    options: data.options,
+    votes: data.votes,
+    userVotes: data.userVotes,
+    active: data.active,
+    deadline: Timestamp.fromDate(deadlineDate),
+    updatedAt: Timestamp.fromDate(new Date())
+  }, { merge: true });
+  invalidateRuntimeCache("col:polls");
+  await logAdminVisualAction(action, { ...payload, pollId, pollQuestion: data.question, optionsCount: data.options.length });
+  return pollId;
+};
+
+const refreshAdminVisualHomePreview = async () => {
+  if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) {
+    try {
+      await loadMatches({ force: true });
+    } catch (error) {
+      console.warn("Falha ao atualizar a home após ação visual:", error);
+    }
+  }
+};
+
+const renderAdminVisualHeader = (title, subtitle, actionsHtml = "") => `
+  <div class="admin-visual-header">
+    <div>
+      <h3>${escapeHtml(title)}</h3>
+      <p>${escapeHtml(subtitle)}</p>
+    </div>
+    ${actionsHtml}
+  </div>
+`;
+
+const renderAdminVisualTabs = () => {
+  const tab = adminVisualState.tab || "sections";
+  return `
+    <div class="admin-visual-tabs">
+      <button type="button" class="${tab === "sections" ? "is-active" : ""}" onclick="window.switchAdminVisualTab('sections')">Sections</button>
+      <button type="button" class="${tab === "banners" ? "is-active" : ""}" onclick="window.switchAdminVisualTab('banners')">Banners</button>
+      <button type="button" class="${tab === "polls" ? "is-active" : ""}" onclick="window.switchAdminVisualTab('polls')">Enquetes</button>
+    </div>
+  `;
+};
+
+const renderAdminVisualEmpty = (title, description) => `
+  <div class="empty-state empty-state--default admin-visual-empty">
+    <p class="empty-state__title">${escapeHtml(title)}</p>
+    <p class="empty-state__description">${escapeHtml(description)}</p>
+  </div>
+`;
+
+const renderAdminVisualSectionList = () => {
+  const sections = Array.isArray(adminVisualState.layout.sections) ? adminVisualState.layout.sections : [];
+  if (!sections.length) {
+    return renderAdminVisualEmpty("Nenhuma section encontrada", "Use Adicionar Section para criar um novo bloco visual.");
+  }
+
+  const canReorder = sections.length > 1;
+  const cards = sections.map((section, index) => {
+    const enabled = section.enabled !== false;
+    const typeLabel = getAdminVisualSectionLabel(section.type);
+    const visibilityBits = [];
+    if (section.visibility?.adminsOnly) visibilityBits.push("Admins");
+    if (section.visibility?.featureFlag) visibilityBits.push(section.visibility.featureFlag);
+    if (section.visibility?.userSegment) visibilityBits.push(section.visibility.userSegment);
+    if (section.visibility?.competition) visibilityBits.push(section.visibility.competition);
+    const summary = [section.subtitle, section.body].filter(Boolean).join(" • ") || "Sem texto complementar.";
+    return `
+      <div class="admin-visual-card">
+        <div class="admin-visual-card__top">
+          <div class="admin-visual-card__meta">
+            <span class="admin-visual-badge ${enabled ? "is-on" : "is-off"}">${enabled ? "ATIVO" : "OCULTO"}</span>
+            <span class="admin-visual-badge is-soft">#${index + 1}</span>
+            <span class="admin-visual-badge is-soft">${escapeHtml(typeLabel)}</span>
+          </div>
+          <div class="admin-visual-card__title">${escapeHtml(section.title || "Sem título")}</div>
+          <div class="admin-visual-card__desc">${escapeHtml(summary)}</div>
+          ${visibilityBits.length ? `<div class="admin-visual-card__sub">${escapeHtml(visibilityBits.join(" • "))}</div>` : ""}
+        </div>
+        <div class="admin-visual-card__actions">
+          ${canReorder ? `<button type="button" class="admin-visual-action" onclick="window.moveAdminVisualSection('${escapeJsString(section.id)}', -1)" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button>` : ""}
+          ${canReorder ? `<button type="button" class="admin-visual-action" onclick="window.moveAdminVisualSection('${escapeJsString(section.id)}', 1)" ${index === sections.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button>` : ""}
+          <button type="button" class="admin-visual-action" onclick="window.toggleAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas ${enabled ? "fa-eye-slash" : "fa-eye"}"></i></button>
+          <button type="button" class="admin-visual-action" onclick="window.duplicateAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas fa-copy"></i></button>
+          <button type="button" class="admin-visual-action is-edit" onclick="window.openAdminVisualSectionEditor('${escapeJsString(section.id)}')"><i class="fas fa-pen"></i></button>
+          <button type="button" class="admin-visual-action is-danger" onclick="window.deleteAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="admin-visual-toolbar">
+      <div class="admin-visual-toolbar__copy">
+        <div class="admin-visual-toolbar__title">Sections da home</div>
+        <div class="admin-visual-toolbar__hint">Use os blocos existentes como base e ajuste apenas o que for seguro.</div>
+      </div>
+      <button type="button" class="admin-visual-primary" onclick="window.openAdminVisualPresetPicker()"><i class="fas fa-plus"></i> Adicionar Section</button>
+    </div>
+    <div class="admin-visual-list">${cards}</div>
+  `;
+};
+
+const renderAdminVisualBannerList = () => {
+  const banners = Array.isArray(adminVisualState.banners) ? adminVisualState.banners : [];
+  if (!banners.length) {
+    return renderAdminVisualEmpty("Nenhum banner encontrado", "Você pode criar um banner novo a partir desta tela.");
+  }
+
+  const cards = banners.map((banner) => {
+    const typeLabel = getAdminVisualBannerTypeLabel(banner.type);
+    return `
+      <div class="admin-visual-card admin-visual-card--banner">
+        <div class="admin-visual-thumb">
+          ${banner.imageUrl ? `<img src="${escapeHtml(banner.imageUrl)}" alt="">` : `<i class="fas fa-image"></i>`}
+        </div>
+        <div class="admin-visual-card__body">
+          <div class="admin-visual-card__meta">
+            <span class="admin-visual-badge ${banner.active ? "is-on" : "is-off"}">${banner.active ? "ATIVO" : "INATIVO"}</span>
+            <span class="admin-visual-badge is-soft">${escapeHtml(typeLabel)}</span>
+            <span class="admin-visual-badge is-soft">${escapeHtml(banner.id || "sem-id")}</span>
+          </div>
+          <div class="admin-visual-card__title">${escapeHtml(banner.name || "Sem nome")}</div>
+          <div class="admin-visual-card__desc">${escapeHtml(banner.targetUrl || "Sem link destino")}</div>
+        </div>
+        <div class="admin-visual-card__actions">
+          <button type="button" class="admin-visual-action is-edit" onclick="window.openAdminVisualBannerEditor('${escapeJsString(banner.id)}')"><i class="fas fa-pen"></i></button>
+          <button type="button" class="admin-visual-action" onclick="window.previewAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas fa-eye"></i></button>
+          <button type="button" class="admin-visual-action ${banner.active ? "" : "is-success"}" onclick="window.toggleAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas ${banner.active ? "fa-eye-slash" : "fa-eye"}"></i></button>
+          <button type="button" class="admin-visual-action is-danger" onclick="window.deleteAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="admin-visual-toolbar">
+      <div class="admin-visual-toolbar__copy">
+        <div class="admin-visual-toolbar__title">Banners cadastrados</div>
+        <div class="admin-visual-toolbar__hint">Gerencie imagens e links já usados pela home.</div>
+      </div>
+      <button type="button" class="admin-visual-primary" onclick="window.openAdminVisualBannerEditor('')"><i class="fas fa-plus"></i> Novo banner</button>
+    </div>
+    <div class="admin-visual-list">${cards}</div>
+  `;
+};
+
+const renderAdminVisualPollList = () => {
+  const polls = Array.isArray(adminVisualState.polls) ? adminVisualState.polls : [];
+  if (!polls.length) {
+    return renderAdminVisualEmpty("Nenhuma enquete encontrada", "Crie uma enquete nova para aparecer na home.");
+  }
+
+  const cards = polls.map((poll) => {
+    const totalVotes = getAdminVisualPollVotesTotal(poll);
+    const deadlineLabel = poll.deadline ? formatAdminDateTimeLabel(poll.deadline) : "Sem prazo";
+    const optionsCount = Array.isArray(poll.options) ? poll.options.length : 0;
+    return `
+      <div class="admin-visual-card admin-visual-card--poll">
+        <div class="admin-visual-card__top">
+          <div class="admin-visual-card__meta">
+            <span class="admin-visual-badge ${poll.active ? "is-on" : "is-off"}">${poll.active ? "ATIVA" : "ENCERRADA"}</span>
+            <span class="admin-visual-badge is-soft">${optionsCount} opção(ões)</span>
+            <span class="admin-visual-badge is-soft">${totalVotes} voto(s)</span>
+          </div>
+          <div class="admin-visual-card__title">${escapeHtml(poll.question || "Sem pergunta")}</div>
+          <div class="admin-visual-card__desc">Encerra em ${escapeHtml(deadlineLabel)}</div>
+        </div>
+        <div class="admin-visual-card__actions">
+          <button type="button" class="admin-visual-action is-edit" onclick="window.openAdminVisualPollEditor('${escapeJsString(poll.id)}')"><i class="fas fa-pen"></i></button>
+          <button type="button" class="admin-visual-action ${poll.active ? "" : "is-success"}" onclick="window.toggleAdminVisualPoll('${escapeJsString(poll.id)}')"><i class="fas ${poll.active ? "fa-eye-slash" : "fa-eye"}"></i></button>
+          <button type="button" class="admin-visual-action is-danger" onclick="window.deleteAdminVisualPoll('${escapeJsString(poll.id)}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="admin-visual-toolbar">
+      <div class="admin-visual-toolbar__copy">
+        <div class="admin-visual-toolbar__title">Enquetes publicadas</div>
+        <div class="admin-visual-toolbar__hint">Crie perguntas, opções e prazo de encerramento.</div>
+      </div>
+      <button type="button" class="admin-visual-primary" onclick="window.openAdminVisualPollEditor('')"><i class="fas fa-plus"></i> Nova enquete</button>
+    </div>
+    <div class="admin-visual-list">${cards}</div>
+  `;
+};
+
+const renderAdminVisualPresetPicker = () => `
+  <div class="admin-visual-section">
+    <div class="admin-visual-section__copy">
+      <div class="admin-visual-section__title">Adicionar Section</div>
+      <div class="admin-visual-section__hint">Escolha um preset simples para iniciar o novo bloco visual.</div>
+    </div>
+    <div class="admin-visual-preset-grid">
+      ${ADMIN_VISUAL_SECTION_TYPES.map((preset) => `
+        <button type="button" class="admin-visual-preset" onclick="window.openAdminVisualSectionEditor('', '${escapeJsString(preset.value)}')">
+          <span class="admin-visual-preset__icon"><i class="fas fa-sparkles"></i></span>
+          <span class="admin-visual-preset__title">${escapeHtml(preset.label)}</span>
+        </button>
+      `).join("")}
+    </div>
+    <button type="button" class="admin-visual-secondary" onclick="window.openAdminVisualManagementModal()">Cancelar</button>
+  </div>
+`;
+
+const renderAdminVisualSectionEditor = () => {
+  const draft = adminVisualState.draft || normalizeAdminVisualSectionDraft({}, 0);
+  const bannerOptions = (adminVisualState.banners || [])
+    .map((banner) => `<option value="${escapeHtml(banner.id)}" ${normalizeAdminText(banner.id || "") === normalizeAdminText(draft.bannerId || "") ? "selected" : ""}>${escapeHtml(banner.name || banner.id || "")}</option>`)
+    .join("");
+
+  return `
+    <div class="admin-visual-section">
+      <div class="admin-visual-section__copy">
+        <div class="admin-visual-section__title">${draft.id && !String(draft.id).startsWith("section_") ? "Editar Section" : "Nova Section"}</div>
+        <div class="admin-visual-section__hint">Preencha apenas os campos já usados pela home.</div>
+      </div>
+      <div class="admin-visual-form-grid">
+        <label class="admin-visual-field">
+          <span>Tipo</span>
+          <select id="adminVisualSectionType" class="admin-creation-input">
+            ${ADMIN_VISUAL_SECTION_TYPES.map((item) => `<option value="${escapeHtml(item.value)}" ${draft.type === item.value ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}
+          </select>
+        </label>
+        <label class="admin-visual-field">
+          <span>Estilo</span>
+          <select id="adminVisualSectionStyle" class="admin-creation-input">
+            ${ADMIN_VISUAL_STYLE_OPTIONS.map((item) => `<option value="${escapeHtml(item.value)}" ${draft.style === item.value ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}
+          </select>
+        </label>
+        <label class="admin-visual-field">
+          <span>Título</span>
+          <input id="adminVisualSectionTitle" class="admin-creation-input" value="${escapeHtml(draft.title || "")}" placeholder="Título do bloco">
+        </label>
+        <label class="admin-visual-field">
+          <span>Subtítulo</span>
+          <input id="adminVisualSectionSubtitle" class="admin-creation-input" value="${escapeHtml(draft.subtitle || "")}" placeholder="Subtítulo opcional">
+        </label>
+        <label class="admin-visual-field admin-visual-field--full">
+          <span>Texto</span>
+          <textarea id="adminVisualSectionBody" class="admin-communication-textarea" placeholder="Mensagem do bloco">${escapeHtml(draft.body || "")}</textarea>
+        </label>
+        <label class="admin-visual-field">
+          <span>Banner vinculado</span>
+          <select id="adminVisualSectionBannerId" class="admin-creation-input">
+            <option value="">Nenhum</option>
+            ${bannerOptions}
+          </select>
+        </label>
+        <label class="admin-visual-field">
+          <span>URL da mídia</span>
+          <input id="adminVisualSectionMediaUrl" class="admin-creation-input" value="${escapeHtml(draft.mediaUrl || "")}" placeholder="https://...">
+        </label>
+        <label class="admin-visual-field">
+          <span>Ação</span>
+          <select id="adminVisualSectionActionType" class="admin-creation-input">
+            ${[{ value: "none", label: "Nenhuma" }, { value: "url", label: "Abrir URL" }, { value: "tab", label: "Abrir aba" }].map((item) => `<option value="${escapeHtml(item.value)}" ${draft.actionType === item.value ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}
+          </select>
+        </label>
+        <label class="admin-visual-field">
+          <span>Valor da ação</span>
+          <input id="adminVisualSectionActionValue" class="admin-creation-input" value="${escapeHtml(draft.actionValue || "")}" placeholder="https:// ou nome da aba">
+        </label>
+        <label class="admin-visual-field">
+          <span>Label do botão</span>
+          <input id="adminVisualSectionActionLabel" class="admin-creation-input" value="${escapeHtml(draft.actionLabel || "")}" placeholder="Texto do botão">
+        </label>
+        <label class="admin-visual-field">
+          <span>Segmento</span>
+          <select id="adminVisualSectionUserSegment" class="admin-creation-input">
+            ${ADMIN_VISUAL_USER_SEGMENT_OPTIONS.map((item) => `<option value="${escapeHtml(item.value)}" ${draft.userSegment === item.value ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}
+          </select>
+        </label>
+        <label class="admin-visual-field">
+          <span>Feature flag</span>
+          <select id="adminVisualSectionFeatureFlag" class="admin-creation-input">
+            ${ADMIN_VISUAL_FEATURE_OPTIONS.map((item) => `<option value="${escapeHtml(item.value)}" ${draft.featureFlag === item.value ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}
+          </select>
+        </label>
+        <label class="admin-visual-field">
+          <span>Competição visível</span>
+          <input id="adminVisualSectionCompetition" class="admin-creation-input" value="${escapeHtml(draft.competition || "")}" placeholder="Ex: Champions League">
+        </label>
+        <label class="admin-visual-field">
+          <span>Início</span>
+          <input id="adminVisualSectionStartAt" type="datetime-local" class="admin-creation-input" value="${escapeHtml(draft.startAt || "")}">
+        </label>
+        <label class="admin-visual-field">
+          <span>Fim</span>
+          <input id="adminVisualSectionEndAt" type="datetime-local" class="admin-creation-input" value="${escapeHtml(draft.endAt || "")}">
+        </label>
+        <label class="admin-visual-field admin-visual-field--inline">
+          <input id="adminVisualSectionEnabled" type="checkbox" ${draft.enabled !== false ? "checked" : ""}>
+          <span>Ativo</span>
+        </label>
+        <label class="admin-visual-field admin-visual-field--inline">
+          <input id="adminVisualSectionAdminsOnly" type="checkbox" ${draft.adminsOnly ? "checked" : ""}>
+          <span>Somente admins</span>
+        </label>
+      </div>
+    </div>
+  `;
+};
+
+const renderAdminVisualBannerEditor = () => {
+  const draft = adminVisualState.draft || normalizeAdminVisualBannerDraft({});
+  return `
+    <div class="admin-visual-section">
+      <div class="admin-visual-section__copy">
+        <div class="admin-visual-section__title">${draft.id ? "Editar banner" : "Novo banner"}</div>
+        <div class="admin-visual-section__hint">Gerencie a imagem e o destino do banner existente.</div>
+      </div>
+      <div class="admin-visual-form-grid">
+        <label class="admin-visual-field">
+          <span>Nome interno</span>
+          <input id="adminVisualBannerName" class="admin-creation-input" value="${escapeHtml(draft.name || "")}" placeholder="Nome do banner">
+        </label>
+        <label class="admin-visual-field">
+          <span>Tipo</span>
+          <select id="adminVisualBannerType" class="admin-creation-input">
+            ${["full", "double", "small"].map((type) => `<option value="${type}" ${draft.type === type ? "selected" : ""}>${getAdminVisualBannerTypeLabel(type)}</option>`).join("")}
+          </select>
+        </label>
+        <label class="admin-visual-field">
+          <span>Imagem 1</span>
+          <input id="adminVisualBannerImage1" class="admin-creation-input" value="${escapeHtml(draft.imageUrl || "")}" placeholder="https://...">
+        </label>
+        <label class="admin-visual-field">
+          <span>Destino 1</span>
+          <input id="adminVisualBannerTarget1" class="admin-creation-input" value="${escapeHtml(draft.targetUrl || "")}" placeholder="https://...">
+        </label>
+        <label class="admin-visual-field">
+          <span>Imagem 2</span>
+          <input id="adminVisualBannerImage2" class="admin-creation-input" value="${escapeHtml(draft.imageUrl2 || "")}" placeholder="https://...">
+        </label>
+        <label class="admin-visual-field">
+          <span>Destino 2</span>
+          <input id="adminVisualBannerTarget2" class="admin-creation-input" value="${escapeHtml(draft.targetUrl2 || "")}" placeholder="https://...">
+        </label>
+        <label class="admin-visual-field admin-visual-field--inline">
+          <input id="adminVisualBannerActive" type="checkbox" ${draft.active ? "checked" : ""}>
+          <span>Ativo</span>
+        </label>
+      </div>
+    </div>
+  `;
+};
+
+const renderAdminVisualPollEditor = () => {
+  const draft = adminVisualState.draft || normalizeAdminVisualPollDraft({});
+  const optionsValue = Array.isArray(draft.options) ? draft.options.join("\n") : "";
+  const deadlineValue = draft.deadline && toJsDate(draft.deadline) ? formatAdminDateTimeInput(toJsDate(draft.deadline)) : "";
+  return `
+    <div class="admin-visual-section">
+      <div class="admin-visual-section__copy">
+        <div class="admin-visual-section__title">${draft.id ? "Editar enquete" : "Nova enquete"}</div>
+        <div class="admin-visual-section__hint">A enquete será salva no mesmo formato usado pela home.</div>
+      </div>
+      <div class="admin-visual-form-grid">
+        <label class="admin-visual-field admin-visual-field--full">
+          <span>Pergunta</span>
+          <input id="adminVisualPollQuestion" class="admin-creation-input" value="${escapeHtml(draft.question || "")}" placeholder="Pergunta da enquete">
+        </label>
+        <label class="admin-visual-field admin-visual-field--full">
+          <span>Opções</span>
+          <textarea id="adminVisualPollOptions" class="admin-communication-textarea" placeholder="Uma opção por linha">${escapeHtml(optionsValue)}</textarea>
+        </label>
+        <label class="admin-visual-field">
+          <span>Encerramento</span>
+          <input id="adminVisualPollDeadline" type="datetime-local" class="admin-creation-input" value="${escapeHtml(deadlineValue || "")}">
+        </label>
+        <label class="admin-visual-field">
+          <span>Horas até encerrar</span>
+          <input id="adminVisualPollDeadlineHours" type="number" min="1" step="1" class="admin-creation-input" value="${escapeHtml(draft.deadlineHours || "24")}" placeholder="24">
+        </label>
+        <label class="admin-visual-field admin-visual-field--inline">
+          <input id="adminVisualPollActive" type="checkbox" ${draft.active !== false ? "checked" : ""}>
+          <span>Ativa</span>
+        </label>
+      </div>
+    </div>
+  `;
+};
+
+const renderAdminVisualContent = () => {
+  const tab = adminVisualState.tab || "sections";
+  if (adminVisualState.mode === "preset") return renderAdminVisualPresetPicker();
+  if (adminVisualState.mode === "section-form") return renderAdminVisualSectionEditor();
+  if (adminVisualState.mode === "banner-form") return renderAdminVisualBannerEditor();
+  if (adminVisualState.mode === "poll-form") return renderAdminVisualPollEditor();
+
+  if (tab === "banners") return renderAdminVisualBannerList();
+  if (tab === "polls") return renderAdminVisualPollList();
+  return renderAdminVisualSectionList();
+};
+
+const renderAdminVisualManagementModal = () => {
+  const title = "Gestão Visual";
+  const subtitle = "Sections, banners e enquetes da home";
+  const content = renderAdminVisualContent();
+  const footerLeft = adminVisualState.mode === "list"
+    ? '<button type="button" onclick="window.openAdminMenu()" class="admin-visual-secondary">Voltar</button>'
+    : '<button type="button" onclick="window.openAdminVisualManagementModal()" class="admin-visual-secondary">Cancelar</button>';
+  const footerRight = ["section-form", "banner-form", "poll-form"].includes(adminVisualState.mode)
+    ? '<button type="button" onclick="window.saveAdminVisualForm()" class="admin-visual-primary">Salvar alterações</button>'
+    : "";
+
+  window.openModal(`
+    <div class="admin-visual-modal">
+      ${renderAdminVisualHeader(title, subtitle, '<button type="button" onclick="window.closeModal()" class="admin-visual-close"><i class="fas fa-times"></i></button>')}
+      <div class="admin-visual-body">
+        ${adminVisualState.mode === "list" ? renderAdminVisualTabs() : ""}
+        ${content}
+      </div>
+      <div class="admin-visual-footer">
+        ${footerLeft}
+        ${footerRight}
+      </div>
+    </div>
+  `);
+};
+
+window.openAdminVisualManagementModal = async () => {
+  window.__setAdminReturnTarget(() => window.openAdminMenu());
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para acessar a gestão visual.");
+    return;
+  }
+
+  adminVisualState.mode = "list";
+  adminVisualState.tab = "sections";
+  adminVisualState.draft = null;
+  adminVisualState.draftType = "";
+  adminVisualState.draftId = "";
+
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh] flex flex-col">
+      <div class="p-6 text-center">
+        <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
+        <p class="text-xs font-black text-slate-500 uppercase">Carregando gestão visual...</p>
+      </div>
+    </div>
+  `;
+
+  try {
+    adminVisualState.loading = true;
+    await loadAdminVisualManagementData({ force: true });
+    renderAdminVisualManagementModal();
+  } catch (error) {
+    console.error("Erro ao abrir gestão visual:", error);
+    cont.innerHTML = `
+      <div class="bg-white p-6 text-center rounded shadow-xl">
+        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar a gestão visual.</p>
+        <button onclick="window.openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
+      </div>
+    `;
+  } finally {
+    adminVisualState.loading = false;
+  }
+};
+
+window.switchAdminVisualTab = (tab) => {
+  adminVisualState.tab = ["sections", "banners", "polls"].includes(tab) ? tab : "sections";
+  adminVisualState.mode = "list";
+  adminVisualState.draft = null;
+  adminVisualState.draftType = "";
+  adminVisualState.draftId = "";
+  renderAdminVisualManagementModal();
+};
+
+window.openAdminVisualPresetPicker = () => {
+  adminVisualState.mode = "preset";
+  renderAdminVisualManagementModal();
+};
+
+window.openAdminVisualSectionEditor = (sectionId = "", presetType = "") => {
+  const existing = (adminVisualState.layout.sections || []).find((section) => section.id === sectionId) || null;
+  const preset = presetType || existing?.type || "announcement";
+  const baseSection = existing || {
+    id: `section_${Date.now()}`,
+    type: preset,
+    enabled: true,
+    title: preset === "ticker" ? "" : (preset === "banner_ref" ? "Banner vinculado" : "Novo aviso informativo"),
+    subtitle: "",
+    body: "",
+    bannerId: "",
+    mediaUrl: "",
+    mediaBase64: "",
+    style: preset === "ticker" ? "dark" : "default",
+    action: { type: "none", value: "", label: "" },
+    visibility: {
+      adminsOnly: false,
+      requiresPendingVotes: false,
+      requiresUnreadOpenChat: false,
+      requiresUnreadWaitingChat: false,
+      requiresUnreadFinishedChat: false,
+      featureFlag: "",
+      competition: "",
+      userSegment: "",
+      startAt: null,
+      endAt: null
+    }
+  };
+
+  adminVisualState.draft = normalizeAdminVisualSectionDraft(baseSection);
+  adminVisualState.draftId = baseSection.id;
+  adminVisualState.draftType = "section";
+  adminVisualState.mode = "section-form";
+  renderAdminVisualManagementModal();
+};
+
+window.openAdminVisualBannerEditor = (bannerId = "") => {
+  const existing = (adminVisualState.banners || []).find((banner) => banner.id === bannerId) || null;
+  adminVisualState.draft = normalizeAdminVisualBannerDraft(existing || {});
+  adminVisualState.draftId = existing?.id || "";
+  adminVisualState.draftType = "banner";
+  adminVisualState.mode = "banner-form";
+  renderAdminVisualManagementModal();
+};
+
+window.previewAdminVisualBanner = (bannerId = "") => {
+  const banner = (adminVisualState.banners || []).find((item) => item.id === bannerId);
+  if (!banner) return;
+  const link = String(banner.targetUrl || banner.targetUrl2 || "#").trim() || "#";
+  if (link === "#") return showAdminCommunicationToast("Banner sem link de destino.", "warning");
+  window.open(link.startsWith("http") ? link : `https://${link}`, "_blank", "noopener,noreferrer");
+};
+
+window.openAdminVisualPollEditor = (pollId = "") => {
+  const existing = (adminVisualState.polls || []).find((poll) => poll.id === pollId) || null;
+  adminVisualState.draft = normalizeAdminVisualPollDraft(existing || {});
+  adminVisualState.draftId = existing?.id || "";
+  adminVisualState.draftType = "poll";
+  adminVisualState.mode = "poll-form";
+  renderAdminVisualManagementModal();
+};
+
+window.moveAdminVisualSection = async (sectionId, direction = 0) => {
+  const sections = [...(adminVisualState.layout.sections || [])];
+  const index = sections.findIndex((section) => section.id === sectionId);
+  if (index < 0) return;
+  const newIndex = index + Number(direction || 0);
+  if (newIndex < 0 || newIndex >= sections.length) return;
+  const [item] = sections.splice(index, 1);
+  sections.splice(newIndex, 0, item);
+  adminVisualState.layout.sections = sections;
+  try {
+    await persistAdminVisualSections(sections, "reorder_home_section", {
+      sectionId,
+      direction,
+      sectionType: item.type
+    });
+    renderAdminVisualManagementModal();
+    await refreshAdminVisualHomePreview();
+    showAdminCommunicationToast("Section reordenada!");
+  } catch (error) {
+    console.error("Erro ao reordenar section:", error);
+    showAdminCommunicationToast("Não foi possível reordenar a section.", "danger");
+  }
+};
+
+window.toggleAdminVisualSection = async (sectionId) => {
+  const sections = [...(adminVisualState.layout.sections || [])];
+  const index = sections.findIndex((section) => section.id === sectionId);
+  if (index < 0) return;
+  sections[index] = {
+    ...sections[index],
+    enabled: sections[index].enabled === false
+  };
+  try {
+    await persistAdminVisualSections(sections, sections[index].enabled ? "show_home_section" : "hide_home_section", {
+      sectionId,
+      sectionType: sections[index].type
+    });
+    adminVisualState.layout.sections = sections;
+    renderAdminVisualManagementModal();
+    await refreshAdminVisualHomePreview();
+    showAdminCommunicationToast(sections[index].enabled ? "Section exibida!" : "Section ocultada!");
+  } catch (error) {
+    console.error("Erro ao alternar section:", error);
+    showAdminCommunicationToast("Não foi possível alterar a visibility da section.", "danger");
+  }
+};
+
+window.duplicateAdminVisualSection = async (sectionId) => {
+  const sections = [...(adminVisualState.layout.sections || [])];
+  const index = sections.findIndex((section) => section.id === sectionId);
+  if (index < 0) return;
+  const original = sections[index];
+  const duplicate = {
+    ...original,
+    id: `section_${Date.now()}`,
+    title: `${String(original.title || "Section").trim()} (cópia)`,
+    enabled: false
+  };
+  sections.splice(index + 1, 0, duplicate);
+  try {
+    await persistAdminVisualSections(sections, "duplicate_home_section", {
+      sectionId: original.id,
+      sectionType: original.type
+    });
+    adminVisualState.layout.sections = sections;
+    renderAdminVisualManagementModal();
+    showAdminCommunicationToast("Section duplicada!");
+  } catch (error) {
+    console.error("Erro ao duplicar section:", error);
+    showAdminCommunicationToast("Não foi possível duplicar a section.", "danger");
+  }
+};
+
+window.deleteAdminVisualSection = async (sectionId) => {
+  if (!confirm("Excluir esta section visual?")) return;
+  const sections = [...(adminVisualState.layout.sections || [])].filter((section) => section.id !== sectionId);
+  try {
+    await persistAdminVisualSections(sections, "delete_home_section", { sectionId });
+    adminVisualState.layout.sections = sections;
+    renderAdminVisualManagementModal();
+    await refreshAdminVisualHomePreview();
+    showAdminCommunicationToast("Section removida.");
+  } catch (error) {
+    console.error("Erro ao remover section:", error);
+    showAdminCommunicationToast("Não foi possível remover a section.", "danger");
+  }
+};
+
+window.toggleAdminVisualBanner = async (bannerId) => {
+  const banner = (adminVisualState.banners || []).find((item) => item.id === bannerId);
+  if (!banner) return;
+  try {
+    await persistAdminVisualBanner({
+      ...banner,
+      active: !banner.active
+    }, banner.active ? "disable_banner" : "enable_banner", { bannerId });
+    await loadAdminVisualManagementData({ force: true });
+    renderAdminVisualManagementModal();
+    await refreshAdminVisualHomePreview();
+    showAdminCommunicationToast(banner.active ? "Banner desativado." : "Banner ativado.");
+  } catch (error) {
+    console.error("Erro ao alternar banner:", error);
+    showAdminCommunicationToast("Não foi possível alterar o banner.", "danger");
+  }
+};
+
+window.deleteAdminVisualBanner = async (bannerId) => {
+  if (!confirm("Desativar este banner?")) return;
+  const banner = (adminVisualState.banners || []).find((item) => item.id === bannerId);
+  if (!banner) return;
+  try {
+    await persistAdminVisualBanner({
+      ...banner,
+      active: false
+    }, "delete_banner", { bannerId });
+    await loadAdminVisualManagementData({ force: true });
+    renderAdminVisualManagementModal();
+    await refreshAdminVisualHomePreview();
+    showAdminCommunicationToast("Banner desativado.");
+  } catch (error) {
+    console.error("Erro ao desativar banner:", error);
+    showAdminCommunicationToast("Não foi possível desativar o banner.", "danger");
+  }
+};
+
+window.toggleAdminVisualPoll = async (pollId) => {
+  const poll = (adminVisualState.polls || []).find((item) => item.id === pollId);
+  if (!poll) return;
+  try {
+    await persistAdminVisualPoll({
+      ...poll,
+      active: !poll.active
+    }, poll.active ? "disable_poll" : "enable_poll", { pollId });
+    await loadAdminVisualManagementData({ force: true });
+    renderAdminVisualManagementModal();
+    await refreshAdminVisualHomePreview();
+    showAdminCommunicationToast(poll.active ? "Enquete encerrada." : "Enquete ativada.");
+  } catch (error) {
+    console.error("Erro ao alternar enquete:", error);
+    showAdminCommunicationToast("Não foi possível alterar a enquete.", "danger");
+  }
+};
+
+window.deleteAdminVisualPoll = async (pollId) => {
+  if (!confirm("Desativar esta enquete? Os votos serão preservados.")) return;
+  const poll = (adminVisualState.polls || []).find((item) => item.id === pollId);
+  if (!poll) return;
+  try {
+    await persistAdminVisualPoll({
+      ...poll,
+      active: false
+    }, "delete_poll", { pollId });
+    await loadAdminVisualManagementData({ force: true });
+    renderAdminVisualManagementModal();
+    showAdminCommunicationToast("Enquete desativada.");
+  } catch (error) {
+    console.error("Erro ao desativar enquete:", error);
+    showAdminCommunicationToast("Não foi possível desativar a enquete.", "danger");
+  }
+};
+
+window.saveAdminVisualForm = async () => {
+  if (adminVisualState.mode === "section-form") {
+    const draft = {
+      ...(adminVisualState.draft || {}),
+      type: String(document.getElementById("adminVisualSectionType")?.value || "announcement"),
+      style: String(document.getElementById("adminVisualSectionStyle")?.value || "default"),
+      title: String(document.getElementById("adminVisualSectionTitle")?.value || "").trim(),
+      subtitle: String(document.getElementById("adminVisualSectionSubtitle")?.value || "").trim(),
+      body: String(document.getElementById("adminVisualSectionBody")?.value || "").trim(),
+      bannerId: String(document.getElementById("adminVisualSectionBannerId")?.value || "").trim(),
+      mediaUrl: String(document.getElementById("adminVisualSectionMediaUrl")?.value || "").trim(),
+      actionType: String(document.getElementById("adminVisualSectionActionType")?.value || "none"),
+      actionValue: String(document.getElementById("adminVisualSectionActionValue")?.value || "").trim(),
+      actionLabel: String(document.getElementById("adminVisualSectionActionLabel")?.value || "").trim(),
+      adminsOnly: document.getElementById("adminVisualSectionAdminsOnly")?.checked === true,
+      enabled: document.getElementById("adminVisualSectionEnabled")?.checked === true,
+      featureFlag: String(document.getElementById("adminVisualSectionFeatureFlag")?.value || "").trim(),
+      competition: String(document.getElementById("adminVisualSectionCompetition")?.value || "").trim(),
+      userSegment: String(document.getElementById("adminVisualSectionUserSegment")?.value || "").trim(),
+      startAt: String(document.getElementById("adminVisualSectionStartAt")?.value || "").trim(),
+      endAt: String(document.getElementById("adminVisualSectionEndAt")?.value || "").trim()
+    };
+
+    if (!draft.title && draft.type !== "ticker") {
+      showAdminCommunicationToast("Informe um título para a section.", "danger");
+      return;
+    }
+    if (draft.type === "banner_ref" && !draft.bannerId) {
+      showAdminCommunicationToast("Selecione um banner para vincular a section.", "danger");
+      return;
+    }
+
+    try {
+      const sections = [...(adminVisualState.layout.sections || [])];
+      const existingIndex = sections.findIndex((section) => section.id === draft.id);
+      const nextSection = buildAdminVisualSectionPayload(draft);
+      if (existingIndex >= 0) sections[existingIndex] = nextSection;
+      else sections.push(nextSection);
+      await persistAdminVisualSections(sections, existingIndex >= 0 ? "update_home_section" : "create_home_section", {
+        sectionId: nextSection.id,
+        sectionType: nextSection.type,
+        title: nextSection.title
+      });
+      adminVisualState.mode = "list";
+      adminVisualState.draft = null;
+      await loadAdminVisualManagementData({ force: true });
+      renderAdminVisualManagementModal();
+      await refreshAdminVisualHomePreview();
+      showAdminCommunicationToast(existingIndex >= 0 ? "Section atualizada!" : "Section criada!");
+      return;
+    } catch (error) {
+      console.error("Erro ao salvar section:", error);
+      showAdminCommunicationToast("Não foi possível salvar a section.", "danger");
+      return;
+    }
+  }
+
+  if (adminVisualState.mode === "banner-form") {
+    const draft = {
+      ...(adminVisualState.draft || {}),
+      name: String(document.getElementById("adminVisualBannerName")?.value || "").trim(),
+      type: String(document.getElementById("adminVisualBannerType")?.value || "full"),
+      imageUrl: String(document.getElementById("adminVisualBannerImage1")?.value || "").trim(),
+      targetUrl: String(document.getElementById("adminVisualBannerTarget1")?.value || "").trim(),
+      imageUrl2: String(document.getElementById("adminVisualBannerImage2")?.value || "").trim(),
+      targetUrl2: String(document.getElementById("adminVisualBannerTarget2")?.value || "").trim(),
+      active: document.getElementById("adminVisualBannerActive")?.checked === true
+    };
+
+    if (!draft.name) {
+      showAdminCommunicationToast("Informe o nome interno do banner.", "danger");
+      return;
+    }
+    if (!isHttpUrl(draft.imageUrl)) {
+      showAdminCommunicationToast("Informe a URL da imagem do banner.", "danger");
+      return;
+    }
+    if (draft.type === "double" && !isHttpUrl(draft.imageUrl2)) {
+      showAdminCommunicationToast("Informe a segunda imagem do banner duplo.", "danger");
+      return;
+    }
+
+    try {
+      await persistAdminVisualBanner(draft, draft.id ? "update_banner" : "create_banner", {
+        bannerId: draft.id || "",
+        bannerName: draft.name
+      });
+      adminVisualState.mode = "list";
+      adminVisualState.draft = null;
+      await loadAdminVisualManagementData({ force: true });
+      renderAdminVisualManagementModal();
+      await refreshAdminVisualHomePreview();
+      showAdminCommunicationToast(draft.id ? "Banner atualizado!" : "Banner criado!");
+      return;
+    } catch (error) {
+      console.error("Erro ao salvar banner:", error);
+      showAdminCommunicationToast("Não foi possível salvar o banner.", "danger");
+      return;
+    }
+  }
+
+  if (adminVisualState.mode === "poll-form") {
+    const question = String(document.getElementById("adminVisualPollQuestion")?.value || "").trim();
+    const optionsRaw = String(document.getElementById("adminVisualPollOptions")?.value || "").trim();
+    const deadlineHoursRaw = String(document.getElementById("adminVisualPollDeadlineHours")?.value || "").trim();
+    const deadlineValue = String(document.getElementById("adminVisualPollDeadline")?.value || "").trim();
+    const active = document.getElementById("adminVisualPollActive")?.checked === true;
+    const options = optionsRaw.split(/\n+/).map((item) => item.trim()).filter(Boolean);
+
+    if (!question) {
+      showAdminCommunicationToast("Informe a pergunta da enquete.", "danger");
+      return;
+    }
+    if (options.length < 2) {
+      showAdminCommunicationToast("Adicione ao menos 2 opções.", "danger");
+      return;
+    }
+
+    const draft = {
+      ...(adminVisualState.draft || {}),
+      question,
+      options,
+      active,
+      deadlineHours: deadlineHoursRaw || "24",
+      deadline: deadlineValue ? new Date(deadlineValue) : null
+    };
+
+    if (deadlineValue && Number.isNaN(new Date(deadlineValue).getTime())) {
+      showAdminCommunicationToast("Informe uma data e hora válidas para encerramento.", "danger");
+      return;
+    }
+
+    try {
+      await persistAdminVisualPoll(draft, draft.id ? "update_poll" : "create_poll", {
+        pollId: draft.id || "",
+        pollQuestion: draft.question,
+        optionsCount: draft.options.length
+      });
+      adminVisualState.mode = "list";
+      adminVisualState.draft = null;
+      await loadAdminVisualManagementData({ force: true });
+      renderAdminVisualManagementModal();
+      await refreshAdminVisualHomePreview();
+      showAdminCommunicationToast(draft.id ? "Enquete atualizada!" : "Enquete criada!");
+      return;
+    } catch (error) {
+      console.error("Erro ao salvar enquete:", error);
+      showAdminCommunicationToast("Não foi possível salvar a enquete.", "danger");
+    }
+  }
+};
+
 const renderAdminCommunicationsModal = () => {
   const tab = adminCommunicationState.tab || "push";
   const isPush = tab === "push";
@@ -11114,8 +12228,9 @@ window.openMatchEditModal = async (matchId) => {
 
                         <div>
                             <h4 class="text-xs font-bold text-gray-500 mb-2 pl-1">📢 COMUNICAÇÃO & FERRAMENTAS</h4>
-                            <div class="grid grid-cols-1 gap-2">
+                            <div class="grid grid-cols-2 gap-2">
                                 <button onclick="window.openAdminCommunicationsModal()" class="bg-[#6A1B9A] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-bullhorn text-lg"></i> Comunicados</button>
+                                <button onclick="window.openAdminVisualManagementModal()" class="bg-[#0F766E] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-palette text-lg"></i> Visual / Banners / Enquetes</button>
                                 <button onclick="window.openAdminRoundSummaryModal()" class="bg-[#1D4ED8] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-image text-lg"></i> Resumo da Rodada</button>
                                 <button onclick="window.openAdminAuditHistoryModal()" class="bg-slate-800 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-clock-rotate-left text-lg"></i> Histórico Admin</button>
                             </div>
