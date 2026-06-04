@@ -7662,7 +7662,7 @@ const renderAdminVisualPollList = () => {
         <div class="admin-visual-card__top">
           <div class="admin-visual-card__meta">
             <span class="admin-visual-badge ${statusInfo.tone === "on" ? "is-on" : statusInfo.tone === "warning" ? "is-soft" : "is-off"}">${escapeHtml(statusInfo.label)}</span>
-            <span class="admin-visual-badge is-soft">${optionsCount} op??o(?es)</span>
+            <span class="admin-visual-badge is-soft">${optionsCount} opção(ões)</span>
             <span class="admin-visual-badge is-soft">${statusInfo.totalVotes} voto(s)</span>
             ${statusInfo.totalVotes === 0 ? `<span class="admin-visual-badge is-soft">SEM VOTOS</span>` : ""}
           </div>
@@ -7688,9 +7688,9 @@ const renderAdminVisualPollList = () => {
     <div class="admin-visual-toolbar">
       <div class="admin-visual-toolbar__copy">
         <div class="admin-visual-toolbar__title">Enquetes publicadas</div>
-        <div class="admin-visual-toolbar__hint">Crie perguntas, op??es e prazo de encerramento.</div>
+        <div class="admin-visual-toolbar__hint">Crie perguntas, opções e prazo de encerramento.</div>
       </div>
-      <button type="button" class="admin-visual-primary" title="Abrir formul?rio para criar uma enquete" onclick="window.openAdminVisualPollEditor('')"><i class="fas fa-plus"></i> Nova enquete</button>
+      <button type="button" class="admin-visual-primary" title="Abrir formulário para criar uma enquete" onclick="window.openAdminVisualPollEditor('')"><i class="fas fa-plus"></i> Nova enquete</button>
     </div>
     <div class="admin-visual-filter-row">${filterChips}</div>
     ${filteredPolls.length ? `<div class="admin-visual-list">${cards}</div>` : renderAdminVisualEmpty("Nenhuma enquete encontrada", emptyText)}
@@ -7928,14 +7928,14 @@ const renderAdminVisualPollEditor = () => {
           <input id="adminVisualPollQuestion" class="admin-creation-input" value="${escapeHtml(draft.question || "")}" placeholder="Pergunta da enquete">
         </label>
         <div class="admin-visual-field admin-visual-field--full">
-          ${renderInfoHint("Op??es de resposta", "Alternativas que os usu?rios poder?o escolher. A enquete precisa de pelo menos duas op??es.", "poll-options")}
+          ${renderInfoHint("Opções de resposta", "Alternativas que os usuários poderão escolher. A enquete precisa de pelo menos duas opções.", "poll-options")}
           <div id="adminVisualPollOptionsList" class="admin-poll-options">
             ${renderAdminVisualPollOptionsRows(draft.options, { locked: lockedOptions })}
           </div>
           ${lockedOptions ? `
-            <div class="admin-poll-options__warning">Esta enquete j? possui votos. Para preservar o hist?rico, edite apenas o texto, o prazo ou o status.</div>
+            <div class="admin-poll-options__warning">Esta enquete já possui votos. Para preservar o histórico, edite apenas o texto, o prazo ou o status.</div>
           ` : `
-            <button type="button" class="admin-poll-options__add" onclick="window.addAdminVisualPollOptionRow()"><i class="fas fa-plus"></i> Adicionar op??o</button>
+            <button type="button" class="admin-poll-options__add" onclick="window.addAdminVisualPollOptionRow()"><i class="fas fa-plus"></i> Adicionar opção</button>
           `}
         </div>
         <label class="admin-visual-field">
@@ -7950,7 +7950,7 @@ const renderAdminVisualPollEditor = () => {
         </label>
         <label class="admin-visual-field admin-visual-field--inline">
           <input id="adminVisualPollActive" type="checkbox" ${draft.active !== false ? "checked" : ""}>
-          ${renderInfoHint("Ativar enquete", "Salva e ativa a enquete para os usu?rios, conforme as regras atuais do projeto.", "poll-active")}
+          ${renderInfoHint("Ativar enquete", "Salva e ativa a enquete para os usuários, conforme as regras atuais do projeto.", "poll-active")}
         </label>
       </div>
       <div id="adminVisualPollPreviewRoot" class="admin-visual-preview-root">
@@ -8453,11 +8453,11 @@ window.saveAdminVisualForm = async () => {
       return;
     }
     if (!lockedOptions && options.length < 2) {
-      showAdminCommunicationToast("A enquete precisa de pelo menos duas op??es de resposta.", "danger");
+      showAdminCommunicationToast("A enquete precisa de pelo menos duas opções de resposta.", "danger");
       return;
     }
     if (!lockedOptions && options.length !== rawOptions.length) {
-      showAdminCommunicationToast("Remova op??es duplicadas antes de salvar.", "warning");
+      showAdminCommunicationToast("Remova opções duplicadas antes de salvar.", "warning");
       return;
     }
 
@@ -8498,7 +8498,7 @@ window.saveAdminVisualForm = async () => {
       return;
     } catch (error) {
       console.error("Erro ao salvar enquete:", error);
-      showAdminCommunicationToast("N?o foi poss?vel salvar a enquete.", "danger");
+      showAdminCommunicationToast("Não foi possível salvar a enquete.", "danger");
     }
   }
 
