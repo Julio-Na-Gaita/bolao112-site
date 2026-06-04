@@ -199,6 +199,7 @@ let adminVisualState = {
   loading: false,
   tab: "sections",
   mode: "list",
+  bannerFilter: "all",
   layout: {
     hasExplicitSections: false,
     order: [],
@@ -6948,10 +6949,37 @@ const getAdminVisualSectionLabel = (type = "") => ({
 }[normalizeAdminVisualSectionType(type)] || "Bloco");
 
 const getAdminVisualBannerTypeLabel = (type = "") => ({
-  full: "Full",
-  double: "Double",
-  small: "Small"
-}[String(type || "").toLowerCase()] || "Full");
+  full: "Grande",
+  double: "Duplo",
+  small: "Pequeno"
+}[String(type || "").toLowerCase()] || "Grande");
+
+const getAdminVisualBannerTypeHint = (type = "") => ({
+  full: "Banner principal com uma imagem.",
+  double: "Banner com duas imagens lado a lado.",
+  small: "Banner compacto para espaços menores."
+}[String(type || "").toLowerCase()] || "Banner principal com uma imagem.");
+
+const ADMIN_VISUAL_BANNER_FILTERS = [
+  { value: "all", label: "Todos" },
+  { value: "full", label: "Grandes" },
+  { value: "double", label: "Duplos" },
+  { value: "small", label: "Pequenos" },
+  { value: "active", label: "Ativos" },
+  { value: "inactive", label: "Inativos" }
+];
+
+const getAdminVisualBannerFilterLabel = (filter = "all") => (
+  ADMIN_VISUAL_BANNER_FILTERS.find((item) => item.value === filter)?.label || "Todos"
+);
+
+const isAdminVisualBannerDestination = (value = "") => {
+  const safe = String(value || "").trim();
+  if (!safe) return true;
+  if (isHttpUrl(safe)) return true;
+  if (safe.startsWith("/") || safe.startsWith("#")) return true;
+  return false;
+};
 
 const getAdminVisualPollVotesTotal = (poll = {}) => Object.values(poll.votes || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
 
@@ -7172,37 +7200,190 @@ const renderAdminVisualSectionList = () => {
   `;
 };
 
+const renderAdminVisualBannerPreview = (banner = {}, { compact = false } = {}) => {
+  const type = ["full", "double", "small"].includes(String(banner.type || "").toLowerCase())
+    ? String(banner.type || "").toLowerCase()
+    : "full";
+  const name = String(banner.name || "Sem nome").trim();
+  const image1 = fixDriveUrl(String(banner.imageUrl || banner.image_url || "").trim());
+  const image2 = fixDriveUrl(String(banner.imageUrl2 || banner.image_url2 || "").trim());
+  const target1 = String(banner.targetUrl || banner.target_url || "").trim();
+  const target2 = String(banner.targetUrl2 || banner.target_url2 || "").trim();
+  const active = banner.active !== false;
+  const typeLabel = getAdminVisualBannerTypeLabel(type);
+  const typeHint = getAdminVisualBannerTypeHint(type);
+  const sizeClass = compact ? "admin-banner-preview--compact" : "";
+  const imageFallback = (label = "Imagem não carregada", hidden = false) => `
+    <div class="admin-banner-preview__fallback ${hidden ? "hidden" : ""}">
+      <i class="fas fa-image"></i>
+      <span>${escapeHtml(label)}</span>
+      <small>Verifique se o link é público.</small>
+    </div>
+  `;
+
+  const renderImageBox = (url, alt, extraClass = "") => {
+    const safeUrl = isHttpUrl(url) || url.startsWith("data:image") ? url : "";
+    return `
+      <div class="admin-banner-preview__image ${extraClass}">
+        ${safeUrl ? `
+          <img
+            src="${escapeHtml(safeUrl)}"
+            alt="${escapeHtml(alt)}"
+            onload="const fb=this.nextElementSibling; if(fb) fb.classList.add('hidden');"
+            onerror="const wrap=this.closest('.admin-banner-preview__image'); if(wrap) wrap.classList.add('is-broken'); const fb=this.nextElementSibling; if(fb) fb.classList.remove('hidden'); this.classList.add('hidden');"
+          >
+          ${imageFallback("Imagem não carregada", true)}
+        ` : imageFallback()}
+      </div>
+    `;
+  };
+
+  return `
+    <div class="admin-banner-preview ${sizeClass} admin-banner-preview--${escapeHtml(type)}">
+      <div class="admin-banner-preview__header">
+        <div class="min-w-0">
+          <div class="admin-banner-preview__eyebrow">Prévia do Banner</div>
+          <div class="admin-banner-preview__title">${escapeHtml(name)}</div>
+          <div class="admin-banner-preview__subtitle">${escapeHtml(typeLabel)} • ${escapeHtml(typeHint)}</div>
+        </div>
+        <div class="admin-banner-preview__status ${active ? "is-on" : "is-off"}">${active ? "ATIVO" : "INATIVO"}</div>
+      </div>
+
+      ${type === "double" ? `
+        <div class="admin-banner-preview__double-grid">
+          ${renderImageBox(image1, `${name} - imagem 1`, "is-primary")}
+          ${renderImageBox(image2, `${name} - imagem 2`, "is-secondary")}
+        </div>
+      ` : renderImageBox(image1, name, "is-primary")}
+
+      <div class="admin-banner-preview__meta">
+        <div><span>Tipo</span><b>${escapeHtml(typeLabel)}</b></div>
+        <div><span>ID</span><b>${escapeHtml(String(banner.id || "sem-id").slice(0, 16))}</b></div>
+        <div><span>Destino 1</span><b>${escapeHtml(target1 || "Sem destino")}</b></div>
+        ${type === "double" ? `<div><span>Destino 2</span><b>${escapeHtml(target2 || "Sem destino")}</b></div>` : ""}
+      </div>
+    </div>
+  `;
+};
+
+window.buildAdminVisualBannerPreviewDraft = () => {
+  const base = adminVisualState.draft || normalizeAdminVisualBannerDraft({});
+  const readValue = (id, fallback = "") => {
+    const el = document.getElementById(id);
+    if (!el) return fallback;
+    return String(el.value ?? fallback);
+  };
+  const readChecked = (id, fallback = false) => {
+    const el = document.getElementById(id);
+    if (!el) return fallback;
+    return el.checked === true;
+  };
+
+  return {
+    ...base,
+    name: readValue("adminVisualBannerName", base.name),
+    type: String(readValue("adminVisualBannerType", base.type || "full")).toLowerCase(),
+    imageUrl: readValue("adminVisualBannerImage1", base.imageUrl),
+    targetUrl: readValue("adminVisualBannerTarget1", base.targetUrl),
+    imageUrl2: readValue("adminVisualBannerImage2", base.imageUrl2),
+    targetUrl2: readValue("adminVisualBannerTarget2", base.targetUrl2),
+    active: readChecked("adminVisualBannerActive", base.active !== false)
+  };
+};
+
+window.refreshAdminVisualBannerPreview = () => {
+  const root = document.getElementById("adminVisualBannerPreviewRoot");
+  if (!root) return;
+  const draft = window.buildAdminVisualBannerPreviewDraft?.() || adminVisualState.draft || normalizeAdminVisualBannerDraft({});
+  root.innerHTML = renderAdminVisualBannerPreview(draft, { compact: true });
+};
+
+window.scheduleAdminVisualBannerPreviewRefresh = () => {
+  if (window.__adminVisualBannerPreviewRaf) {
+    cancelAnimationFrame(window.__adminVisualBannerPreviewRaf);
+  }
+  window.__adminVisualBannerPreviewRaf = requestAnimationFrame(() => {
+    window.__adminVisualBannerPreviewRaf = null;
+    window.refreshAdminVisualBannerPreview();
+  });
+};
+
+window.setAdminVisualBannerFilter = (filter = "all") => {
+  adminVisualState.bannerFilter = ADMIN_VISUAL_BANNER_FILTERS.some((item) => item.value === filter) ? filter : "all";
+  renderAdminVisualManagementModal();
+};
+
 const renderAdminVisualBannerList = () => {
   const banners = Array.isArray(adminVisualState.banners) ? adminVisualState.banners : [];
   if (!banners.length) {
     return renderAdminVisualEmpty("Nenhum banner encontrado", "Você pode criar um banner novo a partir desta tela.");
   }
 
-  const cards = banners.map((banner) => {
+  const filter = ADMIN_VISUAL_BANNER_FILTERS.some((item) => item.value === adminVisualState.bannerFilter)
+    ? adminVisualState.bannerFilter
+    : "all";
+  const filteredBanners = banners.filter((banner) => {
+    if (filter === "active") return banner.active === true;
+    if (filter === "inactive") return banner.active === false;
+    return filter === "all" ? true : String(banner.type || "").toLowerCase() === filter;
+  });
+  const counters = ADMIN_VISUAL_BANNER_FILTERS.reduce((map, item) => {
+    if (item.value === "all") {
+      map[item.value] = banners.length;
+      return map;
+    }
+    if (item.value === "active") {
+      map[item.value] = banners.filter((banner) => banner.active === true).length;
+      return map;
+    }
+    if (item.value === "inactive") {
+      map[item.value] = banners.filter((banner) => banner.active === false).length;
+      return map;
+    }
+    map[item.value] = banners.filter((banner) => String(banner.type || "").toLowerCase() === item.value).length;
+    return map;
+  }, {});
+
+  const filterChips = ADMIN_VISUAL_BANNER_FILTERS.map((item) => `
+    <button type="button" class="admin-visual-filter-chip ${filter === item.value ? "is-active" : ""}" onclick="window.setAdminVisualBannerFilter('${escapeJsString(item.value)}')">
+      ${escapeHtml(item.label)}
+      <span>${counters[item.value] || 0}</span>
+    </button>
+  `).join("");
+
+  const cards = filteredBanners.map((banner) => {
     const typeLabel = getAdminVisualBannerTypeLabel(banner.type);
+    const imageCount = String(banner.type || "").toLowerCase() === "double"
+      ? [banner.imageUrl, banner.imageUrl2].filter((url) => isHttpUrl(url)).length
+      : (isHttpUrl(banner.imageUrl) ? 1 : 0);
     return `
       <div class="admin-visual-card admin-visual-card--banner">
         <div class="admin-visual-thumb">
-          ${banner.imageUrl ? `<img src="${escapeHtml(banner.imageUrl)}" alt="">` : `<i class="fas fa-image"></i>`}
+          ${banner.imageUrl ? `<img src="${escapeHtml(fixDriveUrl(banner.imageUrl))}" alt="">` : `<i class="fas fa-image"></i>`}
         </div>
         <div class="admin-visual-card__body">
           <div class="admin-visual-card__meta">
             <span class="admin-visual-badge ${banner.active ? "is-on" : "is-off"}">${banner.active ? "ATIVO" : "INATIVO"}</span>
             <span class="admin-visual-badge is-soft">${escapeHtml(typeLabel)}</span>
-            <span class="admin-visual-badge is-soft">${escapeHtml(banner.id || "sem-id")}</span>
+            <span class="admin-visual-badge is-soft">${escapeHtml(String(banner.id || "sem-id").slice(0, 10))}</span>
           </div>
           <div class="admin-visual-card__title">${escapeHtml(banner.name || "Sem nome")}</div>
           <div class="admin-visual-card__desc">${escapeHtml(banner.targetUrl || "Sem link destino")}</div>
+          <div class="admin-visual-card__sub">${escapeHtml(typeLabel)}${imageCount === 0 ? " • Imagem ausente" : imageCount > 1 ? ` • ${imageCount} imagem(ns)` : ""}</div>
         </div>
         <div class="admin-visual-card__actions">
-          <button type="button" class="admin-visual-action is-edit" title="Editar banner" onclick="window.openAdminVisualBannerEditor('${escapeJsString(banner.id)}')"><i class="fas fa-pen"></i></button>
           <button type="button" class="admin-visual-action" title="Visualizar banner" onclick="window.previewAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas fa-eye"></i></button>
+          <button type="button" class="admin-visual-action is-edit" title="Editar banner" onclick="window.openAdminVisualBannerEditor('${escapeJsString(banner.id)}')"><i class="fas fa-pen"></i></button>
           <button type="button" class="admin-visual-action ${banner.active ? "" : "is-success"}" title="${banner.active ? "Desativar banner" : "Ativar banner"}" onclick="window.toggleAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas ${banner.active ? "fa-eye-slash" : "fa-eye"}"></i></button>
           <button type="button" class="admin-visual-action is-danger" title="Excluir banner" onclick="window.deleteAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas fa-trash"></i></button>
         </div>
       </div>
     `;
   }).join("");
+
+  const emptyText = filter === "all"
+    ? "Use o botão Novo banner para criar um novo item."
+    : `Nenhum banner encontrado para o filtro ${getAdminVisualBannerFilterLabel(filter)}.`;
 
   return `
     <div class="admin-visual-toolbar">
@@ -7212,7 +7393,8 @@ const renderAdminVisualBannerList = () => {
       </div>
       <button type="button" class="admin-visual-primary" title="Abrir formulário para criar um banner" onclick="window.openAdminVisualBannerEditor('')"><i class="fas fa-plus"></i> Novo banner</button>
     </div>
-    <div class="admin-visual-list">${cards}</div>
+    <div class="admin-visual-filter-row">${filterChips}</div>
+    ${filteredBanners.length ? `<div class="admin-visual-list">${cards}</div>` : renderAdminVisualEmpty("Nenhum banner encontrado", emptyText)}
   `;
 };
 
@@ -7381,8 +7563,9 @@ const renderAdminVisualSectionEditor = () => {
 
 const renderAdminVisualBannerEditor = () => {
   const draft = adminVisualState.draft || normalizeAdminVisualBannerDraft({});
+  const isDouble = String(draft.type || "full").toLowerCase() === "double";
   return `
-    <div class="admin-visual-section">
+    <div class="admin-visual-section" oninput="window.scheduleAdminVisualBannerPreviewRefresh()" onchange="window.scheduleAdminVisualBannerPreviewRefresh()">
       <div class="admin-visual-section__copy">
         <div class="admin-visual-section__title">${draft.id ? "Editar banner" : "Novo banner"}</div>
         <div class="admin-visual-section__hint">Gerencie a imagem e o destino do banner existente.</div>
@@ -7401,23 +7584,36 @@ const renderAdminVisualBannerEditor = () => {
         <label class="admin-visual-field">
           ${renderInfoHint("Link Imagem 1", "URL pública da imagem principal do banner. Pode ser link da web, Drive com acesso público ou hospedagem externa.", "banner-image1")}
           <input id="adminVisualBannerImage1" class="admin-creation-input" value="${escapeHtml(draft.imageUrl || "")}" placeholder="https://...">
+          <small class="admin-visual-field__note">Use uma imagem pública e leve. Banner principal aparece na prévia como destaque.</small>
         </label>
         <label class="admin-visual-field">
           ${renderInfoHint("Link Destino 1", "Link aberto quando o usuário toca no banner principal.", "banner-target1")}
           <input id="adminVisualBannerTarget1" class="admin-creation-input" value="${escapeHtml(draft.targetUrl || "")}" placeholder="https://...">
+          <small class="admin-visual-field__note">Se ficar vazio, o banner continua salvo sem ação de clique.</small>
         </label>
-        <label class="admin-visual-field">
-          ${renderInfoHint("Link Imagem 2", "Usado quando o banner é do tipo duplo. É a segunda imagem exibida.", "banner-image2")}
-          <input id="adminVisualBannerImage2" class="admin-creation-input" value="${escapeHtml(draft.imageUrl2 || "")}" placeholder="https://...">
-        </label>
-        <label class="admin-visual-field">
-          ${renderInfoHint("Link Destino 2", "Link aberto quando o usuário toca na segunda imagem do banner duplo.", "banner-target2")}
-          <input id="adminVisualBannerTarget2" class="admin-creation-input" value="${escapeHtml(draft.targetUrl2 || "")}" placeholder="https://...">
-        </label>
+        ${isDouble ? `
+          <label class="admin-visual-field">
+            ${renderInfoHint("Link Imagem 2", "Usado apenas no banner duplo. É a segunda imagem exibida.", "banner-image2")}
+            <input id="adminVisualBannerImage2" class="admin-creation-input" value="${escapeHtml(draft.imageUrl2 || "")}" placeholder="https://...">
+            <small class="admin-visual-field__note">Usado apenas no banner duplo.</small>
+          </label>
+          <label class="admin-visual-field">
+            ${renderInfoHint("Link Destino 2", "Link aberto quando o usuário toca na segunda imagem do banner duplo.", "banner-target2")}
+            <input id="adminVisualBannerTarget2" class="admin-creation-input" value="${escapeHtml(draft.targetUrl2 || "")}" placeholder="https://...">
+            <small class="admin-visual-field__note">Usado apenas no banner duplo.</small>
+          </label>
+        ` : ""}
         <label class="admin-visual-field admin-visual-field--inline">
           <input id="adminVisualBannerActive" type="checkbox" ${draft.active ? "checked" : ""}>
           ${renderInfoHint("Ativo / Inativo", "Define se o banner pode aparecer na home. Banner inativo fica salvo, mas não é exibido para os usuários.", "banner-active")}
         </label>
+      </div>
+      <div id="adminVisualBannerPreviewRoot" class="admin-visual-preview-root">
+        ${renderAdminVisualBannerPreview(draft, { compact: true })}
+      </div>
+      <div class="admin-visual-banner-guidance">
+        <div class="admin-visual-banner-guidance__title">Sugestões</div>
+        <div class="admin-visual-banner-guidance__text">Grande: melhor para destaque principal. Duplo: ideal para dois patrocinadores ou duas chamadas lado a lado. Pequeno: bom para espaços compactos. Use imagens leves e links públicos.</div>
       </div>
     </div>
   `;
@@ -7608,9 +7804,22 @@ window.openAdminVisualBannerEditor = (bannerId = "") => {
 window.previewAdminVisualBanner = (bannerId = "") => {
   const banner = (adminVisualState.banners || []).find((item) => item.id === bannerId);
   if (!banner) return;
-  const link = String(banner.targetUrl || banner.targetUrl2 || "#").trim() || "#";
-  if (link === "#") return showAdminCommunicationToast("Banner sem link de destino.", "warning");
-  window.open(link.startsWith("http") ? link : `https://${link}`, "_blank", "noopener,noreferrer");
+  const content = `
+    <div class="admin-banner-preview-modal">
+      <div class="admin-banner-preview-modal__header">
+        <div class="min-w-0">
+          <h3>Prévia do Banner</h3>
+          <p>Veja como o banner pode aparecer para o usuário.</p>
+        </div>
+        <button type="button" onclick="window.closeModal()" class="admin-banner-preview-modal__close"><i class="fas fa-times"></i></button>
+      </div>
+      ${renderAdminVisualBannerPreview(banner, { compact: false })}
+      <div class="admin-banner-preview-modal__footer">
+        <button type="button" onclick="window.closeModal()" class="admin-visual-secondary">Fechar</button>
+      </div>
+    </div>
+  `;
+  window.openModal(content);
 };
 
 window.openAdminVisualPollEditor = (pollId = "") => {
@@ -7858,14 +8067,17 @@ window.saveAdminVisualForm = async () => {
   }
 
   if (adminVisualState.mode === "banner-form") {
+    const bannerType = String(document.getElementById("adminVisualBannerType")?.value || "full").toLowerCase();
+    const imageUrl2El = document.getElementById("adminVisualBannerImage2");
+    const targetUrl2El = document.getElementById("adminVisualBannerTarget2");
     const draft = {
       ...(adminVisualState.draft || {}),
       name: String(document.getElementById("adminVisualBannerName")?.value || "").trim(),
-      type: String(document.getElementById("adminVisualBannerType")?.value || "full"),
+      type: bannerType,
       imageUrl: String(document.getElementById("adminVisualBannerImage1")?.value || "").trim(),
       targetUrl: String(document.getElementById("adminVisualBannerTarget1")?.value || "").trim(),
-      imageUrl2: String(document.getElementById("adminVisualBannerImage2")?.value || "").trim(),
-      targetUrl2: String(document.getElementById("adminVisualBannerTarget2")?.value || "").trim(),
+      imageUrl2: bannerType === "double" ? String(imageUrl2El?.value || "").trim() : "",
+      targetUrl2: bannerType === "double" ? String(targetUrl2El?.value || "").trim() : "",
       active: document.getElementById("adminVisualBannerActive")?.checked === true
     };
 
@@ -7874,11 +8086,19 @@ window.saveAdminVisualForm = async () => {
       return;
     }
     if (!isHttpUrl(draft.imageUrl)) {
-      showAdminCommunicationToast("Informe a URL da imagem do banner.", "danger");
+      showAdminCommunicationToast("Informe uma URL pública para a imagem principal do banner.", "danger");
       return;
     }
     if (draft.type === "double" && !isHttpUrl(draft.imageUrl2)) {
-      showAdminCommunicationToast("Informe a segunda imagem do banner duplo.", "danger");
+      showAdminCommunicationToast("Informe uma URL pública para a segunda imagem do banner duplo.", "danger");
+      return;
+    }
+    if (draft.targetUrl && !isAdminVisualBannerDestination(draft.targetUrl)) {
+      showAdminCommunicationToast("O destino 1 não parece ser uma URL válida.", "danger");
+      return;
+    }
+    if (draft.type === "double" && draft.targetUrl2 && !isAdminVisualBannerDestination(draft.targetUrl2)) {
+      showAdminCommunicationToast("O destino 2 não parece ser uma URL válida.", "danger");
       return;
     }
 
