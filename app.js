@@ -333,13 +333,15 @@ const normalizeTickerText = (value = "") => {
 const isHttpUrl = (value = "") => /^https?:\/\/\S+/i.test(String(value || "").trim());
 
 const formatAdminDateTimeInput = (value) => {
-  const date = toJsDate(value) || new Date();
+  const date = toJsDate(value);
+  if (!date || Number.isNaN(date.getTime())) return "";
   const pad = (num) => String(num).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
 const formatAdminDateTimeLabel = (value) => {
-  const date = toJsDate(value) || new Date();
+  const date = toJsDate(value);
+  if (!date || Number.isNaN(date.getTime())) return "";
   return date.toLocaleString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
@@ -2847,6 +2849,31 @@ const normalizeHomeSectionStyle = (raw = "") => {
 const CORE_HOME_SECTION_TYPES = new Set(["fast_vote", "matches_open", "matches_wait", "matches_done"]);
 
 const isCoreHomeSectionType = (value = "") => CORE_HOME_SECTION_TYPES.has(normalizeHomeSectionType(value));
+
+const getAdminVisualSectionWindowStatus = (section = {}, now = new Date()) => {
+  const visibility = section.visibility && typeof section.visibility === "object" ? section.visibility : {};
+  const startAt = toJsDate(visibility.startAt);
+  const endAt = toJsDate(visibility.endAt);
+  const isValidDate = (date) => date && !Number.isNaN(date.getTime());
+
+  if (isValidDate(startAt) && now < startAt) {
+    return { label: "AGENDADA", tone: "warning" };
+  }
+
+  if (isValidDate(endAt) && now > endAt) {
+    return { label: "EXPIRADA", tone: "danger" };
+  }
+
+  if (!isValidDate(startAt) && !isValidDate(endAt)) {
+    return { label: "SEM PRAZO", tone: "success" };
+  }
+
+  if (isValidDate(startAt) && !isValidDate(endAt)) {
+    return { label: "SEM FIM", tone: "success" };
+  }
+
+  return { label: "NA JANELA", tone: "success" };
+};
 
 const createBaseHomeSection = (id, type) => ({
   id,
@@ -6906,6 +6933,7 @@ const renderAdminVisualSectionList = () => {
     const typeLabel = getAdminVisualSectionLabel(section.type);
     const isFixed = isCoreHomeSectionType(section.type);
     const displayEnabled = isFixed ? true : enabled;
+    const windowStatus = isFixed ? null : getAdminVisualSectionWindowStatus(section);
     const visibilityBits = [];
     if (section.visibility?.adminsOnly) visibilityBits.push("Admins");
     if (section.visibility?.featureFlag) visibilityBits.push(section.visibility.featureFlag);
@@ -6920,6 +6948,7 @@ const renderAdminVisualSectionList = () => {
             <span class="admin-visual-badge is-soft">#${index + 1}</span>
             <span class="admin-visual-badge is-soft">${escapeHtml(typeLabel)}</span>
             ${isFixed ? '<span class="admin-visual-badge is-soft">SISTEMA</span><span class="admin-visual-badge is-soft">FIXO</span>' : ""}
+            ${windowStatus ? `<span class="admin-visual-badge ${windowStatus.tone === "danger" ? "is-off" : windowStatus.tone === "warning" ? "is-soft" : "is-on"}">${escapeHtml(windowStatus.label)}</span>` : ""}
           </div>
           <div class="admin-visual-card__title">${escapeHtml(section.title || "Sem título")}</div>
           <div class="admin-visual-card__desc">${escapeHtml(summary)}</div>
@@ -7137,11 +7166,11 @@ const renderAdminVisualSectionEditor = () => {
           <input id="adminVisualSectionCompetition" class="admin-creation-input" value="${escapeHtml(draft.competition || "")}" placeholder="Ex: Champions League">
         </label>
         <label class="admin-visual-field">
-          ${renderInfoHint("Janela de exibição - início", "Data e hora em que a section começa a aparecer.", "section-start")}
+          ${renderInfoHint("Janela de exibição - início", "Deixe vazio para aparecer imediatamente quando a section estiver ativa.", "section-start")}
           <input id="adminVisualSectionStartAt" type="datetime-local" class="admin-creation-input" value="${escapeHtml(draft.startAt || "")}">
         </label>
         <label class="admin-visual-field">
-          ${renderInfoHint("Janela de exibição - fim", "Data e hora em que a section deixa de aparecer.", "section-end")}
+          ${renderInfoHint("Janela de exibição - fim", "Deixe vazio para ficar sem prazo final. A section continua ativa até ser ocultada ou alterada.", "section-end")}
           <input id="adminVisualSectionEndAt" type="datetime-local" class="admin-creation-input" value="${escapeHtml(draft.endAt || "")}">
         </label>
         <label class="admin-visual-field admin-visual-field--inline">
