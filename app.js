@@ -2850,10 +2850,20 @@ const CORE_HOME_SECTION_TYPES = new Set(["fast_vote", "matches_open", "matches_w
 
 const isCoreHomeSectionType = (value = "") => CORE_HOME_SECTION_TYPES.has(normalizeHomeSectionType(value));
 
+const toAdminVisualDate = (value) => {
+  const jsDate = toJsDate(value);
+  if (jsDate && !Number.isNaN(jsDate.getTime())) return jsDate;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  return null;
+};
+
 const getAdminVisualSectionWindowStatus = (section = {}, now = new Date()) => {
   const visibility = section.visibility && typeof section.visibility === "object" ? section.visibility : {};
-  const startAt = toJsDate(visibility.startAt);
-  const endAt = toJsDate(visibility.endAt);
+  const startAt = toAdminVisualDate(visibility.startAt);
+  const endAt = toAdminVisualDate(visibility.endAt);
   const isValidDate = (date) => date && !Number.isNaN(date.getTime());
 
   if (isValidDate(startAt) && now < startAt) {
@@ -2868,11 +2878,191 @@ const getAdminVisualSectionWindowStatus = (section = {}, now = new Date()) => {
     return { label: "SEM PRAZO", tone: "success" };
   }
 
-  if (isValidDate(startAt) && !isValidDate(endAt)) {
-    return { label: "SEM FIM", tone: "success" };
+  return { label: "ATIVA", tone: "success" };
+};
+
+const renderAdminVisualSectionPreview = (draft = {}) => {
+  const type = normalizeAdminVisualSectionType(draft.type);
+  const style = normalizeHomeSectionStyle(draft.style);
+  const actionType = normalizeHomeActionType(draft.actionType);
+  const actionValue = String(draft.actionValue || "").trim();
+  const actionLabel = String(draft.actionLabel || "").trim();
+  const title = String(draft.title || "").trim();
+  const subtitle = String(draft.subtitle || "").trim();
+  const body = String(draft.body || "").trim();
+  const banner = (adminVisualState.banners || []).find((item) =>
+    normalizeAdminText(item.id || "") === normalizeAdminText(draft.bannerId || "")
+  ) || null;
+
+  const previewSection = {
+    id: draft.id || "preview",
+    type,
+    style,
+    title: type === "ticker" ? "LETREIRO" : (title || (type === "poll" ? "Enquete" : "Prévia da Section")),
+    subtitle: type === "ticker"
+      ? "Mensagem do letreiro"
+      : (subtitle || (type === "poll" ? "Pergunta da enquete" : "Veja uma simulação de como este bloco pode aparecer na home.")),
+    body: type === "ticker"
+      ? normalizeTickerText([title, subtitle, body].filter(Boolean).join(" • "))
+      : body,
+    mediaUrl: banner?.imageUrl && isHttpUrl(banner.imageUrl) ? fixDriveUrl(banner.imageUrl) : String(draft.mediaUrl || "").trim(),
+    mediaBase64: String(draft.mediaBase64 || "").trim(),
+    action: {
+      type: actionType,
+      value: actionType !== "none" ? (actionValue || "#preview") : "",
+      label: actionType !== "none" ? (actionLabel || "Botão de ação") : ""
+    }
+  };
+
+  const statusSection = {
+    visibility: {
+      adminsOnly: draft.adminsOnly === true,
+      featureFlag: normalizeHomeFeatureFlag(draft.featureFlag),
+      userSegment: normalizeHomeUserSegment(draft.userSegment),
+      competition: String(draft.competition || "").trim(),
+      startAt: draft.startAt || "",
+      endAt: draft.endAt || ""
+    },
+    enabled: draft.enabled !== false
+  };
+  const windowStatus = getAdminVisualSectionWindowStatus(statusSection);
+  const chips = [
+    { label: draft.enabled === false ? "OCULTA" : windowStatus.label, tone: draft.enabled === false ? "off" : windowStatus.tone },
+    draft.adminsOnly ? { label: "SOMENTE ADMINS", tone: "soft" } : null,
+    draft.userSegment ? { label: draft.userSegment === "debtors" ? "DEVEDORES" : draft.userSegment.toUpperCase(), tone: "soft" } : null,
+    draft.featureFlag ? { label: draft.featureFlag === "fast_vote" ? "VOTO RÁPIDO" : draft.featureFlag.toUpperCase(), tone: "soft" } : null,
+    draft.competition ? { label: draft.competition, tone: "soft" } : null,
+    draft.startAt || draft.endAt ? { label: windowStatus.label, tone: windowStatus.tone } : null
+  ].filter(Boolean);
+
+  const chipsHtml = chips.map((chip) => `
+    <span class="admin-visual-preview__chip admin-visual-preview__chip--${chip.tone}">
+      ${escapeHtml(chip.label)}
+    </span>
+  `).join("");
+
+  let innerHtml = "";
+  if (type === "ticker") {
+    innerHtml = `
+      <div class="admin-visual-preview-card admin-visual-preview-card--ticker">
+        <div class="admin-visual-preview-card__eyebrow">LETREIRO</div>
+        <div class="admin-visual-preview-card__headline">${escapeHtml(previewSection.subtitle || "Mensagem do letreiro")}</div>
+        <div class="admin-visual-preview-card__ticker">${escapeHtml(previewSection.body || "Nenhuma mensagem informada.")}</div>
+      </div>
+    `;
+  } else if (type === "poll") {
+    const pollQuestion = title || "Enquete";
+    const pollSummary = subtitle || body || "Visualize aqui a chamada da enquete.";
+    innerHtml = `
+      <div class="admin-visual-preview-card admin-visual-preview-card--poll">
+        <div class="admin-visual-preview-card__eyebrow">ENQUETE</div>
+        <div class="admin-visual-preview-card__headline">${escapeHtml(pollQuestion)}</div>
+        ${pollSummary ? `<div class="admin-visual-preview-card__text">${formatUserText(pollSummary)}</div>` : ""}
+        <div class="admin-visual-preview-poll__grid">
+          <div class="admin-visual-preview-poll__option">Opção 1</div>
+          <div class="admin-visual-preview-poll__option">Opção 2</div>
+          <div class="admin-visual-preview-poll__option">Opção 3</div>
+        </div>
+      </div>
+    `;
+  } else {
+    const mediaHtml = previewSection.mediaUrl ? `
+      <img
+        src="${escapeHtml(previewSection.mediaUrl)}"
+        alt="${escapeHtml(previewSection.title || "Prévia da Section")}"
+        class="admin-visual-preview-card__media"
+        loading="lazy"
+      >
+    ` : "";
+    const actionToneClass = style === "warning" ? "is-warning" : style === "danger" ? "is-danger" : style === "dark" ? "is-dark" : "";
+    innerHtml = `
+      <div class="admin-visual-preview-card admin-visual-preview-card--${escapeHtml(style)}">
+        ${mediaHtml}
+        <div class="admin-visual-preview-card__body">
+          <div class="admin-visual-preview-card__eyebrow">
+            ${escapeHtml(type === "banner_ref" ? "BANNER VINCULADO" : type === "cta_card" ? "CARD COM BOTÃO" : "AVISO INFORMATIVO")}
+          </div>
+          ${previewSection.title ? `<div class="admin-visual-preview-card__title">${escapeHtml(previewSection.title)}</div>` : ""}
+          ${previewSection.subtitle ? `<div class="admin-visual-preview-card__subtitle">${escapeHtml(previewSection.subtitle)}</div>` : ""}
+          ${previewSection.body ? `<div class="admin-visual-preview-card__text">${formatUserText(previewSection.body)}</div>` : ""}
+          ${actionType !== "none" ? `
+            <div class="admin-visual-preview-card__action ${actionToneClass}">
+              ${escapeHtml(actionLabel || "Botão de ação")}
+            </div>
+            <div class="admin-visual-preview-card__action-note">
+              ${escapeHtml(actionType === "url" ? (actionValue || "Destino não informado") : (actionValue || "Área interna do app"))}
+            </div>
+          ` : ""}
+        </div>
+      </div>
+    `;
   }
 
-  return { label: "NA JANELA", tone: "success" };
+  return `
+    <div class="admin-visual-preview">
+      <div class="admin-visual-preview__header">
+        <div class="min-w-0">
+          <div class="admin-visual-preview__title">Prévia da Section</div>
+          <div class="admin-visual-preview__subtitle">Veja uma simulação de como este bloco pode aparecer na home.</div>
+        </div>
+        <span class="admin-visual-preview__pill">Prévia</span>
+      </div>
+      <div class="admin-visual-preview__chips">${chipsHtml}</div>
+      <div class="admin-visual-preview__surface">${innerHtml}</div>
+    </div>
+  `;
+};
+
+window.buildAdminVisualSectionPreviewDraft = () => {
+  const base = adminVisualState.draft || normalizeAdminVisualSectionDraft({}, 0);
+  const readValue = (id, fallback = "") => {
+    const el = document.getElementById(id);
+    if (!el) return fallback;
+    return String(el.value ?? fallback);
+  };
+  const readChecked = (id, fallback = false) => {
+    const el = document.getElementById(id);
+    if (!el) return fallback;
+    return el.checked === true;
+  };
+
+  return {
+    ...base,
+    type: normalizeAdminVisualSectionType(readValue("adminVisualSectionType", base.type)),
+    style: normalizeHomeSectionStyle(readValue("adminVisualSectionStyle", base.style)),
+    title: readValue("adminVisualSectionTitle", base.title),
+    subtitle: readValue("adminVisualSectionSubtitle", base.subtitle),
+    body: readValue("adminVisualSectionBody", base.body),
+    bannerId: readValue("adminVisualSectionBannerId", base.bannerId),
+    mediaUrl: readValue("adminVisualSectionMediaUrl", base.mediaUrl),
+    actionType: normalizeHomeActionType(readValue("adminVisualSectionActionType", base.actionType)),
+    actionValue: readValue("adminVisualSectionActionValue", base.actionValue),
+    actionLabel: readValue("adminVisualSectionActionLabel", base.actionLabel),
+    userSegment: normalizeHomeUserSegment(readValue("adminVisualSectionUserSegment", base.userSegment)),
+    featureFlag: normalizeHomeFeatureFlag(readValue("adminVisualSectionFeatureFlag", base.featureFlag)),
+    competition: readValue("adminVisualSectionCompetition", base.competition),
+    startAt: readValue("adminVisualSectionStartAt", base.startAt),
+    endAt: readValue("adminVisualSectionEndAt", base.endAt),
+    enabled: readChecked("adminVisualSectionEnabled", base.enabled !== false),
+    adminsOnly: readChecked("adminVisualSectionAdminsOnly", base.adminsOnly === true)
+  };
+};
+
+window.refreshAdminVisualSectionPreview = () => {
+  const root = document.getElementById("adminVisualSectionPreviewRoot");
+  if (!root) return;
+  const draft = window.buildAdminVisualSectionPreviewDraft?.() || adminVisualState.draft || normalizeAdminVisualSectionDraft({}, 0);
+  root.innerHTML = renderAdminVisualSectionPreview(draft);
+};
+
+window.scheduleAdminVisualSectionPreviewRefresh = () => {
+  if (window.__adminVisualSectionPreviewRaf) {
+    cancelAnimationFrame(window.__adminVisualSectionPreviewRaf);
+  }
+  window.__adminVisualSectionPreviewRaf = requestAnimationFrame(() => {
+    window.__adminVisualSectionPreviewRaf = null;
+    window.refreshAdminVisualSectionPreview();
+  });
 };
 
 const createBaseHomeSection = (id, type) => ({
@@ -4361,7 +4551,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                             <div class="relative z-10 p-3">
                                 
                                 <div class="flex justify-between items-start mb-2 border-b border-gray-100 pb-2">
-                                    <div class="w-10">
+                                    <div class="w-14 flex justify-center">
                                         <span class="match-number-pill">#${m.matchNumber}</span>
                                     </div>
                                     
@@ -4373,7 +4563,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                                         </div>
                                     </div>
                                     
-                                    <div class="w-10"></div> </div>
+                                    <div class="w-14"></div> </div>
 
                                 <div class="flex justify-between items-start mb-4">
                                     <div class="flex flex-col w-full pr-2">
@@ -7094,7 +7284,7 @@ const renderAdminVisualSectionEditor = () => {
     .join("");
 
   return `
-    <div class="admin-visual-section">
+    <div class="admin-visual-section" oninput="window.scheduleAdminVisualSectionPreviewRefresh()" onchange="window.scheduleAdminVisualSectionPreviewRefresh()">
       <div class="admin-visual-section__copy">
         <div class="admin-visual-section__title">${draft.id && !String(draft.id).startsWith("section_") ? "Editar Section" : "Nova Section"}</div>
         <div class="admin-visual-section__hint">Preencha apenas os campos já usados pela home.</div>
@@ -7181,6 +7371,9 @@ const renderAdminVisualSectionEditor = () => {
           <input id="adminVisualSectionAdminsOnly" type="checkbox" ${draft.adminsOnly ? "checked" : ""}>
           ${renderInfoHint("Somente admins", "Quando marcado, a section aparece apenas para administradores.", "section-admins")}
         </label>
+      </div>
+      <div id="adminVisualSectionPreviewRoot" class="admin-visual-preview-root">
+        ${renderAdminVisualSectionPreview(draft)}
       </div>
     </div>
   `;
