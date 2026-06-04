@@ -2790,7 +2790,11 @@ const persistRankingMovementSnapshot = async ({ users = [], previousPositions = 
 };
 
 const normalizeHomeSectionType = (raw = "") => {
-  const value = String(raw || "").trim().toLowerCase();
+  const value = String(raw || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
   const aliases = {
     aviso: "announcement",
     notice: "announcement",
@@ -2798,6 +2802,8 @@ const normalizeHomeSectionType = (raw = "") => {
     news: "ticker",
     ticker: "ticker",
     letreiro: "ticker",
+    disponiveis: "matches_open",
+    jogosdisponiveis: "matches_open",
     noticias: "ticker",
     notícias: "ticker",
     jogosabertos: "matches_open",
@@ -2838,6 +2844,10 @@ const normalizeHomeSectionStyle = (raw = "") => {
   return ["default", "warning", "success", "danger", "dark"].includes(value) ? value : "default";
 };
 
+const CORE_HOME_SECTION_TYPES = new Set(["fast_vote", "matches_open", "matches_wait", "matches_done"]);
+
+const isCoreHomeSectionType = (value = "") => CORE_HOME_SECTION_TYPES.has(normalizeHomeSectionType(value));
+
 const createBaseHomeSection = (id, type) => ({
   id,
   type,
@@ -2873,9 +2883,8 @@ const getBaseHomeSections = () => ([
 
 const buildHomeSectionsForRender = (sections = []) => {
   const explicitSections = Array.isArray(sections) ? sections.filter(Boolean) : [];
-  const explicitTypes = new Set(explicitSections.map((section) => normalizeHomeSectionType(section.type)).filter(Boolean));
-  const fallbackSections = getBaseHomeSections().filter((section) => !explicitTypes.has(section.type));
-  return [...explicitSections, ...fallbackSections];
+  const visualSections = explicitSections.filter((section) => !isCoreHomeSectionType(section.type));
+  return [...visualSections, ...getBaseHomeSections()];
 };
 
 const getStatusToneChipClass = (tone = "default") => ({
@@ -6895,6 +6904,8 @@ const renderAdminVisualSectionList = () => {
   const cards = sections.map((section, index) => {
     const enabled = section.enabled !== false;
     const typeLabel = getAdminVisualSectionLabel(section.type);
+    const isFixed = isCoreHomeSectionType(section.type);
+    const displayEnabled = isFixed ? true : enabled;
     const visibilityBits = [];
     if (section.visibility?.adminsOnly) visibilityBits.push("Admins");
     if (section.visibility?.featureFlag) visibilityBits.push(section.visibility.featureFlag);
@@ -6905,21 +6916,26 @@ const renderAdminVisualSectionList = () => {
       <div class="admin-visual-card">
         <div class="admin-visual-card__top">
           <div class="admin-visual-card__meta">
-            <span class="admin-visual-badge ${enabled ? "is-on" : "is-off"}">${enabled ? "ATIVO" : "OCULTO"}</span>
+            <span class="admin-visual-badge ${displayEnabled ? "is-on" : "is-off"}">${displayEnabled ? "ATIVO" : "OCULTO"}</span>
             <span class="admin-visual-badge is-soft">#${index + 1}</span>
             <span class="admin-visual-badge is-soft">${escapeHtml(typeLabel)}</span>
+            ${isFixed ? '<span class="admin-visual-badge is-soft">SISTEMA</span><span class="admin-visual-badge is-soft">FIXO</span>' : ""}
           </div>
           <div class="admin-visual-card__title">${escapeHtml(section.title || "Sem título")}</div>
           <div class="admin-visual-card__desc">${escapeHtml(summary)}</div>
           ${visibilityBits.length ? `<div class="admin-visual-card__sub">${escapeHtml(visibilityBits.join(" • "))}</div>` : ""}
         </div>
         <div class="admin-visual-card__actions">
-          ${canReorder ? `<button type="button" class="admin-visual-action" title="Mover section para cima" onclick="window.moveAdminVisualSection('${escapeJsString(section.id)}', -1)" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button>` : ""}
-          ${canReorder ? `<button type="button" class="admin-visual-action" title="Mover section para baixo" onclick="window.moveAdminVisualSection('${escapeJsString(section.id)}', 1)" ${index === sections.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button>` : ""}
-          <button type="button" class="admin-visual-action" title="${enabled ? "Ocultar section" : "Mostrar section"}" onclick="window.toggleAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas ${enabled ? "fa-eye-slash" : "fa-eye"}"></i></button>
-          <button type="button" class="admin-visual-action" title="Duplicar section" onclick="window.duplicateAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas fa-copy"></i></button>
-          <button type="button" class="admin-visual-action is-edit" title="Editar section" onclick="window.openAdminVisualSectionEditor('${escapeJsString(section.id)}')"><i class="fas fa-pen"></i></button>
-          <button type="button" class="admin-visual-action is-danger" title="Excluir section" onclick="window.deleteAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas fa-trash"></i></button>
+          ${isFixed ? `
+            <button type="button" class="admin-visual-action" title="Seção fixa do sistema" disabled><i class="fas fa-lock"></i></button>
+          ` : `
+            ${canReorder ? `<button type="button" class="admin-visual-action" title="Mover section para cima" onclick="window.moveAdminVisualSection('${escapeJsString(section.id)}', -1)" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button>` : ""}
+            ${canReorder ? `<button type="button" class="admin-visual-action" title="Mover section para baixo" onclick="window.moveAdminVisualSection('${escapeJsString(section.id)}', 1)" ${index === sections.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button>` : ""}
+            <button type="button" class="admin-visual-action" title="${enabled ? "Ocultar section" : "Mostrar section"}" onclick="window.toggleAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas ${enabled ? "fa-eye-slash" : "fa-eye"}"></i></button>
+            <button type="button" class="admin-visual-action" title="Duplicar section" onclick="window.duplicateAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas fa-copy"></i></button>
+            <button type="button" class="admin-visual-action is-edit" title="Editar section" onclick="window.openAdminVisualSectionEditor('${escapeJsString(section.id)}')"><i class="fas fa-pen"></i></button>
+            <button type="button" class="admin-visual-action is-danger" title="Excluir section" onclick="window.deleteAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas fa-trash"></i></button>
+          `}
         </div>
       </div>
     `;
@@ -7320,6 +7336,10 @@ window.openAdminVisualPresetPicker = () => {
 
 window.openAdminVisualSectionEditor = (sectionId = "", presetType = "") => {
   const existing = (adminVisualState.layout.sections || []).find((section) => section.id === sectionId) || null;
+  if (existing && isCoreHomeSectionType(existing.type)) {
+    showAdminCommunicationToast("Esta é uma seção fixa do sistema e não pode ser editada aqui.", "warning");
+    return;
+  }
   const preset = presetType || existing?.type || "announcement";
   const baseSection = existing || {
     id: `section_${Date.now()}`,
@@ -7384,6 +7404,10 @@ window.moveAdminVisualSection = async (sectionId, direction = 0) => {
   const sections = [...(adminVisualState.layout.sections || [])];
   const index = sections.findIndex((section) => section.id === sectionId);
   if (index < 0) return;
+  if (isCoreHomeSectionType(sections[index]?.type)) {
+    showAdminCommunicationToast("Esta é uma seção fixa do sistema e não pode ser reordenada.", "warning");
+    return;
+  }
   const newIndex = index + Number(direction || 0);
   if (newIndex < 0 || newIndex >= sections.length) return;
   const [item] = sections.splice(index, 1);
@@ -7408,6 +7432,10 @@ window.toggleAdminVisualSection = async (sectionId) => {
   const sections = [...(adminVisualState.layout.sections || [])];
   const index = sections.findIndex((section) => section.id === sectionId);
   if (index < 0) return;
+  if (isCoreHomeSectionType(sections[index]?.type)) {
+    showAdminCommunicationToast("Esta é uma seção fixa do sistema e não pode ser ocultada.", "warning");
+    return;
+  }
   sections[index] = {
     ...sections[index],
     enabled: sections[index].enabled === false
@@ -7431,6 +7459,10 @@ window.duplicateAdminVisualSection = async (sectionId) => {
   const sections = [...(adminVisualState.layout.sections || [])];
   const index = sections.findIndex((section) => section.id === sectionId);
   if (index < 0) return;
+  if (isCoreHomeSectionType(sections[index]?.type)) {
+    showAdminCommunicationToast("Esta é uma seção fixa do sistema e não pode ser duplicada.", "warning");
+    return;
+  }
   const original = sections[index];
   const duplicate = {
     ...original,
@@ -7454,6 +7486,11 @@ window.duplicateAdminVisualSection = async (sectionId) => {
 };
 
 window.deleteAdminVisualSection = async (sectionId) => {
+  const target = (adminVisualState.layout.sections || []).find((section) => section.id === sectionId);
+  if (target && isCoreHomeSectionType(target.type)) {
+    showAdminCommunicationToast("Esta é uma seção fixa do sistema e não pode ser excluída.", "warning");
+    return;
+  }
   if (!confirm("Excluir esta section visual?")) return;
   const sections = [...(adminVisualState.layout.sections || [])].filter((section) => section.id !== sectionId);
   try {
