@@ -227,6 +227,24 @@ let adminRoundSummaryState = {
   previewBlob: null,
   previewUrl: ""
 };
+let adminRegulationState = {
+  loading: false,
+  saving: false,
+  version: "",
+  latestAppVersion: "",
+  minimumAppVersion: "",
+  updatedDate: "",
+  updatedTime: "",
+  changeSummary: "",
+  officialStartAt: null,
+  updatedBy: null,
+  items: [],
+  originalItems: [],
+  editingRuleId: "",
+  ruleDraft: null,
+  status: "",
+  statusTone: "success"
+};
 
 // ================= UTILITÁRIOS GERAIS =================
 const normalizeAdminText = (value = "") =>
@@ -366,6 +384,254 @@ const toJsDate = (value) => {
   if (typeof value.toDate === "function") return value.toDate();
   if (value.seconds) return new Date(value.seconds * 1000);
   return null;
+};
+
+const getRulesSettingsRef = () => doc(db, "settings", "rules");
+
+const createRegulationRuleId = (title = "", index = 0) => {
+  const base = normalizeAdminText(title)
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 28);
+  return `rule_${base || "item"}_${index + 1}`;
+};
+
+const normalizeRegulationRuleItem = (item = {}, index = 0) => {
+  const raw = typeof item === "string" ? { title: item, content: "" } : (item || {});
+  const title = String(raw.title || raw.t || raw.name || raw.heading || "").replace(/\s+/g, " ").trim();
+  const content = String(raw.content || raw.c || raw.text || raw.body || "").replace(/\r\n?/g, "\n").trim();
+  const active = raw.active !== false;
+  const order = Number(raw.order || raw.sortOrder || raw.position || index + 1) || (index + 1);
+  const id = String(raw.id || raw.ruleId || raw.key || "").trim() || createRegulationRuleId(title, index);
+
+  return {
+    id,
+    title,
+    content,
+    t: title,
+    c: content,
+    order,
+    active
+  };
+};
+
+const normalizeRegulationItems = (items = []) =>
+  (Array.isArray(items) ? items : [])
+    .map((item, index) => normalizeRegulationRuleItem(item, index))
+    .sort((a, b) => (Number(a.order || 0) - Number(b.order || 0)) || a.title.localeCompare(b.title, "pt-BR"))
+    .map((item, index) => ({
+      ...item,
+      order: index + 1
+    }));
+
+const readRulesSettingsState = (snap) => {
+  const data = snap?.data?.() || {};
+  const updatedAt = data.updatedAt?.toDate ? data.updatedAt.toDate() : toJsDate(data.updatedAt);
+  const officialStartAt = data.officialStartAt?.toDate ? data.officialStartAt.toDate() : toJsDate(data.officialStartAt);
+
+  return {
+    version: String(data.version || data.regulationVersion || "").trim(),
+    latestAppVersion: String(data.latestAppVersion || "").trim(),
+    minimumAppVersion: String(data.minimumAppVersion || "").trim(),
+    updatedDate: String(data.updatedDate || "").trim(),
+    updatedTime: String(data.updatedTime || "").trim(),
+    changeSummary: String(data.changeSummary || data.summary || "").trim(),
+    updatedAt: updatedAt || null,
+    officialStartAt: officialStartAt || null,
+    updatedBy: data.updatedBy || null,
+    items: normalizeRegulationItems(Array.isArray(data.items) ? data.items : Array.isArray(data.rules) ? data.rules : [])
+  };
+};
+
+const ensureRulesSettingsDoc = async () => {
+  const ref = getRulesSettingsRef();
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    const emptyState = {
+      version: "",
+      latestAppVersion: "",
+      minimumAppVersion: "",
+      updatedDate: "",
+      updatedTime: "",
+      changeSummary: "",
+      items: []
+    };
+    await setDoc(ref, emptyState, { merge: true });
+    return emptyState;
+  }
+
+  const current = readRulesSettingsState(snap);
+  const raw = snap.data() || {};
+  const patch = {};
+  if (!Array.isArray(raw.items)) patch.items = [];
+  if (!raw.version && raw.regulationVersion) patch.version = String(raw.regulationVersion || "").trim();
+  if (Object.keys(patch).length > 0) {
+    await setDoc(ref, patch, { merge: true });
+  }
+
+  return current;
+};
+
+const logAdminRegulationAction = async (type, payload = {}) => {
+  try {
+    const admin = await getCurrentAdminProfile();
+    if (!admin) return;
+
+    await addDoc(collection(db, "admin_audit_logs"), {
+      type,
+      adminUid: admin.uid || "",
+      adminName: admin.name || "",
+      adminEmail: admin.email || "",
+      source: "settings/rules",
+      ...payload,
+      createdAt: Timestamp.fromDate(new Date())
+    });
+  } catch (error) {
+    console.warn("Falha ao registrar auditoria de regulamento:", error);
+  }
+};
+
+const normalizeAdminRegulationRuleTitle = (value = "") =>
+  String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const diffAdminRegulationChanges = (oldItems = [], newItems = []) => {
+  const oldMap = new Map((oldItems || []).map((item) => [String(item.id || ""), item]));
+  const newMap = new Map((newItems || []).map((item) => [String(item.id || ""), item]));
+  const created = [];
+  const updated = [];
+  const deleted = [];
+
+  newMap.forEach((item, id) => {
+    const oldItem = oldMap.get(id);
+    if (!oldItem) {
+      created.push(item);
+      return;
+    }
+
+    const oldData = {
+      title: normalizeAdminRegulationRuleTitle(oldItem.title || oldItem.t || ""),
+      content: String(oldItem.content || oldItem.c || ""),
+      order: Number(oldItem.order || 0),
+      active: oldItem.active !== false
+    };
+    const newData = {
+      title: normalizeAdminRegulationRuleTitle(item.title || item.t || ""),
+      content: String(item.content || item.c || ""),
+      order: Number(item.order || 0),
+      active: item.active !== false
+    };
+
+    if (oldData.active && !newData.active) {
+      deleted.push({ oldItem, newItem: item });
+      return;
+    }
+
+    if (!oldData.active && newData.active) {
+      updated.push({ oldItem, newItem: item });
+      return;
+    }
+
+    if (
+      oldData.title !== newData.title ||
+      oldData.content !== newData.content ||
+      oldData.order !== newData.order ||
+      oldData.active !== newData.active
+    ) {
+      updated.push({ oldItem, newItem: item });
+    }
+  });
+
+  oldMap.forEach((item, id) => {
+    if (newMap.has(id)) return;
+    deleted.push(item);
+  });
+
+  return { created, updated, deleted };
+};
+
+const loadAdminRegulation = async ({ force = false } = {}) => {
+  const state = await readWithRuntimeCache(
+    "doc:settings:rules",
+    () => ensureRulesSettingsDoc(),
+    { ttlMs: DATA_CACHE_TTL.cold, force }
+  );
+
+  return readRulesSettingsState({ data: () => state || {} });
+};
+
+const persistAdminRegulationState = async ({ action = "update_regulation", oldState = null } = {}) => {
+  const nextItems = normalizeRegulationItems(adminRegulationState.items || []);
+  const payload = {
+    version: String(adminRegulationState.version || "").trim(),
+    latestAppVersion: String(adminRegulationState.latestAppVersion || "").trim(),
+    minimumAppVersion: String(adminRegulationState.minimumAppVersion || "").trim(),
+    updatedDate: String(adminRegulationState.updatedDate || "").trim(),
+    updatedTime: String(adminRegulationState.updatedTime || "").trim(),
+    changeSummary: String(adminRegulationState.changeSummary || "").trim(),
+    items: nextItems,
+    updatedAt: Timestamp.fromDate(new Date())
+  };
+
+  if (adminRegulationState.officialStartAt) {
+    payload.officialStartAt = adminRegulationState.officialStartAt;
+  }
+
+  if (adminRegulationState.updatedBy) {
+    payload.updatedBy = adminRegulationState.updatedBy;
+  }
+
+  await setDoc(getRulesSettingsRef(), payload, { merge: true });
+  invalidateRuntimeCache("doc:settings:rules");
+
+  const previousItems = oldState && Array.isArray(oldState.items)
+    ? oldState.items
+    : Array.isArray(adminRegulationState.originalItems)
+      ? adminRegulationState.originalItems
+      : [];
+  const diffs = diffAdminRegulationChanges(previousItems, nextItems);
+
+  await logAdminRegulationAction(action, {
+    source: "settings/rules",
+    version: payload.version,
+    latestAppVersion: payload.latestAppVersion,
+    minimumAppVersion: payload.minimumAppVersion,
+    updatedDate: payload.updatedDate,
+    updatedTime: payload.updatedTime,
+    changeSummary: payload.changeSummary,
+    itemsCount: nextItems.length,
+    oldItems: previousItems,
+    newItems: nextItems
+  });
+
+  await Promise.all([
+    ...diffs.created.map((item) => logAdminRegulationAction("create_regulation_rule", {
+      source: "settings/rules",
+      ruleId: item.id,
+      ruleTitle: item.title || "",
+      oldValue: null,
+      newValue: item
+    })),
+    ...diffs.updated.map(({ oldItem, newItem }) => logAdminRegulationAction("update_regulation_rule", {
+      source: "settings/rules",
+      ruleId: newItem.id,
+      ruleTitle: newItem.title || "",
+      oldValue: oldItem,
+      newValue: newItem
+    })),
+    ...diffs.deleted.map((item) => logAdminRegulationAction("delete_regulation_rule", {
+      source: "settings/rules",
+      ruleId: item.oldItem?.id || item.id,
+      ruleTitle: item.oldItem?.title || item.title || "",
+      oldValue: item.oldItem || item,
+      newValue: null
+    }))
+  ]);
+
+  adminRegulationState.originalItems = nextItems.map((item) => ({ ...item }));
+  return payload;
 };
 
 const getAdminCommunicationVapidKey = async () => {
@@ -2125,7 +2391,7 @@ if (tab === 'ranking') {
 
         // --- NOVA LÓGICA DE REGRAS (COM CABEÇALHO E DATA) ---
         
-        // Cache guarda objeto completo agora: { items: [], dateDisplay: "...", version: "...", updatedAt: Date|null, officialStartAt: Date|null }
+// Cache guarda objeto completo agora: { items: [], dateDisplay: "...", version: "...", updatedAt: Date|null, officialStartAt: Date|null }
 let cachedRulesData = null;
 
 async function renderRules(forceRefresh = false) {
@@ -2142,43 +2408,37 @@ async function renderRules(forceRefresh = false) {
   try {
     // Se não temos cache ou pedimos refresh, buscamos no Firebase
     if (!cachedRulesData || forceRefresh) {
-      const docRef = doc(db, "settings", "rules");
-      const snap = await getDoc(docRef);
+      const state = await readWithRuntimeCache(
+        "doc:settings:rules",
+        () => getDoc(getRulesSettingsRef()),
+        { ttlMs: DATA_CACHE_TTL.cold, force: forceRefresh }
+      );
 
-      if (snap.exists()) {
-        const d = snap.data();
-
-        // Formata a data de atualização
-        let dateStr = "Data desconhecida";
-        let updatedAtDate = null;
-        if (d.updatedAt) {
-          updatedAtDate = d.updatedAt.toDate();
-          dateStr = updatedAtDate.toLocaleDateString('pt-BR', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-          });
-        }
-
-        cachedRulesData = {
-          items: d.items || [],
-          dateDisplay: dateStr,
-          version: (d.version || "").toString(),
-          updatedAt: updatedAtDate,
-          officialStartAt: d.officialStartAt?.toDate ? d.officialStartAt.toDate() : null,
-        };
-      } else {
-        cachedRulesData = {
-          items: [],
-          dateDisplay: "--/--/----",
-          version: "",
-          updatedAt: null,
-          officialStartAt: null
-        };
-      }
+      const updatedAtDate = toJsDate(state.updatedAt);
+      cachedRulesData = {
+        items: normalizeRegulationItems(state.items || []),
+        dateDisplay: updatedAtDate ? updatedAtDate.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : "Data desconhecida",
+        version: String(state.version || "").toString(),
+        latestAppVersion: String(state.latestAppVersion || "").toString(),
+        minimumAppVersion: String(state.minimumAppVersion || "").toString(),
+        updatedDate: String(state.updatedDate || "").toString(),
+        updatedTime: String(state.updatedTime || "").toString(),
+        changeSummary: String(state.changeSummary || "").toString(),
+        updatedAt: updatedAtDate,
+        officialStartAt: state.officialStartAt || null,
+        updatedBy: state.updatedBy || null
+      };
     }
 
     // Se a lista estiver vazia
-    if (!cachedRulesData.items || cachedRulesData.items.length === 0) {
+    const visibleRules = (cachedRulesData.items || []).filter((item) => item.active !== false);
+    if (!visibleRules.length) {
       if (list) {
         list.innerHTML = `<div class="text-center p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-xs">O regulamento está sendo atualizado pelo Administrador.</div>`;
       }
@@ -2203,9 +2463,25 @@ async function renderRules(forceRefresh = false) {
           ${
             cachedRulesData.version
               ? `<p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-                   <i class="fas fa-hashtag text-[#006400] mr-1"></i>
-                   Versão: <span class="text-black">${cachedRulesData.version}</span>
-                 </p>`
+                    <i class="fas fa-hashtag text-[#006400] mr-1"></i>
+                    Versão: <span class="text-black">${cachedRulesData.version}</span>
+                  </p>`
+              : ``
+          }
+          ${
+            cachedRulesData.latestAppVersion || cachedRulesData.minimumAppVersion
+              ? `<p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+                    <i class="fas fa-mobile-screen-button text-[#006400] mr-1"></i>
+                    App: <span class="text-black">${escapeHtml(cachedRulesData.latestAppVersion || "N/D")}${cachedRulesData.minimumAppVersion ? ` • mín. ${escapeHtml(cachedRulesData.minimumAppVersion)}` : ""}</span>
+                  </p>`
+              : ``
+          }
+          ${
+            cachedRulesData.changeSummary
+              ? `<p class="text-[10px] text-gray-600 font-bold bg-yellow-50 px-3 py-2 rounded-2xl border border-yellow-200 shadow-sm text-center max-w-[95%]">
+                    <i class="fas fa-bullhorn text-[#F59E0B] mr-1"></i>
+                    ${escapeHtml(cachedRulesData.changeSummary)}
+                  </p>`
               : ``
           }
         </div>
@@ -2213,7 +2489,7 @@ async function renderRules(forceRefresh = false) {
     `;
 
     // 2. Gera a Lista de Regras
-    const itemsHtml = cachedRulesData.items.map(r => `
+    const itemsHtml = visibleRules.map(r => `
       <div class="bg-white rounded p-3 shadow-sm border border-gray-100 mb-2">
         <button class="w-full text-left font-black text-xs text-[#006400] uppercase tracking-wide flex justify-between items-center py-1"
                 onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('i').classList.toggle('fa-chevron-up'); this.querySelector('i').classList.toggle('fa-chevron-down');">
@@ -11593,6 +11869,436 @@ window.restoreAdminCompetition = async (competitionName, nextLogo = "") => {
   }
 };
 
+const setAdminRegulationStatus = (message = "", tone = "success") => {
+  const el = document.getElementById("adminRegulationStatus");
+  if (!el) return;
+
+  if (!message) {
+    el.classList.add("hidden");
+    el.textContent = "";
+    return;
+  }
+
+  el.classList.remove("hidden", "border-green-200", "bg-green-50", "text-green-700", "border-red-200", "bg-red-50", "text-red-700");
+  el.classList.add(
+    tone === "danger" ? "border-red-200" : "border-green-200",
+    tone === "danger" ? "bg-red-50" : "bg-green-50",
+    tone === "danger" ? "text-red-700" : "text-green-700"
+  );
+  el.textContent = message;
+  adminRegulationState.status = message;
+  adminRegulationState.statusTone = tone;
+};
+
+const getAdminRegulationVisibleItems = () =>
+  normalizeRegulationItems(adminRegulationState.items || []).filter((item) => item.active !== false);
+
+const findAdminRegulationDuplicate = (title = "", ignoreId = "") => {
+  const normalized = normalizeAdminText(title);
+  if (!normalized) return null;
+
+  return getAdminRegulationVisibleItems().find((item) =>
+    normalizeAdminText(item.title || item.t || "") === normalized &&
+    String(item.id || "") !== String(ignoreId || "")
+  ) || null;
+};
+
+const refreshAdminRegulationState = async ({ force = true } = {}) => {
+  const state = await loadAdminRegulation({ force });
+  const now = new Date();
+  const defaultDate = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const defaultTime = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  adminRegulationState.version = state.version || "";
+  adminRegulationState.latestAppVersion = state.latestAppVersion || "";
+  adminRegulationState.minimumAppVersion = state.minimumAppVersion || "";
+  adminRegulationState.updatedDate = state.updatedDate || defaultDate;
+  adminRegulationState.updatedTime = state.updatedTime || defaultTime;
+  adminRegulationState.changeSummary = state.changeSummary || "";
+  adminRegulationState.officialStartAt = state.officialStartAt || null;
+  adminRegulationState.updatedBy = state.updatedBy || null;
+  adminRegulationState.items = Array.isArray(state.items) ? state.items.map((item) => ({ ...item })) : [];
+  adminRegulationState.originalItems = Array.isArray(state.items) ? state.items.map((item) => ({ ...item })) : [];
+  return state;
+};
+
+const moveAdminRegulationVisibleItems = (ruleId, direction = 0) => {
+  const visible = getAdminRegulationVisibleItems();
+  const index = visible.findIndex((item) => String(item.id || "") === String(ruleId || ""));
+  if (index < 0) return false;
+
+  const targetIndex = index + Number(direction || 0);
+  if (targetIndex < 0 || targetIndex >= visible.length) return false;
+
+  const nextVisible = [...visible];
+  const [moved] = nextVisible.splice(index, 1);
+  nextVisible.splice(targetIndex, 0, moved);
+
+  const orderMap = new Map(nextVisible.map((item, idx) => [String(item.id || ""), idx + 1]));
+  adminRegulationState.items = (adminRegulationState.items || []).map((item) => {
+    if (item.active === false) return item;
+    return {
+      ...item,
+      order: orderMap.get(String(item.id || "")) || item.order || 0
+    };
+  });
+  return true;
+};
+
+const renderAdminRegulationManager = () => {
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  const visibleItems = getAdminRegulationVisibleItems();
+  const editingRule = adminRegulationState.ruleDraft || null;
+  const isEditing = !!adminRegulationState.editingRuleId;
+  const ruleCards = visibleItems.length
+    ? visibleItems.map((item, index) => {
+        const safeId = String(item.id || "");
+        const isFirst = index === 0;
+        const isLast = index === visibleItems.length - 1;
+        const snippet = clampTextLength(item.content || "", 180);
+
+        return `
+          <div class="admin-round-card" style="align-items:flex-start;">
+            <div class="admin-round-order">${index + 1}</div>
+            <div class="flex-1 min-w-0">
+              <div class="admin-round-name">${escapeHtml(item.title || "Sem título")}</div>
+              <div class="text-[11px] text-gray-500 font-bold mt-1 whitespace-pre-line leading-relaxed">${escapeHtml(snippet || "Sem texto cadastrado.")}</div>
+            </div>
+            <div class="admin-round-actions">
+              <button type="button" onclick="window.moveAdminRegulationRule('${escapeJsString(safeId)}', -1)" ${isFirst ? "disabled" : ""} class="admin-round-icon" aria-label="Mover para cima"><i class="fas fa-arrow-up"></i></button>
+              <button type="button" onclick="window.moveAdminRegulationRule('${escapeJsString(safeId)}', 1)" ${isLast ? "disabled" : ""} class="admin-round-icon" aria-label="Mover para baixo"><i class="fas fa-arrow-down"></i></button>
+              <button type="button" onclick="window.startAdminRegulationRuleEdit('${escapeJsString(safeId)}')" class="admin-round-icon admin-round-icon--ok" aria-label="Editar regra"><i class="fas fa-pen"></i></button>
+              <button type="button" onclick="window.disableAdminRegulationRule('${escapeJsString(safeId)}')" class="admin-round-icon admin-round-icon--danger" aria-label="Excluir regra"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        `;
+      }).join("")
+    : `<div class="admin-creation-panel text-center"><p class="text-sm font-black text-gray-500">Nenhuma regra cadastrada.</p></div>`;
+
+  const editorHtml = editingRule
+    ? `
+      <div class="admin-creation-panel space-y-3 border-dashed border-[#006400]/20 bg-[#006400]/4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">${isEditing ? "Editar regra" : "Nova regra"}</div>
+            <h4 class="text-base font-black text-gray-900 leading-tight">${isEditing ? "Ajuste o título e o texto da regra." : "Cadastre uma nova regra do regulamento."}</h4>
+          </div>
+          <span class="status-chip status-chip--default">${isEditing ? "Editar" : "Nova"}</span>
+        </div>
+        <div>
+          <label class="admin-compact-label">Título da regra</label>
+          <input id="adminRegulationRuleTitle" type="text" class="admin-creation-input" value="${escapeHtml(String(editingRule.title || ""))}" placeholder="OBJETIVO E VIGÊNCIA">
+        </div>
+        <div>
+          <label class="admin-compact-label">Texto da regra</label>
+          <textarea id="adminRegulationRuleContent" class="admin-creation-input" style="min-height:120px;padding-top:12px;padding-bottom:12px;resize:vertical;" placeholder="Texto da regra">${escapeHtml(String(editingRule.content || ""))}</textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" onclick="window.cancelAdminRegulationRuleEdit()" class="w-full bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
+          <button type="button" onclick="window.saveAdminRegulationRuleDraft()" class="w-full bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Salvar item</button>
+        </div>
+      </div>
+    `
+    : `
+      <button type="button" onclick="window.startAdminRegulationRuleCreate()" class="w-full bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+        <i class="fas fa-plus-circle text-base"></i>
+        Adicionar nova regra
+      </button>
+    `;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[88vh] flex flex-col">
+      <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+      <div class="relative z-10 flex flex-col h-full bg-white/92">
+        <div class="bg-[#006400] p-4 text-white flex items-center shadow-md shrink-0">
+          <button onclick="openAdminMenu()" class="mr-4"><i class="fas fa-arrow-left text-xl"></i></button>
+          <div class="min-w-0">
+            <h3 class="font-black uppercase text-lg leading-none">Regulamento</h3>
+            <p class="text-[10px] text-[#FFD700] font-bold">Versão, regras e resumo de atualização</p>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-3 space-y-3">
+          <div class="admin-creation-panel space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Dados gerais</div>
+                <h4 class="text-lg font-black text-gray-900 leading-tight">Versão do regulamento e dados do app.</h4>
+              </div>
+              <span class="status-chip status-chip--default">${visibleItems.length}</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3">
+              <div>
+                <label class="admin-compact-label">Versão do regulamento</label>
+                <input id="adminRegulationVersion" type="text" class="admin-creation-input" value="${escapeHtml(adminRegulationState.version || "")}" placeholder="2026.1">
+              </div>
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label class="admin-compact-label">Última versão do app</label>
+                  <input id="adminRegulationLatestAppVersion" type="text" class="admin-creation-input" value="${escapeHtml(adminRegulationState.latestAppVersion || "")}" placeholder="1.7.5">
+                </div>
+                <div>
+                  <label class="admin-compact-label">Versão mínima</label>
+                  <input id="adminRegulationMinimumAppVersion" type="text" class="admin-creation-input" value="${escapeHtml(adminRegulationState.minimumAppVersion || "")}" placeholder="1.7.5">
+                </div>
+              </div>
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label class="admin-compact-label">Data da alteração</label>
+                  <input id="adminRegulationUpdatedDate" type="text" class="admin-creation-input" value="${escapeHtml(adminRegulationState.updatedDate || "")}" placeholder="01/02/2026">
+                </div>
+                <div>
+                  <label class="admin-compact-label">Hora da alteração</label>
+                  <input id="adminRegulationUpdatedTime" type="text" class="admin-creation-input" value="${escapeHtml(adminRegulationState.updatedTime || "")}" placeholder="16:00">
+                </div>
+              </div>
+              <div>
+                <label class="admin-compact-label">Resumo da mudança</label>
+                <textarea id="adminRegulationChangeSummary" class="admin-creation-input" style="min-height:100px;padding-top:12px;padding-bottom:12px;resize:vertical;" placeholder="Esse resumo pode ser usado para informar aos usuários o que mudou na última atualização do regulamento.">${escapeHtml(adminRegulationState.changeSummary || "")}</textarea>
+                <p class="text-[11px] font-bold text-gray-500 mt-2">Esse resumo pode ser usado para informar aos usuários o que mudou na última atualização do regulamento.</p>
+              </div>
+            </div>
+          </div>
+
+          ${editorHtml}
+
+          <div class="admin-creation-panel space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Regras cadastradas</div>
+                <h4 class="text-lg font-black text-gray-900 leading-tight">Edite, exclua ou adicione novas regras.</h4>
+              </div>
+              <span class="status-chip status-chip--default">${visibleItems.length}</span>
+            </div>
+
+            <div id="adminRegulationStatus" class="hidden rounded-2xl border px-3 py-2 text-xs font-black"></div>
+            <div class="space-y-2">
+              ${ruleCards}
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-quick-results-footer shrink-0">
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="closeModal()" class="w-full bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
+            <button type="button" onclick="window.saveAdminRegulation()" class="w-full bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+              <i class="fas fa-save"></i>
+              Salvar no app
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  setAdminRegulationStatus(adminRegulationState.status || "", adminRegulationState.statusTone || "success");
+  if (editingRule) {
+    setTimeout(() => document.getElementById("adminRegulationRuleTitle")?.focus(), 0);
+  }
+};
+
+window.openAdminRegulationModal = async () => {
+  window.__setAdminReturnTarget(() => window.openAdminMenu());
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para gerenciar o regulamento.");
+    closeModal();
+    return;
+  }
+
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="bg-white p-6 text-center rounded shadow-xl">
+      <i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i>
+      <p class="text-xs font-black text-gray-500 uppercase">Carregando regulamento...</p>
+    </div>
+  `;
+
+  try {
+    adminRegulationState.loading = true;
+    adminRegulationState.editingRuleId = "";
+    adminRegulationState.ruleDraft = null;
+    await refreshAdminRegulationState({ force: true });
+    renderAdminRegulationManager();
+  } catch (error) {
+    console.error("Erro ao abrir regulamento:", error);
+    cont.innerHTML = `
+      <div class="bg-white p-6 text-center rounded shadow-xl">
+        <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar o regulamento.</p>
+        <button onclick="openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
+      </div>
+    `;
+  } finally {
+    adminRegulationState.loading = false;
+  }
+};
+
+window.startAdminRegulationRuleCreate = () => {
+  adminRegulationState.editingRuleId = "";
+  adminRegulationState.ruleDraft = { id: "", title: "", content: "" };
+  renderAdminRegulationManager();
+};
+
+window.startAdminRegulationRuleEdit = (ruleId) => {
+  const item = (adminRegulationState.items || []).find((rule) => String(rule.id || "") === String(ruleId || ""));
+  if (!item) return;
+
+  adminRegulationState.editingRuleId = String(ruleId || "");
+  adminRegulationState.ruleDraft = {
+    id: String(ruleId || ""),
+    title: item.title || item.t || "",
+    content: item.content || item.c || ""
+  };
+  renderAdminRegulationManager();
+};
+
+window.cancelAdminRegulationRuleEdit = () => {
+  adminRegulationState.editingRuleId = "";
+  adminRegulationState.ruleDraft = null;
+  renderAdminRegulationManager();
+};
+
+window.saveAdminRegulationRuleDraft = () => {
+  const titleInput = document.getElementById("adminRegulationRuleTitle");
+  const contentInput = document.getElementById("adminRegulationRuleContent");
+  const title = normalizeAdminRegulationRuleTitle(titleInput?.value || "");
+  const content = String(contentInput?.value || "").replace(/\r\n?/g, "\n").trim();
+  const draftId = String(adminRegulationState.ruleDraft?.id || "").trim();
+
+  if (!title) return setAdminRegulationStatus("Informe o título da regra.", "danger");
+  if (!content) return setAdminRegulationStatus("Informe o texto da regra.", "danger");
+
+  const duplicate = findAdminRegulationDuplicate(title, draftId);
+  if (duplicate) return setAdminRegulationStatus("Já existe uma regra com esse título.", "danger");
+
+  const nextItems = [...(adminRegulationState.items || [])];
+  const activeOrder = Math.max(0, ...nextItems.filter((item) => item.active !== false).map((item) => Number(item.order || 0)));
+
+  if (draftId) {
+    const index = nextItems.findIndex((item) => String(item.id || "") === draftId);
+    if (index < 0) return setAdminRegulationStatus("Regra não encontrada.", "danger");
+    const current = nextItems[index];
+    nextItems[index] = {
+      ...current,
+      title,
+      content,
+      t: title,
+      c: content,
+      active: current.active !== false
+    };
+  } else {
+    nextItems.push({
+      id: createRegulationRuleId(title, nextItems.length),
+      title,
+      content,
+      t: title,
+      c: content,
+      order: activeOrder + 1,
+      active: true
+    });
+  }
+
+  adminRegulationState.items = normalizeRegulationItems(nextItems);
+  adminRegulationState.editingRuleId = "";
+  adminRegulationState.ruleDraft = null;
+  renderAdminRegulationManager();
+  setAdminRegulationStatus("Regra adicionada ao rascunho. Clique em Salvar no app para publicar.");
+};
+
+window.disableAdminRegulationRule = (ruleId) => {
+  const item = (adminRegulationState.items || []).find((rule) => String(rule.id || "") === String(ruleId || ""));
+  if (!item) return;
+  if (!confirm("Deseja remover esta regra do regulamento?")) return;
+
+  const existedOnServer = (adminRegulationState.originalItems || []).some((rule) => String(rule.id || "") === String(ruleId || ""));
+
+  if (existedOnServer) {
+    adminRegulationState.items = (adminRegulationState.items || []).map((rule) => {
+      if (String(rule.id || "") !== String(ruleId || "")) return rule;
+      return {
+        ...rule,
+        active: false
+      };
+    });
+  } else {
+    adminRegulationState.items = (adminRegulationState.items || []).filter((rule) => String(rule.id || "") !== String(ruleId || ""));
+  }
+
+  if (String(adminRegulationState.ruleDraft?.id || "") === String(ruleId || "")) {
+    adminRegulationState.editingRuleId = "";
+    adminRegulationState.ruleDraft = null;
+  }
+
+  renderAdminRegulationManager();
+  setAdminRegulationStatus("Regra removida do rascunho.");
+};
+
+window.moveAdminRegulationRule = (ruleId, direction = 0) => {
+  if (!moveAdminRegulationVisibleItems(ruleId, direction)) return;
+  renderAdminRegulationManager();
+};
+
+window.saveAdminRegulation = async () => {
+  const versionInput = document.getElementById("adminRegulationVersion");
+  const latestAppVersionInput = document.getElementById("adminRegulationLatestAppVersion");
+  const minimumAppVersionInput = document.getElementById("adminRegulationMinimumAppVersion");
+  const updatedDateInput = document.getElementById("adminRegulationUpdatedDate");
+  const updatedTimeInput = document.getElementById("adminRegulationUpdatedTime");
+  const changeSummaryInput = document.getElementById("adminRegulationChangeSummary");
+
+  const version = String(versionInput?.value || "").replace(/\s+/g, " ").trim();
+  const latestAppVersion = String(latestAppVersionInput?.value || "").replace(/\s+/g, " ").trim();
+  const minimumAppVersion = String(minimumAppVersionInput?.value || "").replace(/\s+/g, " ").trim();
+  const updatedDate = String(updatedDateInput?.value || "").replace(/\s+/g, " ").trim();
+  const updatedTime = String(updatedTimeInput?.value || "").replace(/\s+/g, " ").trim();
+  const changeSummary = String(changeSummaryInput?.value || "").replace(/\s+/g, " ").trim();
+
+  if (!version) return setAdminRegulationStatus("Informe a versão do regulamento.", "danger");
+
+  try {
+    const previousState = {
+      version: adminRegulationState.version,
+      latestAppVersion: adminRegulationState.latestAppVersion,
+      minimumAppVersion: adminRegulationState.minimumAppVersion,
+      updatedDate: adminRegulationState.updatedDate,
+      updatedTime: adminRegulationState.updatedTime,
+      changeSummary: adminRegulationState.changeSummary,
+      items: (adminRegulationState.originalItems || []).map((item) => ({ ...item }))
+    };
+
+    adminRegulationState.version = version;
+    adminRegulationState.latestAppVersion = latestAppVersion;
+    adminRegulationState.minimumAppVersion = minimumAppVersion;
+    adminRegulationState.updatedDate = updatedDate;
+    adminRegulationState.updatedTime = updatedTime;
+    adminRegulationState.changeSummary = changeSummary;
+    adminRegulationState.items = normalizeRegulationItems(adminRegulationState.items || []);
+    adminRegulationState.updatedBy = {
+      uid: currentUser?.uid || "",
+      name: currentUser?.displayName || currentUser?.email || "",
+      email: currentUser?.email || ""
+    };
+
+    await persistAdminRegulationState({ action: "update_regulation", oldState: previousState });
+    adminRegulationState.originalItems = (adminRegulationState.items || []).map((item) => ({ ...item }));
+    setAdminRegulationStatus("Regulamento salvo com sucesso.");
+    await renderRules(true);
+  } catch (error) {
+    console.error("Erro ao salvar regulamento:", error);
+    setAdminRegulationStatus("Não foi possível salvar o regulamento. Tente novamente.", "danger");
+  } finally {
+    adminRegulationState.loading = false;
+  }
+};
+
 const setAdminCreationStatus = (message = "", tone = "success") => {
   const el = document.getElementById("adminCreationStatus");
   if (!el) return;
@@ -12796,7 +13502,11 @@ window.openMatchEditModal = async (matchId) => {
             revoke_invite: "Revogação de convite",
             update_user_financial: "Atualização financeira",
             reset_user_password: "Redefinição de senha",
-            disable_user: "Desativação de usuário"
+            disable_user: "Desativação de usuário",
+            update_regulation: "Atualização de regulamento",
+            create_regulation_rule: "Criação de regra",
+            update_regulation_rule: "Edição de regra",
+            delete_regulation_rule: "Exclusão de regra"
           };
           return known[raw] || known[normalized.replace(/\s+/g, "_")] || normalized || "Ação administrativa";
         };
@@ -12805,6 +13515,7 @@ window.openMatchEditModal = async (matchId) => {
           const value = String(log.source || log.category || log.type || log.action || "").toLowerCase();
           if (value.includes("financial") || value.includes("payment") || value.includes("debt") || value.includes("money")) return "Financeiro";
           if (value.includes("round") || value.includes("match") || value.includes("competition") || value.includes("cleanup") || value.includes("summary") || value.includes("quick_results")) return "Partidas";
+          if (value.includes("regulation") || value.includes("rules")) return "Configurações";
           if (value.includes("communication") || value.includes("push") || value.includes("notice")) return "Comunicação";
           if (value.includes("invite") || value.includes("password") || value.includes("disable") || value.includes("user")) return "Usuários";
           if (value.includes("rank")) return "Ranking";
@@ -12903,6 +13614,21 @@ window.openMatchEditModal = async (matchId) => {
             if (username) bits.push(`@${username}`);
             if (userId) bits.push(`ID: ...${userId.slice(-4)}`);
             return bits.length ? bits.join(" • ") : "Usuário administrado";
+          }
+
+          if (action === "update_regulation") {
+            const bits = [];
+            if (log.version) bits.push(`Versão ${log.version}`);
+            if (log.changeSummary) bits.push(log.changeSummary);
+            if (log.itemsCount) bits.push(`${log.itemsCount} regra(s)`);
+            return bits.length ? bits.join(" • ") : "Regulamento atualizado";
+          }
+
+          if (action === "create_regulation_rule" || action === "update_regulation_rule" || action === "delete_regulation_rule") {
+            const bits = [];
+            if (log.ruleTitle) bits.push(log.ruleTitle);
+            if (log.ruleId) bits.push(`#${String(log.ruleId).slice(-4)}`);
+            return bits.length ? bits.join(" • ") : "Regra do regulamento";
           }
 
           if (teamA || teamB || competition || round || matchId || title) {
@@ -13202,6 +13928,7 @@ window.openMatchEditModal = async (matchId) => {
                                 <button onclick="window.openAdminCommunicationsModal()" class="bg-[#6A1B9A] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-bullhorn text-lg"></i> Comunicados</button>
                                 <button onclick="window.openAdminVisualManagementModal()" class="bg-[#0F766E] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-palette text-lg"></i> Visual / Banners / Enquetes</button>
                                 <button onclick="window.openAdminRoundSummaryModal()" class="bg-[#1D4ED8] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-image text-lg"></i> Resumo da Rodada</button>
+                                <button onclick="window.openAdminRegulationModal()" class="bg-[#7C3AED] text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-scale-balanced text-lg"></i> Regulamento</button>
                                 <button onclick="window.openAdminAuditHistoryModal()" class="bg-slate-800 text-white py-3 rounded font-bold text-xs shadow btn-press flex flex-col items-center gap-1"><i class="fas fa-clock-rotate-left text-lg"></i> Histórico Admin</button>
                             </div>
                         </div>
