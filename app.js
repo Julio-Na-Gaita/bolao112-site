@@ -2791,18 +2791,40 @@ const persistRankingMovementSnapshot = async ({ users = [], previousPositions = 
 
 const normalizeHomeSectionType = (raw = "") => {
   const value = String(raw || "").trim().toLowerCase();
-  if ([
-    "ticker",
-    "banner",
-    "banner_ref",
-    "poll",
-    "fast_vote",
-    "matches_open",
-    "matches_wait",
-    "matches_done",
-    "announcement",
-    "cta_card"
-  ].includes(value)) return value;
+  const aliases = {
+    aviso: "announcement",
+    notice: "announcement",
+    block: "announcement",
+    news: "ticker",
+    ticker: "ticker",
+    letreiro: "ticker",
+    noticias: "ticker",
+    notícias: "ticker",
+    jogosabertos: "matches_open",
+    jogos_abertos: "matches_open",
+    jogosabrindo: "matches_open",
+    open_matches: "matches_open",
+    abertos: "matches_open",
+    jogosaguardando: "matches_wait",
+    jogos_aguardando: "matches_wait",
+    waiting_matches: "matches_wait",
+    aguardando: "matches_wait",
+    finished_matches: "matches_done",
+    jogosfinalizados: "matches_done",
+    jogos_finalizados: "matches_done",
+    finalizados: "matches_done",
+    matches_open: "matches_open",
+    matches_wait: "matches_wait",
+    matches_done: "matches_done",
+    banner: "banner",
+    banner_ref: "banner_ref",
+    poll: "poll",
+    enquete: "poll",
+    fast_vote: "fast_vote",
+    cta_card: "cta_card",
+    announcement: "announcement"
+  };
+  if (aliases[value]) return aliases[value];
   return "";
 };
 
@@ -2848,6 +2870,13 @@ const getBaseHomeSections = () => ([
   createBaseHomeSection("base_matches_wait", "matches_wait"),
   createBaseHomeSection("base_matches_done", "matches_done")
 ]);
+
+const buildHomeSectionsForRender = (sections = []) => {
+  const explicitSections = Array.isArray(sections) ? sections.filter(Boolean) : [];
+  const explicitTypes = new Set(explicitSections.map((section) => normalizeHomeSectionType(section.type)).filter(Boolean));
+  const fallbackSections = getBaseHomeSections().filter((section) => !explicitTypes.has(section.type));
+  return [...explicitSections, ...fallbackSections];
+};
 
 const getStatusToneChipClass = (tone = "default") => ({
   default: "status-chip--default",
@@ -3776,53 +3805,60 @@ const renderHomeSectionsWeb = async ({
   html += renderHomeQuickPanel({ runtime, open, waiting, finished, myVotesMap });
   const firstActiveBanner = Object.values(bannersMap).find(item => item.active) || null;
   const pendingOpenMatches = open.filter(m => !myVotesMap[m.id]);
+  const renderSections = buildHomeSectionsForRender(sections);
+  console.info("[HomeSections] sections carregadas:", Array.isArray(sections) ? sections.length : 0);
+  console.info("[HomeSections] sections renderizáveis:", renderSections.length);
 
-  for (const section of sections) {
-    if (!isHomeSectionVisibleWeb(section, runtime)) continue;
+  for (const section of renderSections) {
+    try {
+      if (!isHomeSectionVisibleWeb(section, runtime)) continue;
 
-    switch (normalizeHomeSectionType(section.type)) {
-      case "ticker":
-        html += renderTickerBlock(newsContent);
-        break;
+      switch (normalizeHomeSectionType(section.type)) {
+        case "ticker":
+          html += renderTickerBlock(newsContent);
+          break;
 
-      case "banner_ref":
-        if (section.bannerId && bannersMap[section.bannerId]) {
-          html += renderBanner(bannersMap[section.bannerId]);
-        }
-        break;
+        case "banner_ref":
+          if (section.bannerId && bannersMap[section.bannerId]) {
+            html += renderBanner(bannersMap[section.bannerId]);
+          }
+          break;
 
-      case "banner":
-        if (firstActiveBanner) {
-          html += renderBanner(firstActiveBanner);
-        }
-        break;
+        case "banner":
+          if (firstActiveBanner) {
+            html += renderBanner(firstActiveBanner);
+          }
+          break;
 
-      case "poll":
-        if (activePoll) {
-          html += renderPoll(activePoll);
-        }
-        break;
+        case "poll":
+          if (activePoll) {
+            html += renderPoll(activePoll);
+          }
+          break;
 
-      case "announcement":
-      case "cta_card":
-        html += renderServerDrivenSection(section);
-        break;
+        case "announcement":
+        case "cta_card":
+          html += renderServerDrivenSection(section);
+          break;
 
-      case "fast_vote":
-        html += await renderFastVoteBlock(pendingOpenMatches, allUsersData, myVotesMap);
-        break;
+        case "fast_vote":
+          html += await renderFastVoteBlock(pendingOpenMatches, allUsersData, myVotesMap);
+          break;
 
-      case "matches_open":
-        html += await renderMatchesOpenBlock(open, allUsersData, myVotesMap);
-        break;
+        case "matches_open":
+          html += await renderMatchesOpenBlock(open, allUsersData, myVotesMap);
+          break;
 
-      case "matches_wait":
-        html += await renderMatchesWaitingBlock(waiting, allUsersData, myVotesMap);
-        break;
+        case "matches_wait":
+          html += await renderMatchesWaitingBlock(waiting, allUsersData, myVotesMap);
+          break;
 
-      case "matches_done":
-        html += await renderMatchesDoneBlock(finished, allUsersData, myVotesMap);
-        break;
+        case "matches_done":
+          html += await renderMatchesDoneBlock(finished, allUsersData, myVotesMap);
+          break;
+      }
+    } catch (error) {
+      console.warn("[HomeSections] section ignorada:", error?.message || error, section);
     }
   }
 
@@ -4015,7 +4051,7 @@ const buildFinalMatchesScreenState = (criticalData, { newsSnap, layoutSnap, bann
   );
 
   return {
-    sections: homeSections.length ? homeSections : getBaseHomeSections(),
+    sections: buildHomeSectionsForRender(homeSections),
     runtime: criticalData.runtime,
     open: criticalData.open,
     waiting: criticalData.waiting,
