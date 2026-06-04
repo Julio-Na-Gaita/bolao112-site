@@ -251,19 +251,31 @@ let adminRegulationState = {
 
 const WEB_THEME_FONT_PRESETS = Object.freeze([
   { value: "system", label: "Sistema" },
-  { value: "classic", label: "Clássico" },
-  { value: "modern", label: "Moderno" },
-  { value: "mono", label: "Mono" },
-  { value: "rounded", label: "Arredondado" }
+  { value: "modern", label: "Moderna" },
+  { value: "classic", label: "Clássica" },
+  { value: "mono", label: "Monoespaçada" },
+  { value: "rounded", label: "Arredondada" },
+  { value: "condensed", label: "Condensada" },
+  { value: "elegant", label: "Elegante" },
+  { value: "sport", label: "Esportiva" },
+  { value: "readable", label: "Leitura fácil" },
+  { value: "impact", label: "Impacto" }
 ]);
 
 const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
   padrao_bolao: {
     label: "Padrão Bolão",
+    description: "Visual clássico do Bolão 112 FC, com verde e dourado na medida certa.",
+    tone: "claro",
+    palette: ["#006400", "#FFD700", "#FFFFFF"],
     preset: "padrao_bolao",
     active: false,
     backgroundImageUrl: "",
     backgroundOverlay: "rgba(243,244,246,0.86)",
+    backgroundOverlayOpacity: 86,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
     primaryColor: "#006400",
     primaryDarkColor: "#0B5F2A",
     accentColor: "#FFD700",
@@ -293,10 +305,17 @@ const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
   },
   copa: {
     label: "Copa",
+    description: "Paleta moderna para clima de competição, com água, ouro e muito contraste.",
+    tone: "claro",
+    palette: ["#0F766E", "#F59E0B", "#FFFFFF"],
     preset: "copa",
     active: true,
     backgroundImageUrl: "",
     backgroundOverlay: "rgba(248,250,252,0.84)",
+    backgroundOverlayOpacity: 84,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
     primaryColor: "#0F766E",
     primaryDarkColor: "#0B5F5A",
     accentColor: "#F59E0B",
@@ -326,10 +345,17 @@ const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
   },
   natal: {
     label: "Natal",
+    description: "Tema festivo em vermelho e verde, com leitura suave e visual amigável.",
+    tone: "festivo",
+    palette: ["#0F7A3D", "#DC2626", "#FFFFFF"],
     preset: "natal",
     active: true,
     backgroundImageUrl: "",
     backgroundOverlay: "rgba(255,248,248,0.84)",
+    backgroundOverlayOpacity: 84,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
     primaryColor: "#0F7A3D",
     primaryDarkColor: "#0B4D25",
     accentColor: "#DC2626",
@@ -359,10 +385,17 @@ const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
   },
   noite: {
     label: "Noite",
+    description: "Visual escuro com azul e violeta para uso noturno e telas OLED.",
+    tone: "escuro",
+    palette: ["#111827", "#38BDF8", "#A78BFA"],
     preset: "noite",
     active: true,
     backgroundImageUrl: "",
     backgroundOverlay: "rgba(15,23,42,0.74)",
+    backgroundOverlayOpacity: 74,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
     primaryColor: "#38BDF8",
     primaryDarkColor: "#0F172A",
     accentColor: "#A78BFA",
@@ -392,10 +425,17 @@ const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
   },
   verde_classico: {
     label: "Verde clássico",
+    description: "A cara tradicional do Bolão, com verde campo e dourado limpo.",
+    tone: "claro",
+    palette: ["#006400", "#FFD700", "#F7FDF7"],
     preset: "verde_classico",
     active: true,
     backgroundImageUrl: "",
     backgroundOverlay: "rgba(247,253,247,0.86)",
+    backgroundOverlayOpacity: 86,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
     primaryColor: "#006400",
     primaryDarkColor: "#064E3B",
     accentColor: "#FFD700",
@@ -422,6 +462,406 @@ const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
     successColor: "#166534",
     warningColor: "#9a6700",
     cardAccent: "#006400"
+  },
+  libertadores: {
+    label: "Libertadores",
+    description: "Tema premium com grafite e dourado para clima de noite de jogo grande.",
+    tone: "escuro",
+    palette: ["#111827", "#D4AF37", "#F8FAFC"],
+    preset: "libertadores",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(17,24,39,0.74)",
+    backgroundOverlayOpacity: 74,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
+    primaryColor: "#111827",
+    primaryDarkColor: "#0B1120",
+    accentColor: "#D4AF37",
+    surfaceColor: "#F8FAFC",
+    textColor: "#111827",
+    mutedTextColor: "#475569",
+    buttonColor: "#D4AF37",
+    fontFamily: "elegant",
+    headerBg: "#111827",
+    headerText: "#F8FAFC",
+    headerBorder: "rgba(212,175,55,0.18)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 12px 24px rgba(15,23,42,0.12)",
+    chipBg: "rgba(212,175,55,0.14)",
+    chipText: "#111827",
+    sectionBg: "rgba(248,250,252,0.96)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(15,23,42,0.96)",
+    bottomNavBorder: "rgba(212,175,55,0.16)",
+    navActive: "#D4AF37",
+    navInactive: "#CBD5E1",
+    dangerColor: "#ef4444",
+    successColor: "#22c55e",
+    warningColor: "#f59e0b",
+    cardAccent: "#D4AF37"
+  },
+  champions: {
+    label: "Champions",
+    description: "Azul marinho, branco e dourado com leitura elegante e competitiva.",
+    tone: "claro",
+    palette: ["#0F172A", "#2563EB", "#D4AF37"],
+    preset: "champions",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(248,250,252,0.84)",
+    backgroundOverlayOpacity: 84,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
+    primaryColor: "#0F172A",
+    primaryDarkColor: "#111827",
+    accentColor: "#D4AF37",
+    surfaceColor: "#F8FAFC",
+    textColor: "#0F172A",
+    mutedTextColor: "#475569",
+    buttonColor: "#2563EB",
+    fontFamily: "modern",
+    headerBg: "#0F172A",
+    headerText: "#F8FAFC",
+    headerBorder: "rgba(37,99,235,0.18)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 12px 24px rgba(15,23,42,0.08)",
+    chipBg: "rgba(37,99,235,0.10)",
+    chipText: "#0F172A",
+    sectionBg: "rgba(255,255,255,0.96)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(255,255,255,0.96)",
+    bottomNavBorder: "rgba(15,23,42,0.08)",
+    navActive: "#2563EB",
+    navInactive: "#64748B",
+    dangerColor: "#b91c1c",
+    successColor: "#166534",
+    warningColor: "#9a6700",
+    cardAccent: "#2563EB"
+  },
+  brasileirao: {
+    label: "Brasileirão",
+    description: "Verde forte, amarelo e azul com identidade de campeonato nacional.",
+    tone: "claro",
+    palette: ["#006400", "#FACC15", "#2563EB"],
+    preset: "brasileirao",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(247,253,247,0.88)",
+    backgroundOverlayOpacity: 88,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
+    primaryColor: "#0F7A3D",
+    primaryDarkColor: "#064E3B",
+    accentColor: "#FACC15",
+    surfaceColor: "#F7FFF8",
+    textColor: "#111827",
+    mutedTextColor: "#4B5563",
+    buttonColor: "#2563EB",
+    fontFamily: "sport",
+    headerBg: "#0F7A3D",
+    headerText: "#F8FAFC",
+    headerBorder: "rgba(15,122,61,0.16)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 10px 22px rgba(15,23,42,0.07)",
+    chipBg: "rgba(37,99,235,0.10)",
+    chipText: "#0F7A3D",
+    sectionBg: "rgba(255,255,255,0.95)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(255,255,255,0.96)",
+    bottomNavBorder: "rgba(15,23,42,0.08)",
+    navActive: "#0F7A3D",
+    navInactive: "#64748B",
+    dangerColor: "#b91c1c",
+    successColor: "#166534",
+    warningColor: "#9a6700",
+    cardAccent: "#0F7A3D"
+  },
+  copa_mundo_2026: {
+    label: "Copa do Mundo 2026",
+    description: "Verde escuro, ouro e azul para clima de seleção e evento mundial.",
+    tone: "festivo",
+    palette: ["#064E3B", "#F59E0B", "#2563EB"],
+    preset: "copa_mundo_2026",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(245,250,245,0.86)",
+    backgroundOverlayOpacity: 86,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
+    primaryColor: "#064E3B",
+    primaryDarkColor: "#042F2E",
+    accentColor: "#F59E0B",
+    surfaceColor: "#F8FCF8",
+    textColor: "#0F172A",
+    mutedTextColor: "#475569",
+    buttonColor: "#2563EB",
+    fontFamily: "modern",
+    headerBg: "#064E3B",
+    headerText: "#F8FAFC",
+    headerBorder: "rgba(6,78,59,0.16)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 10px 22px rgba(15,23,42,0.06)",
+    chipBg: "rgba(245,158,11,0.12)",
+    chipText: "#064E3B",
+    sectionBg: "rgba(255,255,255,0.96)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(255,255,255,0.96)",
+    bottomNavBorder: "rgba(15,23,42,0.08)",
+    navActive: "#064E3B",
+    navInactive: "#64748B",
+    dangerColor: "#b91c1c",
+    successColor: "#166534",
+    warningColor: "#9a6700",
+    cardAccent: "#064E3B"
+  },
+  festa_junina: {
+    label: "Festa Junina",
+    description: "Laranja, marrom e amarelo para um clima quente e festivo.",
+    tone: "festivo",
+    palette: ["#9A3412", "#F59E0B", "#FFF7ED"],
+    preset: "festa_junina",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(255,248,240,0.86)",
+    backgroundOverlayOpacity: 86,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
+    primaryColor: "#9A3412",
+    primaryDarkColor: "#7C2D12",
+    accentColor: "#F59E0B",
+    surfaceColor: "#FFF7ED",
+    textColor: "#7C2D12",
+    mutedTextColor: "#92400E",
+    buttonColor: "#C2410C",
+    fontFamily: "elegant",
+    headerBg: "#9A3412",
+    headerText: "#FFF7ED",
+    headerBorder: "rgba(154,52,18,0.16)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 10px 22px rgba(15,23,42,0.07)",
+    chipBg: "rgba(245,158,11,0.12)",
+    chipText: "#9A3412",
+    sectionBg: "rgba(255,255,255,0.96)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(255,255,255,0.96)",
+    bottomNavBorder: "rgba(15,23,42,0.08)",
+    navActive: "#9A3412",
+    navInactive: "#64748B",
+    dangerColor: "#b91c1c",
+    successColor: "#166534",
+    warningColor: "#f59e0b",
+    cardAccent: "#9A3412"
+  },
+  carnaval: {
+    label: "Carnaval",
+    description: "Roxo, amarelo e rosa para um visual vibrante e divertido.",
+    tone: "festivo",
+    palette: ["#6D28D9", "#FACC15", "#DB2777"],
+    preset: "carnaval",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(255,250,255,0.88)",
+    backgroundOverlayOpacity: 88,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
+    primaryColor: "#6D28D9",
+    primaryDarkColor: "#4C1D95",
+    accentColor: "#FACC15",
+    surfaceColor: "#FFFAFF",
+    textColor: "#3B0764",
+    mutedTextColor: "#6B21A8",
+    buttonColor: "#DB2777",
+    fontFamily: "rounded",
+    headerBg: "#6D28D9",
+    headerText: "#FFFAFF",
+    headerBorder: "rgba(109,40,217,0.16)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 10px 22px rgba(15,23,42,0.06)",
+    chipBg: "rgba(219,39,119,0.12)",
+    chipText: "#6D28D9",
+    sectionBg: "rgba(255,255,255,0.96)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(255,255,255,0.96)",
+    bottomNavBorder: "rgba(15,23,42,0.08)",
+    navActive: "#6D28D9",
+    navInactive: "#64748B",
+    dangerColor: "#be123c",
+    successColor: "#16a34a",
+    warningColor: "#eab308",
+    cardAccent: "#DB2777"
+  },
+  halloween: {
+    label: "Halloween",
+    description: "Grafite e laranja com contraste forte para clima temático.",
+    tone: "escuro",
+    palette: ["#111827", "#F97316", "#F8FAFC"],
+    preset: "halloween",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(15,23,42,0.76)",
+    backgroundOverlayOpacity: 76,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
+    primaryColor: "#111827",
+    primaryDarkColor: "#0F172A",
+    accentColor: "#F97316",
+    surfaceColor: "#1F2937",
+    textColor: "#F8FAFC",
+    mutedTextColor: "#CBD5E1",
+    buttonColor: "#F97316",
+    fontFamily: "impact",
+    headerBg: "#111827",
+    headerText: "#F8FAFC",
+    headerBorder: "rgba(249,115,22,0.16)",
+    cardBg: "#0F172A",
+    cardBorder: "rgba(249,115,22,0.12)",
+    cardShadow: "0 12px 26px rgba(2,6,23,0.24)",
+    chipBg: "rgba(249,115,22,0.14)",
+    chipText: "#F8FAFC",
+    sectionBg: "rgba(15,23,42,0.94)",
+    sectionBorder: "rgba(249,115,22,0.12)",
+    bottomNavBg: "rgba(15,23,42,0.96)",
+    bottomNavBorder: "rgba(249,115,22,0.12)",
+    navActive: "#F97316",
+    navInactive: "#CBD5E1",
+    dangerColor: "#fb7185",
+    successColor: "#4ade80",
+    warningColor: "#f59e0b",
+    cardAccent: "#F97316"
+  },
+  black_gold: {
+    label: "Black Gold",
+    description: "Preto e dourado com aparência premium e leitura elegante.",
+    tone: "escuro",
+    palette: ["#000000", "#D4AF37", "#F8FAFC"],
+    preset: "black_gold",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(8,8,8,0.78)",
+    backgroundOverlayOpacity: 78,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
+    primaryColor: "#000000",
+    primaryDarkColor: "#111111",
+    accentColor: "#D4AF37",
+    surfaceColor: "#0F172A",
+    textColor: "#F8FAFC",
+    mutedTextColor: "#CBD5E1",
+    buttonColor: "#D4AF37",
+    fontFamily: "elegant",
+    headerBg: "#000000",
+    headerText: "#F8FAFC",
+    headerBorder: "rgba(212,175,55,0.16)",
+    cardBg: "#111827",
+    cardBorder: "rgba(212,175,55,0.16)",
+    cardShadow: "0 12px 26px rgba(2,6,23,0.32)",
+    chipBg: "rgba(212,175,55,0.14)",
+    chipText: "#D4AF37",
+    sectionBg: "rgba(17,24,39,0.96)",
+    sectionBorder: "rgba(212,175,55,0.12)",
+    bottomNavBg: "rgba(0,0,0,0.96)",
+    bottomNavBorder: "rgba(212,175,55,0.12)",
+    navActive: "#D4AF37",
+    navInactive: "#CBD5E1",
+    dangerColor: "#ef4444",
+    successColor: "#22c55e",
+    warningColor: "#f59e0b",
+    cardAccent: "#D4AF37"
+  },
+  azul_profissional: {
+    label: "Azul Profissional",
+    description: "Visual limpo e corporativo com azul escuro e azul claro.",
+    tone: "claro",
+    palette: ["#0F172A", "#3B82F6", "#F8FAFC"],
+    preset: "azul_profissional",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(248,250,252,0.88)",
+    backgroundOverlayOpacity: 88,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
+    primaryColor: "#0F172A",
+    primaryDarkColor: "#111827",
+    accentColor: "#3B82F6",
+    surfaceColor: "#F8FAFC",
+    textColor: "#111827",
+    mutedTextColor: "#475569",
+    buttonColor: "#2563EB",
+    fontFamily: "modern",
+    headerBg: "#0F172A",
+    headerText: "#F8FAFC",
+    headerBorder: "rgba(59,130,246,0.16)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 10px 22px rgba(15,23,42,0.06)",
+    chipBg: "rgba(59,130,246,0.10)",
+    chipText: "#0F172A",
+    sectionBg: "rgba(255,255,255,0.96)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(255,255,255,0.96)",
+    bottomNavBorder: "rgba(15,23,42,0.08)",
+    navActive: "#2563EB",
+    navInactive: "#64748B",
+    dangerColor: "#b91c1c",
+    successColor: "#166534",
+    warningColor: "#9a6700",
+    cardAccent: "#2563EB"
+  },
+  retro_futebol: {
+    label: "Retrô Futebol",
+    description: "Verde campo, creme e marrom com cara de futebol antigo.",
+    tone: "claro",
+    palette: ["#166534", "#FEF3C7", "#7C2D12"],
+    preset: "retro_futebol",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(251,247,232,0.88)",
+    backgroundOverlayOpacity: 88,
+    backgroundPosition: "center",
+    backgroundSizeMode: "cover",
+    backgroundRepeat: "no-repeat",
+    primaryColor: "#166534",
+    primaryDarkColor: "#14532D",
+    accentColor: "#FEF3C7",
+    surfaceColor: "#FFFDF7",
+    textColor: "#3F1D0F",
+    mutedTextColor: "#6B4F3A",
+    buttonColor: "#7C2D12",
+    fontFamily: "classic",
+    headerBg: "#166534",
+    headerText: "#FFFDF7",
+    headerBorder: "rgba(124,45,18,0.16)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 10px 22px rgba(15,23,42,0.06)",
+    chipBg: "rgba(22,101,52,0.10)",
+    chipText: "#166534",
+    sectionBg: "rgba(255,255,255,0.96)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(255,255,255,0.96)",
+    bottomNavBorder: "rgba(15,23,42,0.08)",
+    navActive: "#166534",
+    navInactive: "#64748B",
+    dangerColor: "#b91c1c",
+    successColor: "#166534",
+    warningColor: "#9a6700",
+    cardAccent: "#166534"
   }
 });
 
@@ -486,12 +926,58 @@ const getWebThemeFontStack = (choice = "classic") => ({
   classic: '"PT Serif", Georgia, serif',
   modern: 'Inter, "Segoe UI", sans-serif',
   mono: '"SFMono-Regular", Consolas, "Liberation Mono", monospace',
-  rounded: 'ui-rounded, "SF Pro Rounded", "Nunito", "Trebuchet MS", sans-serif'
+  rounded: 'ui-rounded, "SF Pro Rounded", "Nunito", "Trebuchet MS", sans-serif',
+  condensed: '"Arial Narrow", "Roboto Condensed", Arial, sans-serif',
+  elegant: 'Georgia, "Palatino Linotype", serif',
+  sport: 'Impact, "Arial Black", sans-serif',
+  readable: 'Verdana, Geneva, sans-serif',
+  impact: 'Impact, "Arial Black", sans-serif'
 }[String(choice || "").trim().toLowerCase()] || '"PT Serif", Georgia, serif');
 
 const normalizeThemeCssColor = (value = "", fallback = "#006400") => {
   const raw = String(value || "").trim();
+  if (!raw) return fallback;
+  if (raw.toLowerCase().includes("javascript:")) return fallback;
+  if (/[<>]/.test(raw)) return fallback;
   return isValidCssColor(raw) ? raw : fallback;
+};
+
+const normalizeThemeBackgroundPosition = (value = "center") => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["center", "top", "bottom", "left", "right"].includes(normalized) ? normalized : "center";
+};
+
+const normalizeThemeBackgroundMode = (value = "cover") => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["cover", "contain", "repeat"].includes(normalized) ? normalized : "cover";
+};
+
+const normalizeThemeOverlayOpacity = (value = 86) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 86;
+  return Math.min(100, Math.max(0, Math.round(num)));
+};
+
+const normalizeThemeBackgroundUrl = (value = "") => {
+  const raw = fixDriveUrl(String(value || "").trim());
+  if (!raw) return "";
+  if (/[<>]/.test(raw)) return "";
+  if (raw.toLowerCase().includes("javascript:")) return "";
+  return isHttpUrl(raw) ? raw : "";
+};
+
+const buildThemeOverlayCss = (overlay = "", opacity = 86) => {
+  const raw = String(overlay || "").trim();
+  const alpha = normalizeThemeOverlayOpacity(opacity) / 100;
+  if (/^rgba?\(/i.test(raw)) {
+    const parts = raw.match(/[\d.]+/g) || [];
+    if (parts.length >= 3) {
+      const [r, g, b] = parts.map((item) => Math.max(0, Math.min(255, Number(item))));
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+  }
+  if (/^#[0-9a-f]{3,8}$/i.test(raw)) return hexToRgba(raw, alpha);
+  return isValidCssColor(raw) ? raw : `rgba(243,244,246,${alpha})`;
 };
 
 const isThemeColorDark = (value = "#006400") => {
@@ -499,15 +985,13 @@ const isThemeColorDark = (value = "#006400") => {
   if (!raw) return false;
   if (/^#[0-9a-f]{3,8}$/i.test(raw)) {
     const { r, g, b } = hexToRgb(normalizeHexColor(raw, "#006400"));
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance < 0.55;
+    return ((0.299 * r + 0.587 * g + 0.114 * b) / 255) < 0.55;
   }
   if (/^rgba?\(/i.test(raw)) {
     const parts = raw.match(/[\d.]+/g) || [];
     if (parts.length >= 3) {
       const [r, g, b] = parts.map((item) => Number(item));
-      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-      return luminance < 0.55;
+      return ((0.299 * r + 0.587 * g + 0.114 * b) / 255) < 0.55;
     }
   }
   return false;
@@ -515,6 +999,15 @@ const isThemeColorDark = (value = "#006400") => {
 
 const getThemeReadableText = (background = "#006400", light = "#F8FAFC", dark = "#111827") =>
   isThemeColorDark(background) ? light : dark;
+
+const getThemeBackgroundRepeat = (mode = "cover") => normalizeThemeBackgroundMode(mode) === "repeat" ? "repeat" : "no-repeat";
+
+const getThemeBackgroundSize = (mode = "cover") => {
+  const normalized = normalizeThemeBackgroundMode(mode);
+  if (normalized === "contain") return "contain";
+  if (normalized === "repeat") return "auto";
+  return "cover";
+};
 
 const getAdminWebThemeDerivedTokens = (theme = {}) => {
   const normalized = normalizeAdminWebThemeDraft(theme);
@@ -7434,18 +7927,22 @@ const getAdminWebThemeDefaultDraft = () => ({
 const normalizeAdminWebThemeDraft = (theme = {}) => {
   const presetKey = String(theme.preset || "").trim().toLowerCase();
   const preset = getAdminWebThemePreset(presetKey);
-  const backgroundImageUrl = fixDriveUrl(String(theme.backgroundImageUrl || theme.background_image_url || "").trim());
-  const safeBackgroundImageUrl = isHttpUrl(backgroundImageUrl) ? backgroundImageUrl : "";
+  const backgroundImageUrl = normalizeThemeBackgroundUrl(theme.backgroundImageUrl || theme.background_image_url || "");
   const overlay = String(theme.backgroundOverlay || theme.background_overlay || preset.backgroundOverlay || "").trim();
   const safeOverlay = isValidCssColor(overlay) ? overlay : preset.backgroundOverlay;
   const fontFamily = String(theme.fontFamily || theme.font_family || preset.fontFamily || "").trim().toLowerCase();
   const safeFontFamily = WEB_THEME_FONT_PRESETS.some((item) => item.value === fontFamily) ? fontFamily : preset.fontFamily;
+  const overlayOpacity = normalizeThemeOverlayOpacity(theme.backgroundOverlayOpacity || theme.background_overlay_opacity || preset.backgroundOverlayOpacity || 86);
 
   return {
     active: theme.active === true,
     preset: preset.preset || "padrao_bolao",
-    backgroundImageUrl: safeBackgroundImageUrl,
+    backgroundImageUrl,
     backgroundOverlay: safeOverlay,
+    backgroundOverlayOpacity: overlayOpacity,
+    backgroundPosition: normalizeThemeBackgroundPosition(theme.backgroundPosition || theme.background_position || preset.backgroundPosition),
+    backgroundSizeMode: normalizeThemeBackgroundMode(theme.backgroundSizeMode || theme.background_size_mode || preset.backgroundSizeMode),
+    backgroundRepeat: normalizeThemeBackgroundMode(theme.backgroundRepeat || theme.background_repeat || preset.backgroundRepeat) === "repeat" ? "repeat" : "no-repeat",
     primaryColor: normalizeHexColor(theme.primaryColor || theme.primary_color, preset.primaryColor),
     primaryDarkColor: normalizeHexColor(theme.primaryDarkColor || theme.primary_dark_color, preset.primaryDarkColor),
     accentColor: normalizeHexColor(theme.accentColor || theme.accent_color, preset.accentColor),
@@ -7490,6 +7987,10 @@ const buildAdminWebThemePayload = (draft = {}, admin = null) => {
     preset: data.preset || "padrao_bolao",
     backgroundImageUrl: data.backgroundImageUrl || "",
     backgroundOverlay: data.backgroundOverlay || WEB_THEME_PRESET_DEFINITIONS.padrao_bolao.backgroundOverlay,
+    backgroundOverlayOpacity: normalizeThemeOverlayOpacity(data.backgroundOverlayOpacity),
+    backgroundPosition: normalizeThemeBackgroundPosition(data.backgroundPosition),
+    backgroundSizeMode: normalizeThemeBackgroundMode(data.backgroundSizeMode),
+    backgroundRepeat: data.backgroundRepeat === "repeat" ? "repeat" : "no-repeat",
     primaryColor: data.primaryColor,
     primaryDarkColor: data.primaryDarkColor,
     accentColor: data.accentColor,
@@ -7527,9 +8028,13 @@ const applyWebTheme = (theme = {}) => {
   const normalized = normalizeAdminWebThemeDraft(theme);
   const applied = normalized.active === true ? normalized : getAdminWebThemeDefaultDraft();
   const derived = getAdminWebThemeDerivedTokens(applied);
-  const imageUrl = applied.active && applied.backgroundImageUrl ? fixDriveUrl(applied.backgroundImageUrl) : "";
+  const imageUrl = applied.active && applied.backgroundImageUrl ? normalizeThemeBackgroundUrl(applied.backgroundImageUrl) : "";
   const safeImage = isHttpUrl(imageUrl) ? imageUrl : "";
   const backgroundImage = safeImage ? `url("${safeImage.replace(/"/g, '\\"')}")` : "none";
+  const backgroundOverlay = buildThemeOverlayCss(applied.backgroundOverlay, applied.backgroundOverlayOpacity);
+  const backgroundPosition = normalizeThemeBackgroundPosition(applied.backgroundPosition);
+  const backgroundRepeat = getThemeBackgroundRepeat(applied.backgroundSizeMode || applied.backgroundRepeat);
+  const backgroundSize = getThemeBackgroundSize(applied.backgroundSizeMode || applied.backgroundRepeat);
 
   root.style.setProperty("--primary", applied.primaryColor);
   root.style.setProperty("--secondary", applied.accentColor);
@@ -7552,8 +8057,10 @@ const applyWebTheme = (theme = {}) => {
   root.style.setProperty("--border-medium", hexToRgba(applied.textColor, 0.12));
   root.style.setProperty("--color-border", hexToRgba(applied.textColor, 0.12));
   root.style.setProperty("--theme-bg-image", backgroundImage);
-  root.style.setProperty("--theme-bg-overlay", applied.backgroundOverlay);
-  root.style.setProperty("--theme-bg-size", "80%");
+  root.style.setProperty("--theme-bg-overlay", backgroundOverlay);
+  root.style.setProperty("--theme-bg-position", backgroundPosition);
+  root.style.setProperty("--theme-bg-repeat", backgroundRepeat);
+  root.style.setProperty("--theme-bg-size", backgroundSize);
   root.style.setProperty("--app-font", getWebThemeFontStack(applied.fontFamily));
   root.style.setProperty("--app-primary", applied.primaryColor);
   root.style.setProperty("--app-primary-dark", applied.primaryDarkColor);
@@ -7593,8 +8100,10 @@ const syncAdminVisualAppearancePreview = () => {
   const draft = normalizeAdminWebThemeDraft(adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft());
   const applied = draft.active === true ? draft : getAdminWebThemeDefaultDraft();
   const derived = getAdminWebThemeDerivedTokens(applied);
-  const backgroundImageUrl = applied.active && applied.backgroundImageUrl ? fixDriveUrl(applied.backgroundImageUrl) : "";
+  const backgroundImageUrl = applied.active && applied.backgroundImageUrl ? normalizeThemeBackgroundUrl(applied.backgroundImageUrl) : "";
   const safeImage = isHttpUrl(backgroundImageUrl) ? backgroundImageUrl : "";
+  const bgImageEl = preview.querySelector("[data-background-preview-image]");
+  const bgStatusEl = preview.querySelector("[data-background-status]");
 
   preview.style.setProperty("--preview-primary", applied.primaryColor);
   preview.style.setProperty("--preview-primary-dark", applied.primaryDarkColor);
@@ -7621,6 +8130,33 @@ const syncAdminVisualAppearancePreview = () => {
   preview.style.setProperty("--preview-danger", derived.dangerColor);
   preview.style.setProperty("--preview-success", derived.successColor);
   preview.style.setProperty("--preview-warning", derived.warningColor);
+
+  if (bgImageEl) {
+    const nextSrc = safeImage || "";
+    if (bgImageEl.dataset.src !== nextSrc) {
+      bgImageEl.dataset.src = nextSrc;
+      bgImageEl.src = nextSrc || "";
+      if (bgStatusEl) {
+        bgStatusEl.textContent = nextSrc ? "Carregando prévia do background..." : "Usando fundo padrão do Bolão.";
+      }
+    }
+    if (!bgImageEl.dataset.bound) {
+      bgImageEl.dataset.bound = "1";
+      bgImageEl.addEventListener("load", () => {
+        if (bgStatusEl && bgImageEl.dataset.src === bgImageEl.currentSrc) {
+          bgStatusEl.textContent = bgImageEl.dataset.src ? "Prévia do background carregada." : "Usando fundo padrão do Bolão.";
+        }
+      });
+      bgImageEl.addEventListener("error", () => {
+        if (bgStatusEl && bgImageEl.dataset.src) {
+          bgStatusEl.textContent = "Não foi possível carregar essa imagem. Verifique se o link é público e direto.";
+        }
+      });
+    }
+  }
+  if (bgStatusEl && !safeImage) {
+    bgStatusEl.textContent = "Usando fundo padrão do Bolão.";
+  }
 
   const status = preview.querySelector("[data-theme-status]");
   if (status) {
@@ -8001,13 +8537,20 @@ const renderAdminVisualEmpty = (title, description) => `
 const renderAdminVisualAppearanceTab = () => {
   const draft = normalizeAdminWebThemeDraft(adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft());
   const applied = draft.active === true ? draft : getAdminWebThemeDefaultDraft();
-  const presetCards = Object.entries(WEB_THEME_PRESET_DEFINITIONS).map(([presetKey, preset]) => `
-    <button type="button" class="admin-visual-appearance-preset ${draft.preset === presetKey ? "is-active" : ""}" onclick="window.selectAdminVisualAppearancePreset('${escapeJsString(presetKey)}')">
-      <span class="admin-visual-appearance-preset__icon"><i class="fas fa-swatchbook"></i></span>
-      <span class="admin-visual-appearance-preset__title">${escapeHtml(preset.label)}</span>
-      <span class="admin-visual-appearance-preset__desc">Aplica um conjunto pronto de cores e tipografia.</span>
-    </button>
-  `).join("");
+  const presetCards = Object.entries(WEB_THEME_PRESET_DEFINITIONS).map(([presetKey, preset]) => {
+    const palette = Array.isArray(preset.palette) ? preset.palette.slice(0, 4) : [];
+    const paletteDots = palette.length ? palette.map((color) => `<span class="admin-visual-appearance-preset__swatch" style="background:${escapeHtml(color)}"></span>`).join("") : "";
+    const toneLabel = preset.tone === "escuro" ? "Escuro" : preset.tone === "festivo" ? "Festivo" : "Claro";
+    return `
+      <button type="button" class="admin-visual-appearance-preset ${draft.preset === presetKey ? "is-active" : ""}" onclick="window.selectAdminVisualAppearancePreset('${escapeJsString(presetKey)}')">
+        <span class="admin-visual-appearance-preset__icon"><i class="fas fa-swatchbook"></i></span>
+        <span class="admin-visual-appearance-preset__title">${escapeHtml(preset.label)}</span>
+        <span class="admin-visual-appearance-preset__desc">${escapeHtml(preset.description || "Aplica um conjunto pronto de cores e tipografia.")}</span>
+        <span class="admin-visual-appearance-preset__tone">${escapeHtml(toneLabel)}</span>
+        <span class="admin-visual-appearance-preset__palette">${paletteDots}</span>
+      </button>
+    `;
+  }).join("");
 
   const fontOptions = WEB_THEME_FONT_PRESETS.map((option) => `
     <option value="${escapeHtml(option.value)}" ${draft.fontFamily === option.value ? "selected" : ""}>${escapeHtml(option.label)}</option>
@@ -8041,6 +8584,18 @@ const renderAdminVisualAppearanceTab = () => {
     --preview-warning:${escapeHtml(applied.warningColor || "#9a6700")};
   `;
 
+  const previewBackgroundLabel = draft.backgroundImageUrl
+    ? "Prévia do background carregada."
+    : "Usando fundo padrão do Bolão.";
+  const bgSizeLabel = draft.backgroundSizeMode === "contain" ? "Conter imagem" : draft.backgroundSizeMode === "repeat" ? "Repetir padrão" : "Cobrir tela";
+  const bgPositionLabel = {
+    center: "Centro",
+    top: "Topo",
+    bottom: "Base",
+    left: "Esquerda",
+    right: "Direita"
+  }[draft.backgroundPosition] || "Centro";
+
   return `
     <div class="admin-visual-section">
       <div class="admin-visual-section__copy">
@@ -8052,6 +8607,7 @@ const renderAdminVisualAppearanceTab = () => {
         <span class="admin-visual-badge is-soft">Preset: <b data-theme-preset>${escapeHtml(getAdminWebThemePreset(draft.preset).label)}</b></span>
       </div>
       <div class="admin-visual-appearance-presets">${presetCards}</div>
+      <div class="admin-visual-appearance-toast">Preset aplicado na prévia. Clique em Salvar aparência para publicar.</div>
     </div>
 
     <div class="admin-visual-section">
@@ -8065,9 +8621,38 @@ const renderAdminVisualAppearanceTab = () => {
           <input type="url" class="admin-creation-input" placeholder="https://..." value="${escapeHtml(draft.backgroundImageUrl)}" oninput="window.updateAdminVisualAppearanceField('backgroundImageUrl', this.value)">
           <div class="admin-visual-field__note">A imagem aparece em segundo plano na home e nas telas que não sobrescrevem o fundo.</div>
         </label>
+        <div class="admin-visual-background-help admin-visual-field--full">
+          <div class="admin-visual-background-help__title">Como usar o background</div>
+          <p>Cole aqui um link público direto de imagem para usar como fundo do app. Funciona melhor com imagens em JPG, PNG ou WebP. Evite links de páginas, links privados ou imagens muito pesadas. Se o link não carregar, o app mantém o fundo padrão.</p>
+          <p class="admin-visual-background-help__hint">Dica: o link ideal normalmente termina em .jpg, .png ou .webp. Links do Google Drive precisam estar públicos e, em alguns casos, podem não abrir como imagem direta.</p>
+          <p class="admin-visual-background-help__warn">Não use códigos HTML, iframe, script ou CSS. Use apenas o link da imagem.</p>
+        </div>
         <label class="admin-visual-field">
           <span>Overlay</span>
           <input type="text" class="admin-creation-input" placeholder="rgba(255,255,255,0.86)" value="${escapeHtml(draft.backgroundOverlay)}" oninput="window.updateAdminVisualAppearanceField('backgroundOverlay', this.value)">
+        </label>
+        <label class="admin-visual-field">
+          <span>Opacidade do fundo</span>
+          <input type="range" min="0" max="100" step="1" value="${escapeHtml(String(draft.backgroundOverlayOpacity ?? 86))}" oninput="window.updateAdminVisualAppearanceField('backgroundOverlayOpacity', this.value)">
+          <div class="admin-visual-field__note">Ajusta a leitura dos cards sobre a imagem de fundo.</div>
+        </label>
+        <label class="admin-visual-field">
+          <span>Posição do fundo</span>
+          <select class="admin-creation-input" onchange="window.updateAdminVisualAppearanceField('backgroundPosition', this.value)">
+            <option value="center" ${draft.backgroundPosition === "center" ? "selected" : ""}>Centro</option>
+            <option value="top" ${draft.backgroundPosition === "top" ? "selected" : ""}>Topo</option>
+            <option value="bottom" ${draft.backgroundPosition === "bottom" ? "selected" : ""}>Base</option>
+            <option value="left" ${draft.backgroundPosition === "left" ? "selected" : ""}>Esquerda</option>
+            <option value="right" ${draft.backgroundPosition === "right" ? "selected" : ""}>Direita</option>
+          </select>
+        </label>
+        <label class="admin-visual-field">
+          <span>Tamanho do fundo</span>
+          <select class="admin-creation-input" onchange="window.updateAdminVisualAppearanceField('backgroundSizeMode', this.value)">
+            <option value="cover" ${draft.backgroundSizeMode === "cover" ? "selected" : ""}>Cobrir tela</option>
+            <option value="contain" ${draft.backgroundSizeMode === "contain" ? "selected" : ""}>Conter imagem</option>
+            <option value="repeat" ${draft.backgroundSizeMode === "repeat" ? "selected" : ""}>Repetir padrão</option>
+          </select>
         </label>
         <label class="admin-visual-field">
           <span>Cor primária</span>
@@ -8102,6 +8687,7 @@ const renderAdminVisualAppearanceTab = () => {
           <select class="admin-creation-input" onchange="window.updateAdminVisualAppearanceField('fontFamily', this.value)">
             ${fontOptions}
           </select>
+          <div class="admin-visual-field__note">As fontes usam opções seguras do próprio aparelho. A aparência pode variar levemente entre Android, iPhone e computador.</div>
         </label>
       </div>
     </div>
@@ -8112,6 +8698,10 @@ const renderAdminVisualAppearanceTab = () => {
         <div class="admin-visual-section__hint">A prévia segue a mesma lógica do app e mostra como o tema fica no celular.</div>
       </div>
       <div id="adminVisualAppearancePreviewRoot" class="admin-visual-appearance-preview" style="${escapeHtml(previewStyle)}">
+        <div class="admin-visual-appearance-preview__bgstage">
+          <img data-background-preview-image alt="Prévia do background" loading="lazy" decoding="async" class="admin-visual-appearance-preview__bgimage" src="${escapeHtml(draft.backgroundImageUrl || "")}">
+          <div class="admin-visual-appearance-preview__bgstatus" data-background-status>${escapeHtml(previewBackgroundLabel)}</div>
+        </div>
         <div class="admin-visual-appearance-preview__hero">
           <div>
             <div class="admin-visual-appearance-preview__eyebrow">BOLÃO 112 FC</div>
@@ -8178,6 +8768,10 @@ const renderAdminVisualAppearanceTab = () => {
             <span class="is-active"><i class="fas fa-home"></i><small>Home</small></span>
             <span><i class="fas fa-trophy"></i><small>Ranking</small></span>
             <span><i class="fas fa-user"></i><small>Perfil</small></span>
+          </div>
+          <div class="admin-visual-appearance-preview__meta">
+            <span>Fundo: ${escapeHtml(bgSizeLabel)}</span>
+            <span>Posição: ${escapeHtml(bgPositionLabel)}</span>
           </div>
         </div>
       </div>
@@ -9050,9 +9644,18 @@ window.switchAdminVisualTab = (tab) => {
 
 window.updateAdminVisualAppearanceField = (field = "", value = "") => {
   const draft = adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft();
+  const nextValue = field === "backgroundOverlayOpacity"
+    ? normalizeThemeOverlayOpacity(value)
+    : field === "backgroundPosition"
+    ? normalizeThemeBackgroundPosition(value)
+    : field === "backgroundSizeMode"
+    ? normalizeThemeBackgroundMode(value)
+    : field === "backgroundRepeat"
+    ? (String(value || "").trim().toLowerCase() === "repeat" ? "repeat" : "no-repeat")
+    : value;
   adminVisualState.appearanceDraft = {
     ...draft,
-    [field]: value,
+    [field]: nextValue,
     active: true
   };
   syncAdminVisualAppearancePreview();
@@ -9067,6 +9670,7 @@ window.selectAdminVisualAppearancePreset = (presetKey = "padrao_bolao") => {
     updatedBy: adminVisualState.appearance?.updatedBy || null
   };
   renderAdminVisualManagementModal();
+  showAdminCommunicationToast("Preset aplicado na prévia. Clique em Salvar aparência para publicar.");
 };
 
 window.restoreAdminVisualTheme = async () => {
@@ -9081,7 +9685,7 @@ window.restoreAdminVisualTheme = async () => {
     adminVisualState.appearanceSaving = true;
     renderAdminVisualManagementModal();
 
-    const current = normalizeAdminWebThemeDraft(adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft());
+    const current = getAdminWebThemeDefaultDraft();
     const payload = {
       ...current,
       active: false,
@@ -9109,7 +9713,10 @@ window.restoreAdminVisualTheme = async () => {
       textColor: payload.textColor,
       mutedTextColor: payload.mutedTextColor,
       buttonColor: payload.buttonColor,
-      fontFamily: payload.fontFamily
+      fontFamily: payload.fontFamily,
+      backgroundPosition: payload.backgroundPosition,
+      backgroundSizeMode: payload.backgroundSizeMode,
+      backgroundOverlayOpacity: payload.backgroundOverlayOpacity
     });
     renderAdminVisualManagementModal();
     showAdminCommunicationToast("Tema restaurado para o padrão do app.");
@@ -9134,6 +9741,7 @@ window.saveAdminVisualTheme = async () => {
 
   if (draft.backgroundImageUrl && !isHttpUrl(draft.backgroundImageUrl)) errors.push("A imagem de fundo precisa usar uma URL pública válida.");
   if (!isValidCssColor(draft.backgroundOverlay)) errors.push("O overlay de fundo precisa ser uma cor válida.");
+  if (!Number.isFinite(Number(draft.backgroundOverlayOpacity))) errors.push("A opacidade do fundo precisa ser um número válido.");
 
   const colorFields = [
     ["primaryColor", "Cor primária"],
@@ -9167,6 +9775,9 @@ window.saveAdminVisualTheme = async () => {
       source: "settings/web_theme",
       preset: payload.preset,
       backgroundImageUrl: payload.backgroundImageUrl,
+      backgroundPosition: payload.backgroundPosition,
+      backgroundSizeMode: payload.backgroundSizeMode,
+      backgroundOverlayOpacity: payload.backgroundOverlayOpacity,
       primaryColor: payload.primaryColor,
       primaryDarkColor: payload.primaryDarkColor,
       accentColor: payload.accentColor,
