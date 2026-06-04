@@ -33,6 +33,11 @@
     --radius-chip: 999px;
     --radius-lg: 18px;
     --radius-xl: 24px;
+    --space-card: 16px;
+    --space-card-compact: 12px;
+    --touch-target: 44px;
+    --button-font-weight: 900;
+    --modal-max-height: 90vh;
     --focus-ring: 0 0 0 3px rgba(0, 100, 0, 0.18);
     --status-default-bg: #eef2f7;
     --status-default-text: #334155;
@@ -114,6 +119,12 @@
 
 button, a, input, select, textarea {
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+button,
+[role="button"],
+.btn-press {
+    touch-action: manipulation;
 }
 
 /* --- BADGES E NOTIFICAÇÕES --- */
@@ -1283,6 +1294,25 @@ select:focus-visible {
     border: 1px dashed rgba(15,23,42,0.12);
     text-align: center;
     background: rgba(255,255,255,0.72);
+    display: grid;
+    gap: 6px;
+    justify-items: center;
+    overflow-wrap: anywhere;
+}
+
+.empty-state::before {
+    content: "•";
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,100,0,0.08);
+    color: var(--primary);
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 900;
 }
 
 .empty-state--default {
@@ -1293,12 +1323,30 @@ select:focus-visible {
     background: rgba(232,245,233,0.9);
 }
 
+.empty-state--success::before {
+    content: "✓";
+    background: rgba(22,101,52,0.1);
+    color: var(--color-success);
+}
+
 .empty-state--warning {
     background: rgba(255,248,225,0.92);
 }
 
+.empty-state--warning::before {
+    content: "!";
+    background: rgba(154,103,0,0.12);
+    color: var(--color-warning);
+}
+
 .empty-state--danger {
     background: rgba(255,235,238,0.92);
+}
+
+.empty-state--danger::before {
+    content: "×";
+    background: rgba(180,35,24,0.1);
+    color: var(--color-danger);
 }
 
 .empty-state__title {
@@ -1314,7 +1362,7 @@ select:focus-visible {
     font-size: 12px;
     font-weight: 700;
     line-height: 1.5;
-    margin-top: 6px;
+    margin-top: 0;
 }
 
 .skeleton-card {
@@ -4144,7 +4192,7 @@ select:focus-visible {
 .profile-action-row,
 .profile-push-card__button,
 .pwa-install-card__button {
-    min-height: 44px;
+    min-height: var(--touch-target);
     border-radius: var(--radius-button);
 }
 
@@ -4159,8 +4207,10 @@ select:focus-visible {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    font-weight: 900;
+    font-weight: var(--button-font-weight);
     letter-spacing: 0;
+    line-height: 1.15;
+    text-align: center;
 }
 
 button:disabled,
@@ -4211,11 +4261,12 @@ button[disabled] {
 }
 
 #modalContainer {
-    max-height: 90vh;
+    max-height: var(--modal-max-height);
     overflow-y: auto;
     border-radius: 22px;
     background: var(--surface-strong);
     border: 1px solid rgba(255,255,255,0.24);
+    overscroll-behavior: contain;
 }
 
 #modalContainer > * {
@@ -4224,7 +4275,7 @@ button[disabled] {
 
 .admin-communications-modal,
 .voters-modal {
-    max-height: 90vh;
+    max-height: var(--modal-max-height);
 }
 
 .empty-state,
@@ -4238,6 +4289,7 @@ button[disabled] {
     background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(248,250,252,0.9));
     color: var(--text-muted);
     box-shadow: 0 8px 20px rgba(15,23,42,0.05);
+    padding: var(--space-card);
 }
 
 .empty-state__title,
@@ -4256,6 +4308,28 @@ button[disabled] {
 .admin-communications-header p,
 .admin-user-picker-row small {
     color: var(--text-muted);
+}
+
+.admin-cleanup-tab,
+.admin-whatsapp-number-button,
+.home-quick-action,
+.profile-action-tile,
+.profile-action-row {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.admin-cleanup-tab,
+.admin-whatsapp-number-button {
+    line-height: 1.15;
+}
+
+.surface-card,
+.card-cut,
+.match-card-shell,
+.admin-financial-card,
+.profile-section {
+    overflow-wrap: anywhere;
 }
 
 .surface-card .text-gray-400,
