@@ -1,4 +1,4 @@
-              import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+﻿              import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { 
   getAuth, 
   signInWithEmailAndPassword, 
@@ -199,6 +199,7 @@ let adminVisualState = {
   loading: false,
   tab: "sections",
   mode: "list",
+  appearanceSaving: false,
   bannerFilter: "all",
   pollFilter: "all",
   layout: {
@@ -206,6 +207,8 @@ let adminVisualState = {
     order: [],
     sections: []
   },
+  appearance: null,
+  appearanceDraft: null,
   banners: [],
   polls: [],
   draft: null,
@@ -246,6 +249,92 @@ let adminRegulationState = {
   statusTone: "success"
 };
 
+const WEB_THEME_FONT_PRESETS = Object.freeze([
+  { value: "system", label: "Sistema" },
+  { value: "classic", label: "Clássico" },
+  { value: "modern", label: "Moderno" },
+  { value: "mono", label: "Mono" },
+  { value: "rounded", label: "Arredondado" }
+]);
+
+const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
+  padrao_bolao: {
+    label: "Padrão Bolão",
+    preset: "padrao_bolao",
+    active: false,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(243,244,246,0.86)",
+    primaryColor: "#006400",
+    primaryDarkColor: "#0B5F2A",
+    accentColor: "#FFD700",
+    surfaceColor: "#F3F4F6",
+    textColor: "#111827",
+    mutedTextColor: "#475569",
+    buttonColor: "#006400",
+    fontFamily: "classic"
+  },
+  copa: {
+    label: "Copa",
+    preset: "copa",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(248,250,252,0.84)",
+    primaryColor: "#0F766E",
+    primaryDarkColor: "#0B5F5A",
+    accentColor: "#F59E0B",
+    surfaceColor: "#F8FAFC",
+    textColor: "#0F172A",
+    mutedTextColor: "#475569",
+    buttonColor: "#0F766E",
+    fontFamily: "modern"
+  },
+  natal: {
+    label: "Natal",
+    preset: "natal",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(255,248,248,0.84)",
+    primaryColor: "#0F7A3D",
+    primaryDarkColor: "#0B4D25",
+    accentColor: "#DC2626",
+    surfaceColor: "#FFF7F7",
+    textColor: "#111827",
+    mutedTextColor: "#6B7280",
+    buttonColor: "#B91C1C",
+    fontFamily: "rounded"
+  },
+  noite: {
+    label: "Noite",
+    preset: "noite",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(15,23,42,0.74)",
+    primaryColor: "#38BDF8",
+    primaryDarkColor: "#0F172A",
+    accentColor: "#A78BFA",
+    surfaceColor: "#111827",
+    textColor: "#F8FAFC",
+    mutedTextColor: "#CBD5E1",
+    buttonColor: "#1D4ED8",
+    fontFamily: "modern"
+  },
+  verde_classico: {
+    label: "Verde clássico",
+    preset: "verde_classico",
+    active: true,
+    backgroundImageUrl: "",
+    backgroundOverlay: "rgba(247,253,247,0.86)",
+    primaryColor: "#006400",
+    primaryDarkColor: "#064E3B",
+    accentColor: "#FFD700",
+    surfaceColor: "#F7FDF7",
+    textColor: "#111827",
+    mutedTextColor: "#4B5563",
+    buttonColor: "#006400",
+    fontFamily: "classic"
+  }
+});
+
 // ================= UTILITÁRIOS GERAIS =================
 const normalizeAdminText = (value = "") =>
   String(value || "")
@@ -263,6 +352,52 @@ const normalizeHomeUserSegment = (raw = "") => {
   const value = String(raw || "").trim().toLowerCase();
   return ["", "debtors", "new_users", "veterans"].includes(value) ? value : "";
 };
+
+const normalizeHexColor = (value = "", fallback = "#006400") => {
+  const raw = String(value || "").trim();
+  if (!raw) return fallback;
+  const short = raw.match(/^#([0-9a-f]{3})$/i);
+  if (short) {
+    const [, hex] = short;
+    return `#${hex.split("").map((ch) => ch + ch).join("")}`.toUpperCase();
+  }
+  if (/^#[0-9a-f]{6}$/i.test(raw)) return raw.toUpperCase();
+  return fallback;
+};
+
+const isValidCssColor = (value = "") => {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+  if (/^#[0-9a-f]{3,8}$/i.test(raw)) return true;
+  if (typeof document === "undefined") return false;
+  const el = document.createElement("option");
+  el.style.color = "";
+  el.style.color = raw;
+  return !!el.style.color;
+};
+
+const hexToRgb = (hex = "#006400") => {
+  const value = normalizeHexColor(hex, "#006400").replace("#", "");
+  return {
+    r: parseInt(value.slice(0, 2), 16),
+    g: parseInt(value.slice(2, 4), 16),
+    b: parseInt(value.slice(4, 6), 16)
+  };
+};
+
+const hexToRgba = (hex = "#006400", alpha = 1) => {
+  const { r, g, b } = hexToRgb(hex);
+  const safeAlpha = Number.isFinite(Number(alpha)) ? Math.min(1, Math.max(0, Number(alpha))) : 1;
+  return `rgba(${r}, ${g}, ${b}, ${safeAlpha})`;
+};
+
+const getWebThemeFontStack = (choice = "classic") => ({
+  system: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  classic: '"PT Serif", Georgia, serif',
+  modern: 'Inter, "Segoe UI", sans-serif',
+  mono: '"SFMono-Regular", Consolas, "Liberation Mono", monospace',
+  rounded: 'ui-rounded, "SF Pro Rounded", "Nunito", "Trebuchet MS", sans-serif'
+}[String(choice || "").trim().toLowerCase()] || '"PT Serif", Georgia, serif');
 
 const escapeHtml = (value = "") =>
   String(value)
@@ -1756,7 +1891,18 @@ if (currentUser && !document.getElementById("rankingScreen")?.classList.contains
   });
 };
 
+const initWebThemeConfig = () => {
+  onSnapshot(doc(db, "settings", "web_theme"), (docSnap) => {
+    const themeData = docSnap.exists() ? (docSnap.data() || {}) : {};
+    applyWebTheme(themeData);
+  }, (error) => {
+    console.warn("Não foi possível carregar settings/web_theme:", error);
+    applyWebTheme(getAdminWebThemeDefaultDraft());
+  });
+};
+
         initRemoteConfig();
+        initWebThemeConfig();
         // (FIM DO BLOCO)
 
         // COMPRESSÃO
@@ -7125,6 +7271,144 @@ const ADMIN_VISUAL_PRESET_HELP = {
   banner_ref: "Cria uma section associada a um banner já cadastrado."
 };
 
+const getWebThemeSettingsRef = () => doc(db, "settings", "web_theme");
+
+const getAdminWebThemePreset = (presetKey = "padrao_bolao") =>
+  WEB_THEME_PRESET_DEFINITIONS[String(presetKey || "").trim().toLowerCase()] || WEB_THEME_PRESET_DEFINITIONS.padrao_bolao;
+
+const getAdminWebThemeDefaultDraft = () => ({
+  ...WEB_THEME_PRESET_DEFINITIONS.padrao_bolao,
+  updatedAt: null,
+  updatedBy: null
+});
+
+const normalizeAdminWebThemeDraft = (theme = {}) => {
+  const presetKey = String(theme.preset || "").trim().toLowerCase();
+  const preset = getAdminWebThemePreset(presetKey);
+  const backgroundImageUrl = fixDriveUrl(String(theme.backgroundImageUrl || theme.background_image_url || "").trim());
+  const safeBackgroundImageUrl = isHttpUrl(backgroundImageUrl) ? backgroundImageUrl : "";
+  const overlay = String(theme.backgroundOverlay || theme.background_overlay || preset.backgroundOverlay || "").trim();
+  const safeOverlay = isValidCssColor(overlay) ? overlay : preset.backgroundOverlay;
+  const fontFamily = String(theme.fontFamily || theme.font_family || preset.fontFamily || "").trim().toLowerCase();
+  const safeFontFamily = WEB_THEME_FONT_PRESETS.some((item) => item.value === fontFamily) ? fontFamily : preset.fontFamily;
+
+  return {
+    active: theme.active === true,
+    preset: preset.preset || "padrao_bolao",
+    backgroundImageUrl: safeBackgroundImageUrl,
+    backgroundOverlay: safeOverlay,
+    primaryColor: normalizeHexColor(theme.primaryColor || theme.primary_color, preset.primaryColor),
+    primaryDarkColor: normalizeHexColor(theme.primaryDarkColor || theme.primary_dark_color, preset.primaryDarkColor),
+    accentColor: normalizeHexColor(theme.accentColor || theme.accent_color, preset.accentColor),
+    surfaceColor: normalizeHexColor(theme.surfaceColor || theme.surface_color, preset.surfaceColor),
+    textColor: normalizeHexColor(theme.textColor || theme.text_color, preset.textColor),
+    mutedTextColor: normalizeHexColor(theme.mutedTextColor || theme.muted_text_color, preset.mutedTextColor),
+    buttonColor: normalizeHexColor(theme.buttonColor || theme.button_color, preset.buttonColor),
+    fontFamily: safeFontFamily,
+    updatedAt: theme.updatedAt || null,
+    updatedBy: theme.updatedBy || null
+  };
+};
+
+const buildAdminWebThemePayload = (draft = {}, admin = null) => {
+  const data = normalizeAdminWebThemeDraft(draft);
+  const updatedBy = admin ? {
+    uid: String(admin.uid || "").trim(),
+    name: String(admin.name || "").trim(),
+    email: String(admin.email || "").trim()
+  } : (data.updatedBy && typeof data.updatedBy === "object" ? data.updatedBy : null);
+
+  return {
+    active: data.active === true,
+    preset: data.preset || "padrao_bolao",
+    backgroundImageUrl: data.backgroundImageUrl || "",
+    backgroundOverlay: data.backgroundOverlay || WEB_THEME_PRESET_DEFINITIONS.padrao_bolao.backgroundOverlay,
+    primaryColor: data.primaryColor,
+    primaryDarkColor: data.primaryDarkColor,
+    accentColor: data.accentColor,
+    surfaceColor: data.surfaceColor,
+    textColor: data.textColor,
+    mutedTextColor: data.mutedTextColor,
+    buttonColor: data.buttonColor,
+    fontFamily: data.fontFamily,
+    updatedAt: Timestamp.fromDate(new Date()),
+    updatedBy
+  };
+};
+
+const applyWebTheme = (theme = {}) => {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  const normalized = normalizeAdminWebThemeDraft(theme);
+  const applied = normalized.active === true ? normalized : getAdminWebThemeDefaultDraft();
+  const imageUrl = applied.active && applied.backgroundImageUrl ? fixDriveUrl(applied.backgroundImageUrl) : "";
+  const safeImage = isHttpUrl(imageUrl) ? imageUrl : "";
+  const backgroundImage = safeImage ? `url("${safeImage.replace(/"/g, '\\"')}")` : "none";
+
+  root.style.setProperty("--primary", applied.primaryColor);
+  root.style.setProperty("--secondary", applied.accentColor);
+  root.style.setProperty("--dark-green", applied.primaryColor);
+  root.style.setProperty("--gold", applied.accentColor);
+  root.style.setProperty("--theme-primary-dark", applied.primaryDarkColor);
+  root.style.setProperty("--button-color", applied.buttonColor);
+  root.style.setProperty("--bg-color", applied.surfaceColor);
+  root.style.setProperty("--color-bg", applied.surfaceColor);
+  root.style.setProperty("--color-surface", applied.surfaceColor);
+  root.style.setProperty("--color-surface-muted", hexToRgba(applied.surfaceColor, 0.96));
+  root.style.setProperty("--color-text", applied.textColor);
+  root.style.setProperty("--color-muted", applied.mutedTextColor);
+  root.style.setProperty("--text-main", applied.textColor);
+  root.style.setProperty("--text-muted", applied.mutedTextColor);
+  root.style.setProperty("--surface", hexToRgba(applied.surfaceColor, 0.92));
+  root.style.setProperty("--surface-strong", applied.surfaceColor);
+  root.style.setProperty("--surface-muted", hexToRgba(applied.surfaceColor, 0.96));
+  root.style.setProperty("--border-soft", hexToRgba(applied.textColor, 0.08));
+  root.style.setProperty("--border-medium", hexToRgba(applied.textColor, 0.12));
+  root.style.setProperty("--color-border", hexToRgba(applied.textColor, 0.12));
+  root.style.setProperty("--theme-bg-image", backgroundImage);
+  root.style.setProperty("--theme-bg-overlay", applied.backgroundOverlay);
+  root.style.setProperty("--theme-bg-size", "80%");
+  root.style.setProperty("--app-font", getWebThemeFontStack(applied.fontFamily));
+};
+
+const syncAdminVisualAppearancePreview = () => {
+  const preview = document.getElementById("adminVisualAppearancePreviewRoot");
+  if (!preview) return;
+  const draft = normalizeAdminWebThemeDraft(adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft());
+  const applied = draft.active === true ? draft : getAdminWebThemeDefaultDraft();
+  const backgroundImageUrl = applied.active && applied.backgroundImageUrl ? fixDriveUrl(applied.backgroundImageUrl) : "";
+  const safeImage = isHttpUrl(backgroundImageUrl) ? backgroundImageUrl : "";
+
+  preview.style.setProperty("--preview-primary", applied.primaryColor);
+  preview.style.setProperty("--preview-primary-dark", applied.primaryDarkColor);
+  preview.style.setProperty("--preview-accent", applied.accentColor);
+  preview.style.setProperty("--preview-button", applied.buttonColor);
+  preview.style.setProperty("--preview-surface", applied.surfaceColor);
+  preview.style.setProperty("--preview-text", applied.textColor);
+  preview.style.setProperty("--preview-muted", applied.mutedTextColor);
+  preview.style.setProperty("--preview-font", getWebThemeFontStack(applied.fontFamily));
+  preview.style.setProperty("--preview-bg-image", safeImage ? `url("${safeImage.replace(/"/g, '\\"')}")` : "none");
+  preview.style.setProperty("--preview-bg-overlay", applied.backgroundOverlay || WEB_THEME_PRESET_DEFINITIONS.padrao_bolao.backgroundOverlay);
+
+  const status = preview.querySelector("[data-theme-status]");
+  if (status) {
+    status.textContent = draft.active === true ? "Tema ativo" : "Tema padrão";
+    status.classList.toggle("is-active", draft.active === true);
+  }
+
+  const summaryStatus = document.querySelector(".admin-visual-appearance-status [data-theme-status]");
+  if (summaryStatus) {
+    summaryStatus.textContent = draft.active === true ? "Tema ativo" : "Tema padrão";
+    summaryStatus.classList.toggle("is-on", draft.active === true);
+    summaryStatus.classList.toggle("is-off", draft.active !== true);
+  }
+
+  const presetLabel = preview.querySelector("[data-theme-preset]");
+  if (presetLabel) {
+    presetLabel.textContent = getAdminWebThemePreset(draft.preset).label;
+  }
+};
+
 const getAdminVisualLayoutRef = () => doc(db, "settings", "home_layout");
 
 const normalizeAdminVisualSectionType = (value = "") => {
@@ -7318,8 +7602,9 @@ const getAdminVisualPollCreatedLabel = (poll = {}) => {
 };
 
 const loadAdminVisualManagementData = async ({ force = false } = {}) => {
-  const [layoutSnap, bannersSnap, pollsSnap] = await Promise.all([
+  const [layoutSnap, themeSnap, bannersSnap, pollsSnap] = await Promise.all([
     readWithRuntimeCache("doc:settings:home_layout", () => getDoc(getAdminVisualLayoutRef()), { ttlMs: DATA_CACHE_TTL.warm, force }),
+    readWithRuntimeCache("doc:settings:web_theme", () => getDoc(getWebThemeSettingsRef()), { ttlMs: DATA_CACHE_TTL.warm, force }),
     readWithRuntimeCache("col:banners", () => getDocs(collection(db, "banners")), { ttlMs: DATA_CACHE_TTL.warm, force }),
     readWithRuntimeCache("col:polls", () => getDocs(collection(db, "polls")), { ttlMs: DATA_CACHE_TTL.hot, force })
   ]);
@@ -7328,6 +7613,7 @@ const loadAdminVisualManagementData = async ({ force = false } = {}) => {
   const homeLayoutSections = Array.isArray(parsedLayout.sections) ? parsedLayout.sections : [];
   const sections = homeLayoutSections.map((section, index) => normalizeAdminVisualSectionDraft(section, index));
   const order = Array.isArray(parsedLayout.order) && parsedLayout.order.length ? parsedLayout.order : sections.map((section) => section.id);
+  const themeData = normalizeAdminWebThemeDraft(themeSnap?.data?.() || {});
   const banners = [];
   bannersSnap.forEach((snap) => banners.push(normalizeAdminVisualBannerDraft({ id: snap.id, ...(snap.data() || {}) })));
   const polls = [];
@@ -7338,6 +7624,10 @@ const loadAdminVisualManagementData = async ({ force = false } = {}) => {
     order,
     sections
   };
+  adminVisualState.appearance = themeData;
+  adminVisualState.appearanceDraft = adminVisualState.appearanceDraft && adminVisualState.mode === "appearance"
+    ? adminVisualState.appearanceDraft
+    : { ...themeData };
   adminVisualState.banners = banners;
   adminVisualState.polls = polls;
   homeSections = homeLayoutSections;
@@ -7350,6 +7640,8 @@ const loadAdminVisualManagementData = async ({ force = false } = {}) => {
     map[item.id] = item;
     return map;
   }, {});
+
+  applyWebTheme(themeData);
 
   return adminVisualState;
 };
@@ -7462,6 +7754,7 @@ const renderAdminVisualTabs = () => {
       <button type="button" class="${tab === "sections" ? "is-active" : ""}" onclick="window.switchAdminVisualTab('sections')">Sections</button>
       <button type="button" class="${tab === "banners" ? "is-active" : ""}" onclick="window.switchAdminVisualTab('banners')">Banners</button>
       <button type="button" class="${tab === "polls" ? "is-active" : ""}" onclick="window.switchAdminVisualTab('polls')">Enquetes</button>
+      <button type="button" class="${tab === "appearance" ? "is-active" : ""}" onclick="window.switchAdminVisualTab('appearance')">Aparência</button>
     </div>
   `;
 };
@@ -7472,6 +7765,137 @@ const renderAdminVisualEmpty = (title, description) => `
     <p class="empty-state__description">${escapeHtml(description)}</p>
   </div>
 `;
+
+const renderAdminVisualAppearanceTab = () => {
+  const draft = normalizeAdminWebThemeDraft(adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft());
+  const applied = draft.active === true ? draft : getAdminWebThemeDefaultDraft();
+  const presetCards = Object.entries(WEB_THEME_PRESET_DEFINITIONS).map(([presetKey, preset]) => `
+    <button type="button" class="admin-visual-appearance-preset ${draft.preset === presetKey ? "is-active" : ""}" onclick="window.selectAdminVisualAppearancePreset('${escapeJsString(presetKey)}')">
+      <span class="admin-visual-appearance-preset__icon"><i class="fas fa-swatchbook"></i></span>
+      <span class="admin-visual-appearance-preset__title">${escapeHtml(preset.label)}</span>
+      <span class="admin-visual-appearance-preset__desc">Aplica um conjunto pronto de cores e tipografia.</span>
+    </button>
+  `).join("");
+
+  const fontOptions = WEB_THEME_FONT_PRESETS.map((option) => `
+    <option value="${escapeHtml(option.value)}" ${draft.fontFamily === option.value ? "selected" : ""}>${escapeHtml(option.label)}</option>
+  `).join("");
+
+  const previewStyle = `
+    --preview-primary:${escapeHtml(applied.primaryColor)};
+    --preview-primary-dark:${escapeHtml(applied.primaryDarkColor)};
+    --preview-accent:${escapeHtml(applied.accentColor)};
+    --preview-button:${escapeHtml(applied.buttonColor)};
+    --preview-surface:${escapeHtml(applied.surfaceColor)};
+    --preview-text:${escapeHtml(applied.textColor)};
+    --preview-muted:${escapeHtml(applied.mutedTextColor)};
+    --preview-font:${escapeHtml(getWebThemeFontStack(applied.fontFamily))};
+    --preview-bg-overlay:${escapeHtml(applied.backgroundOverlay)};
+    --preview-bg-image:${draft.active === true && applied.backgroundImageUrl ? `url("${String(applied.backgroundImageUrl).replace(/"/g, '\\"')}")` : "none"};
+  `;
+
+  return `
+    <div class="admin-visual-section">
+      <div class="admin-visual-section__copy">
+        <div class="admin-visual-section__title">Aparência global</div>
+        <div class="admin-visual-section__hint">Ajuste o fundo, a paleta e a fonte do app inteiro com segurança. Se o tema estiver desativado, o app volta ao padrão do Bolão 112 FC.</div>
+      </div>
+      <div class="admin-visual-appearance-status">
+        <span class="admin-visual-badge ${draft.active === true ? "is-on" : "is-off"}" data-theme-status>${draft.active === true ? "Tema ativo" : "Tema padrão"}</span>
+        <span class="admin-visual-badge is-soft">Preset: <b data-theme-preset>${escapeHtml(getAdminWebThemePreset(draft.preset).label)}</b></span>
+      </div>
+      <div class="admin-visual-appearance-presets">${presetCards}</div>
+    </div>
+
+    <div class="admin-visual-section">
+      <div class="admin-visual-section__copy">
+        <div class="admin-visual-section__title">Paleta e fundo</div>
+        <div class="admin-visual-section__hint">URLs precisam ser públicas e cores inválidas são ignoradas com fallback seguro.</div>
+      </div>
+      <div class="admin-visual-form-grid admin-visual-appearance-grid">
+        <label class="admin-visual-field admin-visual-field--full">
+          <span>Imagem de fundo global</span>
+          <input type="url" class="admin-creation-input" placeholder="https://..." value="${escapeHtml(draft.backgroundImageUrl)}" oninput="window.updateAdminVisualAppearanceField('backgroundImageUrl', this.value)">
+          <div class="admin-visual-field__note">A imagem aparece em segundo plano na home e nas telas que não sobrescrevem o fundo.</div>
+        </label>
+        <label class="admin-visual-field">
+          <span>Overlay</span>
+          <input type="text" class="admin-creation-input" placeholder="rgba(255,255,255,0.86)" value="${escapeHtml(draft.backgroundOverlay)}" oninput="window.updateAdminVisualAppearanceField('backgroundOverlay', this.value)">
+        </label>
+        <label class="admin-visual-field">
+          <span>Cor primária</span>
+          <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.primaryColor)}" oninput="window.updateAdminVisualAppearanceField('primaryColor', this.value)">
+        </label>
+        <label class="admin-visual-field">
+          <span>Primária escura</span>
+          <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.primaryDarkColor)}" oninput="window.updateAdminVisualAppearanceField('primaryDarkColor', this.value)">
+        </label>
+        <label class="admin-visual-field">
+          <span>Cor de destaque</span>
+          <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.accentColor)}" oninput="window.updateAdminVisualAppearanceField('accentColor', this.value)">
+        </label>
+        <label class="admin-visual-field">
+          <span>Cor do botão</span>
+          <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.buttonColor)}" oninput="window.updateAdminVisualAppearanceField('buttonColor', this.value)">
+        </label>
+        <label class="admin-visual-field">
+          <span>Superfície</span>
+          <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.surfaceColor)}" oninput="window.updateAdminVisualAppearanceField('surfaceColor', this.value)">
+        </label>
+        <label class="admin-visual-field">
+          <span>Texto principal</span>
+          <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.textColor)}" oninput="window.updateAdminVisualAppearanceField('textColor', this.value)">
+        </label>
+        <label class="admin-visual-field">
+          <span>Texto secundário</span>
+          <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.mutedTextColor)}" oninput="window.updateAdminVisualAppearanceField('mutedTextColor', this.value)">
+        </label>
+        <label class="admin-visual-field admin-visual-field--full">
+          <span>Fonte</span>
+          <select class="admin-creation-input" onchange="window.updateAdminVisualAppearanceField('fontFamily', this.value)">
+            ${fontOptions}
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="admin-visual-section">
+      <div class="admin-visual-section__copy">
+        <div class="admin-visual-section__title">Prévia ao vivo</div>
+        <div class="admin-visual-section__hint">A prévia segue a mesma lógica do app e mostra como o tema fica no celular.</div>
+      </div>
+      <div id="adminVisualAppearancePreviewRoot" class="admin-visual-appearance-preview" style="${escapeHtml(previewStyle)}">
+        <div class="admin-visual-appearance-preview__hero">
+          <div>
+            <div class="admin-visual-appearance-preview__eyebrow">BOLÃO 112 FC</div>
+            <div class="admin-visual-appearance-preview__title">Tema em tempo real</div>
+            <div class="admin-visual-appearance-preview__subtitle">Fundo, cores, botões e tipografia</div>
+          </div>
+          <span class="admin-visual-appearance-preview__pill ${draft.active === true ? "is-active" : "is-idle"}" data-theme-status>${draft.active === true ? "Ativo" : "Padrão"}</span>
+        </div>
+
+        <div class="admin-visual-appearance-preview__chips">
+          <span class="admin-visual-appearance-preview__chip">Primária</span>
+          <span class="admin-visual-appearance-preview__chip">Destaque</span>
+          <span class="admin-visual-appearance-preview__chip">Botões</span>
+          <span class="admin-visual-appearance-preview__chip">Fonte</span>
+        </div>
+
+        <div class="admin-visual-appearance-preview__surface">
+          <div class="admin-visual-appearance-preview__surface-head">
+            <div class="admin-visual-appearance-preview__surface-badge">Home</div>
+            <div class="admin-visual-appearance-preview__surface-title">Painel do usuário</div>
+          </div>
+          <div class="admin-visual-appearance-preview__surface-card">
+            <div class="admin-visual-appearance-preview__surface-card-title">Resumo da rodada</div>
+            <div class="admin-visual-appearance-preview__surface-card-text">A paleta selecionada será aplicada às superfícies principais do app.</div>
+            <button type="button" class="admin-visual-appearance-preview__button">Botão de ação</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
 
 const renderAdminVisualSectionList = () => {
   const sections = Array.isArray(adminVisualState.layout.sections) ? adminVisualState.layout.sections : [];
@@ -8243,6 +8667,7 @@ const renderAdminVisualContent = () => {
   if (adminVisualState.mode === "banner-form") return renderAdminVisualBannerEditor();
   if (adminVisualState.mode === "poll-form") return renderAdminVisualPollEditor();
 
+  if (tab === "appearance") return renderAdminVisualAppearanceTab();
   if (tab === "banners") return renderAdminVisualBannerList();
   if (tab === "polls") return renderAdminVisualPollList();
   return renderAdminVisualSectionList();
@@ -8251,12 +8676,17 @@ const renderAdminVisualContent = () => {
 const renderAdminVisualManagementModal = () => {
   closeAdminHelpHint();
   const title = "Gestão Visual";
-  const subtitle = "Sections, banners e enquetes da home";
+  const subtitle = "Sections, banners, enquetes e aparência da home";
   const content = renderAdminVisualContent();
   const footerLeft = adminVisualState.mode === "list"
     ? '<button type="button" onclick="window.closeAdminHelpHint(); window.openAdminMenu()" class="admin-visual-secondary">Voltar</button>'
     : '<button type="button" onclick="window.openAdminVisualManagementModal()" class="admin-visual-secondary">Cancelar</button>';
-  const footerRight = ["section-form", "banner-form", "poll-form"].includes(adminVisualState.mode)
+  const footerRight = adminVisualState.tab === "appearance"
+    ? `
+      <button type="button" onclick="window.restoreAdminVisualTheme()" class="admin-visual-secondary" ${adminVisualState.appearanceSaving ? "disabled" : ""}>Restaurar padrão</button>
+      <button type="button" onclick="window.saveAdminVisualTheme()" class="admin-visual-primary" ${adminVisualState.appearanceSaving ? "disabled" : ""}>${adminVisualState.appearanceSaving ? "Salvando..." : "Salvar tema"}</button>
+    `
+    : ["section-form", "banner-form", "poll-form"].includes(adminVisualState.mode)
     ? '<button type="button" onclick="window.saveAdminVisualForm()" class="admin-visual-primary">Salvar alterações</button>'
     : "";
 
@@ -8289,6 +8719,7 @@ window.openAdminVisualManagementModal = async () => {
   adminVisualState.draft = null;
   adminVisualState.draftType = "";
   adminVisualState.draftId = "";
+  adminVisualState.appearanceSaving = false;
 
   const modal = document.getElementById("modalOverlay");
   const cont = document.getElementById("modalContainer");
@@ -8321,12 +8752,151 @@ window.openAdminVisualManagementModal = async () => {
 };
 
 window.switchAdminVisualTab = (tab) => {
-  adminVisualState.tab = ["sections", "banners", "polls"].includes(tab) ? tab : "sections";
+  adminVisualState.tab = ["sections", "banners", "polls", "appearance"].includes(tab) ? tab : "sections";
   adminVisualState.mode = "list";
   adminVisualState.draft = null;
   adminVisualState.draftType = "";
   adminVisualState.draftId = "";
   renderAdminVisualManagementModal();
+};
+
+window.updateAdminVisualAppearanceField = (field = "", value = "") => {
+  const draft = adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft();
+  adminVisualState.appearanceDraft = {
+    ...draft,
+    [field]: value,
+    active: true
+  };
+  syncAdminVisualAppearancePreview();
+};
+
+window.selectAdminVisualAppearancePreset = (presetKey = "padrao_bolao") => {
+  const preset = getAdminWebThemePreset(presetKey);
+  adminVisualState.appearanceDraft = {
+    ...preset,
+    active: true,
+    updatedAt: adminVisualState.appearance?.updatedAt || null,
+    updatedBy: adminVisualState.appearance?.updatedBy || null
+  };
+  renderAdminVisualManagementModal();
+};
+
+window.restoreAdminVisualTheme = async () => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para alterar a aparência.");
+    return;
+  }
+  if (!confirm("Restaurar a aparência padrão do app?")) return;
+
+  try {
+    adminVisualState.appearanceSaving = true;
+    renderAdminVisualManagementModal();
+
+    const current = normalizeAdminWebThemeDraft(adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft());
+    const payload = {
+      ...current,
+      active: false,
+      updatedAt: Timestamp.fromDate(new Date()),
+      updatedBy: {
+        uid: admin.uid || "",
+        name: admin.name || "",
+        email: admin.email || ""
+      }
+    };
+
+    await setDoc(getWebThemeSettingsRef(), payload, { merge: true });
+    invalidateRuntimeCache("doc:settings:web_theme");
+    adminVisualState.appearance = normalizeAdminWebThemeDraft(payload);
+    adminVisualState.appearanceDraft = { ...adminVisualState.appearance };
+    applyWebTheme(payload);
+    await logAdminVisualAction("reset_web_theme", {
+      source: "settings/web_theme",
+      preset: payload.preset,
+      backgroundImageUrl: payload.backgroundImageUrl,
+      primaryColor: payload.primaryColor,
+      primaryDarkColor: payload.primaryDarkColor,
+      accentColor: payload.accentColor,
+      surfaceColor: payload.surfaceColor,
+      textColor: payload.textColor,
+      mutedTextColor: payload.mutedTextColor,
+      buttonColor: payload.buttonColor,
+      fontFamily: payload.fontFamily
+    });
+    renderAdminVisualManagementModal();
+    showAdminCommunicationToast("Tema restaurado para o padrão do app.");
+  } catch (error) {
+    console.error("Erro ao restaurar a aparência:", error);
+    showAdminCommunicationToast("Não foi possível restaurar a aparência.", "danger");
+  } finally {
+    adminVisualState.appearanceSaving = false;
+    renderAdminVisualManagementModal();
+  }
+};
+
+window.saveAdminVisualTheme = async () => {
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para alterar a aparência.");
+    return;
+  }
+
+  const draft = normalizeAdminWebThemeDraft(adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft());
+  const errors = [];
+
+  if (draft.backgroundImageUrl && !isHttpUrl(draft.backgroundImageUrl)) errors.push("A imagem de fundo precisa usar uma URL pública válida.");
+  if (!isValidCssColor(draft.backgroundOverlay)) errors.push("O overlay de fundo precisa ser uma cor válida.");
+
+  const colorFields = [
+    ["primaryColor", "Cor primária"],
+    ["primaryDarkColor", "Primária escura"],
+    ["accentColor", "Cor de destaque"],
+    ["surfaceColor", "Superfície"],
+    ["textColor", "Texto principal"],
+    ["mutedTextColor", "Texto secundário"],
+    ["buttonColor", "Cor do botão"]
+  ];
+  colorFields.forEach(([field, label]) => {
+    if (!isValidCssColor(draft[field])) errors.push(`${label} precisa ser uma cor hexadecimal válida.`);
+  });
+
+  if (errors.length) {
+    showAdminCommunicationToast(errors[0], "danger");
+    return;
+  }
+
+  try {
+    adminVisualState.appearanceSaving = true;
+    renderAdminVisualManagementModal();
+
+    const payload = buildAdminWebThemePayload({ ...draft, active: true }, admin);
+    await setDoc(getWebThemeSettingsRef(), payload, { merge: true });
+    invalidateRuntimeCache("doc:settings:web_theme");
+    adminVisualState.appearance = normalizeAdminWebThemeDraft(payload);
+    adminVisualState.appearanceDraft = { ...adminVisualState.appearance };
+    applyWebTheme(payload);
+    await logAdminVisualAction("update_web_theme", {
+      source: "settings/web_theme",
+      preset: payload.preset,
+      backgroundImageUrl: payload.backgroundImageUrl,
+      primaryColor: payload.primaryColor,
+      primaryDarkColor: payload.primaryDarkColor,
+      accentColor: payload.accentColor,
+      surfaceColor: payload.surfaceColor,
+      textColor: payload.textColor,
+      mutedTextColor: payload.mutedTextColor,
+      buttonColor: payload.buttonColor,
+      fontFamily: payload.fontFamily
+    });
+    renderAdminVisualManagementModal();
+    showAdminCommunicationToast("Tema visual salvo com sucesso!");
+  } catch (error) {
+    console.error("Erro ao salvar a aparência:", error);
+    showAdminCommunicationToast("Não foi possível salvar a aparência.", "danger");
+  } finally {
+    adminVisualState.appearanceSaving = false;
+    renderAdminVisualManagementModal();
+  }
 };
 
 window.openAdminVisualPresetPicker = () => {
@@ -13506,7 +14076,9 @@ window.openMatchEditModal = async (matchId) => {
             update_regulation: "Atualização de regulamento",
             create_regulation_rule: "Criação de regra",
             update_regulation_rule: "Edição de regra",
-            delete_regulation_rule: "Exclusão de regra"
+            delete_regulation_rule: "Exclusão de regra",
+            update_web_theme: "Atualização do tema web",
+            reset_web_theme: "Restauração do tema web"
           };
           return known[raw] || known[normalized.replace(/\s+/g, "_")] || normalized || "Ação administrativa";
         };
@@ -13515,7 +14087,7 @@ window.openMatchEditModal = async (matchId) => {
           const value = String(log.source || log.category || log.type || log.action || "").toLowerCase();
           if (value.includes("financial") || value.includes("payment") || value.includes("debt") || value.includes("money")) return "Financeiro";
           if (value.includes("round") || value.includes("match") || value.includes("competition") || value.includes("cleanup") || value.includes("summary") || value.includes("quick_results")) return "Partidas";
-          if (value.includes("regulation") || value.includes("rules")) return "Configurações";
+          if (value.includes("regulation") || value.includes("rules") || value.includes("theme") || value.includes("appearance")) return "Configurações";
           if (value.includes("communication") || value.includes("push") || value.includes("notice")) return "Comunicação";
           if (value.includes("invite") || value.includes("password") || value.includes("disable") || value.includes("user")) return "Usuários";
           if (value.includes("rank")) return "Ranking";
@@ -13622,6 +14194,14 @@ window.openMatchEditModal = async (matchId) => {
             if (log.changeSummary) bits.push(log.changeSummary);
             if (log.itemsCount) bits.push(`${log.itemsCount} regra(s)`);
             return bits.length ? bits.join(" • ") : "Regulamento atualizado";
+          }
+
+          if (action === "update_web_theme" || action === "reset_web_theme") {
+            const bits = [];
+            if (log.preset) bits.push(String(log.preset).replace(/_/g, " "));
+            if (log.primaryColor) bits.push(log.primaryColor);
+            if (log.backgroundImageUrl) bits.push("fundo personalizado");
+            return bits.length ? bits.join(" • ") : (action === "reset_web_theme" ? "Tema restaurado" : "Tema atualizado");
           }
 
           if (action === "create_regulation_rule" || action === "update_regulation_rule" || action === "delete_regulation_rule") {
@@ -17652,3 +18232,4 @@ window.enforceRulesGate = async () => {
     }
   }
 };
+
