@@ -3842,6 +3842,11 @@ select:focus-visible {
             letter-spacing: 0.5px;
         }
 
+        .ticker-content {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
         @keyframes ticker-scroll {
             0% { transform: translateX(0); }
             100% { transform: translateX(-100%); }

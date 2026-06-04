@@ -274,6 +274,47 @@ const normalizeChatReaction = (value = "") => {
 const formatUserText = (value = "") =>
   escapeHtml(stripControlChars(String(value || "").normalize("NFC"))).replace(/\n/g, "<br>");
 
+const decodeBasicHtmlEntities = (value = "") => {
+  const raw = String(value || "");
+  if (!raw) return "";
+  if (typeof document !== "undefined") {
+    const textarea = document.createElement("textarea");
+    textarea.innerHTML = raw;
+    return textarea.value;
+  }
+  return raw
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&amp;/gi, "&");
+};
+
+const normalizeTickerText = (value = "") => {
+  const rawValue = value && typeof value === "object"
+    ? (value.text || value.body || value.message || value.title || "")
+    : value;
+
+  let text = stripControlChars(String(rawValue || "").normalize("NFC"));
+  for (let i = 0; i < 2; i += 1) {
+    const decoded = decodeBasicHtmlEntities(text);
+    if (decoded === text) break;
+    text = decoded;
+  }
+
+  text = text
+    .replace(/<\s*(script|iframe|object|embed|style)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\b(?:span|div|p|strong|b|em|i)\b[^>]*>/gi, " ")
+    .replace(/\b(?:on\w+|style|class)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, " ")
+    .replace(/javascript\s*:/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!text || ["undefined", "null", "[object object]"].includes(text.toLowerCase())) return "";
+  return clampTextLength(text, 700);
+};
+
 const isHttpUrl = (value = "") => /^https?:\/\/\S+/i.test(String(value || "").trim());
 
 const formatAdminDateTimeInput = (value) => {
@@ -3544,16 +3585,21 @@ window.executeHomeSectionAction = (type, value) => {
   }
 };
 
-const renderTickerBlock = (newsContent) => `
-  <div class="mb-3 rounded-[24px] border-[3px] border-[#006400] bg-white shadow-lg overflow-hidden">
-    <div class="px-4 py-3 bg-[#006400] text-white text-[11px] font-black uppercase tracking-wide">
-      Letreiro
+const renderTickerBlock = (newsContent) => {
+  const safeTickerText = normalizeTickerText(newsContent);
+  if (!safeTickerText) return "";
+
+  return `
+    <div class="mb-3 rounded-[24px] border-[3px] border-[#006400] bg-white shadow-lg overflow-hidden">
+      <div class="px-4 py-3 bg-[#006400] text-white text-[11px] font-black uppercase tracking-wide">
+        Letreiro
+      </div>
+      <div class="ticker-content px-3 py-3 text-[13px] font-bold text-[#006400] bg-[#F9FFF4]">
+        <marquee scrollamount="4">${escapeHtml(safeTickerText)}</marquee>
+      </div>
     </div>
-    <div class="px-3 py-3 text-[13px] font-bold text-[#006400] bg-[#F9FFF4]">
-      <marquee scrollamount="4">${escapeHtml(newsContent)}</marquee>
-    </div>
-  </div>
-`;
+  `;
+};
 
 const renderServerDrivenSection = (section) => {
   const style = normalizeHomeSectionStyle(section.style);
