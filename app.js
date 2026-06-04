@@ -200,6 +200,7 @@ let adminVisualState = {
   tab: "sections",
   mode: "list",
   bannerFilter: "all",
+  pollFilter: "all",
   layout: {
     hasExplicitSections: false,
     order: [],
@@ -6937,7 +6938,9 @@ const normalizeAdminVisualPollDraft = (poll = {}) => ({
   deadline: poll.deadline || null,
   active: poll.active !== false,
   votes: (poll.votes && typeof poll.votes === "object") ? poll.votes : {},
-  userVotes: (poll.userVotes && typeof poll.userVotes === "object") ? poll.userVotes : {}
+  userVotes: (poll.userVotes && typeof poll.userVotes === "object") ? poll.userVotes : {},
+  createdAt: poll.createdAt || null,
+  updatedAt: poll.updatedAt || null
 });
 
 const getAdminVisualSectionLabel = (type = "") => ({
@@ -6981,7 +6984,62 @@ const isAdminVisualBannerDestination = (value = "") => {
   return false;
 };
 
-const getAdminVisualPollVotesTotal = (poll = {}) => Object.values(poll.votes || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+const ADMIN_VISUAL_POLL_FILTERS = [
+  { value: "all", label: "Todas" },
+  { value: "active", label: "Ativas" },
+  { value: "closed", label: "Encerradas" },
+  { value: "inactive", label: "Inativas" }
+];
+
+const getAdminVisualPollFilterLabel = (filter = "all") => (
+  ADMIN_VISUAL_POLL_FILTERS.find((item) => item.value === filter)?.label || "Todas"
+);
+
+const getAdminVisualPollTotalVotes = (poll = {}) => Object.values(poll.votes || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+
+const getAdminVisualPollDeadlineDate = (poll = {}) => toJsDate(poll.deadline) || null;
+
+const getAdminVisualPollStatusInfo = (poll = {}) => {
+  const totalVotes = getAdminVisualPollTotalVotes(poll);
+  const deadlineDate = getAdminVisualPollDeadlineDate(poll);
+  const expired = !!(deadlineDate && deadlineDate.getTime() < Date.now());
+  if (poll.active === false) {
+    return {
+      key: "inactive",
+      label: "INATIVA",
+      tone: "off",
+      totalVotes,
+      hasVotes: totalVotes > 0,
+      deadlineDate,
+      expired
+    };
+  }
+  if (expired) {
+    return {
+      key: "closed",
+      label: "ENCERRADA",
+      tone: "warning",
+      totalVotes,
+      hasVotes: totalVotes > 0,
+      deadlineDate,
+      expired
+    };
+  }
+  return {
+    key: "active",
+    label: "ATIVA",
+    tone: "on",
+    totalVotes,
+    hasVotes: totalVotes > 0,
+    deadlineDate,
+    expired
+  };
+};
+
+const getAdminVisualPollCreatedLabel = (poll = {}) => {
+  const created = toJsDate(poll.createdAt) || toJsDate(poll.updatedAt);
+  return created ? formatAdminDateTimeLabel(created) : "";
+};
 
 const loadAdminVisualManagementData = async ({ force = false } = {}) => {
   const [layoutSnap, bannersSnap, pollsSnap] = await Promise.all([
@@ -7398,29 +7456,223 @@ const renderAdminVisualBannerList = () => {
   `;
 };
 
+const renderAdminVisualPollResultsBars = (poll = {}) => {
+  const options = Array.isArray(poll.options) ? poll.options : [];
+  const totalVotes = getAdminVisualPollTotalVotes(poll);
+  if (!options.length) {
+    return `<div class="admin-poll-results__empty">Nenhuma opção cadastrada.</div>`;
+  }
+
+  return options.map((option, index) => {
+    const count = Number(poll.votes?.[index] ?? poll.votes?.[String(index)] ?? 0);
+    const percent = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+    return `
+      <div class="admin-poll-results__item">
+        <div class="admin-poll-results__row">
+          <div class="admin-poll-results__option">${escapeHtml(option)}</div>
+          <div class="admin-poll-results__stats">${count} voto(s) • ${percent}%</div>
+        </div>
+        <div class="admin-poll-results__bar">
+          <span style="width:${percent}%"></span>
+        </div>
+      </div>
+    `;
+  }).join("");
+};
+
+const renderAdminVisualPollResultsModal = (poll = {}) => {
+  const statusInfo = getAdminVisualPollStatusInfo(poll);
+  const totalVotes = statusInfo.totalVotes || 0;
+  const createdLabel = getAdminVisualPollCreatedLabel(poll);
+  const deadlineLabel = statusInfo.deadlineDate ? formatAdminDateTimeLabel(statusInfo.deadlineDate) : "Sem prazo";
+  const results = totalVotes > 0
+    ? renderAdminVisualPollResultsBars(poll)
+    : `<div class="admin-poll-results__empty">Nenhum voto registrado ainda.</div>`;
+
+  return `
+    <div class="admin-poll-results-modal">
+      <div class="admin-poll-results-modal__header">
+        <div class="min-w-0">
+          <div class="admin-poll-results-modal__eyebrow">Resultados da enquete</div>
+          <h3>${escapeHtml(poll.question || "Sem pergunta")}</h3>
+          <p>${escapeHtml(statusInfo.label)} • ${escapeHtml(totalVotes)} voto(s)</p>
+        </div>
+        <button type="button" class="admin-poll-results-modal__close" onclick="window.closeModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="admin-poll-results-modal__meta">
+        <span class="admin-visual-badge ${statusInfo.tone === "on" ? "is-on" : statusInfo.tone === "warning" ? "is-soft" : "is-off"}">${escapeHtml(statusInfo.label)}</span>
+        <span class="admin-visual-badge is-soft">${escapeHtml(Array.isArray(poll.options) ? poll.options.length : 0)} opção(ões)</span>
+        <span class="admin-visual-badge is-soft">${escapeHtml(totalVotes)} voto(s)</span>
+        ${createdLabel ? `<span class="admin-visual-badge is-soft">Criada em ${escapeHtml(createdLabel)}</span>` : ""}
+        <span class="admin-visual-badge is-soft">Prazo: ${escapeHtml(deadlineLabel)}</span>
+      </div>
+      <div class="admin-poll-results-modal__body">
+        ${results}
+      </div>
+      <div class="admin-poll-results-modal__footer">
+        <button type="button" class="admin-visual-secondary" onclick="window.closeModal()">Fechar</button>
+      </div>
+    </div>
+  `;
+};
+
+window.openAdminVisualPollResults = (pollId = "") => {
+  const poll = (adminVisualState.polls || []).find((item) => item.id === pollId);
+  if (!poll) return;
+  window.openModal(renderAdminVisualPollResultsModal(poll));
+};
+
+window.setAdminVisualPollFilter = (filter = "all") => {
+  adminVisualState.pollFilter = ADMIN_VISUAL_POLL_FILTERS.some((item) => item.value === filter) ? filter : "all";
+  renderAdminVisualManagementModal();
+};
+
+const renderAdminVisualPollOptionsRows = (options = [], { locked = false } = {}) => {
+  const rows = Array.isArray(options) && options.length ? options : ["", ""];
+  return rows.map((option, index) => `
+    <div class="admin-poll-options__row ${locked ? "is-locked" : ""}">
+      <span class="admin-poll-options__index">${index + 1}</span>
+      <input
+        type="text"
+        class="admin-creation-input"
+        data-poll-option-input="1"
+        value="${escapeHtml(option || "")}"
+        placeholder="Opção ${index + 1}"
+        ${locked ? "disabled" : ""}
+      >
+      ${locked ? "" : `
+        <button type="button" class="admin-poll-options__remove" onclick="window.removeAdminVisualPollOptionRow(this)" ${rows.length <= 2 ? "disabled" : ""} title="Remover opção"><i class="fas fa-trash"></i></button>
+      `}
+    </div>
+  `).join("");
+};
+
+window.refreshAdminVisualPollPreview = () => {
+  const root = document.getElementById("adminVisualPollPreviewRoot");
+  if (!root) return;
+  const draft = window.buildAdminVisualPollPreviewDraft?.() || adminVisualState.draft || normalizeAdminVisualPollDraft({});
+  root.innerHTML = renderAdminVisualPollPreview(draft);
+};
+
+window.scheduleAdminVisualPollPreviewRefresh = () => {
+  if (window.__adminVisualPollPreviewRaf) {
+    cancelAnimationFrame(window.__adminVisualPollPreviewRaf);
+  }
+  window.__adminVisualPollPreviewRaf = requestAnimationFrame(() => {
+    window.__adminVisualPollPreviewRaf = null;
+    window.refreshAdminVisualPollPreview();
+  });
+};
+
+window.buildAdminVisualPollPreviewDraft = () => {
+  const base = adminVisualState.draft || normalizeAdminVisualPollDraft({});
+  const question = String(document.getElementById("adminVisualPollQuestion")?.value || base.question || "").trim();
+  const active = document.getElementById("adminVisualPollActive")?.checked === true;
+  const deadlineHours = String(document.getElementById("adminVisualPollDeadlineHours")?.value || base.deadlineHours || "24").trim();
+  const deadlineValue = String(document.getElementById("adminVisualPollDeadline")?.value || "").trim();
+  const options = [...document.querySelectorAll("[data-poll-option-input]")]
+    .map((input) => String(input.value || "").trim())
+    .filter(Boolean);
+  const lockOptions = base.lockOptions === true;
+
+  return {
+    ...base,
+    question,
+    active,
+    deadlineHours,
+    deadline: deadlineValue ? new Date(deadlineValue) : base.deadline || null,
+    options: lockOptions ? (Array.isArray(base.options) ? base.options : []) : options,
+    lockOptions
+  };
+};
+
+window.addAdminVisualPollOptionRow = (value = "") => {
+  const list = document.getElementById("adminVisualPollOptionsList");
+  if (!list) return;
+  const draft = window.buildAdminVisualPollPreviewDraft?.() || adminVisualState.draft || normalizeAdminVisualPollDraft({});
+  if (draft.lockOptions) return;
+  const rowCount = list.querySelectorAll("[data-poll-option-input]").length;
+  const row = document.createElement("div");
+  row.className = "admin-poll-options__row";
+  row.innerHTML = `
+    <span class="admin-poll-options__index">${rowCount + 1}</span>
+    <input type="text" class="admin-creation-input" data-poll-option-input="1" value="${escapeHtml(value)}" placeholder="Opção ${rowCount + 1}">
+    <button type="button" class="admin-poll-options__remove" onclick="window.removeAdminVisualPollOptionRow(this)" title="Remover opção"><i class="fas fa-trash"></i></button>
+  `;
+  list.appendChild(row);
+  window.scheduleAdminVisualPollPreviewRefresh();
+  const input = row.querySelector("[data-poll-option-input]");
+  if (input) input.focus();
+};
+
+window.removeAdminVisualPollOptionRow = (button) => {
+  const list = document.getElementById("adminVisualPollOptionsList");
+  if (!list || !button) return;
+  const draft = window.buildAdminVisualPollPreviewDraft?.() || adminVisualState.draft || normalizeAdminVisualPollDraft({});
+  if (draft.lockOptions) return;
+  const rows = [...list.querySelectorAll(".admin-poll-options__row")];
+  if (rows.length <= 2) {
+    showAdminCommunicationToast("A enquete precisa de pelo menos duas opções de resposta.", "warning");
+    return;
+  }
+  const row = button.closest(".admin-poll-options__row");
+  if (row) row.remove();
+  const nextRows = [...list.querySelectorAll(".admin-poll-options__row")];
+  nextRows.forEach((item, index) => {
+    const indexEl = item.querySelector(".admin-poll-options__index");
+    const input = item.querySelector("[data-poll-option-input]");
+    if (indexEl) indexEl.textContent = String(index + 1);
+    if (input) input.placeholder = `Opção ${index + 1}`;
+  });
+  window.scheduleAdminVisualPollPreviewRefresh();
+};
+
 const renderAdminVisualPollList = () => {
   const polls = Array.isArray(adminVisualState.polls) ? adminVisualState.polls : [];
   if (!polls.length) {
     return renderAdminVisualEmpty("Nenhuma enquete encontrada", "Crie uma enquete nova para aparecer na home.");
   }
 
-  const cards = polls.map((poll) => {
-    const totalVotes = getAdminVisualPollVotesTotal(poll);
-    const deadlineLabel = poll.deadline ? formatAdminDateTimeLabel(poll.deadline) : "Sem prazo";
+  const filter = ADMIN_VISUAL_POLL_FILTERS.some((item) => item.value === adminVisualState.pollFilter)
+    ? adminVisualState.pollFilter
+    : "all";
+  const filteredPolls = polls.filter((poll) => filter === "all" || getAdminVisualPollStatusInfo(poll).key === filter);
+  const filterCounts = ADMIN_VISUAL_POLL_FILTERS.reduce((map, item) => {
+    if (item.value === "all") {
+      map[item.value] = polls.length;
+      return map;
+    }
+    map[item.value] = polls.filter((poll) => getAdminVisualPollStatusInfo(poll).key === item.value).length;
+    return map;
+  }, {});
+  const filterChips = ADMIN_VISUAL_POLL_FILTERS.map((item) => `
+    <button type="button" class="admin-visual-filter-chip ${filter === item.value ? "is-active" : ""}" onclick="window.setAdminVisualPollFilter('${escapeJsString(item.value)}')">
+      ${escapeHtml(item.label)}
+      <span>${filterCounts[item.value] || 0}</span>
+    </button>
+  `).join("");
+
+  const cards = filteredPolls.map((poll) => {
+    const statusInfo = getAdminVisualPollStatusInfo(poll);
+    const deadlineLabel = statusInfo.deadlineDate ? formatAdminDateTimeLabel(statusInfo.deadlineDate) : "Sem prazo";
     const optionsCount = Array.isArray(poll.options) ? poll.options.length : 0;
+    const createdLabel = getAdminVisualPollCreatedLabel(poll);
     return `
       <div class="admin-visual-card admin-visual-card--poll">
         <div class="admin-visual-card__top">
           <div class="admin-visual-card__meta">
-            <span class="admin-visual-badge ${poll.active ? "is-on" : "is-off"}">${poll.active ? "ATIVA" : "ENCERRADA"}</span>
-            <span class="admin-visual-badge is-soft">${optionsCount} opção(ões)</span>
-            <span class="admin-visual-badge is-soft">${totalVotes} voto(s)</span>
+            <span class="admin-visual-badge ${statusInfo.tone === "on" ? "is-on" : statusInfo.tone === "warning" ? "is-soft" : "is-off"}">${escapeHtml(statusInfo.label)}</span>
+            <span class="admin-visual-badge is-soft">${optionsCount} op??o(?es)</span>
+            <span class="admin-visual-badge is-soft">${statusInfo.totalVotes} voto(s)</span>
+            ${statusInfo.totalVotes === 0 ? `<span class="admin-visual-badge is-soft">SEM VOTOS</span>` : ""}
           </div>
           <div class="admin-visual-card__title">${escapeHtml(poll.question || "Sem pergunta")}</div>
           <div class="admin-visual-card__desc">Encerra em ${escapeHtml(deadlineLabel)}</div>
+          ${createdLabel ? `<div class="admin-visual-card__sub">Criada em ${escapeHtml(createdLabel)}</div>` : ""}
         </div>
         <div class="admin-visual-card__actions">
           <button type="button" class="admin-visual-action is-edit" title="Editar enquete" onclick="window.openAdminVisualPollEditor('${escapeJsString(poll.id)}')"><i class="fas fa-pen"></i></button>
+          <button type="button" class="admin-visual-action" title="Visualizar resultados" onclick="window.openAdminVisualPollResults('${escapeJsString(poll.id)}')"><i class="fas fa-chart-bar"></i></button>
           <button type="button" class="admin-visual-action ${poll.active ? "" : "is-success"}" title="${poll.active ? "Encerrar enquete" : "Ativar enquete"}" onclick="window.toggleAdminVisualPoll('${escapeJsString(poll.id)}')"><i class="fas ${poll.active ? "fa-eye-slash" : "fa-eye"}"></i></button>
           <button type="button" class="admin-visual-action is-danger" title="Excluir enquete" onclick="window.deleteAdminVisualPoll('${escapeJsString(poll.id)}')"><i class="fas fa-trash"></i></button>
         </div>
@@ -7428,15 +7680,20 @@ const renderAdminVisualPollList = () => {
     `;
   }).join("");
 
+  const emptyText = filter === "all"
+    ? "Crie uma enquete nova para aparecer na home."
+    : `Nenhuma enquete encontrada para o filtro ${getAdminVisualPollFilterLabel(filter)}.`;
+
   return `
     <div class="admin-visual-toolbar">
       <div class="admin-visual-toolbar__copy">
         <div class="admin-visual-toolbar__title">Enquetes publicadas</div>
-        <div class="admin-visual-toolbar__hint">Crie perguntas, opções e prazo de encerramento.</div>
+        <div class="admin-visual-toolbar__hint">Crie perguntas, op??es e prazo de encerramento.</div>
       </div>
-      <button type="button" class="admin-visual-primary" title="Abrir formulário para criar uma enquete" onclick="window.openAdminVisualPollEditor('')"><i class="fas fa-plus"></i> Nova enquete</button>
+      <button type="button" class="admin-visual-primary" title="Abrir formul?rio para criar uma enquete" onclick="window.openAdminVisualPollEditor('')"><i class="fas fa-plus"></i> Nova enquete</button>
     </div>
-    <div class="admin-visual-list">${cards}</div>
+    <div class="admin-visual-filter-row">${filterChips}</div>
+    ${filteredPolls.length ? `<div class="admin-visual-list">${cards}</div>` : renderAdminVisualEmpty("Nenhuma enquete encontrada", emptyText)}
   `;
 };
 
@@ -7619,37 +7876,85 @@ const renderAdminVisualBannerEditor = () => {
   `;
 };
 
+const renderAdminVisualPollPreview = (draft = {}) => {
+  const statusInfo = getAdminVisualPollStatusInfo(draft);
+  const options = Array.isArray(draft.options) ? draft.options : [];
+  const question = String(draft.question || "").trim();
+  const deadlineLabel = draft.deadline ? formatAdminDateTimeLabel(draft.deadline) : "Sem prazo";
+  const warningBits = [];
+  if (!question) warningBits.push("Informe a pergunta da enquete.");
+  if (options.length < 2) warningBits.push("A enquete precisa de pelo menos duas opções de resposta.");
+  return `
+    <div class="admin-poll-preview">
+      <div class="admin-poll-preview__header">
+        <div>
+          <div class="admin-poll-preview__eyebrow">Prévia da Enquete</div>
+          <div class="admin-poll-preview__title">${escapeHtml(question || "Pergunta da enquete")}</div>
+          <div class="admin-poll-preview__subtitle">Veja como a pergunta e as opções podem aparecer para o usuário.</div>
+        </div>
+        <span class="admin-visual-badge ${statusInfo.tone === "on" ? "is-on" : statusInfo.tone === "warning" ? "is-soft" : "is-off"}">${escapeHtml(statusInfo.label)}</span>
+      </div>
+      <div class="admin-poll-preview__chips">
+        <span class="admin-visual-badge is-soft">${options.length} opção(ões)</span>
+        <span class="admin-visual-badge is-soft">${statusInfo.totalVotes} voto(s)</span>
+        <span class="admin-visual-badge is-soft">${escapeHtml(deadlineLabel)}</span>
+      </div>
+      ${warningBits.length ? `<div class="admin-poll-preview__warning">${escapeHtml(warningBits.join(" "))}</div>` : ""}
+      <div class="admin-poll-preview__list">
+        ${options.length ? options.map((option, index) => `
+          <div class="admin-poll-preview__option">
+            <span>${escapeHtml(option)}</span>
+            <small>Opção ${index + 1}</small>
+          </div>
+        `).join("") : `<div class="admin-poll-preview__empty">Nenhuma opção preenchida.</div>`}
+      </div>
+    </div>
+  `;
+};
+
 const renderAdminVisualPollEditor = () => {
   const draft = adminVisualState.draft || normalizeAdminVisualPollDraft({});
-  const optionsValue = Array.isArray(draft.options) ? draft.options.join("\n") : "";
+  const lockedOptions = draft.lockOptions === true || getAdminVisualPollTotalVotes(draft) > 0;
   const deadlineValue = draft.deadline && toJsDate(draft.deadline) ? formatAdminDateTimeInput(toJsDate(draft.deadline)) : "";
   return `
-    <div class="admin-visual-section">
+    <div class="admin-visual-section" oninput="window.scheduleAdminVisualPollPreviewRefresh()" onchange="window.scheduleAdminVisualPollPreviewRefresh()">
       <div class="admin-visual-section__copy">
         <div class="admin-visual-section__title">${draft.id ? "Editar enquete" : "Nova enquete"}</div>
-        <div class="admin-visual-section__hint">A enquete será salva no mesmo formato usado pela home.</div>
+        <div class="admin-visual-section__hint">A enquete ser? salva no mesmo formato usado pela home.</div>
       </div>
       <div class="admin-visual-form-grid">
         <label class="admin-visual-field admin-visual-field--full">
           ${renderInfoHint("Pergunta", "Texto principal da enquete. Deve ser claro e direto para facilitar o voto.", "poll-question")}
           <input id="adminVisualPollQuestion" class="admin-creation-input" value="${escapeHtml(draft.question || "")}" placeholder="Pergunta da enquete">
         </label>
-        <label class="admin-visual-field admin-visual-field--full">
-          ${renderInfoHint("Opções de resposta", "Alternativas que os usuários poderão escolher. A enquete precisa de pelo menos duas opções.", "poll-options")}
-          <textarea id="adminVisualPollOptions" class="admin-communication-textarea" placeholder="Uma opção por linha">${escapeHtml(optionsValue)}</textarea>
-        </label>
+        <div class="admin-visual-field admin-visual-field--full">
+          ${renderInfoHint("Op??es de resposta", "Alternativas que os usu?rios poder?o escolher. A enquete precisa de pelo menos duas op??es.", "poll-options")}
+          <div id="adminVisualPollOptionsList" class="admin-poll-options">
+            ${renderAdminVisualPollOptionsRows(draft.options, { locked: lockedOptions })}
+          </div>
+          ${lockedOptions ? `
+            <div class="admin-poll-options__warning">Esta enquete j? possui votos. Para preservar o hist?rico, edite apenas o texto, o prazo ou o status.</div>
+          ` : `
+            <button type="button" class="admin-poll-options__add" onclick="window.addAdminVisualPollOptionRow()"><i class="fas fa-plus"></i> Adicionar op??o</button>
+          `}
+        </div>
         <label class="admin-visual-field">
-          ${renderInfoHint("Encerrar em data e hora", "Escolha o momento em que a enquete será encerrada automaticamente.", "poll-deadline")}
+          ${renderInfoHint("Encerrar em data e hora", "Escolha o momento em que a enquete ser? encerrada automaticamente.", "poll-deadline")}
           <input id="adminVisualPollDeadline" type="datetime-local" class="admin-creation-input" value="${escapeHtml(deadlineValue || "")}">
+          <small class="admin-visual-field__note">Se o prazo ficar no passado, a enquete ser? considerada encerrada na administra??o.</small>
         </label>
         <label class="admin-visual-field">
-          ${renderInfoHint("Encerrar em horas", "Quantidade de horas até a enquete ser encerrada automaticamente. Deixe vazio apenas se o sistema já tiver um padrão.", "poll-deadline-hours")}
+          ${renderInfoHint("Encerrar em horas", "Quantidade de horas at? a enquete ser encerrada automaticamente. Deixe vazio apenas se o sistema j? tiver um padr?o.", "poll-deadline-hours")}
           <input id="adminVisualPollDeadlineHours" type="number" min="1" step="1" class="admin-creation-input" value="${escapeHtml(draft.deadlineHours || "24")}" placeholder="24">
+          <small class="admin-visual-field__note">Deixe vazio para usar o prazo padr?o. N?o salve NaN ou valores negativos.</small>
         </label>
         <label class="admin-visual-field admin-visual-field--inline">
           <input id="adminVisualPollActive" type="checkbox" ${draft.active !== false ? "checked" : ""}>
-          ${renderInfoHint("Ativar enquete", "Salva e ativa a enquete para os usuários, conforme as regras atuais do projeto.", "poll-active")}
+          ${renderInfoHint("Ativar enquete", "Salva e ativa a enquete para os usu?rios, conforme as regras atuais do projeto.", "poll-active")}
         </label>
+      </div>
+      <div id="adminVisualPollPreviewRoot" class="admin-visual-preview-root">
+        ${renderAdminVisualPollPreview(draft)}
       </div>
     </div>
   `;
@@ -7704,6 +8009,7 @@ window.openAdminVisualManagementModal = async () => {
 
   adminVisualState.mode = "list";
   adminVisualState.tab = "sections";
+  adminVisualState.pollFilter = "all";
   adminVisualState.draft = null;
   adminVisualState.draftType = "";
   adminVisualState.draftId = "";
@@ -7825,6 +8131,7 @@ window.previewAdminVisualBanner = (bannerId = "") => {
 window.openAdminVisualPollEditor = (pollId = "") => {
   const existing = (adminVisualState.polls || []).find((poll) => poll.id === pollId) || null;
   adminVisualState.draft = normalizeAdminVisualPollDraft(existing || {});
+  adminVisualState.draft.lockOptions = getAdminVisualPollTotalVotes(adminVisualState.draft) > 0;
   adminVisualState.draftId = existing?.id || "";
   adminVisualState.draftType = "poll";
   adminVisualState.mode = "poll-form";
@@ -8123,32 +8430,56 @@ window.saveAdminVisualForm = async () => {
 
   if (adminVisualState.mode === "poll-form") {
     const question = String(document.getElementById("adminVisualPollQuestion")?.value || "").trim();
-    const optionsRaw = String(document.getElementById("adminVisualPollOptions")?.value || "").trim();
     const deadlineHoursRaw = String(document.getElementById("adminVisualPollDeadlineHours")?.value || "").trim();
     const deadlineValue = String(document.getElementById("adminVisualPollDeadline")?.value || "").trim();
     const active = document.getElementById("adminVisualPollActive")?.checked === true;
-    const options = optionsRaw.split(/\n+/).map((item) => item.trim()).filter(Boolean);
+    const draftBase = adminVisualState.draft || normalizeAdminVisualPollDraft({});
+    const lockedOptions = draftBase.lockOptions === true || getAdminVisualPollTotalVotes(draftBase) > 0;
+    const rawOptions = lockedOptions
+      ? (Array.isArray(draftBase.options) ? draftBase.options : [])
+      : [...document.querySelectorAll("[data-poll-option-input]")].map((item) => String(item.value || "").trim()).filter(Boolean);
+    const options = [];
+    const optionKeys = new Set();
+
+    rawOptions.forEach((option) => {
+      const key = normalizeAdminText(option);
+      if (!key || optionKeys.has(key)) return;
+      optionKeys.add(key);
+      options.push(option);
+    });
 
     if (!question) {
       showAdminCommunicationToast("Informe a pergunta da enquete.", "danger");
       return;
     }
-    if (options.length < 2) {
-      showAdminCommunicationToast("Adicione ao menos 2 opções.", "danger");
+    if (!lockedOptions && options.length < 2) {
+      showAdminCommunicationToast("A enquete precisa de pelo menos duas op??es de resposta.", "danger");
+      return;
+    }
+    if (!lockedOptions && options.length !== rawOptions.length) {
+      showAdminCommunicationToast("Remova op??es duplicadas antes de salvar.", "warning");
       return;
     }
 
     const draft = {
-      ...(adminVisualState.draft || {}),
+      ...draftBase,
       question,
-      options,
+      options: lockedOptions ? rawOptions : options,
       active,
       deadlineHours: deadlineHoursRaw || "24",
       deadline: deadlineValue ? new Date(deadlineValue) : null
     };
 
     if (deadlineValue && Number.isNaN(new Date(deadlineValue).getTime())) {
-      showAdminCommunicationToast("Informe uma data e hora válidas para encerramento.", "danger");
+      showAdminCommunicationToast("Informe uma data e hora v?lidas para encerramento.", "danger");
+      return;
+    }
+    if (draft.deadlineHours && Number.isNaN(Number(draft.deadlineHours))) {
+      showAdminCommunicationToast("Informe um prazo num?rico v?lido em horas.", "danger");
+      return;
+    }
+    if (draft.deadlineHours && Number(draft.deadlineHours) <= 0) {
+      showAdminCommunicationToast("O prazo em horas precisa ser maior que zero.", "danger");
       return;
     }
 
@@ -8167,10 +8498,12 @@ window.saveAdminVisualForm = async () => {
       return;
     } catch (error) {
       console.error("Erro ao salvar enquete:", error);
-      showAdminCommunicationToast("Não foi possível salvar a enquete.", "danger");
+      showAdminCommunicationToast("N?o foi poss?vel salvar a enquete.", "danger");
     }
   }
+
 };
+
 
 const renderAdminCommunicationsModal = () => {
   const tab = adminCommunicationState.tab || "push";
