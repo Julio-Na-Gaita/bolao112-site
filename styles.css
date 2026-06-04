@@ -4189,12 +4189,108 @@ select:focus-visible {
     gap: 6px;
 }
 
+.admin-visual-field__label,
+.admin-help-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+}
+
 .admin-visual-field span {
     color: #475569;
     font-size: 11px;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.03em;
+}
+
+.admin-visual-field__label {
+    color: #475569;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    line-height: 1.35;
+}
+
+.admin-help-hint__label {
+    color: inherit;
+    font: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+}
+
+.admin-help-button {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: #e2e8f0;
+    color: #0f172a;
+    font-size: 10px;
+    font-weight: 900;
+    flex: 0 0 auto;
+}
+
+.admin-help-button i {
+    pointer-events: none;
+}
+
+.admin-help-button:hover,
+.admin-help-button:focus-visible {
+    background: #cbd5e1;
+    box-shadow: none;
+}
+
+.admin-help-popover {
+    position: fixed;
+    z-index: 1500;
+    display: none;
+    max-width: min(320px, calc(100vw - 24px));
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(15,23,42,0.1);
+    background: #0f172a;
+    color: #fff;
+    box-shadow: 0 18px 36px rgba(15,23,42,0.2);
+}
+
+.admin-help-popover.is-open {
+    display: block;
+}
+
+.admin-help-popover::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: 18px;
+    width: 12px;
+    height: 12px;
+    transform: rotate(45deg);
+    background: #0f172a;
+    border-left: 1px solid rgba(15,23,42,0.1);
+    border-top: 1px solid rgba(15,23,42,0.1);
+}
+
+.admin-help-popover__title {
+    margin-bottom: 4px;
+    color: #fde68a;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.admin-help-popover__text {
+    color: rgba(255,255,255,0.92);
+    font-size: 12px;
+    line-height: 1.45;
+    font-weight: 700;
 }
 
 .admin-visual-field--full {
@@ -4228,6 +4324,14 @@ select:focus-visible {
     justify-content: center;
     gap: 8px;
     padding: 12px;
+}
+
+.admin-visual-preset__desc {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.35;
+    text-align: center;
 }
 
 .admin-visual-preset__icon {

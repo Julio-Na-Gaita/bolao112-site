@@ -6367,6 +6367,112 @@ const showAdminCommunicationToast = (message, tone = "success") => {
   alert(message);
 };
 
+let adminHelpHintState = {
+  id: "",
+  timer: null
+};
+
+const closeAdminHelpHint = () => {
+  if (adminHelpHintState.timer) {
+    clearTimeout(adminHelpHintState.timer);
+    adminHelpHintState.timer = null;
+  }
+  adminHelpHintState.id = "";
+  const hint = document.getElementById("adminHelpHintPortal");
+  if (hint) {
+    hint.classList.remove("is-open");
+    hint.style.top = "";
+    hint.style.left = "";
+    hint.style.width = "";
+  }
+};
+
+window.closeAdminHelpHint = closeAdminHelpHint;
+
+const ensureAdminHelpHintPortal = () => {
+  let hint = document.getElementById("adminHelpHintPortal");
+  if (!hint) {
+    hint = document.createElement("div");
+    hint.id = "adminHelpHintPortal";
+    hint.className = "admin-help-popover";
+    hint.setAttribute("role", "tooltip");
+    hint.innerHTML = `
+      <div class="admin-help-popover__title"></div>
+      <div class="admin-help-popover__text"></div>
+    `;
+    document.body.appendChild(hint);
+  }
+  return hint;
+};
+
+const openAdminHelpHint = (button, label = "", text = "", id = "") => {
+  if (!button || !text) return;
+  const hint = ensureAdminHelpHintPortal();
+  const titleEl = hint.querySelector(".admin-help-popover__title");
+  const textEl = hint.querySelector(".admin-help-popover__text");
+  if (!titleEl || !textEl) return;
+
+  titleEl.textContent = label ? `Ajuda: ${label}` : "Ajuda";
+  textEl.textContent = text;
+  hint.classList.add("is-open");
+  hint.setAttribute("data-open-id", id || "");
+
+  const width = Math.min(320, Math.max(120, window.innerWidth - 24));
+  const rect = button.getBoundingClientRect();
+  const top = Math.min(window.innerHeight - 20, Math.max(12, rect.bottom + 10));
+  const leftLimit = Math.max(12, window.innerWidth - width - 12);
+  const left = Math.max(12, Math.min(rect.left, leftLimit));
+
+  hint.style.width = `${width}px`;
+  hint.style.top = `${top}px`;
+  hint.style.left = `${left}px`;
+
+  if (adminHelpHintState.timer) clearTimeout(adminHelpHintState.timer);
+  adminHelpHintState.id = id || "";
+  adminHelpHintState.timer = window.setTimeout(() => closeAdminHelpHint(), 7000);
+};
+
+window.toggleAdminHelpHint = (event, id = "") => {
+  event?.preventDefault?.();
+  event?.stopPropagation?.();
+  const button = event?.currentTarget || event?.target?.closest?.(".admin-help-button");
+  if (!button) return;
+  const hint = document.getElementById("adminHelpHintPortal");
+  if (hint && hint.classList.contains("is-open") && adminHelpHintState.id === id) {
+    closeAdminHelpHint();
+    return;
+  }
+  openAdminHelpHint(button, button.dataset.helpLabel || "", button.dataset.helpText || "", id);
+};
+
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".admin-help-hint")) closeAdminHelpHint();
+});
+
+window.addEventListener("scroll", closeAdminHelpHint, true);
+window.addEventListener("resize", closeAdminHelpHint);
+
+const renderInfoHint = (label = "", text = "", id = "") => {
+  const safeId = String(id || `help_${normalizeAdminText(label || text || "hint").replace(/[^a-z0-9]+/g, "_").slice(0, 32) || Date.now()}`);
+  return `
+    <span class="admin-help-hint">
+      <span class="admin-help-hint__label">${escapeHtml(label)}</span>
+      <button
+        type="button"
+        class="admin-help-button"
+        aria-label="Ajuda sobre ${escapeHtml(label)}"
+        title="${escapeHtml(label)}"
+        data-help-id="${escapeHtml(safeId)}"
+        data-help-label="${escapeHtml(label)}"
+        data-help-text="${escapeHtml(text)}"
+        onclick="window.toggleAdminHelpHint(event, '${escapeJsString(safeId)}')"
+      >
+        <i class="fas fa-circle-question"></i>
+      </button>
+    </span>
+  `;
+};
+
 const logAdminCommunicationAction = async (type, payload = {}) => {
   try {
     const admin = await getCurrentAdminProfile();
@@ -6464,6 +6570,20 @@ const ADMIN_VISUAL_USER_SEGMENT_OPTIONS = [
   { value: "new_users", label: "Novos usuários" },
   { value: "veterans", label: "Veteranos" }
 ];
+
+const ADMIN_VISUAL_PRESET_HELP = {
+  announcement: "Cria um bloco simples para recados, comunicados ou orientações sem botão obrigatório.",
+  cta_card: "Cria um bloco com chamada principal e botão para levar o usuário a um link ou área do app.",
+  whatsapp_group: "Cria um card direcionando o usuário para o grupo do WhatsApp.",
+  ranking: "Cria um atalho visual para a área de ranking.",
+  profile: "Cria um atalho visual para a área de perfil do usuário.",
+  debtors: "Cria um aviso segmentado para usuários com pendência financeira.",
+  admins_only: "Cria um bloco visível apenas para administradores.",
+  timed_notice: "Cria um aviso com janela de início e fim, útil para comunicados temporários.",
+  fast_vote: "Cria um bloco relacionado ao recurso de voto rápido.",
+  poll: "Cria um bloco vinculado à enquete ativa.",
+  banner_ref: "Cria uma section associada a um banner já cadastrado."
+};
 
 const getAdminVisualLayoutRef = () => doc(db, "settings", "home_layout");
 
@@ -6758,12 +6878,12 @@ const renderAdminVisualSectionList = () => {
           ${visibilityBits.length ? `<div class="admin-visual-card__sub">${escapeHtml(visibilityBits.join(" • "))}</div>` : ""}
         </div>
         <div class="admin-visual-card__actions">
-          ${canReorder ? `<button type="button" class="admin-visual-action" onclick="window.moveAdminVisualSection('${escapeJsString(section.id)}', -1)" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button>` : ""}
-          ${canReorder ? `<button type="button" class="admin-visual-action" onclick="window.moveAdminVisualSection('${escapeJsString(section.id)}', 1)" ${index === sections.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button>` : ""}
-          <button type="button" class="admin-visual-action" onclick="window.toggleAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas ${enabled ? "fa-eye-slash" : "fa-eye"}"></i></button>
-          <button type="button" class="admin-visual-action" onclick="window.duplicateAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas fa-copy"></i></button>
-          <button type="button" class="admin-visual-action is-edit" onclick="window.openAdminVisualSectionEditor('${escapeJsString(section.id)}')"><i class="fas fa-pen"></i></button>
-          <button type="button" class="admin-visual-action is-danger" onclick="window.deleteAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas fa-trash"></i></button>
+          ${canReorder ? `<button type="button" class="admin-visual-action" title="Mover section para cima" onclick="window.moveAdminVisualSection('${escapeJsString(section.id)}', -1)" ${index === 0 ? "disabled" : ""}><i class="fas fa-arrow-up"></i></button>` : ""}
+          ${canReorder ? `<button type="button" class="admin-visual-action" title="Mover section para baixo" onclick="window.moveAdminVisualSection('${escapeJsString(section.id)}', 1)" ${index === sections.length - 1 ? "disabled" : ""}><i class="fas fa-arrow-down"></i></button>` : ""}
+          <button type="button" class="admin-visual-action" title="${enabled ? "Ocultar section" : "Mostrar section"}" onclick="window.toggleAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas ${enabled ? "fa-eye-slash" : "fa-eye"}"></i></button>
+          <button type="button" class="admin-visual-action" title="Duplicar section" onclick="window.duplicateAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas fa-copy"></i></button>
+          <button type="button" class="admin-visual-action is-edit" title="Editar section" onclick="window.openAdminVisualSectionEditor('${escapeJsString(section.id)}')"><i class="fas fa-pen"></i></button>
+          <button type="button" class="admin-visual-action is-danger" title="Excluir section" onclick="window.deleteAdminVisualSection('${escapeJsString(section.id)}')"><i class="fas fa-trash"></i></button>
         </div>
       </div>
     `;
@@ -6775,7 +6895,7 @@ const renderAdminVisualSectionList = () => {
         <div class="admin-visual-toolbar__title">Sections da home</div>
         <div class="admin-visual-toolbar__hint">Use os blocos existentes como base e ajuste apenas o que for seguro.</div>
       </div>
-      <button type="button" class="admin-visual-primary" onclick="window.openAdminVisualPresetPicker()"><i class="fas fa-plus"></i> Adicionar Section</button>
+      <button type="button" class="admin-visual-primary" title="Abrir os presets para criar uma nova section" onclick="window.openAdminVisualPresetPicker()"><i class="fas fa-plus"></i> Adicionar Section</button>
     </div>
     <div class="admin-visual-list">${cards}</div>
   `;
@@ -6804,10 +6924,10 @@ const renderAdminVisualBannerList = () => {
           <div class="admin-visual-card__desc">${escapeHtml(banner.targetUrl || "Sem link destino")}</div>
         </div>
         <div class="admin-visual-card__actions">
-          <button type="button" class="admin-visual-action is-edit" onclick="window.openAdminVisualBannerEditor('${escapeJsString(banner.id)}')"><i class="fas fa-pen"></i></button>
-          <button type="button" class="admin-visual-action" onclick="window.previewAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas fa-eye"></i></button>
-          <button type="button" class="admin-visual-action ${banner.active ? "" : "is-success"}" onclick="window.toggleAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas ${banner.active ? "fa-eye-slash" : "fa-eye"}"></i></button>
-          <button type="button" class="admin-visual-action is-danger" onclick="window.deleteAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas fa-trash"></i></button>
+          <button type="button" class="admin-visual-action is-edit" title="Editar banner" onclick="window.openAdminVisualBannerEditor('${escapeJsString(banner.id)}')"><i class="fas fa-pen"></i></button>
+          <button type="button" class="admin-visual-action" title="Visualizar banner" onclick="window.previewAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas fa-eye"></i></button>
+          <button type="button" class="admin-visual-action ${banner.active ? "" : "is-success"}" title="${banner.active ? "Desativar banner" : "Ativar banner"}" onclick="window.toggleAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas ${banner.active ? "fa-eye-slash" : "fa-eye"}"></i></button>
+          <button type="button" class="admin-visual-action is-danger" title="Excluir banner" onclick="window.deleteAdminVisualBanner('${escapeJsString(banner.id)}')"><i class="fas fa-trash"></i></button>
         </div>
       </div>
     `;
@@ -6819,7 +6939,7 @@ const renderAdminVisualBannerList = () => {
         <div class="admin-visual-toolbar__title">Banners cadastrados</div>
         <div class="admin-visual-toolbar__hint">Gerencie imagens e links já usados pela home.</div>
       </div>
-      <button type="button" class="admin-visual-primary" onclick="window.openAdminVisualBannerEditor('')"><i class="fas fa-plus"></i> Novo banner</button>
+      <button type="button" class="admin-visual-primary" title="Abrir formulário para criar um banner" onclick="window.openAdminVisualBannerEditor('')"><i class="fas fa-plus"></i> Novo banner</button>
     </div>
     <div class="admin-visual-list">${cards}</div>
   `;
@@ -6847,9 +6967,9 @@ const renderAdminVisualPollList = () => {
           <div class="admin-visual-card__desc">Encerra em ${escapeHtml(deadlineLabel)}</div>
         </div>
         <div class="admin-visual-card__actions">
-          <button type="button" class="admin-visual-action is-edit" onclick="window.openAdminVisualPollEditor('${escapeJsString(poll.id)}')"><i class="fas fa-pen"></i></button>
-          <button type="button" class="admin-visual-action ${poll.active ? "" : "is-success"}" onclick="window.toggleAdminVisualPoll('${escapeJsString(poll.id)}')"><i class="fas ${poll.active ? "fa-eye-slash" : "fa-eye"}"></i></button>
-          <button type="button" class="admin-visual-action is-danger" onclick="window.deleteAdminVisualPoll('${escapeJsString(poll.id)}')"><i class="fas fa-trash"></i></button>
+          <button type="button" class="admin-visual-action is-edit" title="Editar enquete" onclick="window.openAdminVisualPollEditor('${escapeJsString(poll.id)}')"><i class="fas fa-pen"></i></button>
+          <button type="button" class="admin-visual-action ${poll.active ? "" : "is-success"}" title="${poll.active ? "Encerrar enquete" : "Ativar enquete"}" onclick="window.toggleAdminVisualPoll('${escapeJsString(poll.id)}')"><i class="fas ${poll.active ? "fa-eye-slash" : "fa-eye"}"></i></button>
+          <button type="button" class="admin-visual-action is-danger" title="Excluir enquete" onclick="window.deleteAdminVisualPoll('${escapeJsString(poll.id)}')"><i class="fas fa-trash"></i></button>
         </div>
       </div>
     `;
@@ -6861,7 +6981,7 @@ const renderAdminVisualPollList = () => {
         <div class="admin-visual-toolbar__title">Enquetes publicadas</div>
         <div class="admin-visual-toolbar__hint">Crie perguntas, opções e prazo de encerramento.</div>
       </div>
-      <button type="button" class="admin-visual-primary" onclick="window.openAdminVisualPollEditor('')"><i class="fas fa-plus"></i> Nova enquete</button>
+      <button type="button" class="admin-visual-primary" title="Abrir formulário para criar uma enquete" onclick="window.openAdminVisualPollEditor('')"><i class="fas fa-plus"></i> Nova enquete</button>
     </div>
     <div class="admin-visual-list">${cards}</div>
   `;
@@ -6875,9 +6995,10 @@ const renderAdminVisualPresetPicker = () => `
     </div>
     <div class="admin-visual-preset-grid">
       ${ADMIN_VISUAL_SECTION_TYPES.map((preset) => `
-        <button type="button" class="admin-visual-preset" onclick="window.openAdminVisualSectionEditor('', '${escapeJsString(preset.value)}')">
+        <button type="button" class="admin-visual-preset" title="${escapeHtml(ADMIN_VISUAL_PRESET_HELP[preset.value] || preset.label)}" onclick="window.openAdminVisualSectionEditor('', '${escapeJsString(preset.value)}')">
           <span class="admin-visual-preset__icon"><i class="fas fa-sparkles"></i></span>
           <span class="admin-visual-preset__title">${escapeHtml(preset.label)}</span>
+          <span class="admin-visual-preset__desc">${escapeHtml(ADMIN_VISUAL_PRESET_HELP[preset.value] || "")}</span>
         </button>
       `).join("")}
     </div>
@@ -6899,85 +7020,85 @@ const renderAdminVisualSectionEditor = () => {
       </div>
       <div class="admin-visual-form-grid">
         <label class="admin-visual-field">
-          <span>Tipo</span>
+          ${renderInfoHint("Tipo", "Define o modelo visual da section. “Aviso informativo” é melhor para recados simples. “Card com botão” é melhor quando o usuário precisa clicar em algo.", "section-type")}
           <select id="adminVisualSectionType" class="admin-creation-input">
             ${ADMIN_VISUAL_SECTION_TYPES.map((item) => `<option value="${escapeHtml(item.value)}" ${draft.type === item.value ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}
           </select>
         </label>
         <label class="admin-visual-field">
-          <span>Estilo</span>
+          ${renderInfoHint("Estilo visual", "Padrão é neutro. Aviso serve para recados leves. Sucesso destaca confirmações. Perigo chama atenção urgente. Escuro usa um fundo mais forte.", "section-style")}
           <select id="adminVisualSectionStyle" class="admin-creation-input">
             ${ADMIN_VISUAL_STYLE_OPTIONS.map((item) => `<option value="${escapeHtml(item.value)}" ${draft.style === item.value ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}
           </select>
         </label>
         <label class="admin-visual-field">
-          <span>Título</span>
+          ${renderInfoHint("Título principal", "Texto principal do bloco. Deve ser curto e direto, pois aparece com mais destaque na home.", "section-title")}
           <input id="adminVisualSectionTitle" class="admin-creation-input" value="${escapeHtml(draft.title || "")}" placeholder="Título do bloco">
         </label>
         <label class="admin-visual-field">
-          <span>Subtítulo</span>
+          ${renderInfoHint("Texto complementar / subtítulo", "Texto secundário para explicar melhor o aviso ou complementar o título.", "section-subtitle")}
           <input id="adminVisualSectionSubtitle" class="admin-creation-input" value="${escapeHtml(draft.subtitle || "")}" placeholder="Subtítulo opcional">
         </label>
         <label class="admin-visual-field admin-visual-field--full">
-          <span>Texto</span>
+          ${renderInfoHint("Descrição / conteúdo", "Conteúdo maior do bloco. Use para instruções, avisos ou detalhes que precisam aparecer para o usuário.", "section-body")}
           <textarea id="adminVisualSectionBody" class="admin-communication-textarea" placeholder="Mensagem do bloco">${escapeHtml(draft.body || "")}</textarea>
         </label>
         <label class="admin-visual-field">
-          <span>Banner vinculado</span>
+          ${renderInfoHint("Banner vinculado", "Use quando a section deve aparecer associada a um banner já cadastrado.", "section-banner")}
           <select id="adminVisualSectionBannerId" class="admin-creation-input">
             <option value="">Nenhum</option>
             ${bannerOptions}
           </select>
         </label>
         <label class="admin-visual-field">
-          <span>URL da mídia</span>
+          ${renderInfoHint("Mídia URL", "Link de imagem ou mídia que será exibida no bloco, quando o tipo da section permitir. Prefira URL pública.", "section-media")}
           <input id="adminVisualSectionMediaUrl" class="admin-creation-input" value="${escapeHtml(draft.mediaUrl || "")}" placeholder="https://...">
         </label>
         <label class="admin-visual-field">
-          <span>Ação</span>
+          ${renderInfoHint("Ação do botão", "Sem ação deixa o bloco apenas informativo. Abrir link leva para uma URL. Abrir aba navega para uma área do próprio app, como Ranking ou Perfil.", "section-action")}
           <select id="adminVisualSectionActionType" class="admin-creation-input">
             ${[{ value: "none", label: "Nenhuma" }, { value: "url", label: "Abrir URL" }, { value: "tab", label: "Abrir aba" }].map((item) => `<option value="${escapeHtml(item.value)}" ${draft.actionType === item.value ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}
           </select>
         </label>
         <label class="admin-visual-field">
-          <span>Valor da ação</span>
+          ${renderInfoHint("Link / destino da ação", "Destino usado quando a section tem botão. Pode ser um link externo ou uma área interna, dependendo da ação escolhida.", "section-action-value")}
           <input id="adminVisualSectionActionValue" class="admin-creation-input" value="${escapeHtml(draft.actionValue || "")}" placeholder="https:// ou nome da aba">
         </label>
         <label class="admin-visual-field">
-          <span>Label do botão</span>
+          ${renderInfoHint("Label do botão", "Texto do botão exibido para o usuário. Use algo curto e objetivo.", "section-action-label")}
           <input id="adminVisualSectionActionLabel" class="admin-creation-input" value="${escapeHtml(draft.actionLabel || "")}" placeholder="Texto do botão">
         </label>
         <label class="admin-visual-field">
-          <span>Segmento</span>
+          ${renderInfoHint("Segmento de usuário", "Todos mostra para todos. Devedores aparece apenas para usuários com pendência. Novos e Veteranos dependem do tempo de cadastro detectado pelo sistema.", "section-segment")}
           <select id="adminVisualSectionUserSegment" class="admin-creation-input">
             ${ADMIN_VISUAL_USER_SEGMENT_OPTIONS.map((item) => `<option value="${escapeHtml(item.value)}" ${draft.userSegment === item.value ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}
           </select>
         </label>
         <label class="admin-visual-field">
-          <span>Feature flag</span>
+          ${renderInfoHint("Filtro por recurso", "Nenhum aparece sem depender de recurso específico. Chat destaca mensagens. Voto rápido mostra o bloco relacionado ao recurso. Scout fica reservado para estatísticas ou recursos futuros.", "section-feature")}
           <select id="adminVisualSectionFeatureFlag" class="admin-creation-input">
             ${ADMIN_VISUAL_FEATURE_OPTIONS.map((item) => `<option value="${escapeHtml(item.value)}" ${draft.featureFlag === item.value ? "selected" : ""}>${escapeHtml(item.label)}</option>`).join("")}
           </select>
         </label>
         <label class="admin-visual-field">
-          <span>Competição visível</span>
+          ${renderInfoHint("Competição", "Use quando a section deve estar relacionada a uma competição específica. Deixe vazio para aparecer de forma geral.", "section-competition")}
           <input id="adminVisualSectionCompetition" class="admin-creation-input" value="${escapeHtml(draft.competition || "")}" placeholder="Ex: Champions League">
         </label>
         <label class="admin-visual-field">
-          <span>Início</span>
+          ${renderInfoHint("Janela de exibição - início", "Data e hora em que a section começa a aparecer.", "section-start")}
           <input id="adminVisualSectionStartAt" type="datetime-local" class="admin-creation-input" value="${escapeHtml(draft.startAt || "")}">
         </label>
         <label class="admin-visual-field">
-          <span>Fim</span>
+          ${renderInfoHint("Janela de exibição - fim", "Data e hora em que a section deixa de aparecer.", "section-end")}
           <input id="adminVisualSectionEndAt" type="datetime-local" class="admin-creation-input" value="${escapeHtml(draft.endAt || "")}">
         </label>
         <label class="admin-visual-field admin-visual-field--inline">
           <input id="adminVisualSectionEnabled" type="checkbox" ${draft.enabled !== false ? "checked" : ""}>
-          <span>Ativo</span>
+          ${renderInfoHint("Visibilidade", "Ativo deixa a section disponível. Se desmarcado, ela fica salva mas não aparece para os usuários.", "section-enabled")}
         </label>
         <label class="admin-visual-field admin-visual-field--inline">
           <input id="adminVisualSectionAdminsOnly" type="checkbox" ${draft.adminsOnly ? "checked" : ""}>
-          <span>Somente admins</span>
+          ${renderInfoHint("Somente admins", "Quando marcado, a section aparece apenas para administradores.", "section-admins")}
         </label>
       </div>
     </div>
@@ -6994,34 +7115,34 @@ const renderAdminVisualBannerEditor = () => {
       </div>
       <div class="admin-visual-form-grid">
         <label class="admin-visual-field">
-          <span>Nome interno</span>
+          ${renderInfoHint("Nome interno", "Nome usado apenas pelo admin para identificar o banner. Não precisa ser o texto exibido ao usuário.", "banner-name")}
           <input id="adminVisualBannerName" class="admin-creation-input" value="${escapeHtml(draft.name || "")}" placeholder="Nome do banner">
         </label>
         <label class="admin-visual-field">
-          <span>Tipo</span>
+          ${renderInfoHint("Tipo", "Grande / full é o banner principal. Duplo / double usa duas imagens ou dois destinos. Pequeno / small é compacto para espaços menores.", "banner-type")}
           <select id="adminVisualBannerType" class="admin-creation-input">
             ${["full", "double", "small"].map((type) => `<option value="${type}" ${draft.type === type ? "selected" : ""}>${getAdminVisualBannerTypeLabel(type)}</option>`).join("")}
           </select>
         </label>
         <label class="admin-visual-field">
-          <span>Imagem 1</span>
+          ${renderInfoHint("Link Imagem 1", "URL pública da imagem principal do banner. Pode ser link da web, Drive com acesso público ou hospedagem externa.", "banner-image1")}
           <input id="adminVisualBannerImage1" class="admin-creation-input" value="${escapeHtml(draft.imageUrl || "")}" placeholder="https://...">
         </label>
         <label class="admin-visual-field">
-          <span>Destino 1</span>
+          ${renderInfoHint("Link Destino 1", "Link aberto quando o usuário toca no banner principal.", "banner-target1")}
           <input id="adminVisualBannerTarget1" class="admin-creation-input" value="${escapeHtml(draft.targetUrl || "")}" placeholder="https://...">
         </label>
         <label class="admin-visual-field">
-          <span>Imagem 2</span>
+          ${renderInfoHint("Link Imagem 2", "Usado quando o banner é do tipo duplo. É a segunda imagem exibida.", "banner-image2")}
           <input id="adminVisualBannerImage2" class="admin-creation-input" value="${escapeHtml(draft.imageUrl2 || "")}" placeholder="https://...">
         </label>
         <label class="admin-visual-field">
-          <span>Destino 2</span>
+          ${renderInfoHint("Link Destino 2", "Link aberto quando o usuário toca na segunda imagem do banner duplo.", "banner-target2")}
           <input id="adminVisualBannerTarget2" class="admin-creation-input" value="${escapeHtml(draft.targetUrl2 || "")}" placeholder="https://...">
         </label>
         <label class="admin-visual-field admin-visual-field--inline">
           <input id="adminVisualBannerActive" type="checkbox" ${draft.active ? "checked" : ""}>
-          <span>Ativo</span>
+          ${renderInfoHint("Ativo / Inativo", "Define se o banner pode aparecer na home. Banner inativo fica salvo, mas não é exibido para os usuários.", "banner-active")}
         </label>
       </div>
     </div>
@@ -7040,24 +7161,24 @@ const renderAdminVisualPollEditor = () => {
       </div>
       <div class="admin-visual-form-grid">
         <label class="admin-visual-field admin-visual-field--full">
-          <span>Pergunta</span>
+          ${renderInfoHint("Pergunta", "Texto principal da enquete. Deve ser claro e direto para facilitar o voto.", "poll-question")}
           <input id="adminVisualPollQuestion" class="admin-creation-input" value="${escapeHtml(draft.question || "")}" placeholder="Pergunta da enquete">
         </label>
         <label class="admin-visual-field admin-visual-field--full">
-          <span>Opções</span>
+          ${renderInfoHint("Opções de resposta", "Alternativas que os usuários poderão escolher. A enquete precisa de pelo menos duas opções.", "poll-options")}
           <textarea id="adminVisualPollOptions" class="admin-communication-textarea" placeholder="Uma opção por linha">${escapeHtml(optionsValue)}</textarea>
         </label>
         <label class="admin-visual-field">
-          <span>Encerramento</span>
+          ${renderInfoHint("Encerrar em data e hora", "Escolha o momento em que a enquete será encerrada automaticamente.", "poll-deadline")}
           <input id="adminVisualPollDeadline" type="datetime-local" class="admin-creation-input" value="${escapeHtml(deadlineValue || "")}">
         </label>
         <label class="admin-visual-field">
-          <span>Horas até encerrar</span>
+          ${renderInfoHint("Encerrar em horas", "Quantidade de horas até a enquete ser encerrada automaticamente. Deixe vazio apenas se o sistema já tiver um padrão.", "poll-deadline-hours")}
           <input id="adminVisualPollDeadlineHours" type="number" min="1" step="1" class="admin-creation-input" value="${escapeHtml(draft.deadlineHours || "24")}" placeholder="24">
         </label>
         <label class="admin-visual-field admin-visual-field--inline">
           <input id="adminVisualPollActive" type="checkbox" ${draft.active !== false ? "checked" : ""}>
-          <span>Ativa</span>
+          ${renderInfoHint("Ativar enquete", "Salva e ativa a enquete para os usuários, conforme as regras atuais do projeto.", "poll-active")}
         </label>
       </div>
     </div>
@@ -7077,11 +7198,12 @@ const renderAdminVisualContent = () => {
 };
 
 const renderAdminVisualManagementModal = () => {
+  closeAdminHelpHint();
   const title = "Gestão Visual";
   const subtitle = "Sections, banners e enquetes da home";
   const content = renderAdminVisualContent();
   const footerLeft = adminVisualState.mode === "list"
-    ? '<button type="button" onclick="window.openAdminMenu()" class="admin-visual-secondary">Voltar</button>'
+    ? '<button type="button" onclick="window.closeAdminHelpHint(); window.openAdminMenu()" class="admin-visual-secondary">Voltar</button>'
     : '<button type="button" onclick="window.openAdminVisualManagementModal()" class="admin-visual-secondary">Cancelar</button>';
   const footerRight = ["section-form", "banner-form", "poll-form"].includes(adminVisualState.mode)
     ? '<button type="button" onclick="window.saveAdminVisualForm()" class="admin-visual-primary">Salvar alterações</button>'
@@ -7089,7 +7211,7 @@ const renderAdminVisualManagementModal = () => {
 
   window.openModal(`
     <div class="admin-visual-modal">
-      ${renderAdminVisualHeader(title, subtitle, '<button type="button" onclick="window.closeModal()" class="admin-visual-close"><i class="fas fa-times"></i></button>')}
+      ${renderAdminVisualHeader(title, subtitle, '<button type="button" onclick="window.closeAdminHelpHint(); window.closeModal()" class="admin-visual-close"><i class="fas fa-times"></i></button>')}
       <div class="admin-visual-body">
         ${adminVisualState.mode === "list" ? renderAdminVisualTabs() : ""}
         ${content}
