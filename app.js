@@ -271,7 +271,25 @@ const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
     textColor: "#111827",
     mutedTextColor: "#475569",
     buttonColor: "#006400",
-    fontFamily: "classic"
+    fontFamily: "classic",
+    headerBg: "#006400",
+    headerText: "#F8FAFC",
+    headerBorder: "rgba(0,100,0,0.16)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 10px 22px rgba(15,23,42,0.06)",
+    chipBg: "rgba(0,100,0,0.10)",
+    chipText: "#006400",
+    sectionBg: "rgba(255,255,255,0.94)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(255,255,255,0.96)",
+    bottomNavBorder: "rgba(15,23,42,0.08)",
+    navActive: "#006400",
+    navInactive: "#64748B",
+    dangerColor: "#b91c1c",
+    successColor: "#166534",
+    warningColor: "#9a6700",
+    cardAccent: "#006400"
   },
   copa: {
     label: "Copa",
@@ -286,7 +304,25 @@ const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
     textColor: "#0F172A",
     mutedTextColor: "#475569",
     buttonColor: "#0F766E",
-    fontFamily: "modern"
+    fontFamily: "modern",
+    headerBg: "#0F766E",
+    headerText: "#F8FAFC",
+    headerBorder: "rgba(15,118,110,0.16)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 10px 22px rgba(15,23,42,0.06)",
+    chipBg: "rgba(15,118,110,0.10)",
+    chipText: "#0F766E",
+    sectionBg: "rgba(255,255,255,0.95)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(255,255,255,0.96)",
+    bottomNavBorder: "rgba(15,23,42,0.08)",
+    navActive: "#0F766E",
+    navInactive: "#64748B",
+    dangerColor: "#b91c1c",
+    successColor: "#166534",
+    warningColor: "#9a6700",
+    cardAccent: "#0F766E"
   },
   natal: {
     label: "Natal",
@@ -301,7 +337,25 @@ const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
     textColor: "#111827",
     mutedTextColor: "#6B7280",
     buttonColor: "#B91C1C",
-    fontFamily: "rounded"
+    fontFamily: "rounded",
+    headerBg: "#B91C1C",
+    headerText: "#FFF7F7",
+    headerBorder: "rgba(185,28,28,0.16)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 10px 22px rgba(15,23,42,0.06)",
+    chipBg: "rgba(220,38,38,0.10)",
+    chipText: "#B91C1C",
+    sectionBg: "rgba(255,255,255,0.95)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(255,255,255,0.96)",
+    bottomNavBorder: "rgba(15,23,42,0.08)",
+    navActive: "#B91C1C",
+    navInactive: "#64748B",
+    dangerColor: "#b91c1c",
+    successColor: "#166534",
+    warningColor: "#9a6700",
+    cardAccent: "#B91C1C"
   },
   noite: {
     label: "Noite",
@@ -316,7 +370,25 @@ const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
     textColor: "#F8FAFC",
     mutedTextColor: "#CBD5E1",
     buttonColor: "#1D4ED8",
-    fontFamily: "modern"
+    fontFamily: "modern",
+    headerBg: "#111827",
+    headerText: "#F8FAFC",
+    headerBorder: "rgba(248,250,252,0.10)",
+    cardBg: "#0F172A",
+    cardBorder: "rgba(148,163,184,0.16)",
+    cardShadow: "0 10px 22px rgba(2,6,23,0.24)",
+    chipBg: "rgba(56,189,248,0.16)",
+    chipText: "#F8FAFC",
+    sectionBg: "rgba(17,24,39,0.94)",
+    sectionBorder: "rgba(148,163,184,0.16)",
+    bottomNavBg: "rgba(15,23,42,0.96)",
+    bottomNavBorder: "rgba(148,163,184,0.16)",
+    navActive: "#38BDF8",
+    navInactive: "#CBD5E1",
+    dangerColor: "#f87171",
+    successColor: "#4ade80",
+    warningColor: "#fbbf24",
+    cardAccent: "#38BDF8"
   },
   verde_classico: {
     label: "Verde clássico",
@@ -331,7 +403,25 @@ const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
     textColor: "#111827",
     mutedTextColor: "#4B5563",
     buttonColor: "#006400",
-    fontFamily: "classic"
+    fontFamily: "classic",
+    headerBg: "#006400",
+    headerText: "#F8FAFC",
+    headerBorder: "rgba(0,100,0,0.16)",
+    cardBg: "#FFFFFF",
+    cardBorder: "rgba(15,23,42,0.08)",
+    cardShadow: "0 10px 22px rgba(15,23,42,0.06)",
+    chipBg: "rgba(0,100,0,0.10)",
+    chipText: "#006400",
+    sectionBg: "rgba(255,255,255,0.95)",
+    sectionBorder: "rgba(15,23,42,0.08)",
+    bottomNavBg: "rgba(255,255,255,0.96)",
+    bottomNavBorder: "rgba(15,23,42,0.08)",
+    navActive: "#006400",
+    navInactive: "#64748B",
+    dangerColor: "#b91c1c",
+    successColor: "#166534",
+    warningColor: "#9a6700",
+    cardAccent: "#006400"
   }
 });
 
@@ -398,6 +488,65 @@ const getWebThemeFontStack = (choice = "classic") => ({
   mono: '"SFMono-Regular", Consolas, "Liberation Mono", monospace',
   rounded: 'ui-rounded, "SF Pro Rounded", "Nunito", "Trebuchet MS", sans-serif'
 }[String(choice || "").trim().toLowerCase()] || '"PT Serif", Georgia, serif');
+
+const normalizeThemeCssColor = (value = "", fallback = "#006400") => {
+  const raw = String(value || "").trim();
+  return isValidCssColor(raw) ? raw : fallback;
+};
+
+const isThemeColorDark = (value = "#006400") => {
+  const raw = String(value || "").trim();
+  if (!raw) return false;
+  if (/^#[0-9a-f]{3,8}$/i.test(raw)) {
+    const { r, g, b } = hexToRgb(normalizeHexColor(raw, "#006400"));
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance < 0.55;
+  }
+  if (/^rgba?\(/i.test(raw)) {
+    const parts = raw.match(/[\d.]+/g) || [];
+    if (parts.length >= 3) {
+      const [r, g, b] = parts.map((item) => Number(item));
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance < 0.55;
+    }
+  }
+  return false;
+};
+
+const getThemeReadableText = (background = "#006400", light = "#F8FAFC", dark = "#111827") =>
+  isThemeColorDark(background) ? light : dark;
+
+const getAdminWebThemeDerivedTokens = (theme = {}) => {
+  const normalized = normalizeAdminWebThemeDraft(theme);
+  const headerBg = normalizeThemeCssColor(normalized.headerBg || normalized.primaryColor, normalized.primaryColor);
+  const cardBg = normalizeThemeCssColor(normalized.cardBg || normalized.surfaceColor, normalized.surfaceColor);
+  const sectionBg = normalizeThemeCssColor(normalized.sectionBg || normalized.surfaceColor, normalized.surfaceColor);
+  const bottomNavBg = normalizeThemeCssColor(normalized.bottomNavBg || normalized.surfaceColor, normalized.surfaceColor);
+  const chipBg = normalizeThemeCssColor(normalized.chipBg || hexToRgba(normalized.primaryColor, 0.12), hexToRgba(normalized.primaryColor, 0.12));
+  const cardBorder = normalizeThemeCssColor(normalized.cardBorder || hexToRgba(normalized.textColor, 0.08), hexToRgba(normalized.textColor, 0.08));
+  const sectionBorder = normalizeThemeCssColor(normalized.sectionBorder || hexToRgba(normalized.textColor, 0.08), hexToRgba(normalized.textColor, 0.08));
+
+  return {
+    headerBg,
+    headerText: normalizeThemeCssColor(normalized.headerText || getThemeReadableText(headerBg), getThemeReadableText(headerBg)),
+    headerBorder: normalizeThemeCssColor(normalized.headerBorder || hexToRgba(normalized.textColor, 0.08), hexToRgba(normalized.textColor, 0.08)),
+    cardBg,
+    cardBorder,
+    cardShadow: String(normalized.cardShadow || "0 10px 22px rgba(15,23,42,0.06)").trim() || "0 10px 22px rgba(15,23,42,0.06)",
+    chipBg,
+    chipText: normalizeThemeCssColor(normalized.chipText || normalized.primaryColor, normalized.primaryColor),
+    sectionBg,
+    sectionBorder,
+    bottomNavBg,
+    bottomNavBorder: normalizeThemeCssColor(normalized.bottomNavBorder || hexToRgba(normalized.textColor, 0.08), hexToRgba(normalized.textColor, 0.08)),
+    navActive: normalizeThemeCssColor(normalized.navActive || normalized.primaryColor, normalized.primaryColor),
+    navInactive: normalizeThemeCssColor(normalized.navInactive || "#64748B", "#64748B"),
+    dangerColor: normalizeThemeCssColor(normalized.dangerColor || "#b91c1c", "#b91c1c"),
+    successColor: normalizeThemeCssColor(normalized.successColor || "#166534", "#166534"),
+    warningColor: normalizeThemeCssColor(normalized.warningColor || "#9a6700", "#9a6700"),
+    cardAccent: normalizeThemeCssColor(normalized.cardAccent || normalized.primaryColor, normalized.primaryColor)
+  };
+};
 
 const escapeHtml = (value = "") =>
   String(value)
@@ -7305,6 +7454,24 @@ const normalizeAdminWebThemeDraft = (theme = {}) => {
     mutedTextColor: normalizeHexColor(theme.mutedTextColor || theme.muted_text_color, preset.mutedTextColor),
     buttonColor: normalizeHexColor(theme.buttonColor || theme.button_color, preset.buttonColor),
     fontFamily: safeFontFamily,
+    headerBg: normalizeThemeCssColor(theme.headerBg || theme.header_bg || preset.headerBg, preset.headerBg),
+    headerText: normalizeThemeCssColor(theme.headerText || theme.header_text || preset.headerText, preset.headerText),
+    headerBorder: normalizeThemeCssColor(theme.headerBorder || theme.header_border || preset.headerBorder, preset.headerBorder),
+    cardBg: normalizeThemeCssColor(theme.cardBg || theme.card_bg || preset.cardBg, preset.cardBg),
+    cardBorder: normalizeThemeCssColor(theme.cardBorder || theme.card_border || preset.cardBorder, preset.cardBorder),
+    cardShadow: String(theme.cardShadow || theme.card_shadow || preset.cardShadow || "").trim() || preset.cardShadow,
+    chipBg: normalizeThemeCssColor(theme.chipBg || theme.chip_bg || preset.chipBg, preset.chipBg),
+    chipText: normalizeThemeCssColor(theme.chipText || theme.chip_text || preset.chipText, preset.chipText),
+    sectionBg: normalizeThemeCssColor(theme.sectionBg || theme.section_bg || preset.sectionBg, preset.sectionBg),
+    sectionBorder: normalizeThemeCssColor(theme.sectionBorder || theme.section_border || preset.sectionBorder, preset.sectionBorder),
+    bottomNavBg: normalizeThemeCssColor(theme.bottomNavBg || theme.bottom_nav_bg || preset.bottomNavBg, preset.bottomNavBg),
+    bottomNavBorder: normalizeThemeCssColor(theme.bottomNavBorder || theme.bottom_nav_border || preset.bottomNavBorder, preset.bottomNavBorder),
+    navActive: normalizeThemeCssColor(theme.navActive || theme.nav_active || preset.navActive, preset.navActive),
+    navInactive: normalizeThemeCssColor(theme.navInactive || theme.nav_inactive || preset.navInactive, preset.navInactive),
+    dangerColor: normalizeThemeCssColor(theme.dangerColor || theme.danger_color || preset.dangerColor, preset.dangerColor),
+    successColor: normalizeThemeCssColor(theme.successColor || theme.success_color || preset.successColor, preset.successColor),
+    warningColor: normalizeThemeCssColor(theme.warningColor || theme.warning_color || preset.warningColor, preset.warningColor),
+    cardAccent: normalizeThemeCssColor(theme.cardAccent || theme.card_accent || preset.cardAccent, preset.cardAccent),
     updatedAt: theme.updatedAt || null,
     updatedBy: theme.updatedBy || null
   };
@@ -7331,6 +7498,24 @@ const buildAdminWebThemePayload = (draft = {}, admin = null) => {
     mutedTextColor: data.mutedTextColor,
     buttonColor: data.buttonColor,
     fontFamily: data.fontFamily,
+    headerBg: data.headerBg,
+    headerText: data.headerText,
+    headerBorder: data.headerBorder,
+    cardBg: data.cardBg,
+    cardBorder: data.cardBorder,
+    cardShadow: data.cardShadow,
+    chipBg: data.chipBg,
+    chipText: data.chipText,
+    sectionBg: data.sectionBg,
+    sectionBorder: data.sectionBorder,
+    bottomNavBg: data.bottomNavBg,
+    bottomNavBorder: data.bottomNavBorder,
+    navActive: data.navActive,
+    navInactive: data.navInactive,
+    dangerColor: data.dangerColor,
+    successColor: data.successColor,
+    warningColor: data.warningColor,
+    cardAccent: data.cardAccent,
     updatedAt: Timestamp.fromDate(new Date()),
     updatedBy
   };
@@ -7341,6 +7526,7 @@ const applyWebTheme = (theme = {}) => {
   const root = document.documentElement;
   const normalized = normalizeAdminWebThemeDraft(theme);
   const applied = normalized.active === true ? normalized : getAdminWebThemeDefaultDraft();
+  const derived = getAdminWebThemeDerivedTokens(applied);
   const imageUrl = applied.active && applied.backgroundImageUrl ? fixDriveUrl(applied.backgroundImageUrl) : "";
   const safeImage = isHttpUrl(imageUrl) ? imageUrl : "";
   const backgroundImage = safeImage ? `url("${safeImage.replace(/"/g, '\\"')}")` : "none";
@@ -7369,6 +7555,36 @@ const applyWebTheme = (theme = {}) => {
   root.style.setProperty("--theme-bg-overlay", applied.backgroundOverlay);
   root.style.setProperty("--theme-bg-size", "80%");
   root.style.setProperty("--app-font", getWebThemeFontStack(applied.fontFamily));
+  root.style.setProperty("--app-primary", applied.primaryColor);
+  root.style.setProperty("--app-primary-dark", applied.primaryDarkColor);
+  root.style.setProperty("--app-accent", applied.accentColor);
+  root.style.setProperty("--app-surface", applied.surfaceColor);
+  root.style.setProperty("--app-text", applied.textColor);
+  root.style.setProperty("--app-muted", applied.mutedTextColor);
+  root.style.setProperty("--app-button", applied.buttonColor);
+  root.style.setProperty("--app-header-bg", derived.headerBg);
+  root.style.setProperty("--app-header-text", derived.headerText);
+  root.style.setProperty("--app-header-border", derived.headerBorder);
+  root.style.setProperty("--app-card-bg", derived.cardBg);
+  root.style.setProperty("--app-card-border", derived.cardBorder);
+  root.style.setProperty("--app-card-shadow", derived.cardShadow);
+  root.style.setProperty("--app-chip-bg", derived.chipBg);
+  root.style.setProperty("--app-chip-text", derived.chipText);
+  root.style.setProperty("--app-section-bg", derived.sectionBg);
+  root.style.setProperty("--app-section-border", derived.sectionBorder);
+  root.style.setProperty("--app-bottom-nav-bg", derived.bottomNavBg);
+  root.style.setProperty("--app-bottom-nav-border", derived.bottomNavBorder);
+  root.style.setProperty("--app-nav-active", derived.navActive);
+  root.style.setProperty("--app-nav-inactive", derived.navInactive);
+  root.style.setProperty("--app-danger", derived.dangerColor);
+  root.style.setProperty("--app-success", derived.successColor);
+  root.style.setProperty("--app-warning", derived.warningColor);
+  root.style.setProperty("--app-card-accent", derived.cardAccent);
+  root.style.setProperty("--match-accent", derived.cardAccent);
+  root.style.setProperty("--match-chip-bg", derived.chipBg);
+  root.style.setProperty("--match-chip-text", derived.chipText);
+  root.style.setProperty("--match-soft", derived.cardBg);
+  root.style.setProperty("--match-soft-strong", derived.sectionBg);
 };
 
 const syncAdminVisualAppearancePreview = () => {
@@ -7376,6 +7592,7 @@ const syncAdminVisualAppearancePreview = () => {
   if (!preview) return;
   const draft = normalizeAdminWebThemeDraft(adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft());
   const applied = draft.active === true ? draft : getAdminWebThemeDefaultDraft();
+  const derived = getAdminWebThemeDerivedTokens(applied);
   const backgroundImageUrl = applied.active && applied.backgroundImageUrl ? fixDriveUrl(applied.backgroundImageUrl) : "";
   const safeImage = isHttpUrl(backgroundImageUrl) ? backgroundImageUrl : "";
 
@@ -7389,6 +7606,21 @@ const syncAdminVisualAppearancePreview = () => {
   preview.style.setProperty("--preview-font", getWebThemeFontStack(applied.fontFamily));
   preview.style.setProperty("--preview-bg-image", safeImage ? `url("${safeImage.replace(/"/g, '\\"')}")` : "none");
   preview.style.setProperty("--preview-bg-overlay", applied.backgroundOverlay || WEB_THEME_PRESET_DEFINITIONS.padrao_bolao.backgroundOverlay);
+  preview.style.setProperty("--preview-header-bg", derived.headerBg);
+  preview.style.setProperty("--preview-header-text", derived.headerText);
+  preview.style.setProperty("--preview-card-bg", derived.cardBg);
+  preview.style.setProperty("--preview-card-border", derived.cardBorder);
+  preview.style.setProperty("--preview-chip-bg", derived.chipBg);
+  preview.style.setProperty("--preview-chip-text", derived.chipText);
+  preview.style.setProperty("--preview-section-bg", derived.sectionBg);
+  preview.style.setProperty("--preview-section-border", derived.sectionBorder);
+  preview.style.setProperty("--preview-nav-bg", derived.bottomNavBg);
+  preview.style.setProperty("--preview-nav-border", derived.bottomNavBorder);
+  preview.style.setProperty("--preview-nav-active", derived.navActive);
+  preview.style.setProperty("--preview-nav-inactive", derived.navInactive);
+  preview.style.setProperty("--preview-danger", derived.dangerColor);
+  preview.style.setProperty("--preview-success", derived.successColor);
+  preview.style.setProperty("--preview-warning", derived.warningColor);
 
   const status = preview.querySelector("[data-theme-status]");
   if (status) {
@@ -7792,6 +8024,21 @@ const renderAdminVisualAppearanceTab = () => {
     --preview-font:${escapeHtml(getWebThemeFontStack(applied.fontFamily))};
     --preview-bg-overlay:${escapeHtml(applied.backgroundOverlay)};
     --preview-bg-image:${draft.active === true && applied.backgroundImageUrl ? `url("${String(applied.backgroundImageUrl).replace(/"/g, '\\"')}")` : "none"};
+    --preview-header-bg:${escapeHtml(applied.headerBg || applied.primaryColor)};
+    --preview-header-text:${escapeHtml(applied.headerText || getThemeReadableText(applied.primaryColor))};
+    --preview-card-bg:${escapeHtml(applied.cardBg || applied.surfaceColor)};
+    --preview-card-border:${escapeHtml(applied.cardBorder || hexToRgba(applied.textColor, 0.08))};
+    --preview-chip-bg:${escapeHtml(applied.chipBg || hexToRgba(applied.primaryColor, 0.12))};
+    --preview-chip-text:${escapeHtml(applied.chipText || applied.primaryColor)};
+    --preview-section-bg:${escapeHtml(applied.sectionBg || applied.surfaceColor)};
+    --preview-section-border:${escapeHtml(applied.sectionBorder || hexToRgba(applied.textColor, 0.08))};
+    --preview-nav-bg:${escapeHtml(applied.bottomNavBg || applied.surfaceColor)};
+    --preview-nav-border:${escapeHtml(applied.bottomNavBorder || hexToRgba(applied.textColor, 0.08))};
+    --preview-nav-active:${escapeHtml(applied.navActive || applied.primaryColor)};
+    --preview-nav-inactive:${escapeHtml(applied.navInactive || "#64748B")};
+    --preview-danger:${escapeHtml(applied.dangerColor || "#b91c1c")};
+    --preview-success:${escapeHtml(applied.successColor || "#166534")};
+    --preview-warning:${escapeHtml(applied.warningColor || "#9a6700")};
   `;
 
   return `
@@ -7869,9 +8116,17 @@ const renderAdminVisualAppearanceTab = () => {
           <div>
             <div class="admin-visual-appearance-preview__eyebrow">BOLÃO 112 FC</div>
             <div class="admin-visual-appearance-preview__title">Tema em tempo real</div>
-            <div class="admin-visual-appearance-preview__subtitle">Fundo, cores, botões e tipografia</div>
+            <div class="admin-visual-appearance-preview__subtitle">Header, cards, chips, navegação e botões</div>
           </div>
           <span class="admin-visual-appearance-preview__pill ${draft.active === true ? "is-active" : "is-idle"}" data-theme-status>${draft.active === true ? "Ativo" : "Padrão"}</span>
+        </div>
+
+        <div class="admin-visual-appearance-preview__headerbar">
+          <div class="admin-visual-appearance-preview__headerbar-title">Cabeçalho principal</div>
+          <div class="admin-visual-appearance-preview__headerbar-icons">
+            <span><i class="fas fa-bell"></i></span>
+            <span><i class="fas fa-user-circle"></i></span>
+          </div>
         </div>
 
         <div class="admin-visual-appearance-preview__chips">
@@ -7890,6 +8145,39 @@ const renderAdminVisualAppearanceTab = () => {
             <div class="admin-visual-appearance-preview__surface-card-title">Resumo da rodada</div>
             <div class="admin-visual-appearance-preview__surface-card-text">A paleta selecionada será aplicada às superfícies principais do app.</div>
             <button type="button" class="admin-visual-appearance-preview__button">Botão de ação</button>
+          </div>
+          <div class="admin-visual-appearance-preview__match">
+            <div class="admin-visual-appearance-preview__match-top">
+              <span class="admin-visual-appearance-preview__match-chip">Copa</span>
+              <span class="admin-visual-appearance-preview__match-time">Hoje • 21:00</span>
+            </div>
+            <div class="admin-visual-appearance-preview__match-row">
+              <div class="admin-visual-appearance-preview__match-team">
+                <span class="admin-visual-appearance-preview__match-logo">A</span>
+                <small>Time A</small>
+              </div>
+              <div class="admin-visual-appearance-preview__match-vs">x</div>
+              <div class="admin-visual-appearance-preview__match-team is-winner">
+                <span class="admin-visual-appearance-preview__match-logo">B</span>
+                <small>Time B</small>
+              </div>
+            </div>
+          </div>
+          <div class="admin-visual-appearance-preview__ranking">
+            <div class="admin-visual-appearance-preview__ranking-head">
+              <span>Ranking</span>
+              <span class="admin-visual-appearance-preview__ranking-chip">Top 3</span>
+            </div>
+            <div class="admin-visual-appearance-preview__ranking-row">
+              <span class="admin-visual-appearance-preview__ranking-pos">1</span>
+              <span class="admin-visual-appearance-preview__ranking-name">Amauri Jr</span>
+              <span class="admin-visual-appearance-preview__ranking-points">128 pts</span>
+            </div>
+          </div>
+          <div class="admin-visual-appearance-preview__bottom-nav">
+            <span class="is-active"><i class="fas fa-home"></i><small>Home</small></span>
+            <span><i class="fas fa-trophy"></i><small>Ranking</small></span>
+            <span><i class="fas fa-user"></i><small>Perfil</small></span>
           </div>
         </div>
       </div>
