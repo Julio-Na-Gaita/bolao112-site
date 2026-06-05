@@ -15,7 +15,7 @@
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ADICIONADO: enableIndexedDbPersistence
-import { getFirestore, collection, getDocs, doc, getDoc, getDocFromServer, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, limit, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, limit, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getMessaging, getToken, onMessage, deleteToken, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
 let mainServiceWorkerRegistrationPromise = null;
@@ -29,10 +29,6 @@ let mainServiceWorkerRegistrationPromise = null;
 
 
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (window.__voteSavingInProgress) {
-      window.__pendingAppReloadAfterVote = true;
-      return;
-    }
     if (refreshing) return;
     refreshing = true;
     window.location.reload();
@@ -94,12 +90,10 @@ const firebaseConfig = { apiKey: "AIzaSyAEkEE2X5hWIqopoJ0D9jFzCjJHKR8b82k", auth
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-let currentUser = null;
+         let currentUser = null;
 let currentRankingData = [];
 let compMap = {};
 let globalServerCounts = {};
-window.__voteSavingInProgress = false;
-window.__pendingAppReloadAfterVote = false;
 
 let appConfig = {
   chat: true,
@@ -4338,10 +4332,6 @@ const refreshCurrentVisibleViews = async ({ forceMatches = true, forceRanking = 
 
 window.refreshAppData = async ({ hardReload = false, source = "manual" } = {}) => {
   if (window.__appRefreshBusy) return;
-  if (window.__voteSavingInProgress) {
-    window.__pendingAppReloadAfterVote = true;
-    return;
-  }
   window.__appRefreshBusy = true;
 
   const btn = document.getElementById("btnRefresh");
@@ -5777,17 +5767,6 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 return;
             }
             // ----------------------------------
-
-            if (window.__voteSavingInProgress) return;
-
-            if (navigator.onLine === false) {
-                const offlineMessage = "Você parece estar sem conexão. Reconecte e tente votar novamente.";
-                if (typeof window.showToast === "function") {
-                    window.showToast("Sem conexão", offlineMessage, "");
-                }
-                alert(offlineMessage);
-                return;
-            }
             
             const clickedBtn = document.getElementById(btnId);
             const team = clickedBtn?.dataset?.team || "";
@@ -5798,77 +5777,49 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
             const existingVote = window.__matchesScreenStateCache?.myVotesMap?.[mid] || "";
             const currentMatch = window.__matchesScreenStateCache?.open?.find((match) => match.id === mid);
             const isChangingVote = !!existingVote && existingVote !== team && !currentMatch?.expired;
-            const buttons = Array.from(document.getElementsByClassName(`match-btn-${mid}`));
 
-            window.__voteSavingInProgress = true;
-            window.__pendingAppReloadAfterVote = false;
+            // 1. ATUALIZAÇÃO VISUAL IMEDIATA (Otimista)
+            const buttons = document.getElementsByClassName(`match-btn-${mid}`);
+            for (let btn of buttons) {
+                btn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#EEEEEE] text-gray-800`;
+            }
 
             for (let btn of buttons) {
                 btn.disabled = true;
                 btn.classList.add("is-saving-vote");
-                if (!btn.dataset.originalHtml) {
-                    btn.dataset.originalHtml = btn.innerHTML;
-                }
             }
-
             if(clickedBtn) {
-                clickedBtn.innerHTML = `
-                  <span class="match-vote-saving">
-                    <i class="fas fa-circle-notch fa-spin"></i>
-                    <span>Salvando voto...</span>
-                  </span>
-                `;
+                clickedBtn.className = `match-btn-${mid} btn-press flex flex-col items-center justify-center w-[40%] h-24 rounded-lg transition-all bg-[#006400] text-white border-2 border-[#FFD700]`;
             }
-
-            const voteRef = doc(db, "guesses", `${mid}_${currentUser.uid}`);
 
             try {
-                await setDoc(voteRef, {
+                await setDoc(doc(db, "guesses", `${mid}_${currentUser.uid}`), {
                     matchId: mid,
                     userId: currentUser.uid,
                     teamSelected: team,
                     timestamp: new Date()
                 });
-
-                await getDocFromServer(voteRef);
             } catch (error) {
                 console.error("Erro ao salvar voto:", error);
-                console.warn("Diagnóstico de falha no voto:", {
-                  uid: currentUser?.uid || "",
-                  matchId: mid,
-                  online: navigator.onLine,
-                  timestamp: new Date().toISOString(),
-                  appState: {
-                    voteSaving: !!window.__voteSavingInProgress,
-                    refreshBusy: !!window.__appRefreshBusy,
-                    pendingReload: !!window.__pendingAppReloadAfterVote
-                  },
-                  error: {
-                    name: error?.name || "",
-                    code: error?.code || "",
-                    message: error?.message || String(error || "")
-                  }
-                });
                 if (window.__matchesScreenStateCache) {
                     await renderMatchesScreenFromState(window.__matchesScreenStateCache);
                 }
                 if (typeof window.showToast === "function") {
-                    window.showToast("Não foi possível salvar seu voto.", "Verifique sua conexão e tente novamente.", "");
+                    window.showToast("Não foi possível salvar seu palpite.", "Tente novamente.", "");
                 } else {
-                    alert("Não foi possível salvar seu voto. Verifique sua conexão e tente novamente.");
+                    alert("Não foi possível salvar seu palpite. Tente novamente.");
                 }
-                alert("Se o problema continuar, saia e entre novamente na conta.");
                 return;
             }
 
             if (typeof window.showToast === "function") {
                 window.showToast(
-                  isChangingVote ? "Voto alterado!" : "Voto salvo!",
+                  isChangingVote ? "Palpite alterado!" : "Palpite registrado!",
                   isChangingVote ? "Seu voto anterior foi substituído com sucesso." : "Seu voto foi salvo com sucesso.",
                   ""
                 );
             } else {
-                alert(isChangingVote ? "Voto alterado com sucesso!" : "Voto salvo com sucesso!");
+                alert(isChangingVote ? "Palpite alterado com sucesso!" : "Palpite registrado com sucesso!");
             }
 
             try {
@@ -5898,17 +5849,8 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 console.warn("Voto salvo, mas houve erro ao atualizar a interface:", uiError);
             } finally {
                 for (let btn of buttons) {
-                    if (btn.dataset.originalHtml) {
-                        btn.innerHTML = btn.dataset.originalHtml;
-                        delete btn.dataset.originalHtml;
-                    }
                     btn.disabled = false;
                     btn.classList.remove("is-saving-vote");
-                }
-                window.__voteSavingInProgress = false;
-                if (window.__pendingAppReloadAfterVote) {
-                    window.__pendingAppReloadAfterVote = false;
-                    window.setTimeout(() => window.location.reload(), 80);
                 }
             }
         };
