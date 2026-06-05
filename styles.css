@@ -2485,6 +2485,137 @@ select:focus-visible {
     box-shadow: 0 6px 14px rgba(15, 23, 42, 0.05);
 }
 
+.engagement-summary-card {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(244,248,244,0.96));
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+}
+
+.engagement-summary-card__top {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+}
+
+.engagement-summary-card__icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 100, 0, 0.1);
+    color: #006400;
+    font-size: 16px;
+}
+
+.engagement-summary-card__copy {
+    min-width: 0;
+    flex: 1;
+}
+
+.engagement-summary-card__title {
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.engagement-summary-card__subtitle {
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-top: 2px;
+}
+
+.engagement-summary-card__lines {
+    display: grid;
+    gap: 6px;
+}
+
+.engagement-summary-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    background: rgba(248, 250, 252, 0.96);
+}
+
+.engagement-summary-line--success {
+    background: rgba(240, 253, 244, 0.98);
+    border-color: rgba(22, 163, 74, 0.16);
+}
+
+.engagement-summary-line--warning {
+    background: rgba(255, 247, 237, 0.98);
+    border-color: rgba(245, 158, 11, 0.18);
+}
+
+.engagement-summary-line--info {
+    background: rgba(239, 246, 255, 0.98);
+    border-color: rgba(59, 130, 246, 0.16);
+}
+
+.engagement-summary-line__label {
+    flex: 0 0 auto;
+    color: #0f172a;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.engagement-summary-line__text {
+    min-width: 0;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.engagement-summary-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.engagement-summary-card__action {
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #006400;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 900;
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+}
+
+.engagement-summary-card__action--ghost {
+    background: rgba(255,255,255,0.96);
+    color: #0f172a;
+}
+
+.medal-count-badge--share {
+    top: 1px;
+    right: 1px;
+    transform: translate(28%, -28%);
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    font-size: 10px;
+    border-width: 1.5px;
+}
+
 .deadline-modal-shell {
     width: 100%;
     max-height: 82vh;

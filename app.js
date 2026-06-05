@@ -4540,6 +4540,10 @@ const getHomeRoundSummaryNotice = ({ finished = [], myVotesMap = {}, currentUser
     icon: "fa-chart-line",
     title: "Rodada atualizada",
     message: `Você acertou ${stats.hits} de ${stats.considered} palpites recentes.`,
+    summaryText: `você acertou ${stats.hits} de ${stats.considered} palpites recentes.`,
+    hits: stats.hits,
+    considered: stats.considered,
+    skipped: stats.skipped,
     detail: stats.skipped > 0 ? `${stats.skipped} jogo(s) ficaram sem voto.` : "",
     actionLabel: "Ver ranking",
     actionOnClick: "showTab('ranking')",
@@ -4600,27 +4604,77 @@ const getHomeRankingMovementNotice = ({ currentUser = {} } = {}) => {
   };
 };
 
-const getHomeEngagementNotices = ({ runtime = {}, open = [], finished = [], myVotesMap = {} } = {}) => {
+const getHomeEngagementSummaryState = ({ runtime = {}, open = [], finished = [], myVotesMap = {} } = {}) => {
   const currentUserData = getMergedCurrentUserData(runtime.currentUser || {});
-  const notices = [];
+  const uid = String(currentUserData?.uid || currentUser?.uid || "").trim();
+  if (!uid) return null;
 
   const pendingNotice = getHomePendingDeadlineNotice({ open, myVotesMap });
-  if (pendingNotice) notices.push(pendingNotice);
-
   const rankingNotice = getHomeRankingMovementNotice({ currentUser: currentUserData });
-  if (rankingNotice) notices.push(rankingNotice);
-
   const summaryNotice = getHomeRoundSummaryNotice({
     finished,
     myVotesMap,
-    currentUserUid: currentUserData?.uid || currentUser?.uid || ""
+    currentUserUid: uid
   });
-  if (summaryNotice) notices.push(summaryNotice);
 
-  return notices.slice(0, 3);
+  const lines = [];
+  let fingerprintParts = [];
+
+  if (rankingNotice) {
+    const movementInfo = window.__rankingMovementSnapshot?.movements?.[uid] || null;
+    const delta = Number(movementInfo?.delta || 0);
+    const currentPosition = Number(window.__rankingMovementSnapshot?.positions?.[uid] || movementInfo?.currentPosition || 0);
+    const previousPosition = Number(movementInfo?.previousPosition || 0);
+    let text = "";
+    if (delta > 0) {
+      text = `boa! você subiu ${delta} posição${delta > 1 ? "ões" : ""}.`;
+    } else if (delta < 0) {
+      const fallen = Math.abs(delta);
+      text = `você caiu ${fallen} posição${fallen > 1 ? "ões" : ""}, mas ainda dá para recuperar.`;
+    } else if (previousPosition > 0) {
+      text = `você manteve sua posição em ${currentPosition}º.`;
+    } else if (currentPosition > 0) {
+      text = `posição atual: ${currentPosition}º lugar.`;
+    }
+
+    if (text) {
+      lines.push({
+        label: "Ranking",
+        text,
+        tone: delta > 0 ? "success" : (delta < 0 ? "warning" : "info"),
+        actionLabel: "Ver ranking",
+        actionOnClick: "showTab('ranking')"
+      });
+    }
+    fingerprintParts.push(`rank:${rankingNotice.fingerprint}`);
+  }
+
+  if (summaryNotice) {
+    lines.push({
+      label: "Rodada",
+      text: summaryNotice.summaryText || summaryNotice.message || "",
+      tone: "success"
+    });
+    fingerprintParts.push(`round:${summaryNotice.fingerprint}`);
+  }
+
+  if (!lines.length) return null;
+
+  const fingerprint = fingerprintParts.join("::");
+  const storageKey = getHomeEngagementStorageKey("engagementSummarySeen", uid);
+  if (safeHomeStorageGet(storageKey) === fingerprint) return null;
+
+  return {
+    uid,
+    storageKey,
+    fingerprint,
+    title: "Resumo do Bolão",
+    pendingNotice,
+    lines
+  };
 };
 
-window.dismissHomeEngagementNotice = async (storageKey = "", fingerprint = "") => {
+window.dismissHomeEngagementSummary = async (storageKey = "", fingerprint = "") => {
   if (!storageKey) return;
   safeHomeStorageSet(storageKey, fingerprint || "1");
   if (window.__matchesScreenStateCache) {
@@ -4628,62 +4682,44 @@ window.dismissHomeEngagementNotice = async (storageKey = "", fingerprint = "") =
   }
 };
 
-const renderHomeEngagementCard = (notice = {}) => {
-  if (!notice?.title) return "";
+const renderHomeEngagementStack = (params = {}) => {
+  const summary = getHomeEngagementSummaryState(params);
+  if (!summary) return "";
 
-  const dismissHtml = notice.dismissible && notice.storageKey ? `
-    <button
-      type="button"
-      class="engagement-card__close btn-press"
-      aria-label="Fechar aviso"
-      title="Fechar"
-      onclick="window.dismissHomeEngagementNotice(${JSON.stringify(notice.storageKey)}, ${JSON.stringify(notice.fingerprint || "")})"
-    >
-      <i class="fas fa-times"></i>
-    </button>
-  ` : "";
+  const linesHtml = summary.lines.map((line) => `
+    <div class="engagement-summary-line engagement-summary-line--${escapeHtml(line.tone || "info")}">
+      <div class="engagement-summary-line__label">${escapeHtml(line.label)}:</div>
+      <div class="engagement-summary-line__text">${escapeHtml(line.text)}</div>
+    </div>
+  `).join("");
 
-  const actionHtml = notice.actionLabel ? `
-    <button
-      type="button"
-      class="engagement-card__action btn-press"
-      onclick="${notice.actionOnClick || ""}"
-    >
-      ${escapeHtml(notice.actionLabel)}
+  const actionButtons = `
+    <button type="button" class="engagement-summary-card__action btn-press" onclick="showTab('ranking')">
+      Ver ranking
     </button>
-  ` : "";
+    <button type="button" class="engagement-summary-card__action engagement-summary-card__action--ghost btn-press" onclick="window.dismissHomeEngagementSummary(${JSON.stringify(summary.storageKey)}, ${JSON.stringify(summary.fingerprint || "")})">
+      Marcar como lido
+    </button>
+  `;
 
   return `
-    <article class="engagement-card engagement-card--${escapeHtml(notice.tone || "info")}">
-      <div class="engagement-card__icon">
-        <i class="fas ${escapeHtml(notice.icon || "fa-circle-info")}"></i>
+    <article class="engagement-summary-card">
+      <div class="engagement-summary-card__top">
+        <div class="engagement-summary-card__icon">
+          <i class="fas fa-layer-group"></i>
+        </div>
+        <div class="engagement-summary-card__copy">
+          <div class="engagement-summary-card__title">${escapeHtml(summary.title)}</div>
+          <div class="engagement-summary-card__subtitle">As novidades que importam, em um único lugar.</div>
+        </div>
       </div>
-      <div class="engagement-card__body">
-        <div class="engagement-card__header">
-          <div class="engagement-card__header-copy">
-            <div class="engagement-card__title">${escapeHtml(notice.title)}</div>
-            <div class="engagement-card__text">${escapeHtml(notice.message || "")}</div>
-            ${notice.detail ? `<div class="engagement-card__detail">${escapeHtml(notice.detail)}</div>` : ""}
-          </div>
-          ${dismissHtml}
-        </div>
-        <div class="engagement-card__footer">
-          ${notice.pillLabel ? `<span class="engagement-pill">${escapeHtml(notice.pillLabel)}</span>` : ""}
-          ${actionHtml}
-        </div>
+      <div class="engagement-summary-card__lines">
+        ${linesHtml}
+      </div>
+      <div class="engagement-summary-card__actions">
+        ${actionButtons}
       </div>
     </article>
-  `;
-};
-
-const renderHomeEngagementStack = (params = {}) => {
-  const notices = getHomeEngagementNotices(params);
-  if (!notices.length) return "";
-
-  return `
-    <div class="home-engagement-stack">
-      ${notices.map((notice) => renderHomeEngagementCard(notice)).join("")}
-    </div>
   `;
 };
 
@@ -18338,13 +18374,14 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
     gap:10px;
     flex-wrap:wrap;
     margin-top:10px;
-    margin-bottom:6px;
+    margin-bottom:8px;
+    padding:6px 8px 10px;
   ">
     ${iconsToShow.map(icon => `
-      <div style="position:relative; display:inline-flex; align-items:center; justify-content:center;">
-        <span style="font-size:32px; line-height:1;">${icon}</span>
+      <div style="position:relative; display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; padding:2px;">
+        <span style="font-size:30px; line-height:1;">${icon}</span>
         ${medalCounts[icon] > 1 ? `
-          <span class="medal-count-badge ${medalCounts[icon] >= 10 ? "super-medal" : ""}">
+          <span class="medal-count-badge medal-count-badge--share ${medalCounts[icon] >= 10 ? "super-medal" : ""}">
             ${medalCounts[icon] >= 10 ? medalCounts[icon] : `x${medalCounts[icon]}`}
           </span>
 
@@ -18388,6 +18425,8 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
             document.body.appendChild(cardContainer);
 
             const avatarUrl = getAvatarUrl(user.photoBase64, user.name);
+            const shareName = String(user.name || "").toUpperCase();
+            const shareNameFontSize = shareName.length > 24 ? 15 : shareName.length > 18 ? 17 : shareName.length > 12 ? 19 : 21;
             
             // GERAÇÃO DO HTML DA TABELA (AJUSTADO PARA NÃO CORTAR NOMES)
             let tableHtml = "";
@@ -18441,7 +18480,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
                                 <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
                             <div style="text-align: left; min-width: 0;">
-                                <div style="color: white; font-weight: 900; font-size: 21px; line-height: 1.15; text-transform: uppercase; max-width: 210px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${user.name.toUpperCase()}</div>
+                                <div style="color: white; font-weight: 900; font-size: ${shareNameFontSize}px; line-height: 1.12; text-transform: uppercase; max-width: 224px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${shareName}</div>
                                 <div style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
                                     <div style="padding:5px 10px; border-radius:999px; background: rgba(255,215,0,0.16); border:1px solid rgba(255,215,0,0.38); color:#FFD700; font-weight:900; font-size:13px;">${user.p} PONTOS</div>
                                     <div style="padding:5px 10px; border-radius:999px; background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.9); font-weight:800; font-size:11px;">${index + 1}º LUGAR</div>
