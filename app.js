@@ -15,7 +15,7 @@
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         // ADICIONADO: enableIndexedDbPersistence
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, limit, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs, doc, getDoc, getDocFromServer, setDoc, updateDoc, query, where, deleteDoc, writeBatch, addDoc, onSnapshot, orderBy, limit, enableIndexedDbPersistence, arrayUnion, arrayRemove, serverTimestamp, increment, deleteField, Timestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getMessaging, getToken, onMessage, deleteToken, isSupported as isMessagingSupported } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
 let mainServiceWorkerRegistrationPromise = null;
@@ -1281,10 +1281,15 @@ const normalizeRegulationItems = (items = []) =>
       order: index + 1
     }));
 
-const readRulesSettingsState = (snap) => {
-  const data = snap?.data?.() || {};
+const normalizePublicRulesDocument = (data = {}) => {
   const updatedAt = data.updatedAt?.toDate ? data.updatedAt.toDate() : toJsDate(data.updatedAt);
   const officialStartAt = data.officialStartAt?.toDate ? data.officialStartAt.toDate() : toJsDate(data.officialStartAt);
+  const items = normalizeRegulationItems(
+    Array.isArray(data.items) ? data.items
+      : Array.isArray(data.rules) ? data.rules
+        : Array.isArray(data.sections) ? data.sections
+          : []
+  );
 
   return {
     version: String(data.version || data.regulationVersion || "").trim(),
@@ -1296,27 +1301,37 @@ const readRulesSettingsState = (snap) => {
     updatedAt: updatedAt || null,
     officialStartAt: officialStartAt || null,
     updatedBy: data.updatedBy || null,
-    items: normalizeRegulationItems(Array.isArray(data.items) ? data.items : Array.isArray(data.rules) ? data.rules : [])
+    items,
+    dateDisplay: updatedAt
+      ? updatedAt.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : "Data desconhecida"
   };
 };
 
-const buildRulesContentHtml = (rulesData = {}) => {
-  const visibleRules = normalizeRegulationItems(
-    Array.isArray(rulesData.items) ? rulesData.items : Array.isArray(rulesData.rules) ? rulesData.rules : []
-  ).filter((item) => item.active !== false);
+const readRulesSettingsState = (snap) => {
+  return normalizePublicRulesDocument(snap?.data?.() || {});
+};
 
-  const updatedAtDate = toJsDate(rulesData.updatedAt);
-  const updatedLabel = String(rulesData.dateDisplay || "").trim()
-    || String(rulesData.updatedDate || "").trim()
-    || (updatedAtDate ? updatedAtDate.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }) : "Data desconhecida");
+const buildRulesContentHtml = (rulesData = {}) => {
+  const normalized = normalizePublicRulesDocument(rulesData || {});
+  const visibleRules = (normalized.items || []).filter((item) => item.active !== false);
+  const updatedLabel = String(normalized.dateDisplay || "").trim()
+    || String(normalized.updatedDate || "").trim()
+    || "Data desconhecida";
 
   if (!visibleRules.length) {
+    console.warn("[rules] no active public rules found", {
+      hasDoc: Boolean(rulesData),
+      keys: Object.keys(rulesData || {}),
+      rulesCount: (normalized.items || []).length,
+      normalizedCount: visibleRules.length
+    });
     return `<div class="text-center p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-xs">O regulamento está sendo atualizado pelo Administrador.</div>`;
   }
 
@@ -1335,26 +1350,26 @@ const buildRulesContentHtml = (rulesData = {}) => {
         </p>
 
         ${
-          rulesData.version
+          normalized.version
             ? `<p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
                   <i class="fas fa-hashtag text-[#006400] mr-1"></i>
-                  Versão: <span class="text-black">${escapeHtml(String(rulesData.version || ""))}</span>
+                  Versão: <span class="text-black">${escapeHtml(String(normalized.version || ""))}</span>
                 </p>`
             : ``
         }
         ${
-          rulesData.latestAppVersion || rulesData.minimumAppVersion
+          normalized.latestAppVersion || normalized.minimumAppVersion
             ? `<p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
                   <i class="fas fa-mobile-screen-button text-[#006400] mr-1"></i>
-                  App: <span class="text-black">${escapeHtml(rulesData.latestAppVersion || "N/D")}${rulesData.minimumAppVersion ? ` • mín. ${escapeHtml(rulesData.minimumAppVersion)}` : ""}</span>
+                  App: <span class="text-black">${escapeHtml(normalized.latestAppVersion || "N/D")}${normalized.minimumAppVersion ? ` • mín. ${escapeHtml(normalized.minimumAppVersion)}` : ""}</span>
                 </p>`
             : ``
         }
         ${
-          rulesData.changeSummary
+          normalized.changeSummary
             ? `<p class="text-[10px] text-gray-600 font-bold bg-yellow-50 px-3 py-2 rounded-2xl border border-yellow-200 shadow-sm text-center max-w-[95%]">
                   <i class="fas fa-bullhorn text-[#F59E0B] mr-1"></i>
-                  ${escapeHtml(rulesData.changeSummary)}
+                  ${escapeHtml(normalized.changeSummary)}
                 </p>`
             : ``
         }
@@ -3343,32 +3358,17 @@ async function renderRules(forceRefresh = false) {
   try {
     // Se não temos cache ou pedimos refresh, buscamos no Firebase
     if (!cachedRulesData || forceRefresh) {
-      const state = await readWithRuntimeCache(
-        "doc:settings:rules",
-        () => getDoc(getRulesSettingsRef()),
-        { ttlMs: DATA_CACHE_TTL.cold, force: forceRefresh }
-      );
+      const state = forceRefresh
+        ? normalizePublicRulesDocument(
+            (await getDocFromServer(getRulesSettingsRef()).catch(() => getDoc(getRulesSettingsRef()))).data?.() || {}
+          )
+        : await readWithRuntimeCache(
+            "doc:settings:rules",
+            async () => normalizePublicRulesDocument((await getDoc(getRulesSettingsRef())).data?.() || {}),
+            { ttlMs: DATA_CACHE_TTL.cold, force: false }
+          );
 
-      const updatedAtDate = toJsDate(state.updatedAt);
-      cachedRulesData = {
-        items: normalizeRegulationItems(state.items || []),
-        dateDisplay: updatedAtDate ? updatedAtDate.toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }) : "Data desconhecida",
-        version: String(state.version || "").toString(),
-        latestAppVersion: String(state.latestAppVersion || "").toString(),
-        minimumAppVersion: String(state.minimumAppVersion || "").toString(),
-        updatedDate: String(state.updatedDate || "").toString(),
-        updatedTime: String(state.updatedTime || "").toString(),
-        changeSummary: String(state.changeSummary || "").toString(),
-        updatedAt: updatedAtDate,
-        officialStartAt: state.officialStartAt || null,
-        updatedBy: state.updatedBy || null
-      };
+      cachedRulesData = state;
     }
 
     if (list) list.innerHTML = buildRulesContentHtml(cachedRulesData);
