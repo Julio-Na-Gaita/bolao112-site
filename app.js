@@ -4435,6 +4435,34 @@ window.__engagementSummarySeenMemory = window.__engagementSummarySeenMemory || n
 
 const getHomeEngagementMemoryKey = (storageKey = "", fingerprint = "") => `${String(storageKey || "")}:${String(fingerprint || "")}`;
 
+window.markEngagementSummaryAsRead = async (storageKey = "", fingerprint = "") => {
+  const safeStorageKey = String(storageKey || "").trim();
+  if (!safeStorageKey) return;
+
+  const safeFingerprint = String(fingerprint || "1").trim() || "1";
+  const memoryKey = getHomeEngagementMemoryKey(safeStorageKey, safeFingerprint);
+
+  window.__engagementSummarySeenMemory?.add(memoryKey);
+  safeHomeStorageSet(safeStorageKey, safeFingerprint);
+
+  document.getElementById("homeEngagementSummaryCard")?.remove();
+  if (window.__matchesScreenStateCache) {
+    await renderMatchesScreenFromState(window.__matchesScreenStateCache);
+  }
+};
+
+window.dismissHomeEngagementSummary = window.markEngagementSummaryAsRead;
+
+if (!window.__homeEngagementSummaryDismissBound) {
+  window.__homeEngagementSummaryDismissBound = true;
+  document.addEventListener("click", (event) => {
+    const trigger = event.target?.closest?.("[data-engagement-summary-dismiss='1']");
+    if (!trigger) return;
+    event.preventDefault();
+    window.markEngagementSummaryAsRead(trigger.dataset.storageKey || "", trigger.dataset.fingerprint || "");
+  });
+}
+
 const getLocalDayKey = (date = null) => {
   const value = date instanceof Date ? date : toJsDate(date);
   if (!(value instanceof Date) || Number.isNaN(value.getTime())) return "";
@@ -4678,16 +4706,6 @@ const getHomeEngagementSummaryState = ({ runtime = {}, open = [], finished = [],
   };
 };
 
-window.dismissHomeEngagementSummary = async (storageKey = "", fingerprint = "") => {
-  if (!storageKey) return;
-  window.__engagementSummarySeenMemory?.add(getHomeEngagementMemoryKey(storageKey, fingerprint || "1"));
-  safeHomeStorageSet(storageKey, fingerprint || "1");
-  document.getElementById("homeEngagementSummaryCard")?.remove();
-  if (window.__matchesScreenStateCache) {
-    await renderMatchesScreenFromState(window.__matchesScreenStateCache);
-  }
-};
-
 const renderHomeEngagementStack = (params = {}) => {
   const summary = getHomeEngagementSummaryState(params);
   if (!summary) return "";
@@ -4703,7 +4721,13 @@ const renderHomeEngagementStack = (params = {}) => {
     <button type="button" class="engagement-summary-card__action btn-press" onclick="showTab('ranking')">
       Ver ranking
     </button>
-    <button type="button" class="engagement-summary-card__action engagement-summary-card__action--ghost btn-press" onclick='window.dismissHomeEngagementSummary(${JSON.stringify(summary.storageKey)}, ${JSON.stringify(summary.fingerprint || "")})'>
+    <button
+      type="button"
+      class="engagement-summary-card__action engagement-summary-card__action--ghost btn-press"
+      data-engagement-summary-dismiss="1"
+      data-storage-key="${escapeHtml(summary.storageKey)}"
+      data-fingerprint="${escapeHtml(summary.fingerprint || "")}"
+    >
       Marcar como lido
     </button>
   `;
