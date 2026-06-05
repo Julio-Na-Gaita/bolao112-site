@@ -3055,6 +3055,37 @@ select:focus-visible {
     flex-wrap: wrap;
 }
 
+.ranking-density-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.86);
+    border: 1px solid rgba(148,163,184,0.22);
+    box-shadow: 0 8px 18px rgba(15,23,42,0.05);
+    flex: 0 0 auto;
+}
+
+.ranking-density-toggle .btn-press {
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 0;
+    background: transparent;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+    transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.ranking-density-toggle .btn-press.is-active {
+    background: linear-gradient(135deg, #0b5f2a, #15803d);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(21,128,61,0.2);
+}
+
 .ranking-toolbar__search {
     display: flex;
     align-items: center;
@@ -3121,6 +3152,98 @@ select:focus-visible {
 
 .ranking-row-pulse {
     animation: rankingRowPulse 1.2s ease-in-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ranking-row,
+    .ranking-row-pulse,
+    .ranking-density-toggle .btn-press {
+        transition: none;
+        animation: none;
+    }
+}
+
+.ranking-table-shell--compact .ranking-row {
+    min-height: 76px;
+}
+
+.ranking-table-shell--detailed .ranking-row {
+    min-height: 92px;
+}
+
+.ranking-row--compact .ranking-row__compare {
+    display: none;
+}
+
+.ranking-row--compact.ranking-row--compare-spotlight .ranking-row__compare {
+    display: flex;
+}
+
+.ranking-row--detailed .ranking-row__medals {
+    min-height: 24px;
+}
+
+.ranking-row__points-wrap {
+    grid-area: points;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.ranking-row__compare {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    color: #334155;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+    text-align: right;
+}
+
+.ranking-row__compare--compact {
+    color: #475569;
+}
+
+.ranking-row__compare--detailed {
+    color: #334155;
+}
+
+.ranking-row__compare span {
+    display: block;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.ranking-row--me .ranking-row__compare--compact,
+.ranking-row--me .ranking-row__compare--detailed {
+    color: #166534;
+}
+
+.ranking-row--detailed .ranking-row__user {
+    align-items: flex-start;
+}
+
+.ranking-row--detailed .ranking-row__medals {
+    align-items: flex-start;
+}
+
+.ranking-row--detailed .ranking-medals {
+    gap: 5px;
+}
+
+.ranking-row--detailed .ranking-name {
+    font-size: 13px;
+}
+
+.ranking-row--detailed .ranking-move {
+    font-size: 9px;
 }
 
 @keyframes rankingRowPulse {
@@ -3308,6 +3431,11 @@ select:focus-visible {
 
 .ranking-row--me::before {
     background: linear-gradient(180deg, #22c55e, #15803d);
+}
+
+.ranking-row:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 30px rgba(15,23,42,0.12);
 }
 
 .ranking-row__pos {
@@ -4006,8 +4134,20 @@ select:focus-visible {
         align-items: stretch;
     }
 
+    .ranking-density-toggle {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .ranking-density-toggle .btn-press {
+        flex: 1 1 0;
+        min-width: 0;
+        text-align: center;
+    }
+
     .ranking-toolbar__search {
         width: 100%;
+        flex-basis: 100%;
     }
 
     .ranking-jump-me {
@@ -4026,7 +4166,7 @@ select:focus-visible {
         grid-template-columns: 40px minmax(0, 1fr) 44px 54px;
         column-gap: 6px;
         row-gap: 3px;
-        min-height: 72px;
+        min-height: 76px;
         padding: 7px 6px 7px 9px;
         border-radius: 18px;
     }
@@ -4054,6 +4194,15 @@ select:focus-visible {
     .ranking-medal-chip {
         font-size: 11px;
         padding: 2px 5px;
+    }
+
+    .ranking-row__points-wrap {
+        gap: 3px;
+    }
+
+    .ranking-row__compare {
+        font-size: 7px;
+        line-height: 1.1;
     }
 
     .ranking-medal-count {

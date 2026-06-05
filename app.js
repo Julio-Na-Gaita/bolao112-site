@@ -6285,6 +6285,33 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
             .toLowerCase()
             .replace(/\s+/g, " ");
 
+        const RANKING_DENSITY_STORAGE_KEY = "bolao112:ranking-density";
+        const getRankingDensity = () => {
+          try {
+            const stored = String(localStorage.getItem(RANKING_DENSITY_STORAGE_KEY) || "").trim();
+            if (stored === "compact" || stored === "detailed") return stored;
+          } catch (error) {
+            // ignore storage issues
+          }
+          return "compact";
+        };
+
+        window.__rankingDensity = getRankingDensity();
+
+        window.setRankingDensity = (mode = "compact") => {
+          const normalized = mode === "detailed" ? "detailed" : "compact";
+          window.__rankingDensity = normalized;
+          try {
+            localStorage.setItem(RANKING_DENSITY_STORAGE_KEY, normalized);
+          } catch (error) {
+            // ignore storage issues
+          }
+          window.__rankingScreenCache = null;
+          if (typeof loadRanking === "function") {
+            loadRanking({ force: true });
+          }
+        };
+
         window.applyRankingSearchFilter = () => {
           const input = document.getElementById("rankingSearchInput");
           const emptyState = document.getElementById("rankingEmptySearch");
@@ -7032,6 +7059,9 @@ const currentUserPositionText = currentUserRankingEntry && currentUserRankIndex 
   ? `Você está em ${currentUserRankIndex + 1}º`
   : "Sua posição ainda não está disponível.";
 const rankingSearchValue = String(window.__rankingSearchTerm || "").trim();
+const rankingDensityMode = window.__rankingDensity === "detailed" ? "detailed" : "compact";
+const rankingIsDetailed = rankingDensityMode === "detailed";
+const rankingLeaderPoints = Number(users[0]?.p || 0);
 
 // Renderiza HTML
 let html = `
@@ -7084,6 +7114,23 @@ let html = `
   </div>
 
   <div class="ranking-toolbar mb-3">
+    <div class="ranking-density-toggle">
+      <button
+        type="button"
+        class="btn-press ${rankingDensityMode === "compact" ? "is-active" : ""}"
+        onclick="window.setRankingDensity('compact')"
+      >
+        Compacto
+      </button>
+      <button
+        type="button"
+        class="btn-press ${rankingDensityMode === "detailed" ? "is-active" : ""}"
+        onclick="window.setRankingDensity('detailed')"
+      >
+        Detalhado
+      </button>
+    </div>
+
     <div class="ranking-toolbar__search">
       <input
         id="rankingSearchInput"
@@ -7114,7 +7161,7 @@ let html = `
     Nenhum participante encontrado.
   </div>
 
-  <div class="ranking-table-shell">
+  <div class="ranking-table-shell ranking-table-shell--${rankingDensityMode}">
     <div class="ranking-table-head">
       <span>Posição</span>
       <span>Participante</span>
@@ -7166,22 +7213,49 @@ let html = `
                     const movementInfo = rankingMovementSnapshot?.movements?.[u.uid] || getRankingMovementInfo(u.uid);
                     const movementDelta = Number(movementInfo?.delta || 0);
                     const hasMovementHistory = Number(movementInfo?.previousPosition || 0) > 0;
-                    let diffHtml = `<div class="ranking-move ranking-move--neutral">–</div>`;
-                    if (movementDelta > 0) diffHtml = `<div class="ranking-move ranking-move--up"><i class="fas fa-caret-up"></i> ${movementDelta}</div>`;
-                    else if (movementDelta < 0) diffHtml = `<div class="ranking-move ranking-move--down"><i class="fas fa-caret-down"></i> ${Math.abs(movementDelta)}</div>`;
-                    else if (hasMovementHistory) diffHtml = `<div class="ranking-move ranking-move--same">=</div>`;
+                    const movementLabel = movementDelta > 0
+                      ? `↑ Subiu ${movementDelta}`
+                      : movementDelta < 0
+                        ? `↓ Caiu ${Math.abs(movementDelta)}`
+                        : hasMovementHistory
+                          ? "→ Sem mudança"
+                          : "Sem histórico";
+                    const diffHtml = `<div class="ranking-move ranking-move--${movementDelta > 0 ? "up" : movementDelta < 0 ? "down" : hasMovementHistory ? "same" : "neutral"}">${escapeHtml(movementLabel)}</div>`;
 
                     const searchTokens = [
                       u.name || "",
                       u.username || "",
                       u.displayName || ""
                     ].join(" ").trim().toLowerCase();
+                    const pointsGapToLeader = Math.max(0, rankingLeaderPoints - Number(u.p || 0));
+                    const pointsGapToNext = i < users.length - 1
+                      ? Math.max(0, Number(u.p || 0) - Number(users[i + 1]?.p || 0))
+                      : 0;
+                    const compareLeaderLabel = i === 0
+                      ? "Líder"
+                      : `${pointsGapToLeader} pts atrás do líder`;
+                    const compareNextLabel = i < users.length - 1
+                      ? `${pointsGapToNext} pts à frente do próximo`
+                      : "Último";
+                    const compareHtml = rankingIsDetailed
+                      ? `
+                        <div class="ranking-row__compare ranking-row__compare--detailed">
+                          <span>${escapeHtml(compareLeaderLabel)}</span>
+                          <span>${escapeHtml(compareNextLabel)}</span>
+                        </div>
+                      `
+                      : (isMe || i < 3
+                        ? `<div class="ranking-row__compare ranking-row__compare--compact">${escapeHtml(compareLeaderLabel)}</div>`
+                        : "");
+                    const compareSpotlightClass = !rankingIsDetailed && (isMe || i < 3)
+                      ? " ranking-row--compare-spotlight"
+                      : "";
 
                     return `<div
                       id="ranking-row-${String(u.uid || i).replace(/[^a-zA-Z0-9_-]/g, "_")}"
                       data-uid="${escapeHtml(String(u.uid || ""))}"
                       data-search="${escapeHtml(searchTokens)}"
-                      class="ranking-row ${rowClass}"
+                      class="ranking-row ${rowClass} ranking-row--${rankingDensityMode}${compareSpotlightClass}"
                     >
                         <div class="ranking-row__pos">
                           <div class="ranking-pos-badge">${posIcon}</div>
@@ -7203,7 +7277,10 @@ let html = `
                         </div>
 
                         <button type="button" class="ranking-row__debt ${u.debts > 0 ? 'is-debt' : ''}" onclick="showModalHistory(${i})">${u.debts||0}</button>
-                        <button type="button" class="ranking-row__points" onclick="showModalHistory(${i})">${u.p}</button>
+                        <div class="ranking-row__points-wrap">
+                          <button type="button" class="ranking-row__points" onclick="showModalHistory(${i})">${u.p}</button>
+                          ${compareHtml}
+                        </div>
                     </div>`;
                 }).join('');
 
