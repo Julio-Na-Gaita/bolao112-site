@@ -100,6 +100,7 @@ let compMap = {};
 let globalServerCounts = {};
 window.__voteSavingInProgress = false;
 window.__pendingAppReloadAfterVote = false;
+window.__localVoteOverrides = window.__localVoteOverrides || {};
 
 let appConfig = {
   chat: true,
@@ -5287,6 +5288,7 @@ const buildMatchesCriticalData = ({ setSnap, matchesSnap, guessesSnap, uSnap = n
   const guessesData = [];
   const myVotesMap = {};
   const statsMap = {};
+  const localVoteOverrides = window.__localVoteOverrides || {};
 
   guessesSnap.forEach((d) => {
     const guess = d.data() || {};
@@ -5307,6 +5309,13 @@ const buildMatchesCriticalData = ({ setSnap, matchesSnap, guessesSnap, uSnap = n
       statsMap[guess.matchId][guess.teamSelected] += 1;
     }
   });
+
+  if (currentUser?.uid && localVoteOverrides && typeof localVoteOverrides === "object") {
+    Object.entries(localVoteOverrides).forEach(([matchId, teamSelected]) => {
+      if (!matchId || !teamSelected) return;
+      myVotesMap[matchId] = teamSelected;
+    });
+  }
 
   globalServerCounts = {};
   if (commentsSnap) {
@@ -5668,7 +5677,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
         async function renderMatchList(list, usersList, serverCounts, myVotesMap) {
             let html = "";
             for (const m of list) {
-                let userVote = myVotesMap[m.id] || ""; 
+                let userVote = (window.__localVoteOverrides?.[m.id] || myVotesMap[m.id] || ""); 
                 
                 const dl = m.deadlineDate;
                 const statusAccent = m.final ? "#FFD700" : (m.expired ? (m.winner ? "#D32F2F" : "#FBC02D") : "#006400");
@@ -5884,6 +5893,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                 } else {
                     alert("Não foi possível salvar seu voto. Verifique sua conexão e tente novamente.");
                 }
+                delete window.__localVoteOverrides[mid];
                 alert("Se o problema continuar, saia e entre novamente na conta.");
                 return;
             }
@@ -5905,6 +5915,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                     const wasPending = !existingVote;
                     window.__matchesScreenStateCache.myVotesMap = window.__matchesScreenStateCache.myVotesMap || {};
                     window.__matchesScreenStateCache.myVotesMap[mid] = team;
+                    window.__localVoteOverrides[mid] = team;
                     if (window.__matchesScreenStateCache.runtime) {
                         window.__matchesScreenStateCache.runtime.pendingFastVoteCount = Math.max(
                           0,
