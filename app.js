@@ -6971,16 +6971,20 @@ let html = `
   <div class="ranking-hero mb-4">
     <div class="ranking-hero__bg"></div>
     <div class="ranking-hero__content">
-      <div>
-        <h3 class="ranking-hero__title">CLASSIFICACAO</h3>
-        <p class="ranking-hero__subtitle">Temporada 2026 • ${users.length} participantes</p>
+      <div class="ranking-hero__copy">
+        <h3 class="ranking-hero__title">CLASSIFICAÇÃO</h3>
+        <p class="ranking-hero__subtitle">Temporada 2026</p>
+        <div class="ranking-hero__meta">
+          <span class="ranking-hero__chip">${users.length} participantes</span>
+          <span class="ranking-hero__chip ranking-hero__chip--accent">Pontos e dívidas definem a ordem</span>
+        </div>
       </div>
 
       <div class="ranking-hero__actions">
         <button
           onclick="showKingModal()"
-          aria-label="Rei do mes"
-          title="Rei do mes"
+          aria-label="Rei do mês"
+          title="Rei do mês"
           class="ranking-hero__btn ranking-hero__btn--king btn-press"
         >
           <i class="fas fa-trophy"></i>
@@ -7013,11 +7017,26 @@ let html = `
     }
   </div>
 
+  <div class="ranking-legend-strip mb-3">
+    <div class="ranking-legend-strip__item">
+      <span class="ranking-legend-strip__label">Pontos</span>
+      <span class="ranking-legend-strip__text">definem a classificação</span>
+    </div>
+    <div class="ranking-legend-strip__item">
+      <span class="ranking-legend-strip__label">Dívidas</span>
+      <span class="ranking-legend-strip__text">desempatam quando os pontos empatam</span>
+    </div>
+    <div class="ranking-legend-strip__item">
+      <span class="ranking-legend-strip__label">Detalhes</span>
+      <span class="ranking-legend-strip__text">toque em pontos ou dívidas para ver o extrato</span>
+    </div>
+  </div>
+
   <div class="ranking-table-shell">
     <div class="ranking-table-head">
-      <span>Posicao</span>
+      <span>Posição</span>
       <span>Participante</span>
-      <span class="text-center">Dividas</span>
+      <span class="text-center">Dívidas</span>
       <span class="text-right">Pontos</span>
     </div>
     <div class="ranking-table-body">
