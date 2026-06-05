@@ -3048,6 +3048,96 @@ select:focus-visible {
     color: #475569;
 }
 
+.ranking-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ranking-toolbar__search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 220px;
+    min-width: 0;
+}
+
+.ranking-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 42px;
+    border-radius: 16px;
+    border: 1px solid rgba(148,163,184,0.26);
+    background: rgba(255,255,255,0.94);
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+    outline: none;
+    box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+}
+
+.ranking-search-input::placeholder {
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.ranking-search-input:focus {
+    border-color: rgba(22,163,74,0.38);
+    box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+}
+
+.ranking-search-clear,
+.ranking-jump-me {
+    height: 42px;
+    padding: 0 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(148,163,184,0.24);
+    background: rgba(255,255,255,0.92);
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+    box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+}
+
+.ranking-jump-me {
+    background: linear-gradient(135deg, #0b5f2a, #15803d);
+    border-color: rgba(22,163,74,0.3);
+    color: #fff;
+}
+
+.ranking-empty-search {
+    border-radius: 16px;
+    border: 1px dashed rgba(148,163,184,0.34);
+    background: rgba(255,255,255,0.8);
+    color: #475569;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.ranking-row-pulse {
+    animation: rankingRowPulse 1.2s ease-in-out 1;
+}
+
+@keyframes rankingRowPulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(250,204,21,0.0);
+    }
+    35% {
+        transform: scale(1.01);
+        box-shadow: 0 0 0 4px rgba(250,204,21,0.22);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(250,204,21,0.0);
+    }
+}
+
 .ranking-info-medal {
     display: flex;
     align-items: flex-start;
@@ -3912,12 +4002,16 @@ select:focus-visible {
         padding: 0 8px;
     }
 
-    .ranking-legend-strip {
-        grid-template-columns: 1fr;
+    .ranking-toolbar {
+        align-items: stretch;
     }
 
-    .ranking-legend-strip__item {
-        padding: 9px 10px 8px;
+    .ranking-toolbar__search {
+        width: 100%;
+    }
+
+    .ranking-jump-me {
+        width: 100%;
     }
 
     .ranking-table-head {

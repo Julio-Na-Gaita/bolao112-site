@@ -6279,6 +6279,71 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
             cont.innerHTML = html;
         };
 
+        const normalizeRankingSearchText = (value = "") =>
+          String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, " ");
+
+        window.applyRankingSearchFilter = () => {
+          const input = document.getElementById("rankingSearchInput");
+          const emptyState = document.getElementById("rankingEmptySearch");
+          const clearBtn = input?.parentElement?.querySelector(".ranking-search-clear");
+          const term = normalizeRankingSearchText(window.__rankingSearchTerm || input?.value || "");
+          const rows = Array.from(document.querySelectorAll(".ranking-row[data-search]"));
+          let visibleCount = 0;
+
+          rows.forEach((row) => {
+            const haystack = normalizeRankingSearchText(row.dataset.search || "");
+            const match = !term || haystack.includes(term);
+            row.classList.toggle("hidden", !match);
+            if (match) visibleCount++;
+          });
+
+          if (emptyState) emptyState.classList.toggle("hidden", visibleCount > 0);
+          if (clearBtn) clearBtn.classList.toggle("hidden", !term);
+        };
+
+        window.setRankingSearchTerm = (value = "") => {
+          window.__rankingSearchTerm = String(value || "");
+          window.applyRankingSearchFilter();
+        };
+
+        window.clearRankingSearch = () => {
+          window.__rankingSearchTerm = "";
+          const input = document.getElementById("rankingSearchInput");
+          if (input) input.value = "";
+          window.applyRankingSearchFilter();
+        };
+
+        window.jumpToMyRankingPosition = () => {
+          const currentEntry = currentUser ? (currentRankingData || []).find((u) => u.uid === currentUser.uid) : null;
+          if (!currentEntry || !currentEntry.uid) {
+            alert("Sua posição ainda não foi encontrada no ranking.");
+            return;
+          }
+
+          window.clearRankingSearch();
+
+          const rowId = `ranking-row-${String(currentEntry.uid).replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+          const row = document.getElementById(rowId);
+          if (!row) {
+            alert("Sua posição ainda não foi encontrada no ranking.");
+            return;
+          }
+
+          const appContentEl = document.getElementById("appContent");
+          row.classList.remove("ranking-row-pulse");
+          void row.offsetWidth;
+          row.classList.add("ranking-row-pulse");
+          row.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (appContentEl) {
+            const offset = Math.max(row.offsetTop - 120, 0);
+            appContentEl.scrollTo({ top: offset, behavior: "smooth" });
+          }
+          window.setTimeout(() => row.classList.remove("ranking-row-pulse"), 1800);
+        };
+
         // --- RANKING COM NOVAS MEDALHAS (MITO E DIAMANTE) ---
         // Variável global para armazenar a info da última atualização
         window.globalLastUpdateInfo = "Aguardando atualização...";
@@ -6303,6 +6368,7 @@ async function loadRanking(options = {}) {
     window.__rankingMovementSnapshot = cachedRanking.rankingMovementSnapshot || window.__rankingMovementSnapshot || { positions: {}, movements: {} };
     listContainer.scrollTop = 0;
     if (appContent) appContent.scrollTop = 0;
+    window.applyRankingSearchFilter?.();
     return;
   }
 
@@ -6965,6 +7031,7 @@ const currentUserDisplayName = currentUserRankingEntry?.name || currentUserRanki
 const currentUserPositionText = currentUserRankingEntry && currentUserRankIndex >= 0
   ? `Você está em ${currentUserRankIndex + 1}º`
   : "Sua posição ainda não está disponível.";
+const rankingSearchValue = String(window.__rankingSearchTerm || "").trim();
 
 // Renderiza HTML
 let html = `
@@ -7014,6 +7081,37 @@ let html = `
         `
         : `<div class="ranking-my-position__empty">Sua posição ainda não está disponível.</div>`
     }
+  </div>
+
+  <div class="ranking-toolbar mb-3">
+    <div class="ranking-toolbar__search">
+      <input
+        id="rankingSearchInput"
+        type="search"
+        class="ranking-search-input"
+        placeholder="Buscar participante"
+        value="${escapeHtml(rankingSearchValue)}"
+        oninput="window.setRankingSearchTerm(this.value)"
+      >
+      <button
+        type="button"
+        class="ranking-search-clear btn-press ${rankingSearchValue ? "" : "hidden"}"
+        onclick="window.clearRankingSearch()"
+      >
+        Limpar
+      </button>
+    </div>
+    <button
+      type="button"
+      class="ranking-jump-me btn-press"
+      onclick="window.jumpToMyRankingPosition()"
+    >
+      Minha posição
+    </button>
+  </div>
+
+  <div id="rankingEmptySearch" class="ranking-empty-search hidden mb-3">
+    Nenhum participante encontrado.
   </div>
 
   <div class="ranking-table-shell">
@@ -7073,7 +7171,18 @@ let html = `
                     else if (movementDelta < 0) diffHtml = `<div class="ranking-move ranking-move--down"><i class="fas fa-caret-down"></i> ${Math.abs(movementDelta)}</div>`;
                     else if (hasMovementHistory) diffHtml = `<div class="ranking-move ranking-move--same">=</div>`;
 
-                    return `<div class="ranking-row ${rowClass}">
+                    const searchTokens = [
+                      u.name || "",
+                      u.username || "",
+                      u.displayName || ""
+                    ].join(" ").trim().toLowerCase();
+
+                    return `<div
+                      id="ranking-row-${String(u.uid || i).replace(/[^a-zA-Z0-9_-]/g, "_")}"
+                      data-uid="${escapeHtml(String(u.uid || ""))}"
+                      data-search="${escapeHtml(searchTokens)}"
+                      class="ranking-row ${rowClass}"
+                    >
                         <div class="ranking-row__pos">
                           <div class="ranking-pos-badge">${posIcon}</div>
                           ${diffHtml}
@@ -7102,6 +7211,7 @@ let html = `
                 listContainer.innerHTML = html;
                 listContainer.scrollTop = 0;
                 if (appContent) appContent.scrollTop = 0;
+                window.applyRankingSearchFilter?.();
 
 window.__rankingScreenCache = {
   html,
@@ -7176,20 +7286,12 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
         <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
           <div class="text-xs font-black text-[#A78BFA] uppercase tracking-wider">Como o ranking funciona</div>
           <div class="mt-3 space-y-2 text-xs font-bold text-white/80 leading-snug">
-            <div>• Pontos: total acumulado no Bolão.</div>
-            <div>• Dívidas: mensalidades pendentes.</div>
-            <div>• Setas: indicam subida, queda ou permanência na posição.</div>
-            <div>• Atualização: ocorre após baixa de resultados e sincronização do sistema.</div>
-            <div>• Rei do Mês: líder da pontuação no mês vigente.</div>
-          </div>
-        </div>
-
-        <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-          <div class="text-xs font-black text-[#FDE68A] uppercase tracking-wider">Leitura rápida</div>
-          <div class="mt-3 space-y-2 text-xs font-bold text-white/80 leading-snug">
-            <div><span class="font-black text-white">Pontos:</span> definem a classificação principal do ranking.</div>
-            <div><span class="font-black text-white">Dívidas:</span> ajudam no desempate quando houver empate em pontos.</div>
-            <div><span class="font-black text-white">Detalhes:</span> toque em pontos ou dívidas para abrir o extrato do participante.</div>
+            <div>• <span class="font-black text-white">Pontos:</span> definem a classificação principal do ranking. Quanto mais pontos, melhor a posição.</div>
+            <div>• <span class="font-black text-white">Dívidas:</span> aparecem para indicar pendências financeiras e ajudam no desempate quando houver empate em pontos.</div>
+            <div>• <span class="font-black text-white">Setas:</span> mostram se o participante subiu, caiu ou permaneceu na mesma posição desde a última atualização.</div>
+            <div>• <span class="font-black text-white">Detalhes:</span> toque nos pontos ou nas dívidas de um participante para abrir o extrato.</div>
+            <div>• <span class="font-black text-white">Atualização:</span> o ranking é atualizado após a baixa de resultados e a sincronização do sistema.</div>
+            <div>• <span class="font-black text-white">Rei do Mês:</span> mostra o líder da pontuação no mês vigente.</div>
           </div>
         </div>
 
