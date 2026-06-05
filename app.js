@@ -1300,6 +1300,84 @@ const readRulesSettingsState = (snap) => {
   };
 };
 
+const buildRulesContentHtml = (rulesData = {}) => {
+  const visibleRules = normalizeRegulationItems(
+    Array.isArray(rulesData.items) ? rulesData.items : Array.isArray(rulesData.rules) ? rulesData.rules : []
+  ).filter((item) => item.active !== false);
+
+  const updatedAtDate = toJsDate(rulesData.updatedAt);
+  const updatedLabel = String(rulesData.dateDisplay || "").trim()
+    || String(rulesData.updatedDate || "").trim()
+    || (updatedAtDate ? updatedAtDate.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }) : "Data desconhecida");
+
+  if (!visibleRules.length) {
+    return `<div class="text-center p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-xs">O regulamento está sendo atualizado pelo Administrador.</div>`;
+  }
+
+  const headerHtml = `
+    <div class="flex flex-col items-center justify-center mb-6 pt-2">
+      <div class="bg-[#006400] text-white px-4 py-1 rounded-full shadow-md border-2 border-[#FFD700] mb-2">
+        <h3 class="font-black text-xs uppercase tracking-widest">
+          <i class="fas fa-balance-scale mr-2"></i>REGULAMENTO OFICIAL
+        </h3>
+      </div>
+
+      <div class="flex flex-col items-center gap-1">
+        <p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+          <i class="fas fa-sync-alt text-[#006400] mr-1"></i>
+          Atualizado em: <span class="text-black">${escapeHtml(updatedLabel)}</span>
+        </p>
+
+        ${
+          rulesData.version
+            ? `<p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+                  <i class="fas fa-hashtag text-[#006400] mr-1"></i>
+                  Versão: <span class="text-black">${escapeHtml(String(rulesData.version || ""))}</span>
+                </p>`
+            : ``
+        }
+        ${
+          rulesData.latestAppVersion || rulesData.minimumAppVersion
+            ? `<p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+                  <i class="fas fa-mobile-screen-button text-[#006400] mr-1"></i>
+                  App: <span class="text-black">${escapeHtml(rulesData.latestAppVersion || "N/D")}${rulesData.minimumAppVersion ? ` • mín. ${escapeHtml(rulesData.minimumAppVersion)}` : ""}</span>
+                </p>`
+            : ``
+        }
+        ${
+          rulesData.changeSummary
+            ? `<p class="text-[10px] text-gray-600 font-bold bg-yellow-50 px-3 py-2 rounded-2xl border border-yellow-200 shadow-sm text-center max-w-[95%]">
+                  <i class="fas fa-bullhorn text-[#F59E0B] mr-1"></i>
+                  ${escapeHtml(rulesData.changeSummary)}
+                </p>`
+            : ``
+        }
+      </div>
+    </div>
+  `;
+
+  const itemsHtml = visibleRules.map((r) => `
+    <div class="bg-white rounded p-3 shadow-sm border border-gray-100 mb-2">
+      <button class="w-full text-left font-black text-xs text-[#006400] uppercase tracking-wide flex justify-between items-center py-1"
+              onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('i').classList.toggle('fa-chevron-up'); this.querySelector('i').classList.toggle('fa-chevron-down');">
+        ${escapeHtml(r.title || r.t || "Sem título")}
+        <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
+      </button>
+      <div class="hidden mt-2 text-xs text-gray-700 border-t pt-3 whitespace-pre-line leading-relaxed font-medium rules-text">
+        ${escapeHtml(r.content || r.c || "Sem texto cadastrado.")}
+      </div>
+    </div>
+  `).join('');
+
+  return headerHtml + itemsHtml;
+};
+
 const ensureRulesSettingsDoc = async () => {
   const ref = getRulesSettingsRef();
   const snap = await getDoc(ref);
@@ -3293,74 +3371,7 @@ async function renderRules(forceRefresh = false) {
       };
     }
 
-    // Se a lista estiver vazia
-    const visibleRules = (cachedRulesData.items || []).filter((item) => item.active !== false);
-    if (!visibleRules.length) {
-      if (list) {
-        list.innerHTML = `<div class="text-center p-4 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-xs">O regulamento está sendo atualizado pelo Administrador.</div>`;
-      }
-      return;
-    }
-
-    // 1. Gera o HTML do Cabeçalho
-    const headerHtml = `
-      <div class="flex flex-col items-center justify-center mb-6 pt-2">
-        <div class="bg-[#006400] text-white px-4 py-1 rounded-full shadow-md border-2 border-[#FFD700] mb-2">
-          <h3 class="font-black text-xs uppercase tracking-widest">
-            <i class="fas fa-balance-scale mr-2"></i>REGULAMENTO OFICIAL
-          </h3>
-        </div>
-
-        <div class="flex flex-col items-center gap-1">
-          <p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-            <i class="fas fa-sync-alt text-[#006400] mr-1"></i>
-            Atualizado em: <span class="text-black">${cachedRulesData.dateDisplay}</span>
-          </p>
-
-          ${
-            cachedRulesData.version
-              ? `<p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-                    <i class="fas fa-hashtag text-[#006400] mr-1"></i>
-                    Versão: <span class="text-black">${cachedRulesData.version}</span>
-                  </p>`
-              : ``
-          }
-          ${
-            cachedRulesData.latestAppVersion || cachedRulesData.minimumAppVersion
-              ? `<p class="text-[10px] text-gray-500 font-bold bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-                    <i class="fas fa-mobile-screen-button text-[#006400] mr-1"></i>
-                    App: <span class="text-black">${escapeHtml(cachedRulesData.latestAppVersion || "N/D")}${cachedRulesData.minimumAppVersion ? ` • mín. ${escapeHtml(cachedRulesData.minimumAppVersion)}` : ""}</span>
-                  </p>`
-              : ``
-          }
-          ${
-            cachedRulesData.changeSummary
-              ? `<p class="text-[10px] text-gray-600 font-bold bg-yellow-50 px-3 py-2 rounded-2xl border border-yellow-200 shadow-sm text-center max-w-[95%]">
-                    <i class="fas fa-bullhorn text-[#F59E0B] mr-1"></i>
-                    ${escapeHtml(cachedRulesData.changeSummary)}
-                  </p>`
-              : ``
-          }
-        </div>
-      </div>
-    `;
-
-    // 2. Gera a Lista de Regras
-    const itemsHtml = visibleRules.map(r => `
-      <div class="bg-white rounded p-3 shadow-sm border border-gray-100 mb-2">
-        <button class="w-full text-left font-black text-xs text-[#006400] uppercase tracking-wide flex justify-between items-center py-1"
-                onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('i').classList.toggle('fa-chevron-up'); this.querySelector('i').classList.toggle('fa-chevron-down');">
-          ${r.title || r.t}
-          <i class="fas fa-chevron-down text-gray-400 transition-transform"></i>
-        </button>
-        <div class="hidden mt-2 text-xs text-gray-700 border-t pt-3 whitespace-pre-line leading-relaxed font-medium">
-          ${r.content || r.c}
-        </div>
-      </div>
-    `).join('');
-
-    // 3. Junta tudo
-    if (list) list.innerHTML = headerHtml + itemsHtml;
+    if (list) list.innerHTML = buildRulesContentHtml(cachedRulesData);
 
   } catch (e) {
     console.error("Erro ao buscar regras:", e);
@@ -17939,6 +17950,47 @@ window.openCalendar2026 = () => {
     if (elPotRef) elPotRef.innerText = `Previsão Final: ${fmt(forecastPrize)}`;
     if (elPartyRef) elPartyRef.innerText = `Previsão Final: ${fmt(forecastParty)}`;
 
+    const elSplitSection = document.getElementById('potSplitSection');
+    const elSplitList = document.getElementById('potSplitList');
+    const elSplitNote = document.getElementById('potSplitNote');
+    if (elSplitSection) elSplitSection.classList.remove('hidden');
+    if (elSplitList) {
+      if (forecastPrize > 0) {
+        const splitLabels = [
+          { label: '1º lugar', percent: 40 },
+          { label: '2º lugar', percent: 25 },
+          { label: '3º lugar', percent: 18 },
+          { label: '4º lugar', percent: 10 },
+          { label: '5º lugar', percent: 7 }
+        ];
+
+        const totalCents = Math.round(forecastPrize * 100);
+        const shares = splitLabels.map(({ percent }) => Math.floor((totalCents * percent) / 100));
+        const allocated = shares.reduce((sum, value) => sum + value, 0);
+        if (shares.length > 0) shares[0] += Math.max(0, totalCents - allocated);
+
+        elSplitList.innerHTML = splitLabels.map((item, index) => `
+          <div class="flex items-center justify-between gap-3 rounded-lg border border-[#E1EBD9] bg-[#F9FCF8] px-3 py-2">
+            <div class="min-w-0">
+              <p class="text-[10px] font-black text-[#006400] uppercase tracking-wide">${escapeHtml(item.label)}</p>
+              <p class="text-[9px] text-gray-500 font-bold">${item.percent}% da previsão final</p>
+            </div>
+            <div class="text-right shrink-0">
+              <p class="text-[11px] font-black text-gray-800">${fmt(shares[index] / 100)}</p>
+            </div>
+          </div>
+        `).join('');
+        if (elSplitNote) elSplitNote.innerText = `Baseada na previsão final de ${fmt(forecastPrize)}.`;
+      } else {
+        elSplitList.innerHTML = `
+          <div class="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-[10px] font-bold text-yellow-800 text-center">
+            A previsão final ainda não está disponível.
+          </div>
+        `;
+        if (elSplitNote) elSplitNote.innerText = 'A previsão final ainda não está disponível.';
+      }
+    }
+
     // ATUALIZAÇÃO DO CONTADOR NO HTML
     const elCount = document.getElementById('potCount');
     if (elCount) {
@@ -19202,11 +19254,11 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
     window.__rulesGateLock = !!mandatory;
 
     // Garante que renderRules rode antes de abrir o modal.
-    await renderRules();
+    await renderRules(true);
 
     const uid = window.getCurrentUid();
-    const rulesDoc = await window.getRulesDoc(); // pega version
-    const rulesVersion = (rulesDoc.version || "").toString();
+    const rulesDoc = cachedRulesData || await window.getRulesDoc(); // pega version
+    const rulesVersion = (rulesDoc?.version || "").toString();
 
     // marca "abriu tela"
     if (uid) await window.markRulesOpened(uid);
@@ -19218,10 +19270,7 @@ window.openRulesModal = async ({ mandatory = false } = {}) => {
       gate = window.computeGateRules(userState, rulesDoc);
     }
 
-    const rulesList = document.getElementById("rulesList");
-    const inner = rulesList
-      ? rulesList.innerHTML
-      : `<div class="text-xs font-bold text-gray-600">Carregando regras...</div>`;
+    const inner = buildRulesContentHtml(rulesDoc || {});
 
     const closeBtnHtml = mandatory
       ? `` // sem X no modo obrigatório
