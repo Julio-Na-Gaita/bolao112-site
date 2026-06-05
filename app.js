@@ -4413,6 +4413,280 @@ const getHomePendingPaymentNotice = (user = {}) => {
   };
 };
 
+const safeHomeStorageGet = (key = "") => {
+  try {
+    return localStorage.getItem(String(key || ""));
+  } catch (error) {
+    return null;
+  }
+};
+
+const safeHomeStorageSet = (key = "", value = "") => {
+  try {
+    localStorage.setItem(String(key || ""), String(value ?? ""));
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+const getHomeEngagementStorageKey = (type = "", uid = "") => `bolao112:${type}:${String(uid || "").trim()}`;
+
+const getLocalDayKey = (date = null) => {
+  const value = date instanceof Date ? date : toJsDate(date);
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) return "";
+  return [
+    value.getFullYear(),
+    String(value.getMonth() + 1).padStart(2, "0"),
+    String(value.getDate()).padStart(2, "0")
+  ].join("-");
+};
+
+const isWithinHours = (date = null, hours = 24) => {
+  const value = date instanceof Date ? date : toJsDate(date);
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) return false;
+  return (value.getTime() - Date.now()) > 0 && (value.getTime() - Date.now()) <= (Number(hours) * 60 * 60 * 1000);
+};
+
+const getHomePendingDeadlineNotice = ({ open = [], myVotesMap = {} } = {}) => {
+  const now = new Date();
+  const urgentMatches = (Array.isArray(open) ? open : [])
+    .filter((match) => match && !myVotesMap?.[match.id])
+    .filter((match) => {
+      const deadlineDate = match.deadlineDate instanceof Date ? match.deadlineDate : toJsDate(match.deadline);
+      if (!(deadlineDate instanceof Date) || Number.isNaN(deadlineDate.getTime())) return false;
+      const sameDay = getLocalDayKey(deadlineDate) === getLocalDayKey(now);
+      return sameDay || isWithinHours(deadlineDate, 24);
+    })
+    .sort((a, b) => {
+      const aTime = a.deadlineDate instanceof Date ? a.deadlineDate.getTime() : (toJsDate(a.deadline)?.getTime() || 0);
+      const bTime = b.deadlineDate instanceof Date ? b.deadlineDate.getTime() : (toJsDate(b.deadline)?.getTime() || 0);
+      return aTime - bTime;
+    });
+
+  if (!urgentMatches.length) return null;
+
+  const sameDayCount = urgentMatches.filter((match) => {
+    const deadlineDate = match.deadlineDate instanceof Date ? match.deadlineDate : toJsDate(match.deadline);
+    return getLocalDayKey(deadlineDate) === getLocalDayKey(now);
+  }).length;
+
+  const urgentCount = urgentMatches.length;
+  const soonCount = Math.max(0, urgentCount - sameDayCount);
+  const firstDeadline = urgentMatches[0]?.deadlineDate instanceof Date ? urgentMatches[0].deadlineDate : toJsDate(urgentMatches[0]?.deadline);
+  const timeLabel = firstDeadline instanceof Date && !Number.isNaN(firstDeadline.getTime())
+    ? firstDeadline.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", hour12: false })
+    : "";
+
+  return {
+    type: "deadline",
+    tone: "warning",
+    icon: "fa-clock",
+    title: sameDayCount > 0
+      ? `${sameDayCount} palpites expiram hoje`
+      : `${urgentCount} palpites perto do prazo`,
+    message: sameDayCount > 0
+      ? (soonCount > 0
+        ? `Mais ${soonCount} palpites estão perto do prazo. Vote antes do encerramento.`
+        : "Vote antes do encerramento para não ficar para trás.")
+      : "Ainda dá tempo de votar sem correria. Abra os jogos agora.",
+    detail: timeLabel ? `Prazo mais próximo às ${timeLabel}.` : "",
+    actionLabel: "Ver jogos",
+    actionOnClick: "window.goToPendingVote()",
+    pillLabel: sameDayCount > 0 ? "Hoje" : "24h",
+    dismissible: false,
+    storageKey: "",
+    fingerprint: `${urgentMatches.map((match) => `${match.id}:${match.deadlineDate instanceof Date ? match.deadlineDate.getTime() : ""}`).join("|")}`
+  };
+};
+
+const getHomeRoundSummaryNotice = ({ finished = [], myVotesMap = {}, currentUserUid = "" } = {}) => {
+  const now = new Date();
+  const recentFinished = (Array.isArray(finished) ? finished : [])
+    .filter((match) => {
+      const anchorDate = toJsDate(match?.finishedAt) || match?.deadlineDate || toJsDate(match?.deadline);
+      if (!(anchorDate instanceof Date) || Number.isNaN(anchorDate.getTime())) return false;
+      return (now.getTime() - anchorDate.getTime()) <= (7 * 24 * 60 * 60 * 1000);
+    })
+    .slice(0, 5);
+
+  if (!recentFinished.length) return null;
+
+  const stats = recentFinished.reduce((acc, match) => {
+    const vote = myVotesMap?.[match.id];
+    if (!vote) {
+      acc.skipped += 1;
+      return acc;
+    }
+
+    acc.considered += 1;
+    if (vote === match.winner) {
+      acc.hits += 1;
+    } else {
+      acc.misses += 1;
+    }
+    return acc;
+  }, { hits: 0, misses: 0, considered: 0, skipped: 0 });
+
+  if (stats.considered <= 0) return null;
+
+  const fingerprint = recentFinished.map((match) => `${match.id}:${match.winner || ""}`).join("|");
+  const storageKey = getHomeEngagementStorageKey("seenRoundSummary", currentUserUid);
+  if (safeHomeStorageGet(storageKey) === fingerprint) return null;
+
+  return {
+    type: "round_summary",
+    tone: "success",
+    icon: "fa-chart-line",
+    title: "Rodada atualizada",
+    message: `Você acertou ${stats.hits} de ${stats.considered} palpites recentes.`,
+    detail: stats.skipped > 0 ? `${stats.skipped} jogo(s) ficaram sem voto.` : "",
+    actionLabel: "Ver ranking",
+    actionOnClick: "showTab('ranking')",
+    pillLabel: `${recentFinished.length} jogo(s)`,
+    dismissible: true,
+    storageKey,
+    fingerprint
+  };
+};
+
+const getHomeRankingMovementNotice = ({ currentUser = {} } = {}) => {
+  const uid = String(currentUser?.uid || currentUser?.id || currentUser?.userId || "").trim();
+  if (!uid) return null;
+
+  const snapshot = window.__rankingMovementSnapshot || {};
+  const movementInfo = snapshot?.movements?.[uid] || null;
+  const currentPosition = Number(snapshot?.positions?.[uid] || movementInfo?.currentPosition || 0);
+  if (!movementInfo && !currentPosition) return null;
+
+  const delta = Number(movementInfo?.delta || 0);
+  const previousPosition = Number(movementInfo?.previousPosition || 0);
+  const fingerprint = `${currentPosition}:${delta}:${previousPosition}`;
+  const storageKey = getHomeEngagementStorageKey("seenRankingMovement", uid);
+  if (safeHomeStorageGet(storageKey) === fingerprint) return null;
+
+  let title = "Sua posição no ranking";
+  let message = `Você está em ${currentPosition}º lugar.`;
+  let tone = "info";
+
+  if (delta > 0) {
+    title = `Você subiu ${delta} posição${delta > 1 ? "ões" : ""}!`;
+    message = `Agora você está em ${currentPosition}º lugar no ranking.`;
+    tone = "success";
+  } else if (delta < 0) {
+    const fallen = Math.abs(delta);
+    title = `Você caiu ${fallen} posição${fallen > 1 ? "ões" : ""}.`;
+    message = `Ainda dá para recuperar nos próximos jogos.`;
+    tone = "warning";
+  } else if (previousPosition > 0) {
+    title = "Você manteve sua posição.";
+    message = `Posição atual: ${currentPosition}º lugar.`;
+    tone = "info";
+  }
+
+  return {
+    type: "ranking_movement",
+    tone,
+    icon: delta > 0 ? "fa-arrow-trend-up" : (delta < 0 ? "fa-arrow-trend-down" : "fa-equals"),
+    title,
+    message,
+    detail: previousPosition > 0 ? `Anteriormente você estava em ${previousPosition}º.` : "",
+    actionLabel: "Ver ranking",
+    actionOnClick: "showTab('ranking')",
+    pillLabel: "Ranking",
+    dismissible: true,
+    storageKey,
+    fingerprint
+  };
+};
+
+const getHomeEngagementNotices = ({ runtime = {}, open = [], finished = [], myVotesMap = {} } = {}) => {
+  const currentUserData = getMergedCurrentUserData(runtime.currentUser || {});
+  const notices = [];
+
+  const pendingNotice = getHomePendingDeadlineNotice({ open, myVotesMap });
+  if (pendingNotice) notices.push(pendingNotice);
+
+  const rankingNotice = getHomeRankingMovementNotice({ currentUser: currentUserData });
+  if (rankingNotice) notices.push(rankingNotice);
+
+  const summaryNotice = getHomeRoundSummaryNotice({
+    finished,
+    myVotesMap,
+    currentUserUid: currentUserData?.uid || currentUser?.uid || ""
+  });
+  if (summaryNotice) notices.push(summaryNotice);
+
+  return notices.slice(0, 3);
+};
+
+window.dismissHomeEngagementNotice = async (storageKey = "", fingerprint = "") => {
+  if (!storageKey) return;
+  safeHomeStorageSet(storageKey, fingerprint || "1");
+  if (window.__matchesScreenStateCache) {
+    await renderMatchesScreenFromState(window.__matchesScreenStateCache);
+  }
+};
+
+const renderHomeEngagementCard = (notice = {}) => {
+  if (!notice?.title) return "";
+
+  const dismissHtml = notice.dismissible && notice.storageKey ? `
+    <button
+      type="button"
+      class="engagement-card__close btn-press"
+      aria-label="Fechar aviso"
+      title="Fechar"
+      onclick="window.dismissHomeEngagementNotice(${JSON.stringify(notice.storageKey)}, ${JSON.stringify(notice.fingerprint || "")})"
+    >
+      <i class="fas fa-times"></i>
+    </button>
+  ` : "";
+
+  const actionHtml = notice.actionLabel ? `
+    <button
+      type="button"
+      class="engagement-card__action btn-press"
+      onclick="${notice.actionOnClick || ""}"
+    >
+      ${escapeHtml(notice.actionLabel)}
+    </button>
+  ` : "";
+
+  return `
+    <article class="engagement-card engagement-card--${escapeHtml(notice.tone || "info")}">
+      <div class="engagement-card__icon">
+        <i class="fas ${escapeHtml(notice.icon || "fa-circle-info")}"></i>
+      </div>
+      <div class="engagement-card__body">
+        <div class="engagement-card__header">
+          <div class="engagement-card__header-copy">
+            <div class="engagement-card__title">${escapeHtml(notice.title)}</div>
+            <div class="engagement-card__text">${escapeHtml(notice.message || "")}</div>
+            ${notice.detail ? `<div class="engagement-card__detail">${escapeHtml(notice.detail)}</div>` : ""}
+          </div>
+          ${dismissHtml}
+        </div>
+        <div class="engagement-card__footer">
+          ${notice.pillLabel ? `<span class="engagement-pill">${escapeHtml(notice.pillLabel)}</span>` : ""}
+          ${actionHtml}
+        </div>
+      </div>
+    </article>
+  `;
+};
+
+const renderHomeEngagementStack = (params = {}) => {
+  const notices = getHomeEngagementNotices(params);
+  if (!notices.length) return "";
+
+  return `
+    <div class="home-engagement-stack">
+      ${notices.map((notice) => renderHomeEngagementCard(notice)).join("")}
+    </div>
+  `;
+};
+
 window.openHomeFinancialSection = () => {
   showTab("profile");
   setTimeout(() => {
@@ -4624,9 +4898,9 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
             <div class="home-payment-notice__message">${escapeHtml(paymentNotice.message)}</div>
           </div>
           <button type="button" class="home-payment-notice__action btn-press" onclick="window.openHomeFinancialSection()">
-            Ver financeiro
-          </button>
-        </div>
+          Ver financeiro
+        </button>
+      </div>
       ` : ""}
 
       <div class="home-quick-panel__hero">
@@ -4634,6 +4908,8 @@ const renderHomeQuickPanel = ({ runtime, open, waiting, finished, myVotesMap }) 
         <div class="home-quick-panel__hero-title">${nextDescription}</div>
         <div class="home-quick-panel__hero-meta">${escapeHtml(nextMeta)}</div>
       </div>
+
+      ${renderHomeEngagementStack({ runtime, open, finished, myVotesMap })}
 
       <div class="home-quick-stats">
         <button type="button" class="home-quick-stat home-quick-stat--clickable ${pendingCounterClass} btn-press" onclick="window.goToPendingVote()">
@@ -5508,13 +5784,14 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
 
     void (async () => {
       try {
-        const [uSnap, commentsSnap, newsSnap, layoutSnap, bannersSnap, pollsSnap] = await Promise.all([
+        const [uSnap, commentsSnap, newsSnap, layoutSnap, bannersSnap, pollsSnap, rankingMovementSnapshot] = await Promise.all([
           readWithRuntimeCache("col:users", () => getDocs(collection(db, "users")), { ttlMs: DATA_CACHE_TTL.warm, force }),
           readWithRuntimeCache("col:match_comments", () => getDocs(collection(db, "match_comments")), { ttlMs: DATA_CACHE_TTL.hot, force }),
         readWithRuntimeCache("doc:settings:news", () => getDoc(doc(db, "settings", "news")), { ttlMs: DATA_CACHE_TTL.warm, force }),
         readWithRuntimeCache("doc:settings:home_layout", () => getDoc(doc(db, "settings", "home_layout")), { ttlMs: DATA_CACHE_TTL.warm, force }),
         readWithRuntimeCache("col:banners", () => getDocs(collection(db, "banners")), { ttlMs: DATA_CACHE_TTL.warm, force }),
-        readWithRuntimeCache("col:polls", () => getDocs(collection(db, "polls")), { ttlMs: DATA_CACHE_TTL.hot, force })
+        readWithRuntimeCache("col:polls", () => getDocs(collection(db, "polls")), { ttlMs: DATA_CACHE_TTL.hot, force }),
+        loadRankingMovementSnapshot({ force })
       ]);
 
         if (requestId !== matchesLoadRequestSeq) return;
@@ -18107,7 +18384,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
             const cardContainer = document.createElement('div');
             cardContainer.id = "instaCardCapture";
             cardContainer.style.position = "fixed"; cardContainer.style.top = "0"; cardContainer.style.left = "0"; 
-            cardContainer.style.zIndex = "-9999"; cardContainer.style.width = "320px"; cardContainer.style.height = "720px"; // Altura maior
+            cardContainer.style.zIndex = "-9999"; cardContainer.style.width = "360px"; cardContainer.style.height = "780px";
             document.body.appendChild(cardContainer);
 
             const avatarUrl = getAvatarUrl(user.photoBase64, user.name);
@@ -18149,33 +18426,40 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
 
             // HTML DO CARD FINAL
             cardContainer.innerHTML = `
-                <div style="width: 320px; height: 720px; display: flex; flex-direction: column; padding: 16px; background: linear-gradient(180deg, #004D40 0%, #000000 100%); font-family: serif; text-align: center; position: relative; overflow: hidden;">
-                    <img src="bg_ranking.png" loading="lazy" decoding="async" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.15; mix-blend-mode: overlay;">
+                <div style="width: 360px; height: 780px; display: flex; flex-direction: column; padding: 18px; background: linear-gradient(180deg, #004D40 0%, #071c17 58%, #020817 100%); font-family: Inter, system-ui, sans-serif; text-align: center; position: relative; overflow: hidden;">
+                    <img src="bg_ranking.png" loading="lazy" decoding="async" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.16; mix-blend-mode: overlay;">
                     
                     <div style="position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column;">
-                        <h1 style="color: #FFD700; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: 2px; margin: 0;">BOLÃO 112 F.C</h1>
+                        <div style="display:inline-flex; align-self:center; align-items:center; gap:6px; padding:6px 12px; margin-bottom:10px; border-radius:999px; background: rgba(255,255,255,0.1); border:1px solid rgba(255,215,0,0.35); color:#FFE082; font-size:9px; font-weight:900; letter-spacing:1.2px; text-transform:uppercase;">
+                            Card compartilhável
+                        </div>
+                        <h1 style="color: #FFD700; font-weight: 900; font-size: 26px; text-transform: uppercase; letter-spacing: 2px; margin: 0;">BOLÃO 112 F.C</h1>
+                        <div style="color: rgba(255,255,255,0.84); font-size: 11px; font-weight: 800; margin-top: 4px; margin-bottom: 14px;">Meu momento no ranking</div>
                         
-                        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-                            <div style="width: 65px; height: 65px; border-radius: 50%; border: 3px solid #FFD700; overflow: hidden; background: black; box-shadow: 0 4px 8px rgba(0,0,0,0.5);">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px;">
+                            <div style="width: 74px; height: 74px; border-radius: 50%; border: 3px solid #FFD700; overflow: hidden; background: linear-gradient(180deg, #0f172a, #020617); box-shadow: 0 10px 18px rgba(0,0,0,0.42);">
                                 <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
-                            <div style="margin-left: 12px; text-align: left;">
-                                <div style="color: white; font-weight: 900; font-size: 20px; line-height: 1.2;">${user.name.toUpperCase()}</div>
-                                <div style="color: #FFD700; font-weight: 900; font-size: 14px;">${user.p} PONTOS</div>
+                            <div style="text-align: left; min-width: 0;">
+                                <div style="color: white; font-weight: 900; font-size: 21px; line-height: 1.15; text-transform: uppercase; max-width: 210px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${user.name.toUpperCase()}</div>
+                                <div style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
+                                    <div style="padding:5px 10px; border-radius:999px; background: rgba(255,215,0,0.16); border:1px solid rgba(255,215,0,0.38); color:#FFD700; font-weight:900; font-size:13px;">${user.p} PONTOS</div>
+                                    <div style="padding:5px 10px; border-radius:999px; background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.9); font-weight:800; font-size:11px;">${index + 1}º LUGAR</div>
+                                </div>
                             </div>
                         </div>
 ${medalsStripHtml}
 
-                        <div style="background: rgba(255,255,255,0.95); border-radius: 12px; padding: 12px; flex: 1;">
-                            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid black; padding-bottom: 6px; margin-bottom: 6px;">
-                                <span style="font-size: 10px; font-weight: 900;">RANKING GERAL (${totalParticipants})</span>
-                                <span style="font-size: 10px; font-weight: 900;">PTS</span>
+                        <div style="background: rgba(255,255,255,0.96); border-radius: 18px; padding: 12px; flex: 1; box-shadow: 0 16px 32px rgba(0,0,0,0.2);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(15,23,42,0.12); padding-bottom: 8px; margin-bottom: 8px;">
+                                <span style="font-size: 10px; font-weight: 900; letter-spacing: 1px; color: #0f172a;">RANKING GERAL (${totalParticipants})</span>
+                                <span style="font-size: 10px; font-weight: 900; color: #0f172a;">PTS</span>
                             </div>
                             ${tableHtml}
                         </div>
 
-                        <div style="margin-top: 16px; background: #FFD700; border-radius: 12px; padding: 10px;">
-                            <div style="color: black; font-weight: 900; font-size: 12px;">VEM PRO JOGO TAMBÉM!</div>
+                        <div style="margin-top: 14px; background: linear-gradient(90deg, #FFD700, #FFF176); border-radius: 14px; padding: 10px 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.24);">
+                            <div style="color: black; font-weight: 900; font-size: 12px; letter-spacing: 0.6px;">COMPARTILHE SEU MOMENTO!</div>
                             <div style="display: flex; align-items: center; justify-content: center; margin-top: 2px;">
                                 <i class="fas fa-globe" style="font-size: 12px; margin-right: 4px;"></i>
                                 <span style="color: black; font-weight: 900; font-size: 14px;">bolao112-site.vercel.app</span>
@@ -18189,8 +18473,39 @@ ${medalsStripHtml}
                 await new Promise(r => setTimeout(r, 800)); 
 await ensureHtml2Canvas();
 const canvas = await window.html2canvas(cardContainer, { scale: 2, useCORS: true, backgroundColor: null, logging: false });
-const link = document.createElement('a');
-                link.download = `card_${user.name.replace(/\s+/g, '_')}.jpg`;
+                const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+                const fileName = `card_${user.name.replace(/\s+/g, '_')}.jpg`;
+
+                if (blob) {
+                    const file = new File([blob], fileName, { type: "image/jpeg" });
+                    try {
+                        if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+                            await navigator.share({
+                                title: `Bolão 112 FC - ${user.name}`,
+                                text: "Meu card compartilhável do Bolão 112 FC",
+                                files: [file]
+                            });
+                            return;
+                        }
+                    } catch (shareError) {
+                        if (shareError?.name !== "AbortError") {
+                            console.warn("Falha ao compartilhar o card:", shareError);
+                        } else {
+                            return;
+                        }
+                    }
+
+                    const blobUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = blobUrl;
+                    link.click();
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
+                    return;
+                }
+
+                const link = document.createElement('a');
+                link.download = fileName;
                 link.href = canvas.toDataURL("image/jpeg", 0.9);
                 link.click();
             } catch (err) {
