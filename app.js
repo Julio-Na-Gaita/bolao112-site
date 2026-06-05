@@ -123,7 +123,7 @@ let homeSectionCollapseState = {
 };
 
 // Não alterar APP_VERSION automaticamente. A versão visual só deve mudar quando solicitado pelo administrador.
-const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.5');
+const getAppVersion = () => String(window.APP_VERSION || 'web-1.7.6');
 const getAppVersionShort = () => getAppVersion().replace(/^web-/, '');
 const getAppVersionLabel = () => `Web v${getAppVersionShort()}`;
 const getAppVersionFullLabel = () => `Versão ${getAppVersionLabel()}`;
@@ -13851,11 +13851,11 @@ const renderAdminRegulationManager = () => {
               <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label class="admin-compact-label">Última versão do app</label>
-                  <input id="adminRegulationLatestAppVersion" type="text" class="admin-creation-input" value="${escapeHtml(adminRegulationState.latestAppVersion || "")}" placeholder="1.7.5">
+                <input id="adminRegulationLatestAppVersion" type="text" class="admin-creation-input" value="${escapeHtml(adminRegulationState.latestAppVersion || "")}" placeholder="1.7.6">
                 </div>
                 <div>
                   <label class="admin-compact-label">Versão mínima</label>
-                  <input id="adminRegulationMinimumAppVersion" type="text" class="admin-creation-input" value="${escapeHtml(adminRegulationState.minimumAppVersion || "")}" placeholder="1.7.5">
+                  <input id="adminRegulationMinimumAppVersion" type="text" class="admin-creation-input" value="${escapeHtml(adminRegulationState.minimumAppVersion || "")}" placeholder="1.7.6">
                 </div>
               </div>
               <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -17849,7 +17849,7 @@ window.openCalendar2026 = () => {
 
         // --- GUIA DO APP (SUBSTITUI CHANGELOG) ---
 // --- GUIA DO APP ATUALIZADO COM LISTA COMPLETA DE MEDALHAS ---
-        // --- GUIA DO APP ATUALIZADO (v1.7.5) ---
+        // --- GUIA DO APP ATUALIZADO (v1.7.6) ---
         window.showAppGuide = () => { 
             document.getElementById('modalOverlay').classList.remove('hidden'); 
             document.getElementById('modalContainer').innerHTML = `
