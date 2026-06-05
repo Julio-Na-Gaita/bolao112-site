@@ -2265,6 +2265,8 @@ window.__rulesGateLock = false;
 window.__rulesGate = {
   requiredVersion: 0,
   items: [],
+  doc: null,
+  hasValidRules: false,
   updatedAt: null,
   officialStartAt: null,
   gateRules: false
@@ -19114,32 +19116,34 @@ const openRulesGateModal = async () => {
 overlay.style.zIndex = '99999';
 document.body.style.overflow = 'hidden';
 
-  // monta lista de regras
-  const items = Array.isArray(window.__rulesGate.items) ? window.__rulesGate.items : [];
-  const listHtml = items.length
-    ? items.map((t) => `<li class="mb-2 leading-relaxed text-sm text-gray-700">• ${String(t)}</li>`).join('')
-    : `<li class="text-sm text-gray-500">Nenhuma regra cadastrada.</li>`;
+  const rulesDoc = window.__rulesGate.doc || {};
+  const hasValidRules = window.__rulesGate.hasValidRules === true;
+  const innerHtml = buildRulesContentHtml(rulesDoc);
 
   cont.innerHTML = `
     <div class="bg-white p-6 relative w-full max-w-lg rounded-2xl shadow-2xl border border-gray-100">
       <div class="text-center mb-4">
-        <div class="text-[#006400] font-black uppercase text-lg">Regulamento Obrigatório</div>
+        <div class="text-[#006400] font-black uppercase text-lg">Regras do Bolão</div>
         <div class="text-[11px] text-gray-500 font-bold mt-1">
-          Versão: <span class="text-black">${window.__rulesGate.requiredVersion || 0}</span>
+          Versão: <span class="text-black">${window.__rulesGate.requiredVersion || "N/D"}</span>
         </div>
       </div>
 
       <div class="max-h-[55vh] overflow-y-auto p-4 bg-gray-50 rounded-xl border border-gray-200">
-        <ul class="list-none p-0 m-0">
-          ${listHtml}
-        </ul>
+        ${innerHtml}
       </div>
 
       <div class="mt-5 flex gap-3">
-        <button id="btnAcceptRulesGate"
-          class="flex-1 bg-[#006400] text-white py-3 font-black rounded-xl shadow-lg btn-press text-sm">
-          ACEITAR E CONTINUAR
-        </button>
+        ${
+          hasValidRules
+            ? `<button id="btnAcceptRulesGate"
+                class="flex-1 bg-[#006400] text-white py-3 font-black rounded-xl shadow-lg btn-press text-sm">
+                ACEITAR E CONTINUAR
+              </button>`
+            : `<div class="flex-1 bg-yellow-50 text-yellow-800 py-3 px-3 font-black rounded-xl border border-yellow-200 text-[11px] leading-tight">
+                Nenhuma regra ativa disponível no momento.
+              </div>`
+        }
         <button id="btnLogoutRulesGate"
           class="px-4 bg-gray-100 text-gray-700 py-3 font-black rounded-xl border border-gray-200 text-sm">
           SAIR
@@ -19157,44 +19161,47 @@ document.body.style.overflow = 'hidden';
   };
 
   // botão aceitar
-  document.getElementById('btnAcceptRulesGate').onclick = async () => {
-    const msg = document.getElementById('rulesGateMsg');
-    const btn = document.getElementById('btnAcceptRulesGate');
-    btn.disabled = true;
-    btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i>`;
+  const btnAccept = document.getElementById('btnAcceptRulesGate');
+  if (btnAccept) {
+    btnAccept.onclick = async () => {
+      const msg = document.getElementById('rulesGateMsg');
+      const btn = document.getElementById('btnAcceptRulesGate');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i>`;
 
-    try {
-      const uid = window.currentUid;
-      if (!uid) throw new Error("Sem UID");
+      try {
+        const uid = window.currentUid;
+        if (!uid) throw new Error("Sem UID");
 
-      const v = Number(window.__rulesGate.requiredVersion || 0);
+        const v = String(window.__rulesGate.requiredVersion || "").trim();
 
-      await updateDoc(doc(db, "users", uid), {
-        rulesAccepted: true,
-        rulesAcceptedVersion: v,
-        rulesAcceptedAt: serverTimestamp()
-      });
+        await updateDoc(doc(db, "users", uid), {
+          rulesAccepted: true,
+          rulesAcceptedVersion: v,
+          rulesAcceptedAt: serverTimestamp()
+        });
 
-      // libera
-      window.__rulesGate.gateRules = false;
-      window.__rulesGateLock = false;
+        // libera
+        window.__rulesGate.gateRules = false;
+        window.__rulesGateLock = false;
 
-      // fecha modal e segue
-      overlay.classList.add('hidden');
-document.body.style.overflow = 'auto';
+        // fecha modal e segue
+        overlay.classList.add('hidden');
+        document.body.style.overflow = 'auto';
 
 
-      // garantir que a UI “entre” corretamente (caso tenhamos segurado a navegação)
-      // segue pelo funil central
-window.continueAfterLoginGates();
+        // garantir que a UI “entre” corretamente (caso tenhamos segurado a navegação)
+        // segue pelo funil central
+        window.continueAfterLoginGates();
 
-    } catch (e) {
-      console.error(e);
-      if (msg) msg.innerText = "Erro ao salvar aceitação. Verifique sua conexão e tente novamente.";
-      btn.disabled = false;
-      btn.innerText = "ACEITAR E CONTINUAR";
-    }
-  };
+      } catch (e) {
+        console.error(e);
+        if (msg) msg.innerText = "Erro ao salvar aceitação. Verifique sua conexão e tente novamente.";
+        btn.disabled = false;
+        btn.innerText = "ACEITAR E CONTINUAR";
+      }
+    };
+  }
 };
 // --- RULES GATE EVALUATOR ---
 const evaluateRulesGate = async (uid, userData) => {
@@ -19205,36 +19212,38 @@ const evaluateRulesGate = async (uid, userData) => {
     const rulesRef = doc(db, "settings", "rules");
     const rulesSnap = await getDoc(rulesRef);
 
-    let rules = {
-      version: 0,
-      items: [],
-      updatedAt: null,
-      officialStartAt: null
-    };
+    const rules = rulesSnap.exists()
+      ? normalizePublicRulesDocument(rulesSnap.data() || {})
+      : normalizePublicRulesDocument({});
 
-    if (rulesSnap.exists()) {
-      const r = rulesSnap.data();
-      rules.version = Number(r.version || 0);
-      rules.items = Array.isArray(r.items) ? r.items : [];
-      rules.updatedAt = r.updatedAt || null;
-      rules.officialStartAt = r.officialStartAt || null;
-    }
+    const visibleRules = (rules.items || []).filter((item) => item.active !== false);
 
-    window.__rulesGate.requiredVersion = rules.version;
-    window.__rulesGate.items = rules.items;
+    window.__rulesGate.requiredVersion = rules.version || "";
+    window.__rulesGate.items = visibleRules;
+    window.__rulesGate.doc = rules;
+    window.__rulesGate.hasValidRules = visibleRules.length > 0;
     window.__rulesGate.updatedAt = rules.updatedAt;
     window.__rulesGate.officialStartAt = rules.officialStartAt;
 
     // 2) users/{uid} (você já tem userData do getDoc anterior)
-    const accepted = userData?.rulesAccepted === true;
-    const acceptedVersion = Number(userData?.rulesAcceptedVersion || 0);
+    const accepted = !!(userData?.rulesAccepted === true || userData?.acceptedRules === true || userData?.acceptedRegulation === true || userData?.regulationAccepted === true || userData?.termsAccepted === true);
+    const acceptedVersionRaw = String(
+      userData?.rulesAcceptedVersion ??
+      userData?.acceptedRulesVersion ??
+      userData?.acceptedRegulationVersion ??
+      userData?.regulationAcceptedVersion ??
+      userData?.termsAcceptedVersion ??
+      ""
+    ).trim();
 
     // 3) regra do gate
     const activeNow = shouldGateBeActiveNow(rules.officialStartAt);
-
-    const mustAccept =
-      activeNow &&
-      (rules.version > acceptedVersion || !accepted);
+    const currentVersion = String(rules.version || "").trim();
+    const hasCurrentVersion = currentVersion.length > 0;
+    const mustAccept = window.__rulesGate.hasValidRules && activeNow && (
+      !accepted ||
+      (hasCurrentVersion && acceptedVersionRaw !== currentVersion)
+    );
 
     window.__rulesGate.gateRules = mustAccept;
 
@@ -19427,11 +19436,15 @@ window.getRulesDoc = async () => {
 window.getUserRulesState = async (uid) => {
   const ref = doc(db, "users", uid);
   const snap = await getDoc(ref);
-  if (!snap.exists()) return { rulesAccepted: false, rulesAcceptedVersion: "" };
+  if (!snap.exists()) return { rulesAccepted: false, rulesAcceptedVersion: "", acceptedRulesVersion: "", regulationAccepted: false, termsAccepted: false };
   const d = snap.data() || {};
   return {
     rulesAccepted: !!d.rulesAccepted,
     rulesAcceptedVersion: (d.rulesAcceptedVersion || "").toString(),
+    acceptedRulesVersion: (d.acceptedRulesVersion || "").toString(),
+    acceptedRegulationVersion: (d.acceptedRegulationVersion || "").toString(),
+    regulationAccepted: !!d.regulationAccepted,
+    termsAccepted: !!d.termsAccepted,
   };
 };
 
@@ -19460,9 +19473,22 @@ window.acceptRules = async (uid, rulesVersion) => {
 };
 
 window.computeGateRules = (userState, rulesDoc) => {
-  const accepted = !!userState.rulesAccepted;
-  const uVer = (userState.rulesAcceptedVersion || "").toString();
-  const rVer = (rulesDoc.version || "").toString();
+  const normalizedRules = normalizePublicRulesDocument(rulesDoc || {});
+  const visibleRules = (normalizedRules.items || []).filter((item) => item.active !== false);
+  if (!visibleRules.length) return false;
+
+  const accepted = !!(userState.rulesAccepted === true || userState.acceptedRules === true || userState.acceptedRegulation === true || userState.regulationAccepted === true || userState.termsAccepted === true);
+  const uVer = String(
+    userState.rulesAcceptedVersion ??
+    userState.acceptedRulesVersion ??
+    userState.acceptedRegulationVersion ??
+    userState.regulationAcceptedVersion ??
+    userState.termsAcceptedVersion ??
+    ""
+  ).trim();
+  const rVer = String(normalizedRules.version || "").trim();
+
+  if (!rVer) return !accepted;
   return (!accepted) || (uVer !== rVer);
 };
 
