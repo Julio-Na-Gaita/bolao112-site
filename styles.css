@@ -2605,6 +2605,19 @@ select:focus-visible {
     color: #0f172a;
 }
 
+.admin-financial-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.admin-financial-actions-grid button {
+    min-width: 0;
+    padding-left: 6px;
+    padding-right: 6px;
+    line-height: 1.15;
+}
+
 .medal-count-badge--share {
     top: 1px;
     right: 1px;

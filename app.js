@@ -4431,6 +4431,9 @@ const safeHomeStorageSet = (key = "", value = "") => {
 };
 
 const getHomeEngagementStorageKey = (type = "", uid = "") => `bolao112:${type}:${String(uid || "").trim()}`;
+window.__engagementSummarySeenMemory = window.__engagementSummarySeenMemory || new Set();
+
+const getHomeEngagementMemoryKey = (storageKey = "", fingerprint = "") => `${String(storageKey || "")}:${String(fingerprint || "")}`;
 
 const getLocalDayKey = (date = null) => {
   const value = date instanceof Date ? date : toJsDate(date);
@@ -4662,7 +4665,8 @@ const getHomeEngagementSummaryState = ({ runtime = {}, open = [], finished = [],
 
   const fingerprint = fingerprintParts.join("::");
   const storageKey = getHomeEngagementStorageKey("engagementSummarySeen", uid);
-  if (safeHomeStorageGet(storageKey) === fingerprint) return null;
+  const memoryKey = getHomeEngagementMemoryKey(storageKey, fingerprint);
+  if (safeHomeStorageGet(storageKey) === fingerprint || window.__engagementSummarySeenMemory?.has(memoryKey)) return null;
 
   return {
     uid,
@@ -4676,7 +4680,9 @@ const getHomeEngagementSummaryState = ({ runtime = {}, open = [], finished = [],
 
 window.dismissHomeEngagementSummary = async (storageKey = "", fingerprint = "") => {
   if (!storageKey) return;
+  window.__engagementSummarySeenMemory?.add(getHomeEngagementMemoryKey(storageKey, fingerprint || "1"));
   safeHomeStorageSet(storageKey, fingerprint || "1");
+  document.getElementById("homeEngagementSummaryCard")?.remove();
   if (window.__matchesScreenStateCache) {
     await renderMatchesScreenFromState(window.__matchesScreenStateCache);
   }
@@ -4697,13 +4703,13 @@ const renderHomeEngagementStack = (params = {}) => {
     <button type="button" class="engagement-summary-card__action btn-press" onclick="showTab('ranking')">
       Ver ranking
     </button>
-    <button type="button" class="engagement-summary-card__action engagement-summary-card__action--ghost btn-press" onclick="window.dismissHomeEngagementSummary(${JSON.stringify(summary.storageKey)}, ${JSON.stringify(summary.fingerprint || "")})">
+    <button type="button" class="engagement-summary-card__action engagement-summary-card__action--ghost btn-press" onclick='window.dismissHomeEngagementSummary(${JSON.stringify(summary.storageKey)}, ${JSON.stringify(summary.fingerprint || "")})'>
       Marcar como lido
     </button>
   `;
 
   return `
-    <article class="engagement-summary-card">
+    <article id="homeEngagementSummaryCard" class="engagement-summary-card">
       <div class="engagement-summary-card__top">
         <div class="engagement-summary-card__icon">
           <i class="fas fa-layer-group"></i>
@@ -16966,6 +16972,114 @@ async function loadAdminMatches() {
           }
         };
 
+        const loadPotParticipantsAdminState = async () => {
+          const [configSnap, usersSnap] = await Promise.all([
+            getDoc(doc(db, "settings", "config")),
+            getDocs(collection(db, "users"))
+          ]);
+          const configData = configSnap.exists() ? configSnap.data() : {};
+          const config = getPotParticipantsConfig(configData, usersSnap.size || 0);
+          return {
+            value: config.value,
+            fieldName: config.fieldName,
+            totalUsers: usersSnap.size || 0
+          };
+        };
+
+        window.openPotParticipantsModal = async () => {
+          window.__setAdminReturnTarget(() => window.openFinancialScreen());
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) {
+            alert("Você não tem permissão para configurar participantes.");
+            return;
+          }
+
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando configuração...</p></div>`;
+
+          try {
+            const state = await loadPotParticipantsAdminState();
+            cont.innerHTML = `
+              <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden">
+                <div class="bg-[#006400] p-5 text-white">
+                  <h3 class="font-black uppercase text-lg leading-none">Participantes adimplentes</h3>
+                  <p class="text-[10px] text-[#FFD700] font-bold mt-1">Base da previsão final do porquinho</p>
+                </div>
+                <div class="p-5 space-y-4">
+                  <div class="rounded-2xl border border-green-100 bg-green-50 p-3">
+                    <p class="text-xs font-bold text-gray-700 leading-relaxed">
+                      Informe a quantidade atual de participantes adimplentes do bolão. Essa quantidade é usada para calcular a previsão final do pote, festa/troféus e divisão prevista da premiação.
+                    </p>
+                  </div>
+                  <div>
+                    <label class="admin-compact-label">Quantidade atual</label>
+                    <input id="potParticipantsInput" type="number" min="0" step="1" inputmode="numeric" class="admin-creation-input text-center font-black" value="${Number(state.value || 0)}">
+                    <p class="mt-2 text-[10px] font-bold text-gray-500 leading-relaxed">
+                      Essa configuração não altera pagamentos individuais. Ela apenas define a base usada na previsão final do pote.
+                    </p>
+                  </div>
+                  <div class="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2">
+                    <p class="text-[10px] text-gray-500 font-bold">Campo usado: <span class="text-gray-800">${escapeHtml(state.fieldName)}</span></p>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="window.openFinancialScreen()" class="bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Cancelar</button>
+                    <button type="button" onclick="window.savePotParticipantsConfig('${escapeJsString(state.fieldName)}', ${Number(state.value || 0)})" class="bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press">Salvar</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          } catch (error) {
+            console.error("Erro ao abrir configuração do porquinho:", error);
+            cont.innerHTML = `
+              <div class="bg-white p-6 text-center rounded shadow-xl">
+                <p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar a configuração.</p>
+                <button onclick="window.openFinancialScreen()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button>
+              </div>
+            `;
+          }
+        };
+
+        window.savePotParticipantsConfig = async (fieldName = "pot_active_participants", oldValue = 0) => {
+          const input = document.getElementById("potParticipantsInput");
+          const rawValue = String(input?.value || "").trim();
+          const nextValue = Number(rawValue);
+          if (!rawValue || !Number.isInteger(nextValue) || nextValue < 0) {
+            showFinancialToast("Informe um número inteiro válido.", "danger");
+            return;
+          }
+
+          try {
+            const admin = await getCurrentAdminProfile(true);
+            const safeField = fieldName === "potactiveparticipants" ? "potactiveparticipants" : "pot_active_participants";
+            await setDoc(doc(db, "settings", "config"), {
+              [safeField]: nextValue,
+              potParticipantsUpdatedAt: Timestamp.fromDate(new Date()),
+              potParticipantsUpdatedByUid: admin?.uid || "",
+              potParticipantsUpdatedByName: admin?.name || "",
+              potParticipantsUpdatedByEmail: admin?.email || ""
+            }, { merge: true });
+
+            invalidateRuntimeCache("doc:settings:config");
+            await logAdminFinancialAction("update_pot_participants", {
+              source: "settings/config",
+              field: safeField,
+              oldValue: Number(oldValue || 0),
+              newValue: nextValue
+            });
+
+            showFinancialToast("Participantes adimplentes atualizados!");
+            if (typeof calculatePot === "function") await calculatePot();
+            await window.openFinancialScreen();
+          } catch (error) {
+            console.error("Erro ao salvar participantes adimplentes:", error);
+            showFinancialToast("Não foi possível salvar a quantidade.", "danger");
+          }
+        };
+
         const loadAdminFinancialUsers = async () => {
           const snap = await getDocs(collection(db, "users"));
           const users = [];
@@ -17163,12 +17277,15 @@ async function loadAdminMatches() {
                       <span class="status-chip status-chip--default">${pendingCount} pendentes</span>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="admin-financial-actions-grid">
                       <button type="button" onclick="window.openInviteManager()" class="bg-[#6A1B9A] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
                         <i class="fas fa-link"></i> CONVITES
                       </button>
                       <button type="button" onclick="window.openFinancialAuditModal()" class="bg-red-600 text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
                         <i class="fas fa-bolt"></i> AUDITAR
+                      </button>
+                      <button type="button" onclick="window.openPotParticipantsModal()" class="bg-[#006400] text-white py-3 rounded-2xl font-black text-xs shadow-lg btn-press flex items-center justify-center gap-2">
+                        <i class="fas fa-piggy-bank"></i> ADIMPLENTES
                       </button>
                     </div>
 
@@ -18214,6 +18331,38 @@ window.openCalendar2026 = () => {
                 </div>
             </div>`; 
         };
+const getPotParticipantsConfig = (configData = {}, fallbackTotalUsers = 0) => {
+  const hasPrimary = Object.prototype.hasOwnProperty.call(configData || {}, "pot_active_participants");
+  const hasLegacy = Object.prototype.hasOwnProperty.call(configData || {}, "potactiveparticipants");
+  const rawValue = hasPrimary
+    ? configData.pot_active_participants
+    : hasLegacy
+      ? configData.potactiveparticipants
+      : fallbackTotalUsers;
+  const numericValue = Number(rawValue);
+  return {
+    fieldName: hasPrimary || !hasLegacy ? "pot_active_participants" : "potactiveparticipants",
+    value: Number.isFinite(numericValue) ? Math.max(0, Math.trunc(numericValue)) : Math.max(0, Number(fallbackTotalUsers || 0))
+  };
+};
+
+const buildPotForecastValues = ({ totalCotasPagas = 0, totalParticipantesAtivos = 0 } = {}) => {
+  const paidShares = Math.max(0, Number(totalCotasPagas || 0));
+  const activeParticipants = Math.max(0, Number(totalParticipantesAtivos || 0));
+  const currentPrize = paidShares * 10;
+  const currentParty = paidShares * 5;
+  const currentTotal = currentPrize + currentParty;
+  const forecastPrize = activeParticipants * 12 * 10;
+  const forecastParty = activeParticipants * 12 * 5;
+  return {
+    currentPrize,
+    currentParty,
+    currentTotal,
+    forecastPrize,
+    forecastParty
+  };
+};
+
 // --- CÁLCULO DO POTE COM PREVISÃO ANUAL ---
         window.calculatePot = async () => {
   try {
@@ -18231,22 +18380,15 @@ window.openCalendar2026 = () => {
     });
 
     const configData = configSnap.exists() ? configSnap.data() : {};
-    const rawConfiguredParticipants =
-      configData?.pot_active_participants ??
-      configData?.potactiveparticipants;
-
-    const totalParticipantesAtivos = Number.isFinite(Number(rawConfiguredParticipants))
-      ? Number(rawConfiguredParticipants)
-      : totalUsuarios;
-
-    // 1. Valores Reais (O que já tem no caixa)
-    const currentPrize = totalCotasPagas * 10;
-    const currentParty = totalCotasPagas * 5;
-    const currentTotal = currentPrize + currentParty;
-
-    // 2. Valores de Previsão (Participantes adimplentes definidos pelo admin)
-    const forecastPrize = totalParticipantesAtivos * 12 * 10;
-    const forecastParty = totalParticipantesAtivos * 12 * 5;
+    const potParticipantsConfig = getPotParticipantsConfig(configData, totalUsuarios);
+    const totalParticipantesAtivos = potParticipantsConfig.value;
+    const {
+      currentPrize,
+      currentParty,
+      currentTotal,
+      forecastPrize,
+      forecastParty
+    } = buildPotForecastValues({ totalCotasPagas, totalParticipantesAtivos });
 
     // Formatador de Moeda
     const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
