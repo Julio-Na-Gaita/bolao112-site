@@ -2062,29 +2062,6 @@ const syncMatchesNavBadge = (pendingFastVoteCount = 0) => {
   navBtn.innerHTML += `<span id="matches-badge" class="nav-badge">${pendingFastVoteCount > 9 ? "+" : pendingFastVoteCount}</span>`;
 };
 
-const syncMatchVoteButtons = (matchId, selectedTeam) => {
-  if (!matchId) return;
-  const buttons = Array.from(document.getElementsByClassName(`match-btn-${matchId}`));
-  if (!buttons.length) return;
-
-  buttons.forEach((btn) => {
-    if (btn.dataset.originalHtml) {
-      btn.innerHTML = btn.dataset.originalHtml;
-      delete btn.dataset.originalHtml;
-    }
-    const team = String(btn?.dataset?.team || "");
-    const isSelected = team === selectedTeam;
-    btn.disabled = false;
-    btn.classList.remove("is-saving-vote");
-    btn.classList.toggle("bg-[#006400]", isSelected);
-    btn.classList.toggle("text-white", isSelected);
-    btn.classList.toggle("bg-[#EEEEEE]", !isSelected);
-    btn.classList.toggle("text-gray-800", !isSelected);
-    btn.classList.toggle("border-2", isSelected);
-    btn.classList.toggle("border-[#FFD700]", isSelected);
-  });
-};
-
 const renderMatchesScreenFromState = async (state) => {
   const container = document.getElementById("matchesScreen");
   if (!container || !state) return;
@@ -5853,11 +5830,7 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                     timestamp: new Date()
                 });
 
-                const savedSnap = await getDocFromServer(voteRef);
-                const savedData = savedSnap.exists() ? savedSnap.data() : null;
-                if (!savedData || String(savedData.teamSelected || "") !== String(team || "")) {
-                    throw new Error("Vote confirmation mismatch");
-                }
+                await getDocFromServer(voteRef);
             } catch (error) {
                 console.error("Erro ao salvar voto:", error);
                 console.warn("Diagnóstico de falha no voto:", {
@@ -5915,7 +5888,6 @@ if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && t
                         const cachedMatch = window.__matchesScreenStateCache.open.find((match) => match.id === mid);
                         if (cachedMatch) cachedMatch.userVote = team;
                     }
-                    syncMatchVoteButtons(mid, team);
                     if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) {
                         await renderMatchesScreenFromState(window.__matchesScreenStateCache);
                         window.flashPendingMatchCard(mid);
