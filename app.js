@@ -18663,197 +18663,170 @@ const worstPosCount = (rankHistory.length && worstPos !== '-')
     }).sort((a, b) => (b.pct - a.pct) || (b.t - a.t));
 
     const tableHtml = compRows.length ? `
-      <div class="rounded-xl border border-white/10 overflow-hidden">
-        <div class="grid grid-cols-[minmax(0,1fr)_52px_62px_44px] bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white/70">
-          <div>Competição</div>
-          <div class="text-right pr-1">Jogos</div>
-          <div class="text-right pr-1">Acertos</div>
-          <div class="text-right">%</div>
-        </div>
+      <div class="scout-competition-list">
         ${compRows.map(r => `
-          <div class="grid grid-cols-[minmax(0,1fr)_52px_62px_44px] px-3 py-2 text-xs border-t border-white/10">
-            <div class="text-white font-bold truncate pr-2" title="${escapeHtml(r.comp || "Sem nome")}">${escapeHtml(r.comp || "Sem nome")}</div>
-            <div class="text-right pr-1 text-white/90 font-bold tabular-nums">${r.t}</div>
-            <div class="text-right pr-1 text-[#FFD700] font-black tabular-nums">${r.h}</div>
-            <div class="text-right text-white font-black tabular-nums">${r.pct}%</div>
+          <div class="scout-competition-row">
+            <div class="scout-competition-row__top">
+              <div class="scout-competition-row__meta-wrap">
+                <div class="scout-competition-row__name" title="${escapeHtml(r.comp || "Sem nome")}">${escapeHtml(r.comp || "Sem nome")}</div>
+                <div class="scout-competition-row__meta">
+                  <span>${r.t} jogos</span>
+                  <span>${r.h} acertos</span>
+                </div>
+              </div>
+              <div class="scout-competition-row__stats">${r.pct}%</div>
+            </div>
+            <div class="scout-competition-bar" aria-hidden="true">
+              <span style="width:${Math.max(0, Math.min(100, r.pct))}%"></span>
+            </div>
           </div>
         `).join('')}
       </div>
-    ` : `<div class="text-xs text-white/60 font-bold">Sem dados por competição ainda.</div>`;
+    ` : `<div class="scout-empty-state">Sem dados por competição ainda.</div>`;
 
-          const badgeIfMany = (n) => (n && n > 1)
-  ? `<span class="ml-2 inline-flex items-center justify-center min-w-[34px] h-7 px-2 rounded-full bg-red-600 text-white text-xs font-black shadow border border-white/20">${n}x</span>`
-  : '';
+    const badgeIfMany = (n) => (n && n > 1)
+      ? `<span class="scout-record-badge">${n}x</span>`
+      : '';
 
+    const safeScoutName = String(targetName || "Sem nome").trim() || "Sem nome";
+    const safeScoutPhoto = targetPhoto || "";
+    const scoutLast5Items = last5.map((symbol) => {
+      if (symbol === '✅') return { symbol: '✅', label: 'Acerto', tone: 'success' };
+      if (symbol === '❌') return { symbol: '❌', label: 'Erro', tone: 'danger' };
+      return { symbol: '○', label: 'Sem voto', tone: 'neutral' };
+    });
 
-    // 9) Render Premium (FIX: fundo sempre escuro + remove “chuva de números” + close padronizado)
-const html = `
-  <div class="w-full max-w-sm rounded-none shadow-2xl overflow-hidden"
-       style="max-height: 90vh; overflow-y: auto; background: linear-gradient(to bottom, #071018, #0b1622, #071018);">
-       
-    <div class="p-5 text-white">
-      <div class="flex items-start justify-between">
-        <div>
-          <div class="font-black italic text-[#FFD700] text-lg tracking-widest">SCOUT DO PALPITEIRO</div>
-          <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Resumo Premium • 2026</div>
-        </div>
-
-        <!-- FIX: usar window.closeModal -->
-        <button type="button" onclick="window.closeModal()" class="text-white/80 hover:text-white">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="flex items-center gap-3 mt-4">
-        <img src="${getAvatarUrl(targetPhoto, targetName)}" class="w-14 h-14 rounded-full border-2 border-[#FFD700] shadow">
-        <div class="min-w-0">
-          <div class="font-black text-xl uppercase truncate">${targetName}</div>
-          <div class="mt-2 space-y-2">
-
-  <!-- Consistência -->
-  <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-white/10 border border-white/10">
-    <div class="flex items-center gap-2 min-w-0">
-      <span class="text-base">${consistencyEmoji}</span>
-      <div class="min-w-0">
-        <div class="text-[11px] font-black text-white/90 truncate">Consistência: <span class="text-[#FFD700]">${consistencyLabel}</span></div>
-        <div class="text-[10px] text-white/50 font-bold truncate">${consistencyDetail}</div>
-      </div>
-    </div>
-    <button class="w-7 h-7 rounded-full bg-black/30 border border-white/10 flex items-center justify-center"
-      onclick="window.__toggleScoutInfo('scoutInfoConsistency')">
-      <i class="fas fa-info text-[10px] text-white/80"></i>
-    </button>
-  </div>
-
-  <div id="scoutInfoConsistency" class="hidden text-[10px] text-white/70 font-bold bg-black/20 border border-white/10 rounded-xl p-3">
-    Mede o quanto a posição dele “balança” ao longo do tempo. Quanto menor a oscilação, maior a consistência.
-  </div>
-
-  <!-- Risco -->
-  <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-white/10 border border-white/10">
-    <div class="flex items-center gap-2 min-w-0">
-      <span class="text-base">${riskEmoji}</span>
-      <div class="min-w-0">
-        <div class="text-[11px] font-black text-white/90 truncate">Risco: <span class="text-blue-200">${riskLabel}</span></div>
-        <div class="text-[10px] text-white/50 font-bold truncate">${riskDetail}</div>
-      </div>
-    </div>
-    <button class="w-7 h-7 rounded-full bg-black/30 border border-white/10 flex items-center justify-center"
-      onclick="window.__toggleScoutInfo('scoutInfoRisk')">
-      <i class="fas fa-info text-[10px] text-white/80"></i>
-    </button>
-  </div>
-
-  <div id="scoutInfoRisk" class="hidden text-[10px] text-white/70 font-bold bg-black/20 border border-white/10 rounded-xl p-3">
-    Mede se ele costuma votar com a maioria ou “ir contra”. Menor concordância e mais votos contra a maioria = risco mais alto.
-  </div>
-
-</div>
-
-        </div>
-      </div>
-
-      <!-- KPIs -->
-      <div class="grid grid-cols-2 gap-3 mt-4">
-        <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
-          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Votos/Conf.</div>
-          <div class="text-lg font-black">${totalEligible} <span class="text-sm text-white/60">(${totalVoted})</span></div>
-        </div>
-        <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
-          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Acertos</div>
-          <div class="text-lg font-black text-[#FFD700]">${totalHits}</div>
-        </div>
-        <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
-          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Precisão</div>
-          <div class="text-lg font-black text-blue-300">${acc}%</div>
-        </div>
-        <div class="bg-white/10 rounded-lg p-3 border border-white/10 text-center">
-          <div class="text-[9px] uppercase tracking-wider text-white/60 font-black">Seq. Atual</div>
-          <div class="text-lg font-black">${streakDisplay}</div>
-        </div>
-      </div>
-
-      <!-- Últimos 5 -->
-      <div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
-        <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Últimos 5</div>
-        <div class="flex items-center justify-between text-[10px] font-black text-white/60 mb-2 px-1">
-  <span>Mais recente</span>
-  <span class="text-white/40">→</span>
-  <span>Mais antigo</span>
-</div>
-        <div class="flex justify-between gap-2">
-          ${last5.map(x => `
-            <div class="w-10 h-10 rounded-full bg-black/30 border border-white/10 flex items-center justify-center text-lg">
-              ${x}
-            </div>
-          `).join('')}
-        </div>
-        <div class="text-[10px] text-white/50 font-bold mt-2">✅ acerto • ❌ erro • 🚫 sem voto (quebra sequência)</div>
-      </div>
-
-      <!-- Gráfico -->
-      <div class="mt-4 bg-white rounded-lg p-3">
-        <div class="text-[10px] text-gray-600 font-black mb-2 text-center uppercase tracking-wider">Evolução no Ranking</div>
-        <div class="h-40 w-full"><canvas id="scoutChart"></canvas></div>
-      </div>
-
-      <!-- Desempenho por competição -->
-      <div class="mt-4">
-        <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Desempenho por competição</div>
-        ${tableHtml}
-      </div>
-
-      <!-- Recordes & Perfil -->
-<div class="mt-4 bg-white/10 rounded-lg p-3 border border-white/10">
-  <div class="text-[10px] font-black uppercase tracking-wider text-white/70 mb-2">Recordes & Perfil</div>
-
-  <div class="grid grid-cols-2 gap-3">
-    <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-      <div class="flex items-center justify-between">
-        <div class="text-[9px] uppercase text-white/60 font-black">🔥 Melhor seq.</div>
-        ${badgeIfMany(winRecordCount)}
-      </div>
-      <div class="text-lg font-black text-green-300">+${maxWinStreak}</div>
-    </div>
-
-    <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-      <div class="flex items-center justify-between">
-        <div class="text-[9px] uppercase text-white/60 font-black">❄️ Pior seq.</div>
-        ${badgeIfMany(lossRecordCount)}
-      </div>
-      <div class="text-lg font-black text-red-300">${maxLossStreak}</div>
-    </div>
-
-    <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-      <div class="flex items-center justify-between">
-        <div class="text-[9px] uppercase text-white/60 font-black">🏅 Melhor posição</div>
-        ${badgeIfMany(bestPosCount)}
-      </div>
-      <div class="text-lg font-black text-[#FFD700]">#${bestPos}</div>
-    </div>
-
-    <div class="bg-black/20 rounded-lg p-3 border border-white/10">
-      <div class="flex items-center justify-between">
-        <div class="text-[9px] uppercase text-white/60 font-black">⚠️ Pior posição</div>
-        ${badgeIfMany(worstPosCount)}
-      </div>
-      <div class="text-lg font-black text-white">#${worstPos}</div>
-    </div>
-  </div>
-</div>
-
-
-      <!-- FIX: usar window.closeModal -->
-      <button type="button" onclick="window.closeModal()"
-              class="w-full mt-5 bg-[#FFD700] text-black font-black py-3 rounded shadow-lg btn-press text-xs">
-        FECHAR
+    const renderScoutInfoBox = (id, text) => `
+      <button type="button" class="scout-help-trigger" onclick="window.__toggleScoutInfo('${id}')">
+        <i class="fas fa-info"></i>
       </button>
-    </div>
-  </div>
-`;
+      <div id="${id}" class="scout-help-box hidden">${escapeHtml(text)}</div>
+    `;
 
+    const renderScoutKpiCard = (icon, label, value, sub = "", tone = "") => `
+      <div class="scout-kpi-card ${tone ? `scout-kpi-card--${tone}` : ""}">
+        <div class="scout-kpi-card__icon">${icon}</div>
+        <div class="scout-kpi-card__label">${escapeHtml(label)}</div>
+        <div class="scout-kpi-card__value">${value}</div>
+        ${sub ? `<div class="scout-kpi-card__sub">${sub}</div>` : ""}
+      </div>
+    `;
 
-cont.innerHTML = html;
+    const renderScoutRecordCard = (icon, label, value, badge = "") => `
+      <div class="scout-record-card">
+        <div class="scout-record-card__top">
+          <div class="scout-record-card__label">${icon} ${escapeHtml(label)}</div>
+          ${badge}
+        </div>
+        <div class="scout-record-card__value">${value}</div>
+      </div>
+    `;
+
+    const renderScoutEmptyState = (text) => `
+      <div class="scout-empty-state">${escapeHtml(text)}</div>
+    `;
+
+    const renderScoutLast5Item = (item) => `
+      <div class="scout-history__item scout-history__item--${item.tone}">
+        <span class="scout-history__symbol">${item.symbol}</span>
+        <span class="scout-history__label">${escapeHtml(item.label)}</span>
+      </div>
+    `;
+
+    const chartHtml = rankHistory.length
+      ? `<div class="scout-chart-card__canvas"><canvas id="scoutChart"></canvas></div>`
+      : renderScoutEmptyState("Ainda não há dados suficientes para montar a evolução.");
+
+    const html = `
+      <div class="scout-modal">
+        <div class="scout-header">
+          <div class="scout-header__eyebrow">SCOUT DO PALPITEIRO</div>
+          <div class="scout-header__title">Resumo Premium</div>
+          <div class="scout-header__subtitle">Visão analítica dos palpites e da evolução do jogador</div>
+          <button type="button" onclick="window.closeModal()" class="scout-header__close" aria-label="Fechar">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="scout-modal__body">
+          <div class="scout-profile">
+            <img src="${getAvatarUrl(safeScoutPhoto, safeScoutName)}" alt="${escapeHtml(safeScoutName)}" class="scout-profile__avatar">
+            <div class="scout-profile__content">
+              <div class="scout-profile__name">${escapeHtml(safeScoutName)}</div>
+              <div class="scout-profile__meta">Resumo Premium • 2026</div>
+            </div>
+          </div>
+
+          <div class="scout-section">
+            <div class="scout-section__title">Resumo rápido</div>
+            <div class="scout-kpi-grid">
+              ${renderScoutKpiCard("⚽", "Votos/Conf.", `${totalEligible} <span class="scout-kpi-card__muted">(${totalVoted})</span>`)}
+              ${renderScoutKpiCard("🎯", "Acertos", `<span class="scout-kpi-card__value--gold">${totalHits}</span>`)}
+              ${renderScoutKpiCard("📈", "Precisão", `<span class="scout-kpi-card__value--blue">${acc}%</span>`)}
+              ${renderScoutKpiCard("🔁", "Seq. Atual", streakDisplay)}
+            </div>
+          </div>
+
+          <div class="scout-section">
+            <div class="scout-section__title">Consistência</div>
+            <div class="scout-card-row">
+              <div class="scout-card-row__main">
+                <div class="scout-card-row__title">Consistência: <span class="scout-accent">${consistencyLabel}</span></div>
+                <div class="scout-card-row__subtitle">${consistencyDetail}</div>
+              </div>
+              ${renderScoutInfoBox('scoutInfoConsistency', 'Mostra o quanto a posição variou ao longo dos jogos finalizados.')}
+            </div>
+          </div>
+
+          <div class="scout-section">
+            <div class="scout-section__title">Risco</div>
+            <div class="scout-card-row">
+              <div class="scout-card-row__main">
+                <div class="scout-card-row__title">Risco: <span class="scout-accent scout-accent--blue">${riskLabel}</span></div>
+                <div class="scout-card-row__subtitle">${riskDetail}</div>
+              </div>
+              ${renderScoutInfoBox('scoutInfoRisk', 'Compara seus palpites com a escolha da maioria. Quanto mais diferente da maioria, maior o risco.')}
+            </div>
+          </div>
+
+          <div class="scout-section">
+            <div class="scout-section__title">Últimos 5 palpites</div>
+            <div class="scout-history">
+              ${scoutLast5Items.map(renderScoutLast5Item).join('')}
+            </div>
+            <div class="scout-section__hint">✅ acerto • ❌ erro • ○ sem voto</div>
+          </div>
+
+          <div class="scout-section">
+            <div class="scout-section__title">Evolução no Ranking</div>
+            <div class="scout-chart-card">
+              ${chartHtml}
+            </div>
+          </div>
+
+          <div class="scout-section">
+            <div class="scout-section__title">Desempenho por competição</div>
+            ${tableHtml}
+          </div>
+
+          <div class="scout-section">
+            <div class="scout-section__title">Recordes & Perfil</div>
+            <div class="scout-record-grid">
+              ${renderScoutRecordCard("🔥", "Melhor seq.", `+${maxWinStreak}`, badgeIfMany(winRecordCount))}
+              ${renderScoutRecordCard("❄️", "Pior seq.", `${maxLossStreak}`, badgeIfMany(lossRecordCount))}
+              ${renderScoutRecordCard("🏅", "Melhor posição", `#${bestPos}`, badgeIfMany(bestPosCount))}
+              ${renderScoutRecordCard("⚠️", "Pior posição", `#${worstPos}`, badgeIfMany(worstPosCount))}
+            </div>
+          </div>
+
+          <button type="button" onclick="window.closeModal()" class="scout-close-button btn-press">
+            FECHAR
+          </button>
+        </div>
+      </div>
+    `;
+
+    cont.innerHTML = html;
 
     // 10) Gráfico
     if (window.myScoutChart) window.myScoutChart.destroy();

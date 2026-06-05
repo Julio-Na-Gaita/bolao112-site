@@ -7450,6 +7450,463 @@ button[disabled] {
     border-radius: var(--radius-button);
 }
 
+/* ================= SCOUT DO PALPITEIRO ================= */
+.scout-modal {
+    width: min(94vw, 460px);
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: linear-gradient(180deg, #071018 0%, #0b1622 54%, #071018 100%);
+    color: #fff;
+}
+
+.scout-header {
+    position: relative;
+    flex: 0 0 auto;
+    padding: 16px 16px 14px;
+    background: rgba(7, 16, 24, 0.94);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.scout-header__eyebrow {
+    color: #ffd700;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.scout-header__title {
+    margin-top: 4px;
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.scout-header__subtitle {
+    margin-top: 4px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.35;
+    padding-right: 42px;
+}
+
+.scout-header__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.88);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scout-modal__body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 14px 16px 16px;
+}
+
+.scout-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.scout-profile__avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    object-fit: cover;
+    border: 2px solid rgba(255, 215, 0, 0.9);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.22);
+    flex: 0 0 auto;
+}
+
+.scout-profile__content {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.scout-profile__name {
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1.15;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+}
+
+.scout-profile__meta {
+    margin-top: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.58);
+}
+
+.scout-section {
+    margin-top: 14px;
+}
+
+.scout-section__title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.scout-section__hint {
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.54);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.scout-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.scout-kpi-card {
+    position: relative;
+    min-height: 96px;
+    padding: 12px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+}
+
+.scout-kpi-card__icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    opacity: 0.72;
+    font-size: 13px;
+}
+
+.scout-kpi-card__label {
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.scout-kpi-card__value {
+    margin-top: 8px;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+    color: #fff;
+}
+
+.scout-kpi-card__muted,
+.scout-kpi-card__sub {
+    font-size: 10px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.scout-kpi-card__value--gold {
+    color: #ffd700;
+}
+
+.scout-kpi-card__value--blue {
+    color: #93c5fd;
+}
+
+.scout-card-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.scout-card-row__main {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.scout-card-row__title {
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1.3;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.scout-card-row__subtitle {
+    margin-top: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.58);
+}
+
+.scout-accent {
+    color: #ffd700;
+}
+
+.scout-accent--blue {
+    color: #bfdbfe;
+}
+
+.scout-help-trigger {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.24);
+    color: rgba(255, 255, 255, 0.82);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scout-help-box {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.76);
+}
+
+.scout-history {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.scout-history__item {
+    min-height: 64px;
+    padding: 8px 4px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.scout-history__item--success {
+    background: rgba(22, 163, 74, 0.18);
+    border-color: rgba(74, 222, 128, 0.18);
+}
+
+.scout-history__item--danger {
+    background: rgba(220, 38, 38, 0.18);
+    border-color: rgba(248, 113, 113, 0.18);
+}
+
+.scout-history__item--neutral {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.scout-history__symbol {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.scout-history__label {
+    margin-top: 4px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.scout-chart-card {
+    border-radius: 18px;
+    padding: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08);
+}
+
+.scout-chart-card__canvas {
+    height: 170px;
+    width: 100%;
+}
+
+.scout-empty-state {
+    min-height: 150px;
+    padding: 16px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px dashed rgba(15, 23, 42, 0.16);
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.45;
+}
+
+.scout-competition-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.scout-competition-row {
+    padding: 10px 12px 12px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.scout-competition-row__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.scout-competition-row__meta-wrap {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.scout-competition-row__name {
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.25;
+    color: #fff;
+    overflow-wrap: anywhere;
+}
+
+.scout-competition-row__meta {
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 10px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.58);
+}
+
+.scout-competition-row__stats {
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 900;
+    color: #ffd700;
+}
+
+.scout-competition-bar {
+    margin-top: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+
+.scout-competition-bar > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #ffd700, #fdb931);
+}
+
+.scout-record-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.scout-record-card {
+    min-height: 86px;
+    padding: 10px 12px;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.scout-record-card__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.scout-record-card__label {
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.scout-record-badge {
+    flex: 0 0 auto;
+    min-width: 30px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #dc2626;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scout-record-card__value {
+    margin-top: 8px;
+    font-size: 20px;
+    line-height: 1.1;
+    font-weight: 900;
+    color: #fff;
+}
+
+.scout-close-button {
+    width: 100%;
+    margin-top: 14px;
+    min-height: var(--touch-target);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 215, 0, 0.18);
+    background: linear-gradient(180deg, #ffe56b 0%, #ffd700 100%);
+    color: #111827;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: 0 12px 24px rgba(255, 215, 0, 0.16);
+}
+
 @media (max-width: 420px) {
     #modalOverlay {
         align-items: center;
@@ -7473,6 +7930,48 @@ button[disabled] {
     .profile-action-tile,
     .profile-action-row {
         min-height: 46px;
+    }
+
+    .scout-modal {
+        width: 100%;
+        max-height: 92vh;
+    }
+
+    .scout-header,
+    .scout-modal__body {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .scout-header__title {
+        font-size: 16px;
+    }
+
+    .scout-profile__name {
+        font-size: 16px;
+    }
+
+    .scout-kpi-grid,
+    .scout-record-grid {
+        gap: 8px;
+    }
+
+    .scout-kpi-card {
+        min-height: 90px;
+        padding: 11px;
+    }
+
+    .scout-history {
+        gap: 6px;
+    }
+
+    .scout-history__item {
+        min-height: 60px;
+        padding: 7px 4px;
+    }
+
+    .scout-chart-card__canvas {
+        height: 155px;
     }
 }
 
