@@ -16,6 +16,8 @@
     --theme-bg-position: center;
     --theme-bg-repeat: no-repeat;
     --theme-bg-size: cover;
+    --app-bg-image: none;
+    --app-trophy-bg-image: url('bg_pote.png');
     --theme-primary-dark: #0B5F2A;
     --button-color: #006400;
     --app-primary: #006400;
@@ -214,6 +216,54 @@ select:focus-visible {
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-soft);
     backdrop-filter: blur(12px);
+}
+
+#matchesScreen,
+#rankingScreen,
+#profileScreen {
+    background-color: transparent;
+    background-position: center, center;
+    background-repeat: no-repeat, no-repeat;
+    background-size: cover, cover;
+}
+
+#matchesScreen {
+    background-image: linear-gradient(var(--theme-bg-overlay), var(--theme-bg-overlay)), var(--app-home-bg-image, var(--remote-home-bg-image, var(--app-bg-image)));
+    background-position: center, var(--theme-bg-position);
+    background-repeat: no-repeat, var(--theme-bg-repeat);
+    background-size: cover, var(--theme-bg-size);
+}
+
+#rankingScreen {
+    background-image: linear-gradient(var(--theme-bg-overlay), var(--theme-bg-overlay)), var(--app-ranking-bg-image, var(--remote-ranking-bg-image, var(--app-bg-image)));
+    background-position: center, var(--theme-bg-position);
+    background-repeat: no-repeat, var(--theme-bg-repeat);
+    background-size: cover, var(--theme-bg-size);
+}
+
+#profileScreen {
+    background-image: linear-gradient(var(--theme-bg-overlay), var(--theme-bg-overlay)), var(--app-profile-bg-image, var(--app-bg-image));
+    background-position: center, var(--theme-bg-position);
+    background-repeat: no-repeat, var(--theme-bg-repeat);
+    background-size: cover, var(--theme-bg-size);
+}
+
+#modalContainer > .theme-modal-shell,
+#modalContainer > .admin-visual-modal,
+#modalContainer > .admin-menu-shell {
+    background-color: rgba(255,255,255,0.92);
+    background-image: linear-gradient(var(--theme-bg-overlay), var(--theme-bg-overlay)), var(--app-modal-bg-image, var(--app-bg-image));
+    background-position: center, var(--theme-bg-position);
+    background-repeat: no-repeat, var(--theme-bg-repeat);
+    background-size: cover, var(--theme-bg-size);
+}
+
+#potModal .card-cut {
+    background-color: rgba(255,255,255,0.88);
+    background-image: linear-gradient(rgba(255,255,255,0.88), rgba(255,255,255,0.88)), var(--app-trophy-bg-image, url('bg_pote.png'));
+    background-position: center, var(--theme-bg-position);
+    background-repeat: no-repeat, var(--theme-bg-repeat);
+    background-size: cover, var(--theme-bg-size);
 }
 
 .public-home-hero {
@@ -5331,6 +5381,17 @@ select:focus-visible {
     grid-column: 1 / -1;
 }
 
+.admin-visual-appearance-grid .admin-visual-field {
+    min-width: 0;
+}
+
+.admin-visual-section__title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
 .admin-appearance-color {
     width: 100%;
     min-height: 44px;
@@ -5386,6 +5447,78 @@ select:focus-visible {
     font-size: 10px;
     font-weight: 700;
     line-height: 1.45;
+}
+
+.admin-visual-background-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.admin-visual-background-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 8px 18px rgba(15,23,42,0.05);
+}
+
+.admin-visual-background-area__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.admin-visual-clear-button {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid rgba(15,23,42,0.08);
+    background: rgba(248,250,252,0.92);
+    color: #64748b;
+    font-size: 11px;
+}
+
+.admin-visual-clear-button:hover,
+.admin-visual-clear-button:focus-visible {
+    background: rgba(226,232,240,0.92);
+    color: #0f172a;
+    box-shadow: none;
+}
+
+.admin-visual-appearance-preview-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.admin-visual-appearance-preview__area-tab {
+    min-height: 32px;
+    padding: 0 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(15,23,42,0.10);
+    background: rgba(255,255,255,0.78);
+    color: #475569;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1.1;
+    cursor: pointer;
+}
+
+.admin-visual-appearance-preview__area-tab.is-active {
+    background: var(--preview-button, var(--button-color));
+    border-color: transparent;
+    color: #fff;
 }
 
 .admin-visual-appearance-preview {
@@ -5520,6 +5653,8 @@ select:focus-visible {
     line-height: 1.35;
     box-shadow: 0 8px 16px rgba(15,23,42,0.08);
     max-width: calc(100% - 24px);
+    white-space: pre-line;
+    word-break: break-word;
 }
 
 .admin-visual-appearance-preview__surface {
@@ -5745,6 +5880,15 @@ select:focus-visible {
 
     .admin-visual-appearance-presets {
         grid-template-columns: 1fr;
+    }
+
+    .admin-visual-background-grid,
+    .admin-visual-appearance-preview-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-visual-section__title-row {
+        align-items: flex-start;
     }
 
     .admin-poll-options__row {

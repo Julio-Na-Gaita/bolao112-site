@@ -200,6 +200,7 @@ let adminVisualState = {
   tab: "sections",
   mode: "list",
   appearanceSaving: false,
+  appearancePreviewArea: "home",
   bannerFilter: "all",
   pollFilter: "all",
   layout: {
@@ -261,6 +262,36 @@ const WEB_THEME_FONT_PRESETS = Object.freeze([
   { value: "readable", label: "Leitura fácil" },
   { value: "impact", label: "Impacto" }
 ]);
+
+const ADMIN_THEME_BACKGROUND_AREAS = Object.freeze([
+  { key: "global", field: "backgroundImageUrl", label: "Fundo global", fallback: "", help: "Esse fundo vale para o app inteiro e serve como base para as telas que não tiverem imagem própria." },
+  { key: "home", field: "homeBackgroundImageUrl", label: "Home / Confrontos", fallback: "global", help: "Imagem aplicada na tela inicial e na área de confrontos. Se ficar vazio, usa o fundo global." },
+  { key: "ranking", field: "rankingBackgroundImageUrl", label: "Ranking", fallback: "global", help: "Imagem aplicada na área de ranking. Se ficar vazio, usa o fundo global." },
+  { key: "profile", field: "profileBackgroundImageUrl", label: "Perfil", fallback: "global", help: "Imagem aplicada na tela de perfil. Se ficar vazio, usa o fundo global." },
+  { key: "admin", field: "adminBackgroundImageUrl", label: "Painel Admin", fallback: "global", help: "Imagem aplicada ao painel administrativo. Se ficar vazio, usa o fundo global." },
+  { key: "modal", field: "modalBackgroundImageUrl", label: "Modais / internas", fallback: "global", help: "Imagem usada em modais e telas internas que suportam fundo visual. Se ficar vazio, usa o fundo global." },
+  { key: "trophy", field: "trophyBackgroundImageUrl", label: "Sala de Troféus", fallback: "local", help: "Imagem da sala de troféus. Se ficar vazio, mantém o fundo atual da sala." }
+]);
+
+const ADMIN_THEME_HELP_TEXT = Object.freeze({
+  preset: "Presets preenchem automaticamente cores, fonte e estilo visual. Eles não são salvos até você tocar em Salvar tema.",
+  fontFamily: "Define a fonte visual do app. São fontes seguras do próprio aparelho, por isso podem variar um pouco entre Android, iPhone e computador.",
+  primaryColor: "Cor mais importante do app. Afeta cabeçalhos, destaques e áreas principais.",
+  primaryDarkColor: "Versão mais escura da cor principal para contrastes e sombras.",
+  accentColor: "Usada para detalhes, chips, medalhas visuais e realces.",
+  buttonColor: "Define a cor dos botões principais.",
+  surfaceColor: "Cor usada no fundo de cards, painéis e blocos de conteúdo.",
+  textColor: "Cor dos textos mais importantes. Use bom contraste com a cor dos cards.",
+  mutedTextColor: "Cor de subtítulos, descrições e informações auxiliares.",
+  backgroundImageUrl: "Cole um link público direto de imagem. JPG, PNG e WebP funcionam melhor. Links do Google Drive precisam estar com acesso público; o sistema tenta converter links de compartilhamento automaticamente. Se a imagem não carregar, use outro link ou hospede a imagem em local público. Não use HTML, iframe, script ou CSS.",
+  backgroundOverlay: "Cor aplicada por cima da imagem de fundo para melhorar a leitura dos cards.",
+  backgroundOverlayOpacity: "Ajuda a melhorar a leitura dos cards sobre a imagem de fundo. Aumente se a imagem estiver atrapalhando a leitura.",
+  backgroundPosition: "Escolhe qual parte da imagem fica mais visível.",
+  backgroundSizeMode: "Cobrir tela preenche toda a área. Conter mostra a imagem inteira. Repetir cria padrão com a imagem.",
+  restore: "Remove personalizações e volta para o tema padrão do Bolão.",
+  backgrounds: "Defina fundos específicos por área. Se um campo ficar vazio, ele usa o fundo global. Se nem o global existir, o app volta para o fundo padrão do Bolão.",
+  preview: "A prévia mostra como o fundo e as cores vão ficar em áreas diferentes do app. Use as abas para testar cada tela."
+});
 
 const WEB_THEME_PRESET_DEFINITIONS = Object.freeze({
   padrao_bolao: {
@@ -958,13 +989,35 @@ const normalizeThemeOverlayOpacity = (value = 86) => {
   return Math.min(100, Math.max(0, Math.round(num)));
 };
 
-const normalizeThemeBackgroundUrl = (value = "") => {
-  const raw = fixDriveUrl(String(value || "").trim());
-  if (!raw) return "";
-  if (/[<>]/.test(raw)) return "";
-  if (raw.toLowerCase().includes("javascript:")) return "";
-  return isHttpUrl(raw) ? raw : "";
+const normalizeThemeImageUrl = (value = "") => {
+  const rawInput = String(value || "").trim();
+  if (!rawInput) return "";
+  if (/[<>]/.test(rawInput)) return "";
+  if (/javascript:/i.test(rawInput)) return "";
+  if (/<\s*script/i.test(rawInput) || /<\s*iframe/i.test(rawInput)) return "";
+  if (/^data:/i.test(rawInput)) return "";
+  if (!/^https?:\/\//i.test(rawInput)) return "";
+
+  let raw = rawInput;
+  if (/drive\.google\.com/i.test(raw)) {
+    const fileMatch = raw.match(/\/file\/d\/([a-zA-Z0-9_-]+)/i);
+    const idMatch = raw.match(/[?&]id=([a-zA-Z0-9_-]+)/i);
+    const fileId = (fileMatch && fileMatch[1]) || (idMatch && idMatch[1]) || "";
+    if (fileId) {
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`;
+    }
+  }
+
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return "";
+    return url.toString();
+  } catch (error) {
+    return "";
+  }
 };
+
+const normalizeThemeBackgroundUrl = (value = "") => normalizeThemeImageUrl(value);
 
 const buildThemeOverlayCss = (overlay = "", opacity = 86) => {
   const raw = String(overlay || "").trim();
@@ -1007,6 +1060,33 @@ const getThemeBackgroundSize = (mode = "cover") => {
   if (normalized === "contain") return "contain";
   if (normalized === "repeat") return "auto";
   return "cover";
+};
+
+const buildThemeBackgroundCss = (url = "", fallback = "none") => {
+  const safe = normalizeThemeImageUrl(url);
+  if (!safe) return fallback;
+  return `url("${safe.replace(/"/g, '\\"')}")`;
+};
+
+const resolveThemeAreaBackgroundUrl = (theme = {}, areaKey = "global") => {
+  const normalized = normalizeAdminWebThemeDraft(theme);
+  const area = ADMIN_THEME_BACKGROUND_AREAS.find((item) => item.key === areaKey) || ADMIN_THEME_BACKGROUND_AREAS[0];
+  const specific = normalizeThemeImageUrl(normalized[area.field] || "");
+  if (specific) return specific;
+  if (area.fallback === "global") return normalizeThemeImageUrl(normalized.backgroundImageUrl || "");
+  return "";
+};
+
+const getThemeBackgroundStatusLabel = (theme = {}, areaKey = "global") => {
+  const normalized = normalizeAdminWebThemeDraft(theme);
+  const area = ADMIN_THEME_BACKGROUND_AREAS.find((item) => item.key === areaKey) || ADMIN_THEME_BACKGROUND_AREAS[0];
+  const specific = normalizeThemeImageUrl(normalized[area.field] || "");
+  const global = normalizeThemeImageUrl(normalized.backgroundImageUrl || "");
+  const source = specific ? specific : (area.fallback === "global" ? global : "");
+  if (!source) {
+    return area.key === "trophy" ? "Usando o fundo atual da Sala de Troféus." : "Usando fundo padrão do Bolão.";
+  }
+  return `${area.label} • Prévia do background carregada.\n${source}`;
 };
 
 const getAdminWebThemeDerivedTokens = (theme = {}) => {
@@ -2440,24 +2520,13 @@ const applyRemoteBackgrounds = () => {
   const homeBg = resolveRemoteMediaAsset(appConfig.bgHome);
   const rankingBg = resolveRemoteMediaAsset(appConfig.bgRanking);
 
-  const applyBg = (el, bgUrl) => {
+  const applyBg = (el, bgUrl, varName) => {
     if (!el) return;
-
-    if (bgUrl) {
-      el.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.97)), url('${bgUrl}')`;
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-      el.style.backgroundRepeat = "no-repeat";
-    } else {
-      el.style.backgroundImage = "";
-      el.style.backgroundSize = "";
-      el.style.backgroundPosition = "";
-      el.style.backgroundRepeat = "";
-    }
+    el.style.setProperty(varName, bgUrl ? `url("${String(bgUrl).replace(/"/g, '\\"')}")` : "");
   };
 
-  applyBg(document.getElementById("matchesScreen"), homeBg);
-  applyBg(document.getElementById("rankingScreen"), rankingBg);
+  applyBg(document.getElementById("matchesScreen"), homeBg, "--remote-home-bg-image");
+  applyBg(document.getElementById("rankingScreen"), rankingBg, "--remote-ranking-bg-image");
 };
 
 const initRemoteConfig = () => {
@@ -7920,6 +7989,13 @@ const getAdminWebThemePreset = (presetKey = "padrao_bolao") =>
 
 const getAdminWebThemeDefaultDraft = () => ({
   ...WEB_THEME_PRESET_DEFINITIONS.padrao_bolao,
+  backgroundSize: WEB_THEME_PRESET_DEFINITIONS.padrao_bolao.backgroundSizeMode || "cover",
+  homeBackgroundImageUrl: "",
+  rankingBackgroundImageUrl: "",
+  profileBackgroundImageUrl: "",
+  adminBackgroundImageUrl: "",
+  modalBackgroundImageUrl: "",
+  trophyBackgroundImageUrl: "",
   updatedAt: null,
   updatedBy: null
 });
@@ -7927,21 +8003,35 @@ const getAdminWebThemeDefaultDraft = () => ({
 const normalizeAdminWebThemeDraft = (theme = {}) => {
   const presetKey = String(theme.preset || "").trim().toLowerCase();
   const preset = getAdminWebThemePreset(presetKey);
-  const backgroundImageUrl = normalizeThemeBackgroundUrl(theme.backgroundImageUrl || theme.background_image_url || "");
+  const backgroundImageUrl = normalizeThemeImageUrl(theme.backgroundImageUrl || theme.background_image_url || "");
+  const homeBackgroundImageUrl = normalizeThemeImageUrl(theme.homeBackgroundImageUrl || theme.home_background_image_url || "");
+  const rankingBackgroundImageUrl = normalizeThemeImageUrl(theme.rankingBackgroundImageUrl || theme.ranking_background_image_url || "");
+  const profileBackgroundImageUrl = normalizeThemeImageUrl(theme.profileBackgroundImageUrl || theme.profile_background_image_url || "");
+  const adminBackgroundImageUrl = normalizeThemeImageUrl(theme.adminBackgroundImageUrl || theme.admin_background_image_url || "");
+  const modalBackgroundImageUrl = normalizeThemeImageUrl(theme.modalBackgroundImageUrl || theme.modal_background_image_url || "");
+  const trophyBackgroundImageUrl = normalizeThemeImageUrl(theme.trophyBackgroundImageUrl || theme.trophy_background_image_url || "");
   const overlay = String(theme.backgroundOverlay || theme.background_overlay || preset.backgroundOverlay || "").trim();
   const safeOverlay = isValidCssColor(overlay) ? overlay : preset.backgroundOverlay;
   const fontFamily = String(theme.fontFamily || theme.font_family || preset.fontFamily || "").trim().toLowerCase();
   const safeFontFamily = WEB_THEME_FONT_PRESETS.some((item) => item.value === fontFamily) ? fontFamily : preset.fontFamily;
   const overlayOpacity = normalizeThemeOverlayOpacity(theme.backgroundOverlayOpacity || theme.background_overlay_opacity || preset.backgroundOverlayOpacity || 86);
+  const backgroundSizeMode = normalizeThemeBackgroundMode(theme.backgroundSizeMode || theme.backgroundSize || theme.background_size_mode || theme.background_size || preset.backgroundSizeMode);
 
   return {
     active: theme.active === true,
     preset: preset.preset || "padrao_bolao",
     backgroundImageUrl,
+    homeBackgroundImageUrl,
+    rankingBackgroundImageUrl,
+    profileBackgroundImageUrl,
+    adminBackgroundImageUrl,
+    modalBackgroundImageUrl,
+    trophyBackgroundImageUrl,
     backgroundOverlay: safeOverlay,
     backgroundOverlayOpacity: overlayOpacity,
     backgroundPosition: normalizeThemeBackgroundPosition(theme.backgroundPosition || theme.background_position || preset.backgroundPosition),
-    backgroundSizeMode: normalizeThemeBackgroundMode(theme.backgroundSizeMode || theme.background_size_mode || preset.backgroundSizeMode),
+    backgroundSizeMode,
+    backgroundSize: backgroundSizeMode,
     backgroundRepeat: normalizeThemeBackgroundMode(theme.backgroundRepeat || theme.background_repeat || preset.backgroundRepeat) === "repeat" ? "repeat" : "no-repeat",
     primaryColor: normalizeHexColor(theme.primaryColor || theme.primary_color, preset.primaryColor),
     primaryDarkColor: normalizeHexColor(theme.primaryDarkColor || theme.primary_dark_color, preset.primaryDarkColor),
@@ -7986,10 +8076,17 @@ const buildAdminWebThemePayload = (draft = {}, admin = null) => {
     active: data.active === true,
     preset: data.preset || "padrao_bolao",
     backgroundImageUrl: data.backgroundImageUrl || "",
+    homeBackgroundImageUrl: data.homeBackgroundImageUrl || "",
+    rankingBackgroundImageUrl: data.rankingBackgroundImageUrl || "",
+    profileBackgroundImageUrl: data.profileBackgroundImageUrl || "",
+    adminBackgroundImageUrl: data.adminBackgroundImageUrl || "",
+    modalBackgroundImageUrl: data.modalBackgroundImageUrl || "",
+    trophyBackgroundImageUrl: data.trophyBackgroundImageUrl || "",
     backgroundOverlay: data.backgroundOverlay || WEB_THEME_PRESET_DEFINITIONS.padrao_bolao.backgroundOverlay,
     backgroundOverlayOpacity: normalizeThemeOverlayOpacity(data.backgroundOverlayOpacity),
     backgroundPosition: normalizeThemeBackgroundPosition(data.backgroundPosition),
-    backgroundSizeMode: normalizeThemeBackgroundMode(data.backgroundSizeMode),
+    backgroundSizeMode: normalizeThemeBackgroundMode(data.backgroundSizeMode || data.backgroundSize),
+    backgroundSize: normalizeThemeBackgroundMode(data.backgroundSizeMode || data.backgroundSize),
     backgroundRepeat: data.backgroundRepeat === "repeat" ? "repeat" : "no-repeat",
     primaryColor: data.primaryColor,
     primaryDarkColor: data.primaryDarkColor,
@@ -8028,13 +8125,27 @@ const applyWebTheme = (theme = {}) => {
   const normalized = normalizeAdminWebThemeDraft(theme);
   const applied = normalized.active === true ? normalized : getAdminWebThemeDefaultDraft();
   const derived = getAdminWebThemeDerivedTokens(applied);
-  const imageUrl = applied.active && applied.backgroundImageUrl ? normalizeThemeBackgroundUrl(applied.backgroundImageUrl) : "";
+  const imageUrl = applied.active ? normalizeThemeImageUrl(applied.backgroundImageUrl) : "";
+  const homeImageUrl = applied.active ? resolveThemeAreaBackgroundUrl(applied, "home") : "";
+  const rankingImageUrl = applied.active ? resolveThemeAreaBackgroundUrl(applied, "ranking") : "";
+  const profileImageUrl = applied.active ? resolveThemeAreaBackgroundUrl(applied, "profile") : "";
+  const adminImageUrl = applied.active ? resolveThemeAreaBackgroundUrl(applied, "admin") : "";
+  const modalImageUrl = applied.active ? resolveThemeAreaBackgroundUrl(applied, "modal") : "";
+  const trophyImageUrl = applied.active ? resolveThemeAreaBackgroundUrl(applied, "trophy") : "";
   const safeImage = isHttpUrl(imageUrl) ? imageUrl : "";
-  const backgroundImage = safeImage ? `url("${safeImage.replace(/"/g, '\\"')}")` : "none";
+  const backgroundImage = buildThemeBackgroundCss(safeImage, "none");
+  const trophyBackgroundImage = trophyImageUrl ? buildThemeBackgroundCss(trophyImageUrl) : `url("bg_pote.png")`;
   const backgroundOverlay = buildThemeOverlayCss(applied.backgroundOverlay, applied.backgroundOverlayOpacity);
   const backgroundPosition = normalizeThemeBackgroundPosition(applied.backgroundPosition);
   const backgroundRepeat = getThemeBackgroundRepeat(applied.backgroundSizeMode || applied.backgroundRepeat);
   const backgroundSize = getThemeBackgroundSize(applied.backgroundSizeMode || applied.backgroundRepeat);
+  const setThemeBackgroundVar = (name, url = "") => {
+    if (url) {
+      root.style.setProperty(name, buildThemeBackgroundCss(url, ""));
+    } else {
+      root.style.removeProperty(name);
+    }
+  };
 
   root.style.setProperty("--primary", applied.primaryColor);
   root.style.setProperty("--secondary", applied.accentColor);
@@ -8057,6 +8168,13 @@ const applyWebTheme = (theme = {}) => {
   root.style.setProperty("--border-medium", hexToRgba(applied.textColor, 0.12));
   root.style.setProperty("--color-border", hexToRgba(applied.textColor, 0.12));
   root.style.setProperty("--theme-bg-image", backgroundImage);
+  root.style.setProperty("--app-bg-image", backgroundImage);
+  setThemeBackgroundVar("--app-home-bg-image", homeImageUrl);
+  setThemeBackgroundVar("--app-ranking-bg-image", rankingImageUrl);
+  setThemeBackgroundVar("--app-profile-bg-image", profileImageUrl);
+  setThemeBackgroundVar("--app-admin-bg-image", adminImageUrl);
+  setThemeBackgroundVar("--app-modal-bg-image", modalImageUrl);
+  root.style.setProperty("--app-trophy-bg-image", trophyBackgroundImage);
   root.style.setProperty("--theme-bg-overlay", backgroundOverlay);
   root.style.setProperty("--theme-bg-position", backgroundPosition);
   root.style.setProperty("--theme-bg-repeat", backgroundRepeat);
@@ -8100,7 +8218,10 @@ const syncAdminVisualAppearancePreview = () => {
   const draft = normalizeAdminWebThemeDraft(adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft());
   const applied = draft.active === true ? draft : getAdminWebThemeDefaultDraft();
   const derived = getAdminWebThemeDerivedTokens(applied);
-  const backgroundImageUrl = applied.active && applied.backgroundImageUrl ? normalizeThemeBackgroundUrl(applied.backgroundImageUrl) : "";
+  const previewArea = ADMIN_THEME_BACKGROUND_AREAS.some((item) => item.key === adminVisualState.appearancePreviewArea)
+    ? adminVisualState.appearancePreviewArea
+    : "home";
+  const backgroundImageUrl = applied.active ? resolveThemeAreaBackgroundUrl(applied, previewArea) : "";
   const safeImage = isHttpUrl(backgroundImageUrl) ? backgroundImageUrl : "";
   const bgImageEl = preview.querySelector("[data-background-preview-image]");
   const bgStatusEl = preview.querySelector("[data-background-status]");
@@ -8114,7 +8235,10 @@ const syncAdminVisualAppearancePreview = () => {
   preview.style.setProperty("--preview-muted", applied.mutedTextColor);
   preview.style.setProperty("--preview-font", getWebThemeFontStack(applied.fontFamily));
   preview.style.setProperty("--preview-bg-image", safeImage ? `url("${safeImage.replace(/"/g, '\\"')}")` : "none");
-  preview.style.setProperty("--preview-bg-overlay", applied.backgroundOverlay || WEB_THEME_PRESET_DEFINITIONS.padrao_bolao.backgroundOverlay);
+  preview.style.setProperty("--preview-bg-overlay", buildThemeOverlayCss(applied.backgroundOverlay || WEB_THEME_PRESET_DEFINITIONS.padrao_bolao.backgroundOverlay, applied.backgroundOverlayOpacity));
+  preview.style.setProperty("--preview-bg-position", normalizeThemeBackgroundPosition(applied.backgroundPosition));
+  preview.style.setProperty("--preview-bg-repeat", getThemeBackgroundRepeat(applied.backgroundSizeMode || applied.backgroundRepeat));
+  preview.style.setProperty("--preview-bg-size", getThemeBackgroundSize(applied.backgroundSizeMode || applied.backgroundRepeat));
   preview.style.setProperty("--preview-header-bg", derived.headerBg);
   preview.style.setProperty("--preview-header-text", derived.headerText);
   preview.style.setProperty("--preview-card-bg", derived.cardBg);
@@ -8136,26 +8260,33 @@ const syncAdminVisualAppearancePreview = () => {
     if (bgImageEl.dataset.src !== nextSrc) {
       bgImageEl.dataset.src = nextSrc;
       bgImageEl.src = nextSrc || "";
+      bgImageEl.hidden = !nextSrc;
       if (bgStatusEl) {
-        bgStatusEl.textContent = nextSrc ? "Carregando prévia do background..." : "Usando fundo padrão do Bolão.";
+        bgStatusEl.textContent = nextSrc ? "Carregando prévia do background..." : getThemeBackgroundStatusLabel(applied, previewArea);
+        bgStatusEl.title = nextSrc || "";
       }
     }
     if (!bgImageEl.dataset.bound) {
       bgImageEl.dataset.bound = "1";
       bgImageEl.addEventListener("load", () => {
+        bgImageEl.hidden = false;
         if (bgStatusEl && bgImageEl.dataset.src === bgImageEl.currentSrc) {
-          bgStatusEl.textContent = bgImageEl.dataset.src ? "Prévia do background carregada." : "Usando fundo padrão do Bolão.";
+          bgStatusEl.textContent = getThemeBackgroundStatusLabel(applied, previewArea);
+          bgStatusEl.title = bgImageEl.dataset.src || "";
         }
       });
       bgImageEl.addEventListener("error", () => {
         if (bgStatusEl && bgImageEl.dataset.src) {
-          bgStatusEl.textContent = "Não foi possível carregar essa imagem. Verifique se o link é público e direto.";
+          bgStatusEl.textContent = "Não foi possível carregar essa imagem. Verifique se o link está público e se é uma imagem.";
+          bgStatusEl.title = bgImageEl.dataset.src || "";
         }
+        bgImageEl.hidden = true;
       });
     }
   }
   if (bgStatusEl && !safeImage) {
-    bgStatusEl.textContent = "Usando fundo padrão do Bolão.";
+    bgStatusEl.textContent = getThemeBackgroundStatusLabel(applied, previewArea);
+    bgStatusEl.title = "";
   }
 
   const status = preview.querySelector("[data-theme-status]");
@@ -8537,6 +8668,10 @@ const renderAdminVisualEmpty = (title, description) => `
 const renderAdminVisualAppearanceTab = () => {
   const draft = normalizeAdminWebThemeDraft(adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft());
   const applied = draft.active === true ? draft : getAdminWebThemeDefaultDraft();
+  const currentArea = ADMIN_THEME_BACKGROUND_AREAS.some((item) => item.key === adminVisualState.appearancePreviewArea)
+    ? adminVisualState.appearancePreviewArea
+    : "home";
+  const currentAreaLabel = (ADMIN_THEME_BACKGROUND_AREAS.find((item) => item.key === currentArea) || ADMIN_THEME_BACKGROUND_AREAS[1]).label;
   const presetCards = Object.entries(WEB_THEME_PRESET_DEFINITIONS).map(([presetKey, preset]) => {
     const palette = Array.isArray(preset.palette) ? preset.palette.slice(0, 4) : [];
     const paletteDots = palette.length ? palette.map((color) => `<span class="admin-visual-appearance-preset__swatch" style="background:${escapeHtml(color)}"></span>`).join("") : "";
@@ -8556,6 +8691,47 @@ const renderAdminVisualAppearanceTab = () => {
     <option value="${escapeHtml(option.value)}" ${draft.fontFamily === option.value ? "selected" : ""}>${escapeHtml(option.label)}</option>
   `).join("");
 
+  const previewAreaTabs = ADMIN_THEME_BACKGROUND_AREAS.map((area) => `
+    <button
+      type="button"
+      class="admin-visual-appearance-preview__area-tab ${currentArea === area.key ? "is-active" : ""}"
+      onclick="window.setAdminVisualAppearancePreviewArea('${escapeJsString(area.key)}')"
+      data-admin-visual-preview-area="${escapeHtml(area.key)}"
+    >
+      ${escapeHtml(area.label)}
+    </button>
+  `).join("");
+
+  const areaCards = ADMIN_THEME_BACKGROUND_AREAS.filter((area) => area.key !== "global").map((area) => {
+    const value = String(draft[area.field] || "").trim();
+    const emptyNote = area.key === "trophy"
+      ? "Vazio = mantém o fundo atual da Sala de Troféus."
+      : "Vazio = usa o fundo global.";
+    return `
+      <div class="admin-visual-background-area">
+        <div class="admin-visual-background-area__head">
+          ${renderInfoHint(area.label, area.help, `theme_area_${area.key}`)}
+          <button
+            type="button"
+            class="admin-visual-clear-button"
+            title="Limpar ${escapeHtml(area.label)}"
+            onclick="window.updateAdminVisualAppearanceField('${escapeJsString(area.field)}', '')"
+          >
+            <i class="fas fa-eraser"></i>
+          </button>
+        </div>
+        <input
+          type="url"
+          class="admin-creation-input"
+          placeholder="https://..."
+          value="${escapeHtml(value)}"
+          oninput="window.updateAdminVisualAppearanceField('${escapeJsString(area.field)}', this.value)"
+        >
+        <div class="admin-visual-field__note">${escapeHtml(emptyNote)}</div>
+      </div>
+    `;
+  }).join("");
+
   const previewStyle = `
     --preview-primary:${escapeHtml(applied.primaryColor)};
     --preview-primary-dark:${escapeHtml(applied.primaryDarkColor)};
@@ -8565,8 +8741,11 @@ const renderAdminVisualAppearanceTab = () => {
     --preview-text:${escapeHtml(applied.textColor)};
     --preview-muted:${escapeHtml(applied.mutedTextColor)};
     --preview-font:${escapeHtml(getWebThemeFontStack(applied.fontFamily))};
-    --preview-bg-overlay:${escapeHtml(applied.backgroundOverlay)};
-    --preview-bg-image:${draft.active === true && applied.backgroundImageUrl ? `url("${String(applied.backgroundImageUrl).replace(/"/g, '\\"')}")` : "none"};
+    --preview-bg-overlay:${escapeHtml(buildThemeOverlayCss(applied.backgroundOverlay, applied.backgroundOverlayOpacity))};
+    --preview-bg-position:${escapeHtml(normalizeThemeBackgroundPosition(applied.backgroundPosition))};
+    --preview-bg-repeat:${escapeHtml(getThemeBackgroundRepeat(applied.backgroundSizeMode || applied.backgroundRepeat))};
+    --preview-bg-size:${escapeHtml(getThemeBackgroundSize(applied.backgroundSizeMode || applied.backgroundRepeat))};
+    --preview-bg-image:${escapeHtml(buildThemeBackgroundCss(resolveThemeAreaBackgroundUrl(applied, currentArea), "none"))};
     --preview-header-bg:${escapeHtml(applied.headerBg || applied.primaryColor)};
     --preview-header-text:${escapeHtml(applied.headerText || getThemeReadableText(applied.primaryColor))};
     --preview-card-bg:${escapeHtml(applied.cardBg || applied.surfaceColor)};
@@ -8584,22 +8763,13 @@ const renderAdminVisualAppearanceTab = () => {
     --preview-warning:${escapeHtml(applied.warningColor || "#9a6700")};
   `;
 
-  const previewBackgroundLabel = draft.backgroundImageUrl
-    ? "Prévia do background carregada."
-    : "Usando fundo padrão do Bolão.";
-  const bgSizeLabel = draft.backgroundSizeMode === "contain" ? "Conter imagem" : draft.backgroundSizeMode === "repeat" ? "Repetir padrão" : "Cobrir tela";
-  const bgPositionLabel = {
-    center: "Centro",
-    top: "Topo",
-    bottom: "Base",
-    left: "Esquerda",
-    right: "Direita"
-  }[draft.backgroundPosition] || "Centro";
-
   return `
     <div class="admin-visual-section">
       <div class="admin-visual-section__copy">
-        <div class="admin-visual-section__title">Aparência global</div>
+        <div class="admin-visual-section__title-row">
+          <div class="admin-visual-section__title">Aparência global</div>
+          ${renderInfoHint("Presets", ADMIN_THEME_HELP_TEXT.preset, "theme_presets")}
+        </div>
         <div class="admin-visual-section__hint">Ajuste o fundo, a paleta e a fonte do app inteiro com segurança. Se o tema estiver desativado, o app volta ao padrão do Bolão 112 FC.</div>
       </div>
       <div class="admin-visual-appearance-status">
@@ -8612,32 +8782,37 @@ const renderAdminVisualAppearanceTab = () => {
 
     <div class="admin-visual-section">
       <div class="admin-visual-section__copy">
-        <div class="admin-visual-section__title">Paleta e fundo</div>
+        <div class="admin-visual-section__title-row">
+          <div class="admin-visual-section__title">Paleta e fundo</div>
+          ${renderInfoHint("Background", ADMIN_THEME_HELP_TEXT.backgroundImageUrl, "theme_background_help")}
+        </div>
         <div class="admin-visual-section__hint">URLs precisam ser públicas e cores inválidas são ignoradas com fallback seguro.</div>
       </div>
       <div class="admin-visual-form-grid admin-visual-appearance-grid">
         <label class="admin-visual-field admin-visual-field--full">
-          <span>Imagem de fundo global</span>
-          <input type="url" class="admin-creation-input" placeholder="https://..." value="${escapeHtml(draft.backgroundImageUrl)}" oninput="window.updateAdminVisualAppearanceField('backgroundImageUrl', this.value)">
-          <div class="admin-visual-field__note">A imagem aparece em segundo plano na home e nas telas que não sobrescrevem o fundo.</div>
+          ${renderInfoHint("Imagem de fundo global", ADMIN_THEME_HELP_TEXT.backgroundImageUrl, "theme_global_bg")}
+          <input type="url" class="admin-creation-input" placeholder="https://..." value="${escapeHtml(draft.backgroundImageUrl || "")}" oninput="window.updateAdminVisualAppearanceField('backgroundImageUrl', this.value)">
+          <div class="admin-visual-field__note">Esse fundo vale para todo o app e serve como base para as outras telas.</div>
         </label>
-        <div class="admin-visual-background-help admin-visual-field--full">
-          <div class="admin-visual-background-help__title">Como usar o background</div>
-          <p>Cole aqui um link público direto de imagem para usar como fundo do app. Funciona melhor com imagens em JPG, PNG ou WebP. Evite links de páginas, links privados ou imagens muito pesadas. Se o link não carregar, o app mantém o fundo padrão.</p>
-          <p class="admin-visual-background-help__hint">Dica: o link ideal normalmente termina em .jpg, .png ou .webp. Links do Google Drive precisam estar públicos e, em alguns casos, podem não abrir como imagem direta.</p>
-          <p class="admin-visual-background-help__warn">Não use códigos HTML, iframe, script ou CSS. Use apenas o link da imagem.</p>
+
+        <div class="admin-visual-field admin-visual-field--full">
+          ${renderInfoHint("Backgrounds por tela", ADMIN_THEME_HELP_TEXT.backgrounds, "theme_background_areas")}
+          <div class="admin-visual-background-grid">
+            ${areaCards}
+          </div>
         </div>
+
         <label class="admin-visual-field">
-          <span>Overlay</span>
-          <input type="text" class="admin-creation-input" placeholder="rgba(255,255,255,0.86)" value="${escapeHtml(draft.backgroundOverlay)}" oninput="window.updateAdminVisualAppearanceField('backgroundOverlay', this.value)">
+          ${renderInfoHint("Overlay", ADMIN_THEME_HELP_TEXT.backgroundOverlay, "theme_background_overlay")}
+          <input type="text" class="admin-creation-input" placeholder="rgba(255,255,255,0.86)" value="${escapeHtml(draft.backgroundOverlay || "")}" oninput="window.updateAdminVisualAppearanceField('backgroundOverlay', this.value)">
         </label>
         <label class="admin-visual-field">
-          <span>Opacidade do fundo</span>
+          ${renderInfoHint("Opacidade do fundo", ADMIN_THEME_HELP_TEXT.backgroundOverlayOpacity, "theme_background_overlay_opacity")}
           <input type="range" min="0" max="100" step="1" value="${escapeHtml(String(draft.backgroundOverlayOpacity ?? 86))}" oninput="window.updateAdminVisualAppearanceField('backgroundOverlayOpacity', this.value)">
-          <div class="admin-visual-field__note">Ajusta a leitura dos cards sobre a imagem de fundo.</div>
+          <div class="admin-visual-field__note">Aumente se a imagem estiver atrapalhando a leitura dos cards.</div>
         </label>
         <label class="admin-visual-field">
-          <span>Posição do fundo</span>
+          ${renderInfoHint("Posição do fundo", ADMIN_THEME_HELP_TEXT.backgroundPosition, "theme_background_position")}
           <select class="admin-creation-input" onchange="window.updateAdminVisualAppearanceField('backgroundPosition', this.value)">
             <option value="center" ${draft.backgroundPosition === "center" ? "selected" : ""}>Centro</option>
             <option value="top" ${draft.backgroundPosition === "top" ? "selected" : ""}>Topo</option>
@@ -8647,7 +8822,7 @@ const renderAdminVisualAppearanceTab = () => {
           </select>
         </label>
         <label class="admin-visual-field">
-          <span>Tamanho do fundo</span>
+          ${renderInfoHint("Tamanho do fundo", ADMIN_THEME_HELP_TEXT.backgroundSizeMode, "theme_background_size")}
           <select class="admin-creation-input" onchange="window.updateAdminVisualAppearanceField('backgroundSizeMode', this.value)">
             <option value="cover" ${draft.backgroundSizeMode === "cover" ? "selected" : ""}>Cobrir tela</option>
             <option value="contain" ${draft.backgroundSizeMode === "contain" ? "selected" : ""}>Conter imagem</option>
@@ -8655,35 +8830,35 @@ const renderAdminVisualAppearanceTab = () => {
           </select>
         </label>
         <label class="admin-visual-field">
-          <span>Cor primária</span>
+          ${renderInfoHint("Cor primária", ADMIN_THEME_HELP_TEXT.primaryColor, "theme_primary_color")}
           <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.primaryColor)}" oninput="window.updateAdminVisualAppearanceField('primaryColor', this.value)">
         </label>
         <label class="admin-visual-field">
-          <span>Primária escura</span>
+          ${renderInfoHint("Primária escura", ADMIN_THEME_HELP_TEXT.primaryDarkColor, "theme_primary_dark")}
           <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.primaryDarkColor)}" oninput="window.updateAdminVisualAppearanceField('primaryDarkColor', this.value)">
         </label>
         <label class="admin-visual-field">
-          <span>Cor de destaque</span>
+          ${renderInfoHint("Cor de destaque", ADMIN_THEME_HELP_TEXT.accentColor, "theme_accent_color")}
           <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.accentColor)}" oninput="window.updateAdminVisualAppearanceField('accentColor', this.value)">
         </label>
         <label class="admin-visual-field">
-          <span>Cor do botão</span>
+          ${renderInfoHint("Cor do botão", ADMIN_THEME_HELP_TEXT.buttonColor, "theme_button_color")}
           <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.buttonColor)}" oninput="window.updateAdminVisualAppearanceField('buttonColor', this.value)">
         </label>
         <label class="admin-visual-field">
-          <span>Superfície</span>
+          ${renderInfoHint("Superfície", ADMIN_THEME_HELP_TEXT.surfaceColor, "theme_surface_color")}
           <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.surfaceColor)}" oninput="window.updateAdminVisualAppearanceField('surfaceColor', this.value)">
         </label>
         <label class="admin-visual-field">
-          <span>Texto principal</span>
+          ${renderInfoHint("Texto principal", ADMIN_THEME_HELP_TEXT.textColor, "theme_text_color")}
           <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.textColor)}" oninput="window.updateAdminVisualAppearanceField('textColor', this.value)">
         </label>
         <label class="admin-visual-field">
-          <span>Texto secundário</span>
+          ${renderInfoHint("Texto secundário", ADMIN_THEME_HELP_TEXT.mutedTextColor, "theme_muted_text_color")}
           <input type="color" class="admin-appearance-color" value="${escapeHtml(draft.mutedTextColor)}" oninput="window.updateAdminVisualAppearanceField('mutedTextColor', this.value)">
         </label>
         <label class="admin-visual-field admin-visual-field--full">
-          <span>Fonte</span>
+          ${renderInfoHint("Fonte", ADMIN_THEME_HELP_TEXT.fontFamily, "theme_font_family")}
           <select class="admin-creation-input" onchange="window.updateAdminVisualAppearanceField('fontFamily', this.value)">
             ${fontOptions}
           </select>
@@ -8694,13 +8869,19 @@ const renderAdminVisualAppearanceTab = () => {
 
     <div class="admin-visual-section">
       <div class="admin-visual-section__copy">
-        <div class="admin-visual-section__title">Prévia ao vivo</div>
+        <div class="admin-visual-section__title-row">
+          <div class="admin-visual-section__title">Prévia ao vivo</div>
+          ${renderInfoHint("Prévia", ADMIN_THEME_HELP_TEXT.preview, "theme_preview_help")}
+        </div>
         <div class="admin-visual-section__hint">A prévia segue a mesma lógica do app e mostra como o tema fica no celular.</div>
+      </div>
+      <div class="admin-visual-appearance-preview-tabs">
+        ${previewAreaTabs}
       </div>
       <div id="adminVisualAppearancePreviewRoot" class="admin-visual-appearance-preview" style="${escapeHtml(previewStyle)}">
         <div class="admin-visual-appearance-preview__bgstage">
-          <img data-background-preview-image alt="Prévia do background" loading="lazy" decoding="async" class="admin-visual-appearance-preview__bgimage" src="${escapeHtml(draft.backgroundImageUrl || "")}">
-          <div class="admin-visual-appearance-preview__bgstatus" data-background-status>${escapeHtml(previewBackgroundLabel)}</div>
+          <img data-background-preview-image alt="Prévia do background" loading="lazy" decoding="async" class="admin-visual-appearance-preview__bgimage" src="${escapeHtml(resolveThemeAreaBackgroundUrl(applied, currentArea) || "")}">
+          <div class="admin-visual-appearance-preview__bgstatus" data-background-status>${escapeHtml(getThemeBackgroundStatusLabel(applied, currentArea))}</div>
         </div>
         <div class="admin-visual-appearance-preview__hero">
           <div>
@@ -8728,8 +8909,8 @@ const renderAdminVisualAppearanceTab = () => {
 
         <div class="admin-visual-appearance-preview__surface">
           <div class="admin-visual-appearance-preview__surface-head">
-            <div class="admin-visual-appearance-preview__surface-badge">Home</div>
-            <div class="admin-visual-appearance-preview__surface-title">Painel do usuário</div>
+            <div class="admin-visual-appearance-preview__surface-badge">${escapeHtml(currentAreaLabel)}</div>
+            <div class="admin-visual-appearance-preview__surface-title">Painel de exemplo</div>
           </div>
           <div class="admin-visual-appearance-preview__surface-card">
             <div class="admin-visual-appearance-preview__surface-card-title">Resumo da rodada</div>
@@ -8770,8 +8951,8 @@ const renderAdminVisualAppearanceTab = () => {
             <span><i class="fas fa-user"></i><small>Perfil</small></span>
           </div>
           <div class="admin-visual-appearance-preview__meta">
-            <span>Fundo: ${escapeHtml(bgSizeLabel)}</span>
-            <span>Posição: ${escapeHtml(bgPositionLabel)}</span>
+            <span>Fundo: ${escapeHtml(currentAreaLabel)}</span>
+            <span>Posição: ${escapeHtml(draft.backgroundPosition === "top" ? "Topo" : draft.backgroundPosition === "bottom" ? "Base" : draft.backgroundPosition === "left" ? "Esquerda" : draft.backgroundPosition === "right" ? "Direita" : "Centro")}</span>
           </div>
         </div>
       </div>
@@ -9602,6 +9783,7 @@ window.openAdminVisualManagementModal = async () => {
   adminVisualState.draftType = "";
   adminVisualState.draftId = "";
   adminVisualState.appearanceSaving = false;
+  adminVisualState.appearancePreviewArea = "home";
 
   const modal = document.getElementById("modalOverlay");
   const cont = document.getElementById("modalContainer");
@@ -9661,9 +9843,22 @@ window.updateAdminVisualAppearanceField = (field = "", value = "") => {
   syncAdminVisualAppearancePreview();
 };
 
+window.setAdminVisualAppearancePreviewArea = (area = "home") => {
+  adminVisualState.appearancePreviewArea = ADMIN_THEME_BACKGROUND_AREAS.some((item) => item.key === area) ? area : "home";
+  const root = document.getElementById("adminVisualAppearancePreviewRoot");
+  if (root) {
+    root.querySelectorAll("[data-admin-visual-preview-area]").forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.adminVisualPreviewArea === adminVisualState.appearancePreviewArea);
+    });
+  }
+  syncAdminVisualAppearancePreview();
+};
+
 window.selectAdminVisualAppearancePreset = (presetKey = "padrao_bolao") => {
   const preset = getAdminWebThemePreset(presetKey);
+  const currentDraft = adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft();
   adminVisualState.appearanceDraft = {
+    ...currentDraft,
     ...preset,
     active: true,
     updatedAt: adminVisualState.appearance?.updatedAt || null,
@@ -9706,6 +9901,12 @@ window.restoreAdminVisualTheme = async () => {
       source: "settings/web_theme",
       preset: payload.preset,
       backgroundImageUrl: payload.backgroundImageUrl,
+      homeBackgroundImageUrl: payload.homeBackgroundImageUrl,
+      rankingBackgroundImageUrl: payload.rankingBackgroundImageUrl,
+      profileBackgroundImageUrl: payload.profileBackgroundImageUrl,
+      adminBackgroundImageUrl: payload.adminBackgroundImageUrl,
+      modalBackgroundImageUrl: payload.modalBackgroundImageUrl,
+      trophyBackgroundImageUrl: payload.trophyBackgroundImageUrl,
       primaryColor: payload.primaryColor,
       primaryDarkColor: payload.primaryDarkColor,
       accentColor: payload.accentColor,
@@ -9716,6 +9917,7 @@ window.restoreAdminVisualTheme = async () => {
       fontFamily: payload.fontFamily,
       backgroundPosition: payload.backgroundPosition,
       backgroundSizeMode: payload.backgroundSizeMode,
+      backgroundSize: payload.backgroundSize,
       backgroundOverlayOpacity: payload.backgroundOverlayOpacity
     });
     renderAdminVisualManagementModal();
@@ -9739,7 +9941,18 @@ window.saveAdminVisualTheme = async () => {
   const draft = normalizeAdminWebThemeDraft(adminVisualState.appearanceDraft || adminVisualState.appearance || getAdminWebThemeDefaultDraft());
   const errors = [];
 
-  if (draft.backgroundImageUrl && !isHttpUrl(draft.backgroundImageUrl)) errors.push("A imagem de fundo precisa usar uma URL pública válida.");
+  const imageFields = [
+    ["backgroundImageUrl", "A imagem de fundo precisa usar uma URL pública válida."],
+    ["homeBackgroundImageUrl", "O fundo da Home/Confrontos precisa usar uma URL pública válida."],
+    ["rankingBackgroundImageUrl", "O fundo do Ranking precisa usar uma URL pública válida."],
+    ["profileBackgroundImageUrl", "O fundo do Perfil precisa usar uma URL pública válida."],
+    ["adminBackgroundImageUrl", "O fundo do Painel Admin precisa usar uma URL pública válida."],
+    ["modalBackgroundImageUrl", "O fundo dos Modais precisa usar uma URL pública válida."],
+    ["trophyBackgroundImageUrl", "O fundo da Sala de Troféus precisa usar uma URL pública válida."]
+  ];
+  imageFields.forEach(([field, label]) => {
+    if (draft[field] && !normalizeThemeImageUrl(draft[field])) errors.push(label);
+  });
   if (!isValidCssColor(draft.backgroundOverlay)) errors.push("O overlay de fundo precisa ser uma cor válida.");
   if (!Number.isFinite(Number(draft.backgroundOverlayOpacity))) errors.push("A opacidade do fundo precisa ser um número válido.");
 
@@ -9774,9 +9987,16 @@ window.saveAdminVisualTheme = async () => {
     await logAdminVisualAction("update_web_theme", {
       source: "settings/web_theme",
       preset: payload.preset,
-      backgroundImageUrl: payload.backgroundImageUrl,
+    backgroundImageUrl: payload.backgroundImageUrl,
+      homeBackgroundImageUrl: payload.homeBackgroundImageUrl,
+      rankingBackgroundImageUrl: payload.rankingBackgroundImageUrl,
+      profileBackgroundImageUrl: payload.profileBackgroundImageUrl,
+      adminBackgroundImageUrl: payload.adminBackgroundImageUrl,
+      modalBackgroundImageUrl: payload.modalBackgroundImageUrl,
+      trophyBackgroundImageUrl: payload.trophyBackgroundImageUrl,
       backgroundPosition: payload.backgroundPosition,
       backgroundSizeMode: payload.backgroundSizeMode,
+      backgroundSize: payload.backgroundSize,
       backgroundOverlayOpacity: payload.backgroundOverlayOpacity,
       primaryColor: payload.primaryColor,
       primaryDarkColor: payload.primaryDarkColor,
@@ -15357,7 +15577,7 @@ window.openMatchEditModal = async (matchId) => {
             }
             
             cont.innerHTML = `
-            <div class="w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh] flex flex-col">
+            <div class="theme-modal-shell admin-menu-shell w-full max-w-sm bg-white rounded-none shadow-2xl overflow-hidden relative h-[85vh] flex flex-col">
                 <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
                 
                 <div class="relative z-10 flex flex-col h-full bg-white/90">
@@ -18619,6 +18839,10 @@ window.openModal = (html) => {
   if (!overlay || !container) return;
 
   container.innerHTML = html;
+  const firstChild = container.firstElementChild;
+  if (firstChild && firstChild.classList && !firstChild.classList.contains("theme-modal-shell")) {
+    firstChild.classList.add("theme-modal-shell");
+  }
   overlay.classList.remove("hidden");
 };
 
