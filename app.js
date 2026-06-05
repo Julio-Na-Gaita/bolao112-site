@@ -6279,12 +6279,6 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
             cont.innerHTML = html;
         };
 
-        const normalizeRankingSearchText = (value = "") =>
-          String(value || "")
-            .trim()
-            .toLowerCase()
-            .replace(/\s+/g, " ");
-
         const RANKING_DENSITY_STORAGE_KEY = "bolao112:ranking-density";
         const getRankingDensity = () => {
           try {
@@ -6312,65 +6306,6 @@ window.goToMatchRegisteredBets = async (matchId, fromHistoryIdx = null) => {
           }
         };
 
-        window.applyRankingSearchFilter = () => {
-          const input = document.getElementById("rankingSearchInput");
-          const emptyState = document.getElementById("rankingEmptySearch");
-          const clearBtn = input?.parentElement?.querySelector(".ranking-search-clear");
-          const term = normalizeRankingSearchText(window.__rankingSearchTerm || input?.value || "");
-          const rows = Array.from(document.querySelectorAll(".ranking-row[data-search]"));
-          let visibleCount = 0;
-
-          rows.forEach((row) => {
-            const haystack = normalizeRankingSearchText(row.dataset.search || "");
-            const match = !term || haystack.includes(term);
-            row.classList.toggle("hidden", !match);
-            if (match) visibleCount++;
-          });
-
-          if (emptyState) emptyState.classList.toggle("hidden", visibleCount > 0);
-          if (clearBtn) clearBtn.classList.toggle("hidden", !term);
-        };
-
-        window.setRankingSearchTerm = (value = "") => {
-          window.__rankingSearchTerm = String(value || "");
-          window.applyRankingSearchFilter();
-        };
-
-        window.clearRankingSearch = () => {
-          window.__rankingSearchTerm = "";
-          const input = document.getElementById("rankingSearchInput");
-          if (input) input.value = "";
-          window.applyRankingSearchFilter();
-        };
-
-        window.jumpToMyRankingPosition = () => {
-          const currentEntry = currentUser ? (currentRankingData || []).find((u) => u.uid === currentUser.uid) : null;
-          if (!currentEntry || !currentEntry.uid) {
-            alert("Sua posição ainda não foi encontrada no ranking.");
-            return;
-          }
-
-          window.clearRankingSearch();
-
-          const rowId = `ranking-row-${String(currentEntry.uid).replace(/[^a-zA-Z0-9_-]/g, "_")}`;
-          const row = document.getElementById(rowId);
-          if (!row) {
-            alert("Sua posição ainda não foi encontrada no ranking.");
-            return;
-          }
-
-          const appContentEl = document.getElementById("appContent");
-          row.classList.remove("ranking-row-pulse");
-          void row.offsetWidth;
-          row.classList.add("ranking-row-pulse");
-          row.scrollIntoView({ behavior: "smooth", block: "center" });
-          if (appContentEl) {
-            const offset = Math.max(row.offsetTop - 120, 0);
-            appContentEl.scrollTo({ top: offset, behavior: "smooth" });
-          }
-          window.setTimeout(() => row.classList.remove("ranking-row-pulse"), 1800);
-        };
-
         // --- RANKING COM NOVAS MEDALHAS (MITO E DIAMANTE) ---
         // Variável global para armazenar a info da última atualização
         window.globalLastUpdateInfo = "Aguardando atualização...";
@@ -6395,7 +6330,6 @@ async function loadRanking(options = {}) {
     window.__rankingMovementSnapshot = cachedRanking.rankingMovementSnapshot || window.__rankingMovementSnapshot || { positions: {}, movements: {} };
     listContainer.scrollTop = 0;
     if (appContent) appContent.scrollTop = 0;
-    window.applyRankingSearchFilter?.();
     return;
   }
 
@@ -7058,10 +6992,21 @@ const currentUserDisplayName = currentUserRankingEntry?.name || currentUserRanki
 const currentUserPositionText = currentUserRankingEntry && currentUserRankIndex >= 0
   ? `Você está em ${currentUserRankIndex + 1}º`
   : "Sua posição ainda não está disponível.";
-const rankingSearchValue = String(window.__rankingSearchTerm || "").trim();
 const rankingDensityMode = window.__rankingDensity === "detailed" ? "detailed" : "compact";
 const rankingIsDetailed = rankingDensityMode === "detailed";
 const rankingLeaderPoints = Number(users[0]?.p || 0);
+const currentUserMovementSymbol = currentUserRankingEntry
+  ? (currentUserMovementDelta > 0
+    ? "↑"
+    : currentUserMovementDelta < 0
+      ? "↓"
+      : Number(currentUserMovementInfo?.previousPosition || 0) > 0
+        ? "→"
+        : "–")
+  : "";
+const currentUserMovementDisplay = rankingIsDetailed
+  ? currentUserMovementText
+  : currentUserMovementSymbol;
 
 // Renderiza HTML
 let html = `
@@ -7099,66 +7044,35 @@ let html = `
   </div>
 
   <div class="ranking-my-position mb-3">
-    <div class="ranking-my-position__eyebrow">Você no ranking</div>
     ${
       currentUserRankingEntry && currentUserRankIndex >= 0
         ? `
           <div class="ranking-my-position__main">
             <div class="ranking-my-position__title">${escapeHtml(currentUserPositionText)}</div>
             <div class="ranking-my-position__line">${escapeHtml(currentUserDisplayName)}</div>
-            <div class="ranking-my-position__movement">${escapeHtml(currentUserMovementText)}</div>
+            <div class="ranking-my-position__movement">${escapeHtml(currentUserMovementDisplay)}</div>
           </div>
         `
         : `<div class="ranking-my-position__empty">Sua posição ainda não está disponível.</div>`
     }
-  </div>
-
-  <div class="ranking-toolbar mb-3">
-    <div class="ranking-density-toggle">
-      <button
-        type="button"
-        class="btn-press ${rankingDensityMode === "compact" ? "is-active" : ""}"
-        onclick="window.setRankingDensity('compact')"
-      >
-        Compacto
-      </button>
-      <button
-        type="button"
-        class="btn-press ${rankingDensityMode === "detailed" ? "is-active" : ""}"
-        onclick="window.setRankingDensity('detailed')"
-      >
-        Detalhado
-      </button>
+    <div class="ranking-my-position__footer">
+      <div class="ranking-density-toggle ranking-density-toggle--card" aria-label="Modo de exibição do ranking">
+        <button
+          type="button"
+          class="btn-press ${rankingDensityMode === "compact" ? "is-active" : ""}"
+          onclick="window.setRankingDensity('compact')"
+        >
+          Compacto
+        </button>
+        <button
+          type="button"
+          class="btn-press ${rankingDensityMode === "detailed" ? "is-active" : ""}"
+          onclick="window.setRankingDensity('detailed')"
+        >
+          Detalhado
+        </button>
+      </div>
     </div>
-
-    <div class="ranking-toolbar__search">
-      <input
-        id="rankingSearchInput"
-        type="search"
-        class="ranking-search-input"
-        placeholder="Buscar participante"
-        value="${escapeHtml(rankingSearchValue)}"
-        oninput="window.setRankingSearchTerm(this.value)"
-      >
-      <button
-        type="button"
-        class="ranking-search-clear btn-press ${rankingSearchValue ? "" : "hidden"}"
-        onclick="window.clearRankingSearch()"
-      >
-        Limpar
-      </button>
-    </div>
-    <button
-      type="button"
-      class="ranking-jump-me btn-press"
-      onclick="window.jumpToMyRankingPosition()"
-    >
-      Minha posição
-    </button>
-  </div>
-
-  <div id="rankingEmptySearch" class="ranking-empty-search hidden mb-3">
-    Nenhum participante encontrado.
   </div>
 
   <div class="ranking-table-shell ranking-table-shell--${rankingDensityMode}">
@@ -7199,14 +7113,18 @@ let html = `
                         return idxA - idxB;
                     });
                     const uniqueIcons = orderedIcons;
+                    const visibleIcons = rankingIsDetailed ? uniqueIcons : uniqueIcons.slice(0, 3);
 
-                    if (uniqueIcons.length > 0) {
+                    if (visibleIcons.length > 0) {
                         medalsHtml = `<div class="ranking-medals">` +
-                            uniqueIcons.map(icon => {
+                            visibleIcons.map(icon => {
                               const count = counts[icon] || 0;
                               const isSuperMedal = count >= 10;
                               return `<span class="ranking-medal-chip ${isSuperMedal ? "super-medal" : ""}">${icon}${count > 1 ? `<span class="ranking-medal-count">${count}</span>` : ""}</span>`;
                             }).join("") +
+                            (!rankingIsDetailed && uniqueIcons.length > visibleIcons.length
+                              ? `<span class="ranking-medal-chip ranking-medal-chip--more">…</span>`
+                              : "") +
                         `</div>`;
                     }
 
@@ -7220,7 +7138,6 @@ let html = `
                         : hasMovementHistory
                           ? "→ Sem mudança"
                           : "Sem histórico";
-                    const diffHtml = `<div class="ranking-move ranking-move--${movementDelta > 0 ? "up" : movementDelta < 0 ? "down" : hasMovementHistory ? "same" : "neutral"}">${escapeHtml(movementLabel)}</div>`;
 
                     const searchTokens = [
                       u.name || "",
@@ -7244,22 +7161,25 @@ let html = `
                           <span>${escapeHtml(compareNextLabel)}</span>
                         </div>
                       `
-                      : (isMe || i < 3
-                        ? `<div class="ranking-row__compare ranking-row__compare--compact">${escapeHtml(compareLeaderLabel)}</div>`
-                        : "");
-                    const compareSpotlightClass = !rankingIsDetailed && (isMe || i < 3)
-                      ? " ranking-row--compare-spotlight"
                       : "";
+                    const compactMovementSymbol = movementDelta > 0
+                      ? "↑"
+                      : movementDelta < 0
+                        ? "↓"
+                        : hasMovementHistory
+                          ? "→"
+                          : "–";
+                    const movementChipText = rankingIsDetailed ? escapeHtml(movementLabel) : compactMovementSymbol;
 
                     return `<div
                       id="ranking-row-${String(u.uid || i).replace(/[^a-zA-Z0-9_-]/g, "_")}"
                       data-uid="${escapeHtml(String(u.uid || ""))}"
                       data-search="${escapeHtml(searchTokens)}"
-                      class="ranking-row ${rowClass} ranking-row--${rankingDensityMode}${compareSpotlightClass}"
+                      class="ranking-row ${rowClass} ranking-row--${rankingDensityMode}"
                     >
                         <div class="ranking-row__pos">
                           <div class="ranking-pos-badge">${posIcon}</div>
-                          ${diffHtml}
+                          <div class="ranking-move ranking-move--${movementDelta > 0 ? "up" : movementDelta < 0 ? "down" : hasMovementHistory ? "same" : "neutral"}">${movementChipText}</div>
                         </div>
 
                         <div class="ranking-row__user" onclick="showModalPhoto(${i})">
@@ -7288,7 +7208,6 @@ let html = `
                 listContainer.innerHTML = html;
                 listContainer.scrollTop = 0;
                 if (appContent) appContent.scrollTop = 0;
-                window.applyRankingSearchFilter?.();
 
 window.__rankingScreenCache = {
   html,
