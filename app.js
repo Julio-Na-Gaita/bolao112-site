@@ -6976,7 +6976,6 @@ let html = `
         <p class="ranking-hero__subtitle">Temporada 2026</p>
         <div class="ranking-hero__meta">
           <span class="ranking-hero__chip">${users.length} participantes</span>
-          <span class="ranking-hero__chip ranking-hero__chip--accent">Pontos e dívidas definem a ordem</span>
         </div>
       </div>
 
@@ -7015,21 +7014,6 @@ let html = `
         `
         : `<div class="ranking-my-position__empty">Sua posição ainda não está disponível.</div>`
     }
-  </div>
-
-  <div class="ranking-legend-strip mb-3">
-    <div class="ranking-legend-strip__item">
-      <span class="ranking-legend-strip__label">Pontos</span>
-      <span class="ranking-legend-strip__text">definem a classificação</span>
-    </div>
-    <div class="ranking-legend-strip__item">
-      <span class="ranking-legend-strip__label">Dívidas</span>
-      <span class="ranking-legend-strip__text">desempatam quando os pontos empatam</span>
-    </div>
-    <div class="ranking-legend-strip__item">
-      <span class="ranking-legend-strip__label">Detalhes</span>
-      <span class="ranking-legend-strip__text">toque em pontos ou dívidas para ver o extrato</span>
-    </div>
   </div>
 
   <div class="ranking-table-shell">
@@ -7197,6 +7181,15 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
             <div>• Setas: indicam subida, queda ou permanência na posição.</div>
             <div>• Atualização: ocorre após baixa de resultados e sincronização do sistema.</div>
             <div>• Rei do Mês: líder da pontuação no mês vigente.</div>
+          </div>
+        </div>
+
+        <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
+          <div class="text-xs font-black text-[#FDE68A] uppercase tracking-wider">Leitura rápida</div>
+          <div class="mt-3 space-y-2 text-xs font-bold text-white/80 leading-snug">
+            <div><span class="font-black text-white">Pontos:</span> definem a classificação principal do ranking.</div>
+            <div><span class="font-black text-white">Dívidas:</span> ajudam no desempate quando houver empate em pontos.</div>
+            <div><span class="font-black text-white">Detalhes:</span> toque em pontos ou dívidas para abrir o extrato do participante.</div>
           </div>
         </div>
 
