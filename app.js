@@ -7478,10 +7478,10 @@ let html = `
                             visibleIcons.map(icon => {
                               const count = counts[icon] || 0;
                               const isSuperMedal = count >= 10;
-                              return `<span class="ranking-medal-chip ${isSuperMedal ? "super-medal" : ""}">${icon}${count > 1 ? `<span class="ranking-medal-count">${count}</span>` : ""}</span>`;
+                              return `<span class="ranking-medal-chip ranking-medal-chip--clickable ${isSuperMedal ? "super-medal" : ""}" role="button" tabindex="0" title="Ver sala de troféus" onclick="showModalPhoto(${i})">${icon}${count > 1 ? `<span class="ranking-medal-count">${count}</span>` : ""}</span>`;
                             }).join("") +
                             (!rankingIsDetailed && uniqueIcons.length > visibleIcons.length
-                              ? `<span class="ranking-medal-chip ranking-medal-chip--more">…</span>`
+                              ? `<span class="ranking-medal-chip ranking-medal-chip--more ranking-medal-chip--clickable" role="button" tabindex="0" title="Ver sala de troféus" onclick="showModalPhoto(${i})">…</span>`
                               : "") +
                         `</div>`;
                     }
@@ -7535,10 +7535,10 @@ let html = `
                       data-search="${escapeHtml(searchTokens)}"
                       class="ranking-row ${rowClass} ranking-row--${rankingDensityMode}"
                     >
-                        <div class="ranking-row__pos">
+                        <button type="button" class="ranking-row__pos ranking-row__pos--clickable btn-press" onclick="window.openRankingEvolutionModal(${JSON.stringify(String(u.uid || ""))}, ${JSON.stringify(String(u.name || u.username || "Sem nome"))}, ${JSON.stringify(String(u.photoBase64 || ""))})" title="Ver evolução no ranking">
                           <div class="ranking-pos-badge">${posIcon}</div>
                           <div class="ranking-move ranking-move--${movementDelta > 0 ? "up" : movementDelta < 0 ? "down" : hasMovementHistory ? "same" : "neutral"}">${movementChipText}</div>
-                        </div>
+                        </button>
 
                         <div class="ranking-row__user" onclick="showModalPhoto(${i})">
                             <div class="${avatarClass}"><img src="${getAvatarUrl(u.photoBase64, u.name)}" class="w-full h-full object-cover"></div>
@@ -7550,7 +7550,7 @@ let html = `
                             </div>
                         </div>
 
-                        <div class="ranking-row__medals">
+                        <div class="ranking-row__medals ranking-row__medals--clickable" onclick="showModalPhoto(${i})" title="Ver sala de troféus">
                           ${medalsHtml || '<div class="ranking-medals-empty">Sem medalhas</div>'}
                         </div>
 
@@ -7605,7 +7605,7 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
   ];
 
   const medalRows = medalInfos.map((medal) => `
-    <div class="ranking-info-medal">
+    <div class="ranking-info-medal ranking-info-medal--contrast">
       <div class="ranking-info-medal__icon">${medal.icon}</div>
       <div class="ranking-info-medal__body">
         <div class="ranking-info-medal__name">${escapeHtml(medal.name)}</div>
@@ -7649,9 +7649,9 @@ window.openRankingInfoModal = (lastUpdateInfoText = "") => {
           </div>
         </div>
 
-        <div class="mt-4 rounded-xl border border-white/10 bg-white/5 p-4">
-          <div class="text-xs font-black text-[#FDE68A] uppercase tracking-wider">Medalhas</div>
-          <div class="text-[10px] font-bold text-white/60 uppercase tracking-wider mt-1">Ordem de importância: da mais valiosa para a menos valiosa.</div>
+        <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
+          <div class="text-xs font-black text-[#006400] uppercase tracking-wider">Medalhas</div>
+          <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-1">Ordem de importância: da mais valiosa para a menos valiosa.</div>
           <div class="mt-3 space-y-3">
             ${medalRows}
           </div>
@@ -19388,7 +19388,7 @@ const buildPotForecastValues = ({ totalCotasPagas = 0, totalParticipantesAtivos 
             }
 
             // 2. ORDENAÇÃO ROBUSTA
-            currentRankingData.sort((a,b) => {
+            const shareRankingData = [...currentRankingData].sort((a,b) => {
                 if (b.p !== a.p) return b.p - a.p;
                 if ((a.debts||0) !== (b.debts||0)) return (a.debts||0) - (b.debts||0);
 
@@ -19402,9 +19402,9 @@ const countB = (b.medals || []).filter((medalIcon) => medalIcon === icon).length
             });
 
             // 3. Localiza o usuário e define posição real
-            const index = currentRankingData.findIndex(u => u.uid === uid);
+            const index = shareRankingData.findIndex(u => u.uid === uid);
             if (index === -1) return;
-            const user = currentRankingData[index];
+            const user = shareRankingData[index];
             user.lastRank = index + 1;
 // =========================
 // ✅ MEDALHAS NO CARD DO INSTAGRAM (compacto + contador)
@@ -19442,20 +19442,20 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
 `;
 
             // --- LÓGICA DA TABELA INTELIGENTE ---
-            const totalParticipants = currentRankingData.length;
+            const totalParticipants = shareRankingData.length;
             const maxRows = 8;
             let displayList = [];
 
             if (totalParticipants <= maxRows) {
-                displayList = currentRankingData;
+                displayList = shareRankingData;
             } else if (index < maxRows) {
-                displayList = currentRankingData.slice(0, maxRows);
+                displayList = shareRankingData.slice(0, maxRows);
             } else {
-                const top3 = currentRankingData.slice(0, 3);
+                const top3 = shareRankingData.slice(0, 3);
                 const separator = { uid: "sep", name: "...", p: 0 };
                 const start = Math.max(3, index - 1);
                 const end = Math.min(totalParticipants, index + 2);
-                const neighborhood = currentRankingData.slice(start, end);
+                const neighborhood = shareRankingData.slice(start, end);
                 displayList = [...top3, separator, ...neighborhood];
             }
             
@@ -19471,7 +19471,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
             const cardContainer = document.createElement('div');
             cardContainer.id = "instaCardCapture";
             cardContainer.style.position = "fixed"; cardContainer.style.top = "0"; cardContainer.style.left = "0"; 
-            cardContainer.style.zIndex = "-9999"; cardContainer.style.width = "360px"; cardContainer.style.height = "800px";
+            cardContainer.style.zIndex = "-9999"; cardContainer.style.width = "360px"; cardContainer.style.height = "auto";
             document.body.appendChild(cardContainer);
 
             const avatarUrl = getAvatarUrl(user.photoBase64, user.name);
@@ -19484,7 +19484,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
                 if (uItem.uid === "sep") {
                     tableHtml += `<div style="text-align: center; color: gray; font-weight: bold; padding: 2px;">...</div>`;
                 } else {
-                    const realRank = currentRankingData.findIndex(x => x.uid === uItem.uid) + 1;
+                    const realRank = shareRankingData.findIndex(x => x.uid === uItem.uid) + 1;
                     const isMe = uItem.uid === user.uid;
                     
                     // Cores e Estilos
@@ -19512,7 +19512,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
 
             // HTML DO CARD FINAL
             cardContainer.innerHTML = `
-                <div style="width: 360px; height: 800px; display: flex; flex-direction: column; padding: 18px; background: linear-gradient(180deg, #004D40 0%, #071c17 58%, #020817 100%); font-family: Inter, system-ui, sans-serif; text-align: center; position: relative; overflow: hidden;">
+                <div style="width: 360px; min-height: 800px; height: auto; display: flex; flex-direction: column; padding: 18px; background: linear-gradient(180deg, #004D40 0%, #071c17 58%, #020817 100%); font-family: Inter, system-ui, sans-serif; text-align: center; position: relative; overflow: hidden;">
                     <img src="bg_ranking.png" loading="lazy" decoding="async" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.16; mix-blend-mode: overlay;">
                     
                     <div style="position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column;">
@@ -19527,8 +19527,8 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
                                 <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
                             <div style="text-align: left; min-width: 0;">
-                                <div style="color: white; font-weight: 900; font-size: ${shareNameFontSize}px; line-height: 1.12; text-transform: uppercase; max-width: 248px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; text-align: left;">${shareName}</div>
-                                <div style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
+                                <div style="color: white; font-weight: 900; font-size: ${shareNameFontSize}px; line-height: 1.08; text-transform: uppercase; max-width: 236px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; text-align: left;">${shareName}</div>
+                                <div style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap; row-gap:4px;">
                                     <div style="padding:5px 10px; border-radius:999px; background: rgba(255,215,0,0.16); border:1px solid rgba(255,215,0,0.38); color:#FFD700; font-weight:900; font-size:13px;">${user.p} PONTOS</div>
                                     <div style="padding:5px 10px; border-radius:999px; background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.9); font-weight:800; font-size:11px;">${index + 1}º LUGAR</div>
                                 </div>
@@ -19536,7 +19536,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
                         </div>
 ${medalsStripHtml}
 
-                        <div style="background: rgba(255,255,255,0.96); border-radius: 18px; padding: 12px; flex: 1; box-shadow: 0 16px 32px rgba(0,0,0,0.2);">
+                            <div style="background: rgba(255,255,255,0.96); border-radius: 18px; padding: 12px; flex: 1; min-height: 0; box-shadow: 0 16px 32px rgba(0,0,0,0.2);">
                             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(15,23,42,0.12); padding-bottom: 8px; margin-bottom: 8px;">
                                 <span style="font-size: 10px; font-weight: 900; letter-spacing: 1px; color: #0f172a;">RANKING GERAL (${totalParticipants})</span>
                                 <span style="font-size: 10px; font-weight: 900; color: #0f172a;">PTS</span>
@@ -19800,16 +19800,30 @@ window.__toggleScoutInfo = (id) => {
 
         // --- SCOUT PREMIUM (KPIs + ÚLTIMOS 5 + GRÁFICO + COMPETIÇÕES + RECORDES) ---
 // --- SCOUT PREMIUM (ESTATÍSTICAS + GRÁFICO + ÚLTIMOS 5 + TABELA + RECORDES) ---
-window.showPlayerScout = async (targetUid, targetName, targetPhoto) => {
+window.openRankingEvolutionModal = (targetUid, targetName, targetPhoto) => {
+  if (typeof window.showPlayerScout !== "function") return;
+  window.showPlayerScout(targetUid, targetName, targetPhoto, { mode: "ranking_evolution" });
+};
+
+window.showPlayerScout = async (targetUid, targetName, targetPhoto, options = {}) => {
   const cont = document.getElementById('modalContainer');
   const overlay = document.getElementById('modalOverlay');
   if (!cont || !overlay) return;
+  const scoutMode = String(options?.mode || "").toLowerCase();
+  const scoutHeaderTitle = scoutMode === "ranking_evolution" ? "Evolução no Ranking" : "Resumo Premium";
+  const scoutHeaderEyebrow = scoutMode === "ranking_evolution" ? "MOVIMENTO DO RANKING" : "SCOUT DO PALPITEIRO";
+  const scoutHeaderSubtitle = scoutMode === "ranking_evolution"
+    ? "Acompanhe sua trajetória e variação de posição"
+    : "Visão analítica dos palpites e da evolução do jogador";
+  const scoutLoadingLabel = scoutMode === "ranking_evolution"
+    ? "Calculando evolução no ranking..."
+    : "Calculando Scout Premium...";
 
   overlay.classList.remove('hidden');
   cont.innerHTML = `
     <div class="bg-white p-6 text-center">
       <i class="fas fa-spinner fa-spin text-2xl text-[#006400]"></i>
-      <p class="text-xs mt-2 font-bold text-gray-500">Calculando Scout Premium...</p>
+      <p class="text-xs mt-2 font-bold text-gray-500">${escapeHtml(scoutLoadingLabel)}</p>
     </div>
   `;
 
@@ -20195,9 +20209,9 @@ const worstPosCount = (rankHistory.length && worstPos !== '-')
     const html = `
       <div class="scout-modal">
         <div class="scout-header">
-          <div class="scout-header__eyebrow">SCOUT DO PALPITEIRO</div>
-          <div class="scout-header__title">Resumo Premium</div>
-          <div class="scout-header__subtitle">Visão analítica dos palpites e da evolução do jogador</div>
+          <div class="scout-header__eyebrow">${escapeHtml(scoutHeaderEyebrow)}</div>
+          <div class="scout-header__title">${escapeHtml(scoutHeaderTitle)}</div>
+          <div class="scout-header__subtitle">${escapeHtml(scoutHeaderSubtitle)}</div>
           <button type="button" onclick="window.closeModal()" class="scout-header__close" aria-label="Fechar">
             <i class="fas fa-times"></i>
           </button>
@@ -20208,7 +20222,7 @@ const worstPosCount = (rankHistory.length && worstPos !== '-')
             <img src="${getAvatarUrl(safeScoutPhoto, safeScoutName)}" alt="${escapeHtml(safeScoutName)}" class="scout-profile__avatar">
             <div class="scout-profile__content">
               <div class="scout-profile__name">${escapeHtml(safeScoutName)}</div>
-              <div class="scout-profile__meta">Resumo Premium • 2026</div>
+              <div class="scout-profile__meta">${scoutMode === "ranking_evolution" ? "Evolução de posição • 2026" : "Resumo Premium • 2026"}</div>
             </div>
           </div>
 

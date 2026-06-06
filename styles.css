@@ -2686,6 +2686,10 @@ select:focus-visible {
     height: 44px;
     padding: 2px;
     overflow: visible;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.14);
 }
 
 .share-card-medal__icon {
@@ -2701,6 +2705,8 @@ select:focus-visible {
     padding: 6px 6px;
     border-radius: 6px;
     margin-bottom: 3px;
+    min-height: 34px;
+    overflow: hidden;
 }
 
 .share-card-ranking-pos {
@@ -2731,6 +2737,33 @@ select:focus-visible {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.ranking-row__pos--clickable,
+.ranking-row__medals--clickable {
+    cursor: pointer;
+}
+
+.ranking-row__pos--clickable {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+}
+
+.ranking-row__pos--clickable:focus-visible,
+.ranking-row__medals--clickable:focus-visible,
+.ranking-medal-chip--clickable:focus-visible {
+    outline: 2px solid rgba(255,215,0,0.85);
+    outline-offset: 2px;
+}
+
+.ranking-medal-chip--clickable {
+    cursor: pointer;
 }
 
 .share-card-ranking-points {
@@ -3751,6 +3784,23 @@ select:focus-visible {
     font-size: 10px;
     font-weight: 700;
     line-height: 1.35;
+}
+
+.ranking-info-medal--contrast {
+    border-top-color: rgba(148,163,184,0.18);
+}
+
+.ranking-info-medal--contrast .ranking-info-medal__icon {
+    background: rgba(0,100,0,0.08);
+    color: #006400;
+}
+
+.ranking-info-medal--contrast .ranking-info-medal__name {
+    color: #0f172a;
+}
+
+.ranking-info-medal--contrast .ranking-info-medal__desc {
+    color: #475569;
 }
 
 .ranking-hero__btn {
