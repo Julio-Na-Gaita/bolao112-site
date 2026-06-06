@@ -8672,6 +8672,52 @@ button[disabled] {
     margin-top: 12px;
 }
 
+.ranking-evolution-debug {
+    margin-top: 12px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 16px;
+    background: #f8fafc;
+    padding: 10px 12px;
+}
+
+.ranking-evolution-debug summary {
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 900;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+.ranking-evolution-debug__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 10px;
+    margin-top: 10px;
+}
+
+.ranking-evolution-debug__grid div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.ranking-evolution-debug__grid span {
+    font-size: 10px;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.ranking-evolution-debug__grid strong {
+    font-size: 11px;
+    font-weight: 900;
+    color: #0f172a;
+    word-break: break-word;
+}
+
 .ranking-evolution-footer {
     flex: 0 0 auto;
     padding: 0 16px 16px;
@@ -8796,6 +8842,10 @@ button[disabled] {
 
     .ranking-evolution-row__movement {
         font-size: 9px;
+    }
+
+    .ranking-evolution-debug__grid {
+        grid-template-columns: 1fr;
     }
 
     .scout-history__item {

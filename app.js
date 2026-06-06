@@ -19983,6 +19983,7 @@ const buildRankingEvolutionData = async (targetPlayer = {}, rankingEntry = {}, c
   const targetAliasSet = new Set(normalizedTargetAliases);
   gSnap.forEach((docSnap) => {
     const guess = { id: docSnap.id, ...(docSnap.data() || {}) };
+    const rawGuessUserId = String(guess.userId || guess.uid || guess.user || guess.playerId || "").trim();
     const guessAliases = getRankingEvolutionPlayerAliases(guess, guess).map((alias) => normalizeRankingEvolutionKey(alias));
     if (guessAliases.some((alias) => targetAliasSet.has(alias)) && guess.matchId) {
       targetGuessIds.add(guess.matchId);
@@ -19996,7 +19997,14 @@ const buildRankingEvolutionData = async (targetPlayer = {}, rankingEntry = {}, c
       if (guess.matchId) {
         guessLookupByUserMatch[`${resolvedGuessKey}__${guess.matchId}`] = guess;
       }
-      if (resolvedGuessKey === safeUid) {
+      if (resolvedGuessKey === safeUid && guess.matchId) {
+        targetGuessIds.add(guess.matchId);
+      }
+    }
+
+    if (rawGuessUserId && guess.matchId) {
+      guessLookupByUserMatch[`${rawGuessUserId}__${guess.matchId}`] = guess;
+      if (normalizeRankingEvolutionKey(rawGuessUserId) === normalizeRankingEvolutionKey(safeUid)) {
         targetGuessIds.add(guess.matchId);
       }
     }
@@ -20063,6 +20071,7 @@ const buildRankingEvolutionData = async (targetPlayer = {}, rankingEntry = {}, c
   });
 
   const targetVotesCount = targetGuessIds.size;
+  const hasHistoryPoints = evolution.length >= 1;
 
   matches.forEach((match, index) => {
     if (!safeUid || (usersCreatedAt[safeUid] && usersCreatedAt[safeUid] > match.deadlineDate)) return;
@@ -20147,13 +20156,15 @@ const buildRankingEvolutionData = async (targetPlayer = {}, rankingEntry = {}, c
     maxFall,
     totalSnapshots: evolution.length,
     hasEnoughHistory: evolution.length >= 2,
+    hasHistoryPoints,
     rankingMovementSnapshot,
     reason,
     diagnostic: {
       matchesCount: matches.length,
       finishedMatchesCount: matches.length,
       guessesCount: allGuesses.length,
-      targetVotesCount
+      targetVotesCount,
+      playerKey: safeUid
     }
   };
 };
@@ -20196,7 +20207,9 @@ const renderRankingEvolutionModal = async (targetPlayer, rankingEntry, context) 
     };
     const historyHint = data.hasEnoughHistory
       ? "A linha abaixo mostra a posição rodada a rodada."
-      : (historyHintMap[data.reason] || "Ainda não há histórico suficiente para montar a evolução completa.");
+      : (data.hasHistoryPoints
+        ? "Histórico parcial encontrado. Ainda não há marcos suficientes para desenhar a curva completa."
+        : (historyHintMap[data.reason] || "Ainda não há histórico suficiente para montar a evolução completa."));
 
     const timelineHtml = evolutionItems.length
       ? evolutionItems.map((item, index) => {
@@ -20299,6 +20312,22 @@ const renderRankingEvolutionModal = async (targetPlayer, rankingEntry, context) 
           </div>
 
           ${!data.hasEnoughHistory ? `<div class="ranking-evolution-empty ranking-evolution-empty--notice">${escapeHtml(historyHint)}</div>` : ""}
+          ${!data.hasEnoughHistory ? `
+            <details class="ranking-evolution-debug">
+              <summary>Detalhes técnicos</summary>
+              <div class="ranking-evolution-debug__grid">
+                <div><span>playerKey</span><strong>${escapeHtml(String(data.diagnostic?.playerKey || data.safeUid || "—"))}</strong></div>
+                <div><span>nome</span><strong>${escapeHtml(String(targetDisplayName || "—"))}</strong></div>
+                <div><span>matches carregados</span><strong>${escapeHtml(String(data.diagnostic?.matchesCount ?? 0))}</strong></div>
+                <div><span>jogos finalizados</span><strong>${escapeHtml(String(data.diagnostic?.finishedMatchesCount ?? 0))}</strong></div>
+                <div><span>guesses carregados</span><strong>${escapeHtml(String(data.diagnostic?.guessesCount ?? 0))}</strong></div>
+                <div><span>palpites do participante</span><strong>${escapeHtml(String(data.diagnostic?.targetVotesCount ?? 0))}</strong></div>
+                <div><span>marcos gerados</span><strong>${escapeHtml(String(data.totalSnapshots || 0))}</strong></div>
+                <div><span>fonte</span><strong>matches + guesses + users</strong></div>
+                <div><span>motivo</span><strong>${escapeHtml(String(data.reason || "insufficient"))}</strong></div>
+              </div>
+            </details>
+          ` : ""}
         </div>
 
         <div class="ranking-evolution-footer">
