@@ -7535,7 +7535,17 @@ let html = `
                       data-search="${escapeHtml(searchTokens)}"
                       class="ranking-row ${rowClass} ranking-row--${rankingDensityMode}"
                     >
-                        <button type="button" class="ranking-row__pos ranking-row__pos--clickable btn-press" onclick='event.preventDefault(); event.stopPropagation(); window.openRankingEvolutionModal(${JSON.stringify(String(u.uid || ""))}, ${JSON.stringify(String(u.name || u.username || "Sem nome"))}, ${JSON.stringify(String(u.photoBase64 || ""))})' title="Ver evolução no ranking" aria-label="Ver evolução no ranking de ${escapeHtml(String(u.name || u.username || "Sem nome"))}">
+                        <button type="button" class="ranking-row__pos ranking-row__pos--clickable btn-press" onclick='event.preventDefault(); event.stopPropagation(); window.openRankingEvolutionModal(${JSON.stringify({
+                          uid: String(u.uid || ""),
+                          id: String(u.id || ""),
+                          userId: String(u.userId || ""),
+                          playerId: String(u.playerId || ""),
+                          email: String(u.email || ""),
+                          name: String(u.name || ""),
+                          username: String(u.username || ""),
+                          displayName: String(u.displayName || ""),
+                          photoBase64: String(u.photoBase64 || "")
+                        })})' title="Ver evolução no ranking" aria-label="Ver evolução no ranking de ${escapeHtml(String(u.name || u.username || "Sem nome"))}">
                           <div class="ranking-pos-badge">${posIcon}</div>
                           <div class="ranking-move ranking-move--${movementDelta > 0 ? "up" : movementDelta < 0 ? "down" : hasMovementHistory ? "same" : "neutral"}">${movementChipText}</div>
                         </button>
@@ -19799,81 +19809,267 @@ window.__toggleScoutInfo = (id) => {
 };
 
 // --- EVOLUÇÃO NO RANKING (modal dedicado, sem reaproveitar a tela do Scout) ---
-const buildRankingEvolutionData = async (targetUid = "", targetName = "", targetPhoto = "") => {
-  const safeUid = String(targetUid || "").trim();
-  const safeName = String(targetName || "").trim() || "Sem nome";
-  const safePhoto = String(targetPhoto || "").trim();
+const normalizeRankingEvolutionKey = (value = "") =>
+  String(value || "")
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+
+const getRankingEvolutionPlayerAliases = (player = {}, rankingEntry = {}) => {
+  const values = [];
+  const sourceList = [player, rankingEntry];
+
+  sourceList.forEach((source) => {
+    if (!source || typeof source !== "object") return;
+    [
+      source.uid,
+      source.id,
+      source.userId,
+      source.playerId,
+      source.email,
+      source.name,
+      source.username,
+      source.displayName
+    ].forEach((value) => {
+      const raw = String(value || "").trim();
+      if (raw) values.push(raw);
+      const normalized = normalizeRankingEvolutionKey(raw);
+      if (normalized) values.push(normalized);
+    });
+  });
+
+  return [...new Set(values.filter(Boolean))];
+};
+
+const getRankingEvolutionPlayerKey = (player = {}, rankingEntry = {}) => {
+  const aliases = getRankingEvolutionPlayerAliases(player, rankingEntry);
+  return aliases[0] || "";
+};
+
+const isRankingEvolutionFinishedMatch = (match = {}) => {
+  const winner = String(match.winner || match.winnerName || match.vencedor || match.resultWinner || "").trim();
+  const status = String(match.status || "").trim().toLowerCase();
+  return Boolean(
+    winner ||
+    match.finishedAt ||
+    match.final === true ||
+    status.includes("final")
+  );
+};
+
+const getRankingEvolutionMatchWinner = (match = {}) =>
+  String(match.winner || match.winnerName || match.vencedor || match.resultWinner || "").trim();
+
+const buildRankingEvolutionData = async (targetPlayer = {}, rankingEntry = {}, context = {}) => {
+  const targetInput = targetPlayer && typeof targetPlayer === "object"
+    ? targetPlayer
+    : { uid: targetPlayer, name: rankingEntry, username: rankingEntry, photoBase64: context };
+  const safeName = String(
+    targetInput.name ||
+    targetInput.username ||
+    targetInput.displayName ||
+    rankingEntry?.name ||
+    rankingEntry?.username ||
+    "Sem nome"
+  ).trim() || "Sem nome";
+  const safePhoto = String(targetInput.photoBase64 || rankingEntry?.photoBase64 || "").trim();
+  const targetAliases = getRankingEvolutionPlayerAliases(targetInput, rankingEntry);
+  const normalizedTargetAliases = [...new Set(targetAliases.map((alias) => normalizeRankingEvolutionKey(alias)).filter(Boolean))];
 
   const [mSnap, gSnap, uSnap, rankingMovementSnapshot] = await Promise.all([
     getDocs(collection(db, "matches")),
     getDocs(collection(db, "guesses")),
-    loadRankingMovementSnapshot({ force: false }),
-    getDocs(collection(db, "users"))
+    getDocs(collection(db, "users")),
+    loadRankingMovementSnapshot({ force: false })
   ]);
 
-  const users = [];
-  const usersCreatedAt = {};
-  const userDebts = {};
-  let fallbackTarget = null;
+  const userIndex = new Map();
+  const aliasIndex = new Map();
+  const sourceUsers = [];
 
-  uSnap.forEach((d) => {
-    const data = d.data() || {};
-    const uid = String(d.id || "").trim();
-    const createdDate = data.createdAt && typeof data.createdAt.toDate === "function"
-      ? data.createdAt.toDate()
-      : new Date(0);
-    const user = {
-      uid,
-      ...data,
+  const registerUser = (rawUser = {}) => {
+    const createdDate = toJsDate(rawUser.createdAt) || toJsDate(rawUser.createdDate) || new Date(0);
+    const canonicalId = String(rawUser.uid || rawUser.id || rawUser.userId || rawUser.playerId || "").trim();
+    const normalizedId = normalizeRankingEvolutionKey(canonicalId);
+    const normalizedName = normalizeRankingEvolutionKey(rawUser.name || rawUser.username || rawUser.displayName || "");
+    const normalizedEmail = normalizeRankingEvolutionKey(rawUser.email || "");
+    const candidateKey = normalizedId || normalizedEmail || normalizedName;
+    if (!candidateKey) return;
+
+    const existing = userIndex.get(candidateKey) || {};
+    const merged = {
+      ...existing,
+      ...rawUser,
+      uid: String(rawUser.uid || rawUser.id || rawUser.userId || rawUser.playerId || existing.uid || candidateKey).trim(),
+      id: String(rawUser.id || existing.id || rawUser.uid || rawUser.userId || rawUser.playerId || "").trim(),
+      userId: String(rawUser.userId || existing.userId || rawUser.uid || rawUser.id || "").trim(),
+      playerId: String(rawUser.playerId || existing.playerId || "").trim(),
+      name: String(rawUser.name || existing.name || rawUser.username || existing.username || rawUser.displayName || existing.displayName || "Sem nome").trim() || "Sem nome",
+      username: String(rawUser.username || existing.username || "").trim(),
+      displayName: String(rawUser.displayName || existing.displayName || "").trim(),
+      email: String(rawUser.email || existing.email || "").trim(),
+      debts: Number(rawUser.debts ?? existing.debts ?? 0),
       createdDate
     };
 
-    users.push(user);
-    usersCreatedAt[uid] = createdDate;
-    userDebts[uid] = Number(data.debts || 0);
+    userIndex.set(candidateKey, merged);
+    sourceUsers.push(merged);
 
-    if (!fallbackTarget && uid && (uid === safeUid || String(data.name || "").trim() === safeName || String(data.username || "").trim() === safeName)) {
-      fallbackTarget = user;
-    }
-  });
-
-  const targetUser = users.find((u) => u.uid === safeUid) || fallbackTarget || {
-    uid: safeUid,
-    name: safeName,
-    username: safeName,
-    photoBase64: safePhoto,
-    createdDate: new Date(0)
+    getRankingEvolutionPlayerAliases(merged, merged).forEach((alias) => {
+      const normalizedAlias = normalizeRankingEvolutionKey(alias);
+      if (normalizedAlias) aliasIndex.set(normalizedAlias, candidateKey);
+    });
   };
-  const targetCreated = usersCreatedAt[safeUid] || targetUser.createdDate || new Date(0);
 
-  const allGuesses = [];
-  gSnap.forEach((d) => allGuesses.push(d.data()));
+  uSnap.forEach((docSnap) => registerUser({ id: docSnap.id, ...(docSnap.data() || {}) }));
+
+  const cacheUsers = Array.isArray(window.__rankingScreenCache?.currentRankingData)
+    ? window.__rankingScreenCache.currentRankingData
+    : [];
+  cacheUsers.forEach((user) => registerUser(user || {}));
+
+  const resolvedTargetKey = normalizedTargetAliases
+    .map((alias) => aliasIndex.get(alias))
+    .find((key) => key && userIndex.has(key)) || "";
+
+  const targetUser = resolvedTargetKey ? userIndex.get(resolvedTargetKey) : null;
+  const fallbackTarget = !targetUser
+    ? sourceUsers.find((user) => {
+        const aliases = getRankingEvolutionPlayerAliases(user, user).map((alias) => normalizeRankingEvolutionKey(alias));
+        return normalizedTargetAliases.some((alias) => aliases.includes(alias));
+      }) || null
+    : null;
+  const effectiveTarget = targetUser || fallbackTarget;
+  const safeUid = String(effectiveTarget?.uid || resolvedTargetKey || targetInput.uid || targetInput.id || targetInput.userId || targetInput.playerId || "").trim();
+  const targetCreated = toJsDate(effectiveTarget?.createdAt) || effectiveTarget?.createdDate || new Date(0);
 
   const matches = [];
-  mSnap.forEach((d) => {
-    const data = d.data();
-    if (!data?.winner) return;
+  mSnap.forEach((docSnap) => {
+    const data = docSnap.data() || {};
+    if (!isRankingEvolutionFinishedMatch(data)) return;
+    const deadlineDate = toJsDate(data.deadline) || toJsDate(data.finishedAt) || new Date(0);
     matches.push({
-      id: d.id,
+      id: docSnap.id,
       ...data,
-      deadlineDate: data.deadline?.toDate ? data.deadline.toDate() : new Date(0)
+      winner: getRankingEvolutionMatchWinner(data),
+      deadlineDate,
+      finishedAtDate: toJsDate(data.finishedAt) || null
     });
   });
   matches.sort(matchComparator);
+  matches.forEach((match, index) => {
+    match.matchNumber = Number(match.matchNumber || index + 1);
+  });
 
-  const allUsersIds = users.map((user) => user.uid).filter(Boolean);
+  const allUsers = [...userIndex.values()].sort((a, b) => {
+    const dateA = toJsDate(a.createdAt) || a.createdDate || new Date(0);
+    const dateB = toJsDate(b.createdAt) || b.createdDate || new Date(0);
+    if (dateA.getTime() !== dateB.getTime()) return dateA.getTime() - dateB.getTime();
+    return String(a.uid || a.id || a.userId || a.playerId || "").localeCompare(String(b.uid || b.id || b.userId || b.playerId || ""));
+  });
+  const allUsersIds = allUsers.map((user) => String(user.uid || user.id || user.userId || user.playerId || "").trim()).filter(Boolean);
+  const usersCreatedAt = {};
+  const userDebts = {};
+  allUsers.forEach((user) => {
+    usersCreatedAt[user.uid] = toJsDate(user.createdAt) || user.createdDate || new Date(0);
+    userDebts[user.uid] = Number(user.debts || 0);
+  });
+
+  const allGuesses = [];
+  const guessLookupByUserMatch = {};
+  const targetGuessIds = new Set();
+  const targetAliasSet = new Set(normalizedTargetAliases);
+  gSnap.forEach((docSnap) => {
+    const guess = { id: docSnap.id, ...(docSnap.data() || {}) };
+    const guessAliases = getRankingEvolutionPlayerAliases(guess, guess).map((alias) => normalizeRankingEvolutionKey(alias));
+    if (guessAliases.some((alias) => targetAliasSet.has(alias)) && guess.matchId) {
+      targetGuessIds.add(guess.matchId);
+    }
+    const resolvedGuessKey = guessAliases
+      .map((alias) => aliasIndex.get(alias))
+      .find((key) => key && userIndex.has(key)) || "";
+
+    if (resolvedGuessKey) {
+      guess.userKey = resolvedGuessKey;
+      if (guess.matchId) {
+        guessLookupByUserMatch[`${resolvedGuessKey}__${guess.matchId}`] = guess;
+      }
+      if (resolvedGuessKey === safeUid) {
+        targetGuessIds.add(guess.matchId);
+      }
+    }
+
+    allGuesses.push(guess);
+  });
+
+  if (!effectiveTarget && !safeUid) {
+    return {
+      targetUser: null,
+      safeUid: "",
+      safeName,
+      safePhoto,
+      evolution: [],
+      currentPosition: 0,
+      bestPosition: 0,
+      worstPosition: 0,
+      recentVariation: 0,
+      maxRise: 0,
+      maxFall: 0,
+      totalSnapshots: 0,
+      hasEnoughHistory: false,
+      rankingMovementSnapshot,
+      reason: "missing_user",
+      diagnostic: {
+        matchesCount: matches.length,
+        finishedMatchesCount: matches.length,
+        guessesCount: allGuesses.length,
+        targetVotesCount: 0
+      }
+    };
+  }
+
+  if (!matches.length) {
+    return {
+      targetUser: effectiveTarget,
+      safeUid,
+      safeName,
+      safePhoto,
+      evolution: [],
+      currentPosition: Number(rankingMovementSnapshot?.positions?.[safeUid] || rankingMovementSnapshot?.movements?.[safeUid]?.currentPosition || 0),
+      bestPosition: 0,
+      worstPosition: 0,
+      recentVariation: Number(rankingMovementSnapshot?.movements?.[safeUid]?.delta || 0),
+      maxRise: 0,
+      maxFall: 0,
+      totalSnapshots: 0,
+      hasEnoughHistory: false,
+      rankingMovementSnapshot,
+      reason: "no_finished_matches",
+      diagnostic: {
+        matchesCount: 0,
+        finishedMatchesCount: 0,
+        guessesCount: allGuesses.length,
+        targetVotesCount: 0
+      }
+    };
+  }
+
   const currentScores = {};
+  const evolution = [];
   allUsersIds.forEach((uid) => {
     currentScores[uid] = 0;
   });
 
-  const evolution = [];
+  const targetVotesCount = targetGuessIds.size;
+
   matches.forEach((match, index) => {
-    if (targetCreated > match.deadlineDate) return;
+    if (!safeUid || (usersCreatedAt[safeUid] && usersCreatedAt[safeUid] > match.deadlineDate)) return;
 
     allUsersIds.forEach((uid) => {
       if ((usersCreatedAt[uid] || new Date(0)) > match.deadlineDate) return;
-      const vote = allGuesses.find((guess) => guess.matchId === match.id && guess.userId === uid);
+      const vote = guessLookupByUserMatch[`${uid}__${match.id}`] || null;
       if (vote && vote.teamSelected === match.winner) {
         currentScores[uid] += (String(match.round || "").toLowerCase() === "final" ? 6 : 3);
       }
@@ -19887,7 +20083,9 @@ const buildRankingEvolutionData = async (targetUid = "", targetName = "", target
       const da = userDebts[a] || 0;
       const db = userDebts[b] || 0;
       if (da !== db) return da - db;
-      return String(a).localeCompare(String(b));
+      const userA = allUsers.find((user) => user.uid === a);
+      const userB = allUsers.find((user) => user.uid === b);
+      return String(userA?.name || userA?.username || a).localeCompare(String(userB?.name || userB?.username || b));
     });
 
     const position = activeUsers.indexOf(safeUid) + 1;
@@ -19895,9 +20093,11 @@ const buildRankingEvolutionData = async (targetUid = "", targetName = "", target
 
     const previousPosition = evolution.length ? Number(evolution[evolution.length - 1].position || 0) : 0;
     const movement = previousPosition > 0 ? previousPosition - position : 0;
-    const date = match.deadlineDate instanceof Date ? match.deadlineDate : new Date(0);
+    const date = match.finishedAtDate instanceof Date && !Number.isNaN(match.finishedAtDate.getTime())
+      ? match.finishedAtDate
+      : (match.deadlineDate instanceof Date ? match.deadlineDate : new Date(0));
     const shortDate = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
-    const roundLabel = String(match.round || "").trim() || `Rodada ${evolution.length + 1}`;
+    const roundLabel = String(match.round || match.rodada || match.phase || match.stage || match.competitionRound || match.matchday || "").trim() || `Marco ${evolution.length + 1}`;
 
     evolution.push({
       index: evolution.length + 1,
@@ -19927,8 +20127,14 @@ const buildRankingEvolutionData = async (targetUid = "", targetName = "", target
   const maxRise = evolution.length ? Math.max(...evolution.map((item) => Number(item.movement || 0))) : 0;
   const maxFall = evolution.length ? Math.min(...evolution.map((item) => Number(item.movement || 0))) : 0;
 
+  let reason = "";
+  if (!safeUid) reason = "missing_user";
+  else if (!matches.length) reason = "no_finished_matches";
+  else if (targetVotesCount <= 0) reason = "no_votes";
+  else if (evolution.length < 2) reason = "insufficient";
+
   return {
-    targetUser,
+    targetUser: effectiveTarget || null,
     safeUid,
     safeName,
     safePhoto,
@@ -19941,11 +20147,18 @@ const buildRankingEvolutionData = async (targetUid = "", targetName = "", target
     maxFall,
     totalSnapshots: evolution.length,
     hasEnoughHistory: evolution.length >= 2,
-    rankingMovementSnapshot
+    rankingMovementSnapshot,
+    reason,
+    diagnostic: {
+      matchesCount: matches.length,
+      finishedMatchesCount: matches.length,
+      guessesCount: allGuesses.length,
+      targetVotesCount
+    }
   };
 };
 
-const renderRankingEvolutionModal = async (targetUid, targetName, targetPhoto) => {
+const renderRankingEvolutionModal = async (targetPlayer, rankingEntry, context) => {
   const cont = document.getElementById("modalContainer");
   const overlay = document.getElementById("modalOverlay");
   if (!cont || !overlay) return;
@@ -19961,7 +20174,7 @@ const renderRankingEvolutionModal = async (targetUid, targetName, targetPhoto) =
   `;
 
   try {
-    const data = await buildRankingEvolutionData(targetUid, targetName, targetPhoto);
+    const data = await buildRankingEvolutionData(targetPlayer, rankingEntry, context);
     const targetDisplayName = String(data.targetUser?.name || data.targetUser?.username || data.safeName || "Sem nome").trim() || "Sem nome";
     const targetDisplayPhoto = data.targetUser?.photoBase64 || data.safePhoto || "";
     const currentPositionLabel = data.currentPosition > 0 ? `${data.currentPosition}º lugar` : "Sem posição disponível";
@@ -19975,9 +20188,15 @@ const renderRankingEvolutionModal = async (targetUid, targetName, targetPhoto) =
     const maxRiseLabel = data.maxRise > 0 ? `+${Math.abs(data.maxRise)}` : "0";
     const maxFallLabel = data.maxFall < 0 ? `-${Math.abs(data.maxFall)}` : "0";
     const evolutionItems = data.evolution || [];
+    const historyHintMap = {
+      missing_user: "Não foi possível localizar o histórico deste participante.",
+      no_finished_matches: "Nenhum jogo finalizado foi encontrado para montar a evolução.",
+      no_votes: "Nenhum palpite foi encontrado para este participante.",
+      insufficient: "Ainda não há histórico suficiente para montar a evolução completa."
+    };
     const historyHint = data.hasEnoughHistory
       ? "A linha abaixo mostra a posição rodada a rodada."
-      : "Ainda não há histórico suficiente para montar a evolução completa.";
+      : (historyHintMap[data.reason] || "Ainda não há histórico suficiente para montar a evolução completa.");
 
     const timelineHtml = evolutionItems.length
       ? evolutionItems.map((item, index) => {
@@ -20079,7 +20298,7 @@ const renderRankingEvolutionModal = async (targetUid, targetName, targetPhoto) =
             </div>
           </div>
 
-          ${!data.hasEnoughHistory ? `<div class="ranking-evolution-empty ranking-evolution-empty--notice">Ainda não há histórico suficiente para montar a evolução completa.</div>` : ""}
+          ${!data.hasEnoughHistory ? `<div class="ranking-evolution-empty ranking-evolution-empty--notice">${escapeHtml(historyHint)}</div>` : ""}
         </div>
 
         <div class="ranking-evolution-footer">
@@ -20168,7 +20387,7 @@ const renderRankingEvolutionModal = async (targetUid, targetName, targetPhoto) =
         </div>
         <div class="ranking-evolution-body">
           <div class="ranking-evolution-empty ranking-evolution-empty--notice">
-            Ainda não há histórico suficiente para montar a evolução completa.
+            Não foi possível carregar a evolução agora.
           </div>
         </div>
         <div class="ranking-evolution-footer">
@@ -20179,8 +20398,8 @@ const renderRankingEvolutionModal = async (targetUid, targetName, targetPhoto) =
   }
 };
 
-window.openRankingEvolutionModal = async (targetUid, targetName, targetPhoto) => {
-  await renderRankingEvolutionModal(targetUid, targetName, targetPhoto);
+window.openRankingEvolutionModal = async (targetPlayer, rankingEntry, context) => {
+  await renderRankingEvolutionModal(targetPlayer, rankingEntry, context);
 };
 
 window.showPlayerScout = async (targetUid, targetName, targetPhoto, options = {}) => {
