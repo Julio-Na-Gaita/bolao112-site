@@ -19798,11 +19798,389 @@ window.__toggleScoutInfo = (id) => {
   el.classList.toggle('hidden');
 };
 
-        // --- SCOUT PREMIUM (KPIs + ÚLTIMOS 5 + GRÁFICO + COMPETIÇÕES + RECORDES) ---
-// --- SCOUT PREMIUM (ESTATÍSTICAS + GRÁFICO + ÚLTIMOS 5 + TABELA + RECORDES) ---
-window.openRankingEvolutionModal = (targetUid, targetName, targetPhoto) => {
-  if (typeof window.showPlayerScout !== "function") return;
-  window.showPlayerScout(targetUid, targetName, targetPhoto, { mode: "ranking_evolution" });
+// --- EVOLUÇÃO NO RANKING (modal dedicado, sem reaproveitar a tela do Scout) ---
+const buildRankingEvolutionData = async (targetUid = "", targetName = "", targetPhoto = "") => {
+  const safeUid = String(targetUid || "").trim();
+  const safeName = String(targetName || "").trim() || "Sem nome";
+  const safePhoto = String(targetPhoto || "").trim();
+
+  const [mSnap, gSnap, uSnap, rankingMovementSnapshot] = await Promise.all([
+    getDocs(collection(db, "matches")),
+    getDocs(collection(db, "guesses")),
+    loadRankingMovementSnapshot({ force: false }),
+    getDocs(collection(db, "users"))
+  ]);
+
+  const users = [];
+  const usersCreatedAt = {};
+  const userDebts = {};
+  let fallbackTarget = null;
+
+  uSnap.forEach((d) => {
+    const data = d.data() || {};
+    const uid = String(d.id || "").trim();
+    const createdDate = data.createdAt && typeof data.createdAt.toDate === "function"
+      ? data.createdAt.toDate()
+      : new Date(0);
+    const user = {
+      uid,
+      ...data,
+      createdDate
+    };
+
+    users.push(user);
+    usersCreatedAt[uid] = createdDate;
+    userDebts[uid] = Number(data.debts || 0);
+
+    if (!fallbackTarget && uid && (uid === safeUid || String(data.name || "").trim() === safeName || String(data.username || "").trim() === safeName)) {
+      fallbackTarget = user;
+    }
+  });
+
+  const targetUser = users.find((u) => u.uid === safeUid) || fallbackTarget || {
+    uid: safeUid,
+    name: safeName,
+    username: safeName,
+    photoBase64: safePhoto,
+    createdDate: new Date(0)
+  };
+  const targetCreated = usersCreatedAt[safeUid] || targetUser.createdDate || new Date(0);
+
+  const allGuesses = [];
+  gSnap.forEach((d) => allGuesses.push(d.data()));
+
+  const matches = [];
+  mSnap.forEach((d) => {
+    const data = d.data();
+    if (!data?.winner) return;
+    matches.push({
+      id: d.id,
+      ...data,
+      deadlineDate: data.deadline?.toDate ? data.deadline.toDate() : new Date(0)
+    });
+  });
+  matches.sort(matchComparator);
+
+  const allUsersIds = users.map((user) => user.uid).filter(Boolean);
+  const currentScores = {};
+  allUsersIds.forEach((uid) => {
+    currentScores[uid] = 0;
+  });
+
+  const evolution = [];
+  matches.forEach((match, index) => {
+    if (targetCreated > match.deadlineDate) return;
+
+    allUsersIds.forEach((uid) => {
+      if ((usersCreatedAt[uid] || new Date(0)) > match.deadlineDate) return;
+      const vote = allGuesses.find((guess) => guess.matchId === match.id && guess.userId === uid);
+      if (vote && vote.teamSelected === match.winner) {
+        currentScores[uid] += (String(match.round || "").toLowerCase() === "final" ? 6 : 3);
+      }
+    });
+
+    const activeUsers = allUsersIds.filter((uid) => (usersCreatedAt[uid] || new Date(0)) <= match.deadlineDate);
+    activeUsers.sort((a, b) => {
+      const netA = (currentScores[a] || 0) - (userDebts[a] || 0) * 3;
+      const netB = (currentScores[b] || 0) - (userDebts[b] || 0) * 3;
+      if (netB !== netA) return netB - netA;
+      const da = userDebts[a] || 0;
+      const db = userDebts[b] || 0;
+      if (da !== db) return da - db;
+      return String(a).localeCompare(String(b));
+    });
+
+    const position = activeUsers.indexOf(safeUid) + 1;
+    if (position <= 0) return;
+
+    const previousPosition = evolution.length ? Number(evolution[evolution.length - 1].position || 0) : 0;
+    const movement = previousPosition > 0 ? previousPosition - position : 0;
+    const date = match.deadlineDate instanceof Date ? match.deadlineDate : new Date(0);
+    const shortDate = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+    const roundLabel = String(match.round || "").trim() || `Rodada ${evolution.length + 1}`;
+
+    evolution.push({
+      index: evolution.length + 1,
+      label: roundLabel,
+      dateLabel: shortDate,
+      competition: String(match.competition || "").trim(),
+      matchTitle: [match.teamA, match.teamB].filter(Boolean).join(" x "),
+      position,
+      movement,
+      matchId: match.id,
+      deadlineDate: date,
+      teamA: match.teamA || "",
+      teamB: match.teamB || "",
+      winner: match.winner || "",
+      matchNumber: Number(match.matchNumber || index + 1)
+    });
+  });
+
+  const snapshotMovement = rankingMovementSnapshot?.movements?.[safeUid] || null;
+  const snapshotPosition = Number(rankingMovementSnapshot?.positions?.[safeUid] || snapshotMovement?.currentPosition || 0);
+  const currentPosition = evolution.length ? evolution[evolution.length - 1].position : snapshotPosition || 0;
+  const bestPosition = evolution.length ? Math.min(...evolution.map((item) => Number(item.position || 0)).filter(Boolean)) : currentPosition || 0;
+  const worstPosition = evolution.length ? Math.max(...evolution.map((item) => Number(item.position || 0)).filter(Boolean)) : currentPosition || 0;
+  const recentVariation = evolution.length >= 2
+    ? Number(evolution[evolution.length - 2].position || 0) - Number(evolution[evolution.length - 1].position || 0)
+    : Number(snapshotMovement?.delta || 0);
+  const maxRise = evolution.length ? Math.max(...evolution.map((item) => Number(item.movement || 0))) : 0;
+  const maxFall = evolution.length ? Math.min(...evolution.map((item) => Number(item.movement || 0))) : 0;
+
+  return {
+    targetUser,
+    safeUid,
+    safeName,
+    safePhoto,
+    evolution,
+    currentPosition,
+    bestPosition,
+    worstPosition,
+    recentVariation,
+    maxRise,
+    maxFall,
+    totalSnapshots: evolution.length,
+    hasEnoughHistory: evolution.length >= 2,
+    rankingMovementSnapshot
+  };
+};
+
+const renderRankingEvolutionModal = async (targetUid, targetName, targetPhoto) => {
+  const cont = document.getElementById("modalContainer");
+  const overlay = document.getElementById("modalOverlay");
+  if (!cont || !overlay) return;
+
+  overlay.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="ranking-evolution-modal">
+      <div class="ranking-evolution-modal__loading">
+        <i class="fas fa-circle-notch fa-spin"></i>
+        <p>Carregando evolução no ranking...</p>
+      </div>
+    </div>
+  `;
+
+  try {
+    const data = await buildRankingEvolutionData(targetUid, targetName, targetPhoto);
+    const targetDisplayName = String(data.targetUser?.name || data.targetUser?.username || data.safeName || "Sem nome").trim() || "Sem nome";
+    const targetDisplayPhoto = data.targetUser?.photoBase64 || data.safePhoto || "";
+    const currentPositionLabel = data.currentPosition > 0 ? `${data.currentPosition}º lugar` : "Sem posição disponível";
+    const bestPositionLabel = data.bestPosition > 0 ? `${data.bestPosition}º lugar` : "Sem dados";
+    const worstPositionLabel = data.worstPosition > 0 ? `${data.worstPosition}º lugar` : "Sem dados";
+    const recentVariationLabel = data.recentVariation > 0
+      ? `↑ +${Math.abs(data.recentVariation)}`
+      : data.recentVariation < 0
+        ? `↓ ${Math.abs(data.recentVariation)}`
+        : "↔ 0";
+    const maxRiseLabel = data.maxRise > 0 ? `+${Math.abs(data.maxRise)}` : "0";
+    const maxFallLabel = data.maxFall < 0 ? `-${Math.abs(data.maxFall)}` : "0";
+    const evolutionItems = data.evolution || [];
+    const historyHint = data.hasEnoughHistory
+      ? "A linha abaixo mostra a posição rodada a rodada."
+      : "Ainda não há histórico suficiente para montar a evolução completa.";
+
+    const timelineHtml = evolutionItems.length
+      ? evolutionItems.map((item, index) => {
+          const prev = index > 0 ? Number(evolutionItems[index - 1].position || 0) : 0;
+          const movement = index > 0 ? prev - Number(item.position || 0) : 0;
+          const movementLabel = index === 0
+            ? "Início"
+            : movement > 0
+              ? `↑ +${Math.abs(movement)}`
+              : movement < 0
+                ? `↓ ${Math.abs(movement)}`
+                : "↔ 0";
+          const toneClass = index === 0
+            ? "is-start"
+            : movement > 0
+              ? "is-up"
+              : movement < 0
+                ? "is-down"
+                : "is-same";
+
+          return `
+            <div class="ranking-evolution-row ${toneClass}">
+              <div class="ranking-evolution-row__main">
+                <div class="ranking-evolution-row__label">${escapeHtml(item.label || `Rodada ${index + 1}`)}</div>
+                <div class="ranking-evolution-row__meta">
+                  <span>${escapeHtml(item.dateLabel || "")}</span>
+                  ${item.competition ? `<span>${escapeHtml(item.competition)}</span>` : ""}
+                </div>
+              </div>
+              <div class="ranking-evolution-row__position">${escapeHtml(String(item.position || "—"))}º</div>
+              <div class="ranking-evolution-row__movement">${escapeHtml(movementLabel)}</div>
+            </div>
+          `;
+        }).join("")
+      : `<div class="ranking-evolution-empty">${escapeHtml(historyHint)}</div>`;
+
+    const chartHtml = evolutionItems.length >= 2
+      ? `<div class="ranking-evolution-chart-wrap"><canvas id="rankingEvolutionChart"></canvas></div>`
+      : "";
+
+    const html = `
+      <div class="ranking-evolution-modal">
+        <div class="ranking-evolution-header">
+          <div>
+            <div class="ranking-evolution-header__eyebrow">Evolução no Ranking</div>
+            <div class="ranking-evolution-header__title">${escapeHtml(targetDisplayName)}</div>
+            <div class="ranking-evolution-header__subtitle">${escapeHtml(historyHint)}</div>
+          </div>
+          <button type="button" onclick="window.closeModal()" class="ranking-evolution-header__close" aria-label="Fechar">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="ranking-evolution-body">
+          <div class="ranking-evolution-player">
+            <img src="${getAvatarUrl(targetDisplayPhoto, targetDisplayName)}" alt="${escapeHtml(targetDisplayName)}" class="ranking-evolution-player__avatar">
+            <div class="ranking-evolution-player__content">
+              <div class="ranking-evolution-player__name">${escapeHtml(targetDisplayName)}</div>
+              <div class="ranking-evolution-player__meta">Linha do tempo da posição no ranking</div>
+            </div>
+          </div>
+
+          <div class="ranking-evolution-summary">
+            <div class="ranking-evolution-stat">
+              <span class="ranking-evolution-stat__label">Posição atual</span>
+              <span class="ranking-evolution-stat__value">${escapeHtml(currentPositionLabel)}</span>
+            </div>
+            <div class="ranking-evolution-stat">
+              <span class="ranking-evolution-stat__label">Melhor posição</span>
+              <span class="ranking-evolution-stat__value">${escapeHtml(bestPositionLabel)}</span>
+            </div>
+            <div class="ranking-evolution-stat">
+              <span class="ranking-evolution-stat__label">Pior posição</span>
+              <span class="ranking-evolution-stat__value">${escapeHtml(worstPositionLabel)}</span>
+            </div>
+            <div class="ranking-evolution-stat">
+              <span class="ranking-evolution-stat__label">Variação recente</span>
+              <span class="ranking-evolution-stat__value ${data.recentVariation > 0 ? "is-up" : data.recentVariation < 0 ? "is-down" : ""}">${escapeHtml(recentVariationLabel)}</span>
+            </div>
+            <div class="ranking-evolution-stat">
+              <span class="ranking-evolution-stat__label">Rodadas com dados</span>
+              <span class="ranking-evolution-stat__value">${escapeHtml(String(data.totalSnapshots || 0))}</span>
+            </div>
+            <div class="ranking-evolution-stat">
+              <span class="ranking-evolution-stat__label">Maior subida / queda</span>
+              <span class="ranking-evolution-stat__value">${escapeHtml(maxRiseLabel)} / ${escapeHtml(maxFallLabel)}</span>
+            </div>
+          </div>
+
+          <div class="ranking-evolution-chart-shell">
+            <div class="ranking-evolution-section-title">Linha do tempo</div>
+            ${chartHtml || `<div class="ranking-evolution-empty">${escapeHtml(historyHint)}</div>`}
+          </div>
+
+          <div class="ranking-evolution-timeline-shell">
+            <div class="ranking-evolution-section-title">Detalhes por rodada</div>
+            <div class="ranking-evolution-timeline">
+              ${timelineHtml}
+            </div>
+          </div>
+
+          ${!data.hasEnoughHistory ? `<div class="ranking-evolution-empty ranking-evolution-empty--notice">Ainda não há histórico suficiente para montar a evolução completa.</div>` : ""}
+        </div>
+
+        <div class="ranking-evolution-footer">
+          <button type="button" onclick="window.closeModal()" class="ranking-evolution-footer__button btn-press">FECHAR</button>
+        </div>
+      </div>
+    `;
+
+    cont.innerHTML = html;
+
+    if (window.__rankingEvolutionChart) {
+      try {
+        window.__rankingEvolutionChart.destroy();
+      } catch (error) {
+        // ignore chart destroy issues
+      }
+      window.__rankingEvolutionChart = null;
+    }
+
+    if (evolutionItems.length >= 2) {
+      try {
+        const canvas = document.getElementById("rankingEvolutionChart");
+        if (canvas) {
+          const ChartLib = await ensureChartJs();
+          if (ChartLib) {
+            const ctx = canvas.getContext("2d");
+            const labels = evolutionItems.map((item, index) => item.label || `Rodada ${index + 1}`);
+            const positions = evolutionItems.map((item) => Number(item.position || 0));
+
+            window.__rankingEvolutionChart = new ChartLib(ctx, {
+              type: "line",
+              data: {
+                labels,
+                datasets: [{
+                  label: "Posição",
+                  data: positions,
+                  borderColor: "#006400",
+                  backgroundColor: "rgba(0,100,0,0.12)",
+                  tension: 0.3,
+                  fill: true,
+                  pointRadius: 3,
+                  pointBackgroundColor: "#006400",
+                  pointBorderColor: "#ffffff",
+                  pointBorderWidth: 2
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    reverse: true,
+                    beginAtZero: false,
+                    min: 1,
+                    ticks: { color: "#475569", font: { size: 10 }, precision: 0 }
+                  },
+                  x: {
+                    ticks: { color: "#475569", font: { size: 10 }, maxRotation: 0, autoSkip: true },
+                    grid: { display: false }
+                  }
+                },
+                plugins: {
+                  legend: { display: false }
+                }
+              }
+            });
+          }
+        }
+      } catch (chartError) {
+        console.warn("Não foi possível montar o gráfico da evolução:", chartError);
+      }
+    }
+  } catch (error) {
+    console.error("Erro ao abrir evolução no ranking:", error);
+    cont.innerHTML = `
+      <div class="ranking-evolution-modal">
+        <div class="ranking-evolution-header">
+          <div>
+            <div class="ranking-evolution-header__eyebrow">Evolução no Ranking</div>
+            <div class="ranking-evolution-header__title">${escapeHtml(String(targetName || "Sem nome"))}</div>
+            <div class="ranking-evolution-header__subtitle">Não foi possível carregar a evolução agora.</div>
+          </div>
+          <button type="button" onclick="window.closeModal()" class="ranking-evolution-header__close" aria-label="Fechar">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="ranking-evolution-body">
+          <div class="ranking-evolution-empty ranking-evolution-empty--notice">
+            Ainda não há histórico suficiente para montar a evolução completa.
+          </div>
+        </div>
+        <div class="ranking-evolution-footer">
+          <button type="button" onclick="window.closeModal()" class="ranking-evolution-footer__button btn-press">FECHAR</button>
+        </div>
+      </div>
+    `;
+  }
+};
+
+window.openRankingEvolutionModal = async (targetUid, targetName, targetPhoto) => {
+  await renderRankingEvolutionModal(targetUid, targetName, targetPhoto);
 };
 
 window.showPlayerScout = async (targetUid, targetName, targetPhoto, options = {}) => {
