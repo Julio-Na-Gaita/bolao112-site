@@ -7535,7 +7535,7 @@ let html = `
                       data-search="${escapeHtml(searchTokens)}"
                       class="ranking-row ${rowClass} ranking-row--${rankingDensityMode}"
                     >
-                        <button type="button" class="ranking-row__pos ranking-row__pos--clickable btn-press" onclick="window.openRankingEvolutionModal(${JSON.stringify(String(u.uid || ""))}, ${JSON.stringify(String(u.name || u.username || "Sem nome"))}, ${JSON.stringify(String(u.photoBase64 || ""))})" title="Ver evolução no ranking">
+                        <button type="button" class="ranking-row__pos ranking-row__pos--clickable btn-press" onclick='event.preventDefault(); event.stopPropagation(); window.openRankingEvolutionModal(${JSON.stringify(String(u.uid || ""))}, ${JSON.stringify(String(u.name || u.username || "Sem nome"))}, ${JSON.stringify(String(u.photoBase64 || ""))})' title="Ver evolução no ranking" aria-label="Ver evolução no ranking de ${escapeHtml(String(u.name || u.username || "Sem nome"))}">
                           <div class="ranking-pos-badge">${posIcon}</div>
                           <div class="ranking-move ranking-move--${movementDelta > 0 ? "up" : movementDelta < 0 ? "down" : hasMovementHistory ? "same" : "neutral"}">${movementChipText}</div>
                         </button>
