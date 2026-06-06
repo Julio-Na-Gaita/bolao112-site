@@ -150,6 +150,8 @@ let adminCreationState = {
   selectedRound: "",
   editingRoundName: "",
   editingCompetitionName: "",
+  publishPreviewDraft: null,
+  publishKeepOpen: false,
   roundsTab: "active",
   competitionsTab: "active",
   teams: []
@@ -13004,10 +13006,10 @@ const renderAdminCreationModal = () => {
 
       <div class="grid grid-cols-3 gap-2">
         <button type="button" onclick="window.saveAdminMatch(true)" class="bg-[#F9A825] text-white py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press">
-          Salvar +1
+          Prévia +1
         </button>
         <button type="button" onclick="window.saveAdminMatch(false)" class="bg-[#006400] text-white py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press">
-          Salvar
+          Prévia final
         </button>
         <button type="button" onclick="window.closeModal()" class="bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press">
           Cancelar
@@ -14986,6 +14988,303 @@ const refreshRankingMovementAfterOfficialChange = async (meta = {}) => {
   }
 };
 
+const buildAdminMatchFormDraft = () => {
+  setAdminCreationStatus("");
+
+  const competition = String(document.getElementById("adminMatchCompetition")?.value || "").trim();
+  const round = String(document.getElementById("adminMatchRound")?.value || "").trim();
+  const teamA = String(document.getElementById("adminTeamNameA")?.value || "").trim();
+  const teamB = String(document.getElementById("adminTeamNameB")?.value || "").trim();
+  const teamALogo = String(document.getElementById("adminTeamLogoA")?.value || "").trim();
+  const teamBLogo = String(document.getElementById("adminTeamLogoB")?.value || "").trim();
+  const deadlineValue = String(document.getElementById("adminMatchDeadline")?.value || "").trim();
+  const shareWhatsapp = document.getElementById("adminMatchShareWhatsapp")?.checked === true;
+
+  if (!competition) {
+    alert("Informe a competição.");
+    return null;
+  }
+  if (!round) {
+    alert("Informe a rodada/fase.");
+    return null;
+  }
+  if (!teamA) {
+    alert("Informe o Time A.");
+    return null;
+  }
+  if (!teamB) {
+    alert("Informe o Time B.");
+    return null;
+  }
+  if (normalizeAdminText(teamA) === normalizeAdminText(teamB)) {
+    alert("O Time A e o Time B não podem ser iguais.");
+    return null;
+  }
+  if (!deadlineValue) {
+    alert("Informe a data e hora limite para votação.");
+    return null;
+  }
+  if (teamALogo && !isHttpUrl(teamALogo)) {
+    alert("O link da logo do Time A precisa começar com http:// ou https://.");
+    return null;
+  }
+  if (teamBLogo && !isHttpUrl(teamBLogo)) {
+    alert("O link da logo do Time B precisa começar com http:// ou https://.");
+    return null;
+  }
+
+  const deadlineDate = new Date(deadlineValue);
+  if (Number.isNaN(deadlineDate.getTime())) {
+    alert("A data e hora informadas são inválidas.");
+    return null;
+  }
+
+  const competitionItem = (adminCreationState.competitionItems || []).find((item) =>
+    normalizeAdminText(item.name || "") === normalizeAdminText(competition) && item.active === true
+  ) || null;
+
+  return {
+    competition,
+    competitionLogo: competitionItem?.logo || "",
+    round,
+    teamA,
+    teamB,
+    teamALogo,
+    teamBLogo,
+    deadlineDate,
+    shareWhatsapp
+  };
+};
+
+const renderAdminMatchPublishPreviewModal = () => {
+  const modal = document.getElementById("modalOverlay");
+  const cont = document.getElementById("modalContainer");
+  if (!modal || !cont) return;
+
+  const draft = adminCreationState.publishPreviewDraft || null;
+  if (!draft) return;
+
+  const teamAThumb = draft.teamALogo && isHttpUrl(draft.teamALogo)
+    ? `<img src="${escapeHtml(draft.teamALogo)}" alt="" class="h-full w-full object-cover">`
+    : '<i class="fas fa-shield-alt text-lg text-gray-400"></i>';
+  const teamBThumb = draft.teamBLogo && isHttpUrl(draft.teamBLogo)
+    ? `<img src="${escapeHtml(draft.teamBLogo)}" alt="" class="h-full w-full object-cover">`
+    : '<i class="fas fa-shield-alt text-lg text-gray-400"></i>';
+  const competitionThumb = draft.competitionLogo && isHttpUrl(draft.competitionLogo)
+    ? `<img src="${escapeHtml(draft.competitionLogo)}" alt="" class="h-full w-full object-cover">`
+    : '<i class="fas fa-trophy text-base text-gray-400"></i>';
+  const deadlineLabel = formatAdminPanelDateTime(draft.deadlineDate);
+
+  modal.classList.remove("hidden");
+  cont.innerHTML = `
+    <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[88vh] flex flex-col">
+      <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+      <div class="relative z-10 flex flex-col h-full bg-white/92">
+        <div class="bg-[#006400] p-4 text-white flex items-start justify-between shadow-md shrink-0">
+          <div class="pr-3 min-w-0">
+            <h3 class="font-black uppercase text-lg leading-none">Prévia final</h3>
+            <p class="text-[10px] text-[#FFD700] font-bold mt-1">Confira antes de publicar o confronto</p>
+          </div>
+          <button type="button" onclick="window.cancelAdminMatchPublication()" class="ml-2"><i class="fas fa-times text-xl"></i></button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-3 space-y-3">
+          <div class="admin-creation-panel space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Novo confronto</div>
+                <h4 class="text-lg font-black text-gray-900 leading-tight truncate">${escapeHtml(draft.teamA)} x ${escapeHtml(draft.teamB)}</h4>
+              </div>
+              <span class="status-chip status-chip--success">${draft.shareWhatsapp ? "WhatsApp" : "Sem WhatsApp"}</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2">
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 flex items-center gap-3">
+                <div class="admin-team-thumb admin-team-thumb--small">${competitionThumb}</div>
+                <div class="min-w-0">
+                  <div class="text-[10px] font-black text-slate-500 uppercase">Competição</div>
+                  <div class="text-xs font-black text-slate-900 truncate">${escapeHtml(draft.competition)}</div>
+                </div>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <div class="text-[10px] font-black text-slate-500 uppercase">Rodada / Fase</div>
+                <div class="text-xs font-black text-slate-900 truncate">${escapeHtml(draft.round)}</div>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <div class="text-[10px] font-black text-slate-500 uppercase">Prazo</div>
+                <div class="text-xs font-black text-slate-900 truncate">${escapeHtml(deadlineLabel)}</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div class="rounded-2xl border border-slate-200 bg-white p-3 text-center">
+                <div class="mx-auto mb-2 h-12 w-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center">${teamAThumb}</div>
+                <div class="text-[10px] font-black text-slate-500 uppercase">Time A</div>
+                <div class="text-sm font-black text-slate-900 truncate">${escapeHtml(draft.teamA)}</div>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-white p-3 text-center">
+                <div class="mx-auto mb-2 h-12 w-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center">${teamBThumb}</div>
+                <div class="text-[10px] font-black text-slate-500 uppercase">Time B</div>
+                <div class="text-sm font-black text-slate-900 truncate">${escapeHtml(draft.teamB)}</div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800 leading-relaxed">
+              Compartilhar no WhatsApp: ${draft.shareWhatsapp ? "Sim" : "Não"}.
+              ${draft.competitionLogo ? " A competição selecionada define a identidade visual do confronto." : ""}
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 p-3 border-t bg-white shrink-0">
+          <button type="button" onclick="window.cancelAdminMatchPublication()" class="bg-gray-200 text-gray-800 py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press">Voltar</button>
+          <button type="button" onclick="window.confirmAdminMatchPublication()" class="bg-[#006400] text-white py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press">${adminCreationState.publishKeepOpen ? "Salvar +1" : "Publicar confronto"}</button>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+const commitAdminMatchPublication = async (draft = {}, keepOpen = false) => {
+  const {
+    competition,
+    round,
+    teamA,
+    teamB,
+    teamALogo,
+    teamBLogo,
+    deadlineDate,
+    shareWhatsapp,
+    competitionLogo
+  } = draft || {};
+
+  const admin = await getCurrentAdminProfile(true);
+  if (!admin) {
+    alert("Você não tem permissão para criar confrontos.");
+    closeModal();
+    return;
+  }
+
+  try {
+    const savedTeamA = await persistAdminTeamIfNeeded(teamA, teamALogo);
+    const savedTeamB = await persistAdminTeamIfNeeded(teamB, teamBLogo);
+    const nowTs = Timestamp.fromDate(new Date());
+    const deadlineTs = Timestamp.fromDate(deadlineDate);
+
+    const matchPayload = {
+      competition,
+      competitionLogo: competitionLogo || "",
+      round,
+      teamA,
+      teamB,
+      teamAUrl: teamALogo || savedTeamA?.logoUrl || "",
+      teamBUrl: teamBLogo || savedTeamB?.logoUrl || "",
+      deadline: deadlineTs,
+      updatedAt: nowTs,
+      updatedByUid: admin.uid || "",
+      updatedByName: admin.name || "",
+      updatedByEmail: admin.email || ""
+    };
+
+    matchPayload.createdAt = nowTs;
+    matchPayload.winner = "";
+    matchPayload.final = false;
+    matchPayload.stats = {};
+    matchPayload.createdByUid = admin.uid || "";
+    matchPayload.createdByName = admin.name || "";
+    matchPayload.createdByEmail = admin.email || "";
+
+    const matchRef = await addDoc(collection(db, "matches"), matchPayload);
+    await logAdminMatchCreation({
+      matchId: matchRef.id,
+      teamA,
+      teamB,
+      competition,
+      round,
+      deadline: deadlineDate
+    });
+
+    invalidateHomeRankingCaches();
+    invalidateRuntimeCache("col:matches");
+    await loadAdminMatches();
+    if (!document.getElementById("matchesScreen")?.classList.contains("hidden")) {
+      await loadMatches({ force: true });
+    }
+    if (!document.getElementById("rankingScreen")?.classList.contains("hidden") && typeof loadRanking === "function") {
+      await loadRanking({ force: true });
+    }
+
+    if (shareWhatsapp) {
+      const text = buildAdminWhatsAppMessage({ teamA, teamB, competition, round, deadline: deadlineDate });
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+    }
+
+    if (keepOpen) {
+      const preservedDeadline = formatAdminDateTimeInput(deadlineDate);
+      const preservedWhatsapp = shareWhatsapp;
+
+      const teamANameInput = document.getElementById("adminTeamNameA");
+      const teamBNameInput = document.getElementById("adminTeamNameB");
+      const teamALogoInput = document.getElementById("adminTeamLogoA");
+      const teamBLogoInput = document.getElementById("adminTeamLogoB");
+      const deadlineInput = document.getElementById("adminMatchDeadline");
+      const whatsappInput = document.getElementById("adminMatchShareWhatsapp");
+
+      if (teamANameInput) teamANameInput.value = "";
+      if (teamBNameInput) teamBNameInput.value = "";
+      if (teamALogoInput) teamALogoInput.value = "";
+      if (teamBLogoInput) teamBLogoInput.value = "";
+      if (deadlineInput) deadlineInput.value = preservedDeadline;
+      if (whatsappInput) whatsappInput.checked = preservedWhatsapp;
+
+      window.updateAdminTeamPreview("A");
+      window.updateAdminTeamPreview("B");
+      window.updateAdminCompetitionPreview();
+      setAdminCreationStatus("Confronto salvo. Preencha o próximo jogo.");
+      renderAdminCreationModal();
+      return;
+    }
+
+    if (typeof window.showToast === "function") {
+      window.showToast("Confronto salvo!", "O confronto foi publicado com sucesso.", "");
+    } else {
+      alert("Confronto salvo com sucesso.");
+    }
+    closeModal();
+  } catch (error) {
+    console.error("Erro ao salvar confronto:", error);
+    setAdminCreationStatus("Não foi possível salvar o confronto.", "danger");
+    alert(`Não foi possível salvar o confronto. ${error?.message || ""}`.trim());
+  }
+};
+
+window.openAdminMatchPublishPreview = async (keepOpen = false) => {
+  const draft = buildAdminMatchFormDraft();
+  if (!draft) return;
+  adminCreationState.publishPreviewDraft = draft;
+  adminCreationState.publishKeepOpen = keepOpen === true;
+  renderAdminMatchPublishPreviewModal();
+};
+
+window.cancelAdminMatchPublication = () => {
+  adminCreationState.publishPreviewDraft = null;
+  adminCreationState.publishKeepOpen = false;
+  renderAdminCreationModal();
+};
+
+window.confirmAdminMatchPublication = async () => {
+  const draft = adminCreationState.publishPreviewDraft;
+  if (!draft) {
+    window.cancelAdminMatchPublication();
+    return;
+  }
+
+  const keepOpen = adminCreationState.publishKeepOpen === true;
+  adminCreationState.publishPreviewDraft = null;
+  adminCreationState.publishKeepOpen = false;
+  await commitAdminMatchPublication(draft, keepOpen);
+};
+
 window.saveAdminQuickResults = async () => {
   const pendingMatches = Array.isArray(adminQuickResultsState.matches) ? adminQuickResultsState.matches : [];
   const selections = adminQuickResultsState.selections || {};
@@ -15232,11 +15531,15 @@ const saveAdminMatchInternal = async (keepOpen = false) => {
 };
 
 window.saveAdminMatch = async (keepOpen = false) => {
-  await saveAdminMatchInternal(keepOpen);
+  if (adminMatchEditState.matchId) {
+    await saveAdminMatchInternal(keepOpen);
+    return;
+  }
+  await window.openAdminMatchPublishPreview(keepOpen);
 };
 
 window.saveAdminMatchAndReset = async () => {
-  await saveAdminMatchInternal(true);
+  await window.openAdminMatchPublishPreview(true);
 };
 
 window.saveAdminMatchEdit = async () => {
@@ -16022,6 +16325,479 @@ window.openMatchEditModal = async (matchId) => {
           }
         };
         window.loadAdminOverviewCards = loadAdminOverviewCards;
+
+        const chunkArray = (items = [], size = 10) => {
+          const list = Array.isArray(items) ? items : [];
+          const step = Math.max(1, Number(size || 10));
+          const chunks = [];
+          for (let index = 0; index < list.length; index += step) {
+            chunks.push(list.slice(index, index + step));
+          }
+          return chunks;
+        };
+
+        const downloadTextBlob = (filename = "export.csv", content = "", mime = "text/csv;charset=utf-8") => {
+          const blob = new Blob(["\uFEFF", String(content || "")], { type: mime });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 1500);
+        };
+
+        const escapeCsvCell = (value = "") => {
+          const text = String(value == null ? "" : value);
+          return `"${text.replace(/"/g, '""').replace(/\r?\n/g, " ").trim()}"`;
+        };
+
+        const collectFinancialMonthColumns = (user = {}) => {
+          return FINANCIAL_MONTHS.map((monthKey) => (user.payments?.[monthKey] === true ? "PAGO" : "PENDENTE"));
+        };
+
+        const buildAdminSystemHealthMetrics = async () => {
+          const [usersSnap, matchesSnap, trashSnap, bannersSnap, pollsSnap, rankingSnap, recentLogs] = await Promise.all([
+            getDocs(collection(db, "users")),
+            getDocs(collection(db, "matches")),
+            getDocs(collection(db, "bin_matches")),
+            getDocs(collection(db, "banners")),
+            getDocs(collection(db, "polls")),
+            getDoc(doc(db, "settings", "rankingMovement")),
+            loadRecentAdminAuditLogs({ limitSize: 40 })
+          ]);
+
+          const users = [];
+          usersSnap.forEach((snap) => users.push({ id: snap.id, ...(snap.data() || {}) }));
+          const matches = [];
+          matchesSnap.forEach((snap) => {
+            const data = snap.data() || {};
+            const deadlineDate = toJsDate(data.deadline);
+            const finishedAtDate = toJsDate(data.finishedAt);
+            const hasWinner = !!String(data.winner || "").trim();
+            const expired = deadlineDate ? new Date() > deadlineDate : false;
+            matches.push({
+              id: snap.id,
+              ...data,
+              deadlineDate,
+              finishedAtDate,
+              expired,
+              hasWinner
+            });
+          });
+
+          const monthKey = typeof getFinancialCurrentMonthKey === "function" ? getFinancialCurrentMonthKey() : "";
+          const day30ms = 30 * 24 * 60 * 60 * 1000;
+          const now = Date.now();
+          const activeUsers = users.filter((user) => {
+            const lastAccess = toJsDate(user.lastAccess || user.lastLogin || user.lastLoginAt || user.updatedAt || user.createdAt);
+            return user.isActive !== false && lastAccess && (now - lastAccess.getTime()) <= day30ms;
+          }).length;
+
+          const pendingUsers = monthKey
+            ? users.filter((user) => user.isActive !== false && user.payments?.[monthKey] !== true).length
+            : 0;
+
+          const pushActive = users.filter((user) => user.hasWebPushToken === true || Number(user.webPushTokenCount || 0) > 0 || user.webPushLastStatus === "active").length;
+          const admins = users.filter((user) => user.isAdmin === true).length;
+          const bannersActive = bannersSnap.docs.filter((snap) => (snap.data() || {}).active !== false).length;
+          const pollsActive = pollsSnap.docs.filter((snap) => (snap.data() || {}).active !== false).length;
+          const matchesOpen = matches.filter((match) => !match.expired && !match.hasWinner).length;
+          const matchesWaiting = matches.filter((match) => match.expired && !match.hasWinner).length;
+          const matchesFinished = matches.filter((match) => match.hasWinner || match.final === true).length;
+          const lastLogs = Array.isArray(recentLogs) ? recentLogs : [];
+          const latestAudit = lastLogs[0] || null;
+          const latestAuditSummary = latestAudit ? getAdminAuditSummaryText(latestAudit) : "";
+          const lastRankingUpdatedAt = rankingSnap.exists()
+            ? (rankingSnap.data()?.updatedAt || rankingSnap.data()?.lastUpdatedAt || rankingSnap.data()?.createdAt || null)
+            : null;
+
+          return {
+            totalUsers: users.length,
+            activeUsers,
+            pendingUsers,
+            pushActive,
+            admins,
+            bannersActive,
+            pollsActive,
+            matchesOpen,
+            matchesWaiting,
+            matchesFinished,
+            trashCount: trashSnap.size || 0,
+            lastRankingUpdatedAt,
+            lastAuditAt: latestAudit ? getAdminAuditTimestamp(latestAudit) : null,
+            lastAuditSummary: latestAuditSummary,
+            appVersion: getAppVersion(),
+            monthLabel: typeof getFinancialCurrentMonthName === "function" ? getFinancialCurrentMonthName() : "N/D"
+          };
+        };
+
+        const renderAdminHealthModal = (metrics = {}) => {
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+          const lastRankingLabel = metrics.lastRankingUpdatedAt ? formatAdminPanelDateTime(metrics.lastRankingUpdatedAt) : "Ainda não registrado";
+          const lastAuditLabel = metrics.lastAuditAt ? formatAdminPanelDateTime(metrics.lastAuditAt) : "Ainda não registrado";
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `
+            <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[88vh] flex flex-col">
+              <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+              <div class="relative z-10 flex flex-col h-full bg-white/92">
+                <div class="bg-[#006400] p-4 text-white flex items-start justify-between shadow-md shrink-0">
+                  <div class="pr-3 min-w-0">
+                    <h3 class="font-black uppercase text-lg leading-none">Saúde do Sistema</h3>
+                    <p class="text-[10px] text-[#FFD700] font-bold mt-1">Visão geral rápida do Bolão</p>
+                  </div>
+                  <button type="button" onclick="window.openAdminMenu()" class="ml-2"><i class="fas fa-times text-xl"></i></button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-3 space-y-3">
+                  <div class="admin-creation-panel space-y-3">
+                    <div class="admin-overview-grid">
+                      <div class="admin-overview-card admin-overview-card--info">
+                        <span class="admin-overview-card__value">${escapeHtml(metrics.appVersion || "N/D")}</span>
+                        <span class="admin-overview-card__label">Versão do app</span>
+                        <span class="admin-overview-card__hint">Versão visual atualmente publicada.</span>
+                      </div>
+                      <div class="admin-overview-card admin-overview-card--info">
+                        <span class="admin-overview-card__value">${Number(metrics.totalUsers || 0)}</span>
+                        <span class="admin-overview-card__label">Usuários</span>
+                        <span class="admin-overview-card__hint">${Number(metrics.admins || 0)} admins • ${Number(metrics.activeUsers || 0)} ativos</span>
+                      </div>
+                      <div class="admin-overview-card admin-overview-card--info">
+                        <span class="admin-overview-card__value">${Number(metrics.pendingUsers || 0)}</span>
+                        <span class="admin-overview-card__label">Mensalidades pendentes</span>
+                        <span class="admin-overview-card__hint">Referente a ${escapeHtml(metrics.monthLabel || "N/D")}.</span>
+                      </div>
+                      <div class="admin-overview-card admin-overview-card--info">
+                        <span class="admin-overview-card__value">${Number(metrics.pushActive || 0)}</span>
+                        <span class="admin-overview-card__label">Push ativos</span>
+                        <span class="admin-overview-card__hint">Tokens web habilitados.</span>
+                      </div>
+                      <div class="admin-overview-card admin-overview-card--info">
+                        <span class="admin-overview-card__value">${Number(metrics.matchesOpen || 0)} / ${Number(metrics.matchesWaiting || 0)} / ${Number(metrics.matchesFinished || 0)}</span>
+                        <span class="admin-overview-card__label">Jogos</span>
+                        <span class="admin-overview-card__hint">Abertos • aguardando • finalizados.</span>
+                      </div>
+                      <div class="admin-overview-card admin-overview-card--info">
+                        <span class="admin-overview-card__value">${Number(metrics.trashCount || 0)}</span>
+                        <span class="admin-overview-card__label">Lixeira</span>
+                        <span class="admin-overview-card__hint">${Number(metrics.bannersActive || 0)} banners • ${Number(metrics.pollsActive || 0)} enquetes ativas</span>
+                      </div>
+                    </div>
+
+                    <div class="admin-overview-actions">
+                      <button type="button" onclick="window.refreshAdminSystemHealthModal()" class="admin-overview-action admin-overview-action--green btn-press">
+                        <i class="fas fa-rotate"></i>
+                        <span>Atualizar</span>
+                      </button>
+                      <button type="button" onclick="window.openAdminEngagementReportModal()" class="admin-overview-action admin-overview-action--slate btn-press">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Engajamento</span>
+                      </button>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 space-y-2">
+                      <div class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Últimos registros</div>
+                      <div class="text-xs font-bold text-slate-800 leading-relaxed">
+                        <span class="font-black">Ranking:</span> ${escapeHtml(lastRankingLabel)}
+                      </div>
+                      <div class="text-xs font-bold text-slate-800 leading-relaxed">
+                        <span class="font-black">Admin:</span> ${escapeHtml(lastAuditLabel)}
+                      </div>
+                      <div class="text-xs font-bold text-slate-600 leading-relaxed">${escapeHtml(metrics.lastAuditSummary || "Sem detalhes recentes.")}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        };
+
+        window.refreshAdminSystemHealthModal = async () => {
+          try {
+            const metrics = await buildAdminSystemHealthMetrics();
+            renderAdminHealthModal(metrics);
+          } catch (error) {
+            console.error("Erro ao atualizar a saúde do sistema:", error);
+            showAdminCommunicationToast("Não foi possível atualizar a saúde do sistema.", "danger");
+          }
+        };
+
+        window.openAdminSystemHealthModal = async () => {
+          window.__setAdminReturnTarget(() => window.openAdminMenu());
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) {
+            alert("Você não tem permissão para acessar a saúde do sistema.");
+            return;
+          }
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+          modal.classList.remove("hidden");
+          cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando saúde do sistema...</p></div>`;
+          try {
+            const metrics = await buildAdminSystemHealthMetrics();
+            renderAdminHealthModal(metrics);
+          } catch (error) {
+            console.error("Erro ao abrir saúde do sistema:", error);
+            cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar a saúde do sistema.</p><button onclick="window.openAdminMenu()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button></div>`;
+          }
+        };
+
+        const buildAdminEngagementReportData = async () => {
+          const [usersSnap, matchesSnap] = await Promise.all([
+            getDocs(collection(db, "users")),
+            getDocs(collection(db, "matches"))
+          ]);
+
+          const users = [];
+          const userMap = new Map();
+          usersSnap.forEach((snap) => {
+            const data = snap.data() || {};
+            const user = {
+              id: snap.id,
+              uid: snap.id,
+              ...data,
+              name: data.name || data.username || "Sem nome",
+              username: data.username || "",
+              photoBase64: data.photoBase64 || data.photo || ""
+            };
+            users.push(user);
+            userMap.set(user.id, user);
+          });
+
+          const matches = [];
+          matchesSnap.forEach((snap) => {
+            const data = snap.data() || {};
+            const deadlineDate = toJsDate(data.deadline);
+            const finishedAtDate = toJsDate(data.finishedAt);
+            const hasWinner = !!String(data.winner || "").trim();
+            if (!hasWinner && !finishedAtDate && data.final !== true) return;
+            matches.push({
+              id: snap.id,
+              ...data,
+              deadlineDate,
+              finishedAtDate,
+              hasWinner
+            });
+          });
+
+          matches.sort((a, b) => {
+            const left = b.finishedAtDate?.getTime?.() || b.deadlineDate?.getTime?.() || 0;
+            const right = a.finishedAtDate?.getTime?.() || a.deadlineDate?.getTime?.() || 0;
+            return left - right;
+          });
+
+          const selectedMatches = matches.slice(0, 30);
+          const selectedIds = new Set(selectedMatches.map((match) => match.id));
+          const selectedIdChunks = chunkArray(selectedMatches.map((match) => match.id), 10);
+          let guessDocs = [];
+
+          for (const ids of selectedIdChunks) {
+            if (!ids.length) continue;
+            try {
+              const snap = await getDocs(query(collection(db, "guesses"), where("matchId", "in", ids)));
+              snap.forEach((docSnap) => guessDocs.push({ id: docSnap.id, ...(docSnap.data() || {}) }));
+            } catch (error) {
+              console.warn("Falha ao carregar palpites por lote:", error);
+            }
+          }
+
+          if (!guessDocs.length) {
+            const allGuessSnap = await getDocs(collection(db, "guesses"));
+            allGuessSnap.forEach((docSnap) => guessDocs.push({ id: docSnap.id, ...(docSnap.data() || {}) }));
+          }
+
+          const perUser = new Map();
+          const perMatch = new Map();
+
+          selectedMatches.forEach((match) => perMatch.set(match.id, { ...match, votes: 0 }));
+
+          guessDocs.forEach((guess) => {
+            const matchId = String(guess.matchId || "").trim();
+            const userId = String(guess.userId || "").trim();
+            const teamSelected = String(guess.teamSelected || "").trim();
+            if (!selectedIds.has(matchId) || !userId) return;
+            const match = perMatch.get(matchId);
+            if (!match) return;
+
+            const user = userMap.get(userId) || {
+              id: userId,
+              uid: userId,
+              name: "Sem nome",
+              username: "",
+              photoBase64: ""
+            };
+            const current = perUser.get(userId) || {
+              uid: userId,
+              name: user.name || user.username || "Sem nome",
+              username: user.username || "",
+              photoBase64: user.photoBase64 || "",
+              totalVotes: 0,
+              hits: 0,
+              considered: 0
+            };
+
+            current.totalVotes += 1;
+            current.considered += 1;
+            if (String(match.winner || "").trim() && String(match.winner || "").trim() === teamSelected) {
+              current.hits += 1;
+            }
+            perUser.set(userId, current);
+            match.votes += 1;
+          });
+
+          const eligibleUsers = Array.from(perUser.values())
+            .filter((user) => Number(user.considered || 0) > 0)
+            .map((user) => {
+              const accuracy = user.considered > 0 ? user.hits / user.considered : 0;
+              return {
+                ...user,
+                accuracy
+              };
+            });
+
+          eligibleUsers.sort((a, b) => {
+            if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
+            if (b.hits !== a.hits) return b.hits - a.hits;
+            return String(a.name || "").localeCompare(String(b.name || ""));
+          });
+
+          const craques = eligibleUsers.slice(0, 3);
+          const perebas = [...eligibleUsers].sort((a, b) => {
+            if (a.accuracy !== b.accuracy) return a.accuracy - b.accuracy;
+            if (a.hits !== b.hits) return a.hits - b.hits;
+            return String(a.name || "").localeCompare(String(b.name || ""));
+          }).slice(0, 3);
+
+          const averageAccuracy = eligibleUsers.length
+            ? (eligibleUsers.reduce((sum, user) => sum + user.accuracy, 0) / eligibleUsers.length) * 100
+            : 0;
+
+          return {
+            totalMatches: selectedMatches.length,
+            eligibleUsers: eligibleUsers.length,
+            totalVotes: eligibleUsers.reduce((sum, user) => sum + Number(user.totalVotes || 0), 0),
+            averageAccuracy,
+            selectedMatches,
+            craques,
+            perebas
+          };
+        };
+
+        const renderAdminEngagementReportModal = (report = {}) => {
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+
+          const renderPersonRow = (user = {}) => {
+            const avatar = getAvatarUrl(user.photoBase64 || user.photo || "", user.name || user.username || "");
+            return `
+              <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                <img src="${escapeHtml(avatar)}" alt="" class="w-10 h-10 rounded-full object-cover border border-slate-200 bg-gray-100">
+                <div class="min-w-0 flex-1">
+                  <div class="text-sm font-black text-slate-900 truncate">${escapeHtml(user.name || "Sem nome")}</div>
+                  <div class="text-[10px] font-bold text-slate-500 truncate">@${escapeHtml(user.username || user.uid || "")}</div>
+                </div>
+                <div class="text-right shrink-0">
+                  <div class="text-xs font-black text-[#006400]">${Math.round(Number(user.accuracy || 0) * 100)}%</div>
+                  <div class="text-[10px] font-bold text-slate-500">${Number(user.hits || 0)}/${Number(user.considered || 0)} acerto(s)</div>
+                </div>
+              </div>
+            `;
+          };
+
+          modal.classList.remove("hidden");
+          cont.innerHTML = `
+            <div class="w-full max-w-md bg-white rounded-none shadow-2xl overflow-hidden relative h-[88vh] flex flex-col">
+              <img src="bg_painel_admin.jpeg" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover opacity-100">
+              <div class="relative z-10 flex flex-col h-full bg-white/92">
+                <div class="bg-[#006400] p-4 text-white flex items-start justify-between shadow-md shrink-0">
+                  <div class="pr-3 min-w-0">
+                    <h3 class="font-black uppercase text-lg leading-none">Relatório de Engajamento</h3>
+                    <p class="text-[10px] text-[#FFD700] font-bold mt-1">Últimos ${Number(report.totalMatches || 0)} jogos finalizados analisados</p>
+                  </div>
+                  <button type="button" onclick="window.openAdminSystemHealthModal()" class="ml-2"><i class="fas fa-arrow-left text-xl"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-3 space-y-3">
+                  <div class="admin-creation-panel space-y-3">
+                    <div class="admin-overview-grid">
+                      <div class="admin-overview-card admin-overview-card--info">
+                        <span class="admin-overview-card__value">${Number(report.eligibleUsers || 0)}</span>
+                        <span class="admin-overview-card__label">Participantes elegíveis</span>
+                        <span class="admin-overview-card__hint">Votaram em pelo menos 1 jogo selecionado.</span>
+                      </div>
+                      <div class="admin-overview-card admin-overview-card--info">
+                        <span class="admin-overview-card__value">${Number(report.totalVotes || 0)}</span>
+                        <span class="admin-overview-card__label">Palpites considerados</span>
+                        <span class="admin-overview-card__hint">Base do cálculo de aproveitamento.</span>
+                      </div>
+                      <div class="admin-overview-card admin-overview-card--info">
+                        <span class="admin-overview-card__value">${Math.round(Number(report.averageAccuracy || 0))}%</span>
+                        <span class="admin-overview-card__label">Aproveitamento médio</span>
+                        <span class="admin-overview-card__hint">Média simples dos participantes elegíveis.</span>
+                      </div>
+                      <div class="admin-overview-card admin-overview-card--info">
+                        <span class="admin-overview-card__value">${(report.craques || []).length}</span>
+                        <span class="admin-overview-card__label">Craques</span>
+                        <span class="admin-overview-card__hint">Melhor aproveitamento no recorte atual.</span>
+                      </div>
+                    </div>
+
+                    <div class="space-y-2">
+                      <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Melhores do recorte</div>
+                      <div class="space-y-2">
+                        ${(report.craques || []).length ? (report.craques || []).map(renderPersonRow).join("") : '<div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs font-bold text-slate-500">Sem dados para craques.</div>'}
+                      </div>
+                    </div>
+
+                    <div class="space-y-2">
+                      <div class="text-[10px] font-black text-[#006400] uppercase tracking-[0.18em]">Perebas do recorte</div>
+                      <div class="space-y-2">
+                        ${(report.perebas || []).length ? (report.perebas || []).map(renderPersonRow).join("") : '<div class="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs font-bold text-slate-500">Sem dados para perebas.</div>'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        };
+
+        window.refreshAdminEngagementReportModal = async () => {
+          try {
+            const report = await buildAdminEngagementReportData();
+            renderAdminEngagementReportModal(report);
+          } catch (error) {
+            console.error("Erro ao atualizar relatório de engajamento:", error);
+            showAdminCommunicationToast("Não foi possível atualizar o relatório.", "danger");
+          }
+        };
+
+        window.openAdminEngagementReportModal = async () => {
+          window.__setAdminReturnTarget(() => window.openAdminMenu());
+          const admin = await getCurrentAdminProfile(true);
+          if (!admin) {
+            alert("Você não tem permissão para acessar o relatório de engajamento.");
+            return;
+          }
+          const modal = document.getElementById("modalOverlay");
+          const cont = document.getElementById("modalContainer");
+          if (!modal || !cont) return;
+          modal.classList.remove("hidden");
+          cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><i class="fas fa-circle-notch fa-spin text-2xl text-[#006400] mb-3"></i><p class="text-xs font-black text-gray-500 uppercase">Carregando relatório...</p></div>`;
+          try {
+            const report = await buildAdminEngagementReportData();
+            renderAdminEngagementReportModal(report);
+          } catch (error) {
+            console.error("Erro ao abrir relatório de engajamento:", error);
+            cont.innerHTML = `<div class="bg-white p-6 text-center rounded shadow-xl"><p class="text-sm font-black text-red-600 mb-3">Não foi possível carregar o relatório.</p><button onclick="window.openAdminSystemHealthModal()" class="bg-[#006400] text-white px-4 py-2 rounded font-black text-xs">Voltar</button></div>`;
+          }
+        };
+
         window.openAdminMenu = async () => {
             window.__clearAdminReturnTarget();
             const modal = document.getElementById('modalOverlay'); 
@@ -16068,6 +16844,16 @@ window.openMatchEditModal = async (matchId) => {
                                     </button>
                                 </div>
                                 <div id="adminOverviewCards" class="text-xs text-gray-400 font-bold">Carregando resumo...</div>
+                            </div>
+                            <div class="admin-overview-actions">
+                                <button type="button" onclick="window.openAdminSystemHealthModal()" class="admin-overview-action admin-overview-action--green btn-press">
+                                    <i class="fas fa-heart-pulse"></i>
+                                    <span>Saúde do Sistema</span>
+                                </button>
+                                <button type="button" onclick="window.openAdminEngagementReportModal()" class="admin-overview-action admin-overview-action--slate btn-press">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Engajamento</span>
+                                </button>
                             </div>
                         </div>
                         
@@ -17176,6 +17962,105 @@ async function loadAdminMatches() {
           return items;
         };
 
+        const downloadAdminCsv = (filename = "export.csv", rows = []) => {
+          const csv = rows.map((row) => row.map((cell) => escapeCsvCell(cell)).join(",")).join("\n");
+          downloadTextBlob(filename, csv, "text/csv;charset=utf-8");
+        };
+
+        const buildAdminFinancialUsersRows = (users = []) => {
+          return [
+            [
+              "Nome",
+              "Usuario",
+              "Email",
+              "Admin",
+              "Ativo",
+              "Mensalidade atual",
+              "Push",
+              "Debts",
+              "Regulamento",
+              "Ultimo login",
+              "Versao app"
+            ],
+            ...users.map((user) => {
+              const pushChip = getFinancialPushStatusChip(user);
+              return [
+                user.name || "",
+                user.username || "",
+                user.email || "",
+                user.isAdmin === true ? "SIM" : "NAO",
+                user.isActive === false ? "NAO" : "SIM",
+                getFinancialPaymentsSummary(user),
+                pushChip.label,
+                Number(user.debts || 0),
+                user.rulesAccepted === true ? `ACEITO ${user.rulesAcceptedVersion || ""}`.trim() : "PENDENTE",
+                formatFinancialDateTime(user.lastAccessDate),
+                user.appVersion || ""
+              ];
+            })
+          ];
+        };
+
+        const buildAdminFinancialPaymentsRows = (users = []) => {
+          const rows = [[
+            "Nome",
+            "Usuario",
+            "Email",
+            ...FINANCIAL_MONTHS,
+            "Debts",
+            "Regulamento",
+            "Ultimo login"
+          ]];
+
+          users.forEach((user) => {
+            rows.push([
+              user.name || "",
+              user.username || "",
+              user.email || "",
+              ...collectFinancialMonthColumns(user),
+              Number(user.debts || 0),
+              user.rulesAccepted === true ? `ACEITO ${user.rulesAcceptedVersion || ""}`.trim() : "PENDENTE",
+              formatFinancialDateTime(user.lastAccessDate)
+            ]);
+          });
+
+          return rows;
+        };
+
+        window.exportAdminUsersCsv = async () => {
+          try {
+            const users = Array.isArray(adminFinancialState.users) && adminFinancialState.users.length
+              ? adminFinancialState.users
+              : await loadAdminFinancialUsers();
+            await loadAdminPushStatuses().catch(() => {});
+            downloadAdminCsv(`bolao112-usuarios-${Date.now()}.csv`, buildAdminFinancialUsersRows(users));
+            await logAdminFinancialAction("export_financial_users_csv", {
+              totalUsers: users.length
+            });
+            showFinancialToast("CSV de usuários exportado!");
+          } catch (error) {
+            console.error("Erro ao exportar CSV de usuários:", error);
+            showFinancialToast("Não foi possível exportar o CSV de usuários.", "danger");
+          }
+        };
+
+        window.exportAdminPaymentsCsv = async () => {
+          try {
+            const users = Array.isArray(adminFinancialState.users) && adminFinancialState.users.length
+              ? adminFinancialState.users
+              : await loadAdminFinancialUsers();
+            await loadAdminPushStatuses().catch(() => {});
+            downloadAdminCsv(`bolao112-pagamentos-${Date.now()}.csv`, buildAdminFinancialPaymentsRows(users));
+            await logAdminFinancialAction("export_financial_payments_csv", {
+              totalUsers: users.length
+            });
+            showFinancialToast("CSV de pagamentos exportado!");
+          } catch (error) {
+            console.error("Erro ao exportar CSV de pagamentos:", error);
+            showFinancialToast("Não foi possível exportar o CSV de pagamentos.", "danger");
+          }
+        };
+
         const getFinancialPaymentsSummary = (user) => {
           const monthKey = getFinancialCurrentMonthKey();
           const monthName = getFinancialCurrentMonthName();
@@ -17330,6 +18215,15 @@ async function loadAdminMatches() {
                     <span class="status-chip status-chip--success">${paidCount} pagos</span>
                     <span class="status-chip status-chip--warning">${pendingCount} pendentes</span>
                     <span class="status-chip status-chip--default">${sorted.length} exibidos</span>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="window.exportAdminUsersCsv()" class="bg-slate-800 text-white py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press flex items-center justify-center gap-2">
+                      <i class="fas fa-file-csv"></i> USUÁRIOS CSV
+                    </button>
+                    <button type="button" onclick="window.exportAdminPaymentsCsv()" class="bg-[#0F766E] text-white py-3 rounded-2xl font-black text-[11px] shadow-lg btn-press flex items-center justify-center gap-2">
+                      <i class="fas fa-file-invoice"></i> PAGAMENTOS CSV
+                    </button>
                   </div>
 
                   <div id="adminFinancialUsersList" class="space-y-2">
@@ -18533,24 +19427,14 @@ const maxIcons = 8;
 const iconsToShow = iconsOrdered.slice(0, maxIcons);
 
 const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
-  <div style="
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-top:10px;
-    margin-bottom:8px;
-    padding:6px 8px 10px;
-  ">
+  <div class="share-card-medals">
     ${iconsToShow.map(icon => `
-      <div style="position:relative; display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; padding:2px;">
-        <span style="font-size:30px; line-height:1;">${icon}</span>
+      <div class="share-card-medal">
+        <span class="share-card-medal__icon">${icon}</span>
         ${medalCounts[icon] > 1 ? `
           <span class="medal-count-badge medal-count-badge--share ${medalCounts[icon] >= 10 ? "super-medal" : ""}">
             ${medalCounts[icon] >= 10 ? medalCounts[icon] : `x${medalCounts[icon]}`}
           </span>
-
         ` : ``}
       </div>
     `).join("")}
@@ -18587,7 +19471,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
             const cardContainer = document.createElement('div');
             cardContainer.id = "instaCardCapture";
             cardContainer.style.position = "fixed"; cardContainer.style.top = "0"; cardContainer.style.left = "0"; 
-            cardContainer.style.zIndex = "-9999"; cardContainer.style.width = "360px"; cardContainer.style.height = "780px";
+            cardContainer.style.zIndex = "-9999"; cardContainer.style.width = "360px"; cardContainer.style.height = "800px";
             document.body.appendChild(cardContainer);
 
             const avatarUrl = getAvatarUrl(user.photoBase64, user.name);
@@ -18609,18 +19493,15 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
                     const weight = isMe ? "900" : "normal"; // 900 = Black, normal = Regular
                     const colorPts = isMe ? "#006400" : "black";
                     
-                    // CORREÇÃO AQUI: 
-                    // 1. Padding vertical aumentado para '6px' na linha (div pai).
-                    // 2. Adicionado 'line-height: 1.5' e 'padding-top: 2px' no nome para evitar corte e centralizar.
+                    const rowAvatar = getAvatarUrl(uItem.photoBase64 || uItem.photo || "", uItem.name || uItem.username || "");
                     tableHtml += `
-                    <div style="display: flex; align-items: center; background: ${bg}; padding: 6px 4px; border-radius: 4px; margin-bottom: 2px;">
-                        <div style="width: 28px; font-size: 11px; font-weight: bold; color: ${colorPos};">${realRank}º</div>
-                        
-                        <div style="flex: 1; font-size: 11px; font-weight: ${weight}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; padding-top: 2px; padding-bottom: 2px; padding-left: 2px;">
-                            ${uItem.name}
+                    <div class="share-card-ranking-row" style="background: ${bg};">
+                        <div class="share-card-ranking-pos" style="color: ${colorPos};">${realRank}º</div>
+                        <img src="${escapeHtml(rowAvatar)}" alt="" class="share-card-ranking-avatar">
+                        <div class="share-card-ranking-name" style="font-weight: ${weight}; color: ${isMe ? "#0f172a" : "#0f172a"};">
+                            ${escapeHtml(uItem.name || "")}
                         </div>
-                        
-                        <div style="width: 35px; text-align: right; font-size: 12px; font-weight: 900; color: ${colorPts};">${uItem.p}</div>
+                        <div class="share-card-ranking-points" style="color: ${colorPts};">${uItem.p}</div>
                     </div>`;
                 }
             });
@@ -18631,7 +19512,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
 
             // HTML DO CARD FINAL
             cardContainer.innerHTML = `
-                <div style="width: 360px; height: 780px; display: flex; flex-direction: column; padding: 18px; background: linear-gradient(180deg, #004D40 0%, #071c17 58%, #020817 100%); font-family: Inter, system-ui, sans-serif; text-align: center; position: relative; overflow: hidden;">
+                <div style="width: 360px; height: 800px; display: flex; flex-direction: column; padding: 18px; background: linear-gradient(180deg, #004D40 0%, #071c17 58%, #020817 100%); font-family: Inter, system-ui, sans-serif; text-align: center; position: relative; overflow: hidden;">
                     <img src="bg_ranking.png" loading="lazy" decoding="async" style="position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; opacity: 0.16; mix-blend-mode: overlay;">
                     
                     <div style="position: relative; z-index: 10; flex: 1; display: flex; flex-direction: column;">
@@ -18646,7 +19527,7 @@ const medalsStripHtml = (iconsToShow.length === 0) ? "" : `
                                 <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;">
                             </div>
                             <div style="text-align: left; min-width: 0;">
-                                <div style="color: white; font-weight: 900; font-size: ${shareNameFontSize}px; line-height: 1.12; text-transform: uppercase; max-width: 224px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${shareName}</div>
+                                <div style="color: white; font-weight: 900; font-size: ${shareNameFontSize}px; line-height: 1.12; text-transform: uppercase; max-width: 248px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; text-align: left;">${shareName}</div>
                                 <div style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
                                     <div style="padding:5px 10px; border-radius:999px; background: rgba(255,215,0,0.16); border:1px solid rgba(255,215,0,0.38); color:#FFD700; font-weight:900; font-size:13px;">${user.p} PONTOS</div>
                                     <div style="padding:5px 10px; border-radius:999px; background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.14); color: rgba(255,255,255,0.9); font-weight:800; font-size:11px;">${index + 1}º LUGAR</div>

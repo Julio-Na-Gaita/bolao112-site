@@ -742,6 +742,42 @@ select:focus-visible {
     background: linear-gradient(180deg, rgba(240,253,244,0.96), rgba(255,255,255,0.94));
 }
 
+.admin-overview-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.admin-overview-action {
+    min-height: 42px;
+    padding: 0 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(15,23,42,0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 900;
+    box-shadow: 0 10px 18px rgba(15,23,42,0.06);
+}
+
+.admin-overview-action--green {
+    background: linear-gradient(135deg, #006400, #0b8a38);
+    color: #fff;
+}
+
+.admin-overview-action--slate {
+    background: linear-gradient(135deg, #334155, #0f172a);
+    color: #fff;
+}
+
+.admin-overview-action--teal {
+    background: linear-gradient(135deg, #0F766E, #115e59);
+    color: #fff;
+}
+
 .admin-match-tools {
     margin-bottom: 10px;
     display: flex;
@@ -2619,14 +2655,90 @@ select:focus-visible {
 }
 
 .medal-count-badge--share {
-    top: 1px;
-    right: 1px;
-    transform: translate(28%, -28%);
-    min-width: 18px;
-    height: 18px;
+    top: -2px;
+    right: -2px;
+    transform: translate(18%, -18%);
+    min-width: 20px;
+    height: 20px;
     padding: 0 4px;
-    font-size: 10px;
+    font-size: 9px;
     border-width: 1.5px;
+}
+
+.share-card-medals {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 8px;
+    padding: 8px 8px 12px;
+    min-height: 62px;
+}
+
+.share-card-medal {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 2px;
+    overflow: visible;
+}
+
+.share-card-medal__icon {
+    font-size: 30px;
+    line-height: 1;
+}
+
+.share-card-ranking-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    padding: 6px 6px;
+    border-radius: 6px;
+    margin-bottom: 3px;
+}
+
+.share-card-ranking-pos {
+    width: 28px;
+    flex: 0 0 auto;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.share-card-ranking-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(255,255,255,0.9);
+    background: #fff;
+    object-fit: cover;
+    flex: 0 0 auto;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.16);
+}
+
+.share-card-ranking-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1.2;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.share-card-ranking-points {
+    width: 36px;
+    flex: 0 0 auto;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 900;
 }
 
 .deadline-modal-shell {
